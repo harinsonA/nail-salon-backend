@@ -1,0 +1,129 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/static
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Migrations (temporalmente mientras configuramos la BD)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# =============================================
+# Nail Salon Project Specific
+# =============================================
+
+# Archivos temporales de scripts de corrección
+fix_*.py
+temp_*.py
+script_*.py
+backup_*.py
+
+# Archivos de configuración de desarrollo
+dev_config/
+test_config/
+
+# Archivos de respaldo
+backup/
+backups/
+*.bak
+*.backup
+
+# Archivos específicos del proyecto que no deben versionarse
+test_data/
+sample_data/
+temp_docs/
+draft_docs/
+
+# Archivos de configuración sensibles adicionales
+config.ini
+secrets.json
+credentials.json
+.api_keys
+tokens.json
+
+# SSL certificates y archivos de seguridad
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Archivos de base de datos PostgreSQL locales
+postgresql.conf
+pg_hba.conf
+
+# Logs específicos del proyecto
+logs/
+app_logs/
+error_logs/
