@@ -5,8 +5,8 @@ Este módulo contiene factories para el modelo DetalleCita.
 """
 
 import factory
+import random
 from factory.django import DjangoModelFactory
-from factory import Faker
 from decimal import Decimal
 
 from apps.appointments.models import DetalleCita
@@ -22,7 +22,7 @@ class DetalleCitaFactory(DjangoModelFactory):
     cita = factory.LazyAttribute(lambda o: None)
     servicio = factory.LazyAttribute(lambda o: None)
     descuento = Decimal("0.00")
-    notas_detalle = Faker("text", max_nb_chars=150)
+    notas_detalle = factory.Faker("text", max_nb_chars=150)
 
     @factory.LazyAttribute
     def precio_acordado(self):
@@ -35,7 +35,7 @@ class DetalleCitaFactory(DjangoModelFactory):
     @factory.LazyAttribute
     def cantidad_servicios(self):
         """Generar cantidad realista."""
-        return factory.Faker("random_int", min=1, max=3).generate()
+        return random.randint(1, 3)
 
     @factory.PostGeneration
     def setup_relations(self, create, extracted, **kwargs):

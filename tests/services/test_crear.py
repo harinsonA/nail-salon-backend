@@ -15,7 +15,7 @@ class TestCrearServicios(BaseAPITestCase):
     def setUp(self):
         """Configuración inicial para cada test."""
         super().setUp()
-        self.url_name = "servicios:list"
+        self.url_name = "servicio-list"
 
     def test_crear_servicio_exitoso(self):
         """Test que verifica que se puede crear un servicio correctamente."""

@@ -7,12 +7,15 @@ class ServicioSerializer(serializers.ModelSerializer):
     Serializer para el modelo Servicio
     """
 
+    # Añadir campo 'id' para compatibilidad con API REST estándar
+    id = serializers.IntegerField(source="servicio_id", read_only=True)
     duracion_estimada_horas = serializers.SerializerMethodField()
     precio_formateado = serializers.SerializerMethodField()
 
     class Meta:
         model = Servicio
         fields = [
+            "id",
             "servicio_id",
             "nombre_servicio",
             "precio",
@@ -26,7 +29,12 @@ class ServicioSerializer(serializers.ModelSerializer):
             "fecha_creacion",
             "fecha_actualizacion",
         ]
-        read_only_fields = ["servicio_id", "fecha_creacion", "fecha_actualizacion"]
+        read_only_fields = [
+            "id",
+            "servicio_id",
+            "fecha_creacion",
+            "fecha_actualizacion",
+        ]
 
     def get_duracion_estimada_horas(self, obj):
         """
@@ -45,12 +53,22 @@ class ServicioSerializer(serializers.ModelSerializer):
         """
         return f"${obj.precio:,.2f}"
 
+    def validate_nombre_servicio(self, value):
+        """
+        Validar que el nombre del servicio sea único
+        """
+        if Servicio.objects.filter(nombre_servicio=value).exists():
+            if self.instance and self.instance.nombre_servicio == value:
+                return value
+            raise serializers.ValidationError("Ya existe un servicio con este nombre.")
+        return value
+
     def validate_precio(self, value):
         """
-        Validar que el precio sea mayor a 0
+        Validar que el precio sea mayor o igual a 0
         """
-        if value <= 0:
-            raise serializers.ValidationError("El precio debe ser mayor a 0.")
+        if value < 0:
+            raise serializers.ValidationError("El precio debe ser mayor o igual a 0.")
         return value
 
     def validate_duracion_estimada(self, value):
@@ -63,21 +81,55 @@ class ServicioSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def to_internal_value(self, data):
+        """
+        Validar formato de duración antes del parsing
+        """
+        if "duracion_estimada" in data and isinstance(
+            data.get("duracion_estimada"), str
+        ):
+            duracion_str = data["duracion_estimada"]
+            # Verificar formato básico de duración
+            if ":" in duracion_str:
+                parts = duracion_str.split(":")
+                if len(parts) >= 2:
+                    try:
+                        minutes = int(parts[1]) if len(parts) > 1 else 0
+                        seconds = int(parts[2]) if len(parts) > 2 else 0
+                        # Validar rangos
+                        if minutes > 59 or seconds > 59:
+                            raise serializers.ValidationError(
+                                {
+                                    "duracion_estimada": "Formato de duración inválido. Los minutos y segundos deben ser menores a 60."
+                                }
+                            )
+                    except ValueError:
+                        raise serializers.ValidationError(
+                            {"duracion_estimada": "Formato de duración inválido."}
+                        )
+        return super().to_internal_value(data)
+
 
 class ServicioListSerializer(serializers.ModelSerializer):
     """
     Serializer simplificado para listas de servicios
     """
 
+    # Añadir campo 'id' para compatibilidad con API REST estándar
+    id = serializers.IntegerField(source="servicio_id", read_only=True)
     precio_formateado = serializers.SerializerMethodField()
     duracion_estimada_horas = serializers.SerializerMethodField()
 
     class Meta:
         model = Servicio
         fields = [
+            "id",
             "servicio_id",
             "nombre_servicio",
+            "precio",
             "precio_formateado",
+            "descripcion",
+            "duracion_estimada",
             "duracion_estimada_horas",
             "categoria",
             "activo",

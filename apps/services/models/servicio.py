@@ -8,8 +8,10 @@ class Servicio(models.Model):
     precio = models.DecimalField(
         max_digits=10, decimal_places=2, validators=[validate_precio_positivo]
     )
-    descripcion = models.TextField()
-    duracion_estimada = models.DurationField(validators=[validate_duracion_positiva])
+    descripcion = models.TextField(blank=True, null=True)
+    duracion_estimada = models.DurationField(
+        validators=[validate_duracion_positiva], blank=True, null=True
+    )
 
     # Campos adicionales
     activo = models.BooleanField(default=True)
@@ -29,9 +31,16 @@ class Servicio(models.Model):
         return self.nombre_servicio
 
     @property
+    def id(self):
+        """Alias para servicio_id para compatibilidad con tests y API estándar"""
+        return self.servicio_id
+
+    @property
     def duracion_en_minutos(self):
         """Retorna la duración en minutos"""
-        return int(self.duracion_estimada.total_seconds() / 60)
+        if self.duracion_estimada:
+            return int(self.duracion_estimada.total_seconds() / 60)
+        return 0
 
     def get_precio_formateado(self):
         """Retorna el precio formateado como string"""

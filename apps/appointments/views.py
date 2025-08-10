@@ -1,3 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
+# Importar desde el directorio views
+from .views.cita_views import CitaViewSet
+from .views.detalle_cita_views import DetalleCitaViewSet

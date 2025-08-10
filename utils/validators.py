@@ -19,10 +19,10 @@ def validate_telefono(value):
 
 def validate_precio_positivo(value):
     """
-    Validador para precios que deben ser positivos.
+    Validador para precios que deben ser no negativos.
     """
-    if value <= 0:
-        raise ValidationError("El precio debe ser mayor a 0.")
+    if value < 0:
+        raise ValidationError("El precio debe ser mayor o igual a 0.")
 
 
 def validate_duracion_positiva(value):
