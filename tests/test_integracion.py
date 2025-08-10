@@ -22,7 +22,7 @@ class TestFlujoCompletoSalon(BaseAPITestCase):
             "telefono": "3001234567",
             "email": "maria.gonzalez@test.com",
         }
-        cliente_response = self.api_post("clientes-list", cliente_data)
+        cliente_response = self.api_post("cliente-list", cliente_data)
         self.assert_response_status(cliente_response, status.HTTP_201_CREATED)
         cliente_id = cliente_response.data["id"]
 
@@ -97,7 +97,7 @@ class TestFlujoCompletoSalon(BaseAPITestCase):
         cita = self.create_cita_with_factory(cliente=cliente)
 
         # Buscar cliente por nombre
-        search_response = self.api_get("clientes-list", {"search": "Ana"})
+        search_response = self.api_get("cliente-list", {"search": "Ana"})
         self.assert_response_status(search_response, status.HTTP_200_OK)
         self.assertEqual(search_response.data["count"], 1)
 

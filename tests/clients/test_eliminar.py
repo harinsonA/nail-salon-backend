@@ -30,7 +30,7 @@ class TestEliminarClientes(BaseAPITestCase):
         self.assert_response_status(response, status.HTTP_204_NO_CONTENT)
 
         # Verificar que el cliente ya no existe en la base de datos
-        self.assertFalse(Cliente.objects.filter(id=cliente_id).exists())
+        self.assertFalse(Cliente.objects.filter(cliente_id=cliente_id).exists())
 
     def test_eliminar_cliente_inexistente(self):
         """Test que verifica respuesta para cliente que no existe."""
@@ -66,7 +66,9 @@ class TestEliminarClientes(BaseAPITestCase):
         self.assert_response_status(response, status.HTTP_204_NO_CONTENT)
 
         # Verificar que el cliente ya no existe
-        self.assertFalse(Cliente.objects.filter(id=self.cliente.cliente_id).exists())
+        self.assertFalse(
+            Cliente.objects.filter(cliente_id=self.cliente.cliente_id).exists()
+        )
 
     def test_eliminar_cliente_ya_eliminado(self):
         """Test que verifica doble eliminación."""
@@ -90,9 +92,11 @@ class TestEliminarClientes(BaseAPITestCase):
         self.assert_response_status(response, status.HTTP_204_NO_CONTENT)
 
         # Verificar que no existe en la base de datos
-        self.assertFalse(Cliente.objects.filter(id=cliente_id).exists())
+        self.assertFalse(Cliente.objects.filter(cliente_id=cliente_id).exists())
         self.assertFalse(Cliente.objects.filter(email=email_original).exists())
 
         # Verificar que se puede crear otro cliente con el mismo email
         nuevo_cliente = self.create_cliente_with_factory(email=email_original)
-        self.assertTrue(Cliente.objects.filter(id=nuevo_cliente.cliente_id).exists())
+        self.assertTrue(
+            Cliente.objects.filter(cliente_id=nuevo_cliente.cliente_id).exists()
+        )

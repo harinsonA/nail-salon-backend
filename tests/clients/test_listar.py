@@ -110,8 +110,8 @@ class TestListarClientes(BaseAPITestCase):
         response = self.api_get(self.url_name, {"page": 1, "page_size": 10})
         self.assert_response_status(response, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 10)
-        self.assertIsNotNone(response.data["next"])
-        self.assertIsNone(response.data["previous"])
+        self.assertIsNotNone(response.data["links"]["next"])
+        self.assertIsNone(response.data["links"]["previous"])
 
         # Test segunda página
         response = self.api_get(self.url_name, {"page": 2, "page_size": 10})
@@ -119,8 +119,8 @@ class TestListarClientes(BaseAPITestCase):
         self.assertEqual(
             len(response.data["results"]), 8
         )  # 18 total - 10 primera página
-        self.assertIsNone(response.data["next"])
-        self.assertIsNotNone(response.data["previous"])
+        self.assertIsNone(response.data["links"]["next"])
+        self.assertIsNotNone(response.data["links"]["previous"])
 
     def test_listar_clientes_sin_autenticacion(self):
         """Test que verifica que se requiere autenticación."""

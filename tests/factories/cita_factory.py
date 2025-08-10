@@ -22,19 +22,24 @@ class CitaFactory(DjangoModelFactory):
 
     # Import lazy para evitar dependencias circulares
     cliente = factory.LazyAttribute(lambda o: None)  # Se asignará dinámicamente
-    fecha_hora_cita = factory.LazyFunction(
-        lambda: timezone.now()
-        + timedelta(
-            days=factory.Faker("random_int", min=1, max=30)(),
-            hours=factory.Faker("random_int", min=8, max=18)(),
-        )
-    )
-    notas = Faker("text", max_nb_chars=200)
 
     @factory.LazyAttribute
-    def estado(self):
+    def fecha_hora_cita(self):
+        """Generar fecha futura para la cita."""
+        import random
+
+        days_ahead = random.randint(1, 30)
+        hour = random.randint(8, 18)
+        return timezone.now() + timedelta(days=days_ahead, hours=hour)
+
+    observaciones = Faker("text", max_nb_chars=200)
+
+    @factory.LazyAttribute
+    def estado_cita(self):
         """Generar estados realistas."""
-        return factory.Faker("random_element", elements=APPOINTMENT_STATES)()
+        import random
+
+        return random.choice(APPOINTMENT_STATES)
 
     @factory.PostGeneration
     def setup_cliente(self, create, extracted, **kwargs):
@@ -53,7 +58,7 @@ class CitaFactory(DjangoModelFactory):
 class CitaProgramadaFactory(CitaFactory):
     """Factory para citas programadas."""
 
-    estado = "programada"
+    estado_cita = "programada"
     fecha_hora_cita = factory.LazyFunction(lambda: timezone.now() + timedelta(days=1))
 
 

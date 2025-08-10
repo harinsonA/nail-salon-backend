@@ -2,30 +2,7 @@
 Utilidades base para tests de API del proyecto nail-salon-backend.
 
 Este módulo contiene:
-- Clase ba    def api_get(self, url_name, query_params=None, url_kwargs=None, pk=None, **request_kwargs):
-        """
-        Realizar request GET a la API.
-
-        Args:
-            url_name (str): Nombre de la URL
-            query_params (dict): Parámetros de consulta (query string)
-            url_kwargs (dict): Parámetros para la URL
-            pk: Primary key para la URL
-            **request_kwargs: Parámetros adicionales para el request
-
-        Returns:
-            Response: Respuesta de la API
-        """
-        kwargs = url_kwargs or {}
-        if pk is not None:
-            kwargs['pk'] = pk
-        url = self.get_url(url_name, **kwargs)
-        
-        # Si hay query_params, añadirlos como data para GET
-        if query_params:
-            return self.client.get(url, data=query_params, **request_kwargs)
-        else:
-            return self.client.get(url, **request_kwargs)tests de API
+- Clase base para todos los tests de API
 - Utilidades para autenticación y manejo de requests
 - Helpers comunes para validaciones
 """
@@ -129,13 +106,16 @@ class BaseAPITestCase(TestCase):
         """
         return reverse(url_name, kwargs=kwargs)
 
-    def api_get(self, url_name, url_kwargs=None, pk=None, **request_kwargs):
+    def api_get(
+        self, url_name, query_params=None, url_kwargs=None, pk=None, **request_kwargs
+    ):
         """
         Realizar request GET a la API.
 
         Args:
             url_name (str): Nombre de la URL
-            url_kwargs (dict): Parámetros para la URL
+            query_params (dict): Parámetros de query (?search=..., ?page=...)
+            url_kwargs (dict): Parámetros para la URL (como pk)
             pk: Primary key para la URL
             **request_kwargs: Parámetros adicionales para el request
 
@@ -146,7 +126,12 @@ class BaseAPITestCase(TestCase):
         if pk is not None:
             kwargs["pk"] = pk
         url = self.get_url(url_name, **kwargs)
-        return self.client.get(url, **request_kwargs)
+
+        # Si se pasaron query_params como primer argumento posicional (retrocompatibilidad)
+        if isinstance(query_params, dict):
+            return self.client.get(url, data=query_params, **request_kwargs)
+        else:
+            return self.client.get(url, **request_kwargs)
 
     def api_post(self, url_name, data=None, url_kwargs=None, pk=None, **request_kwargs):
         """
@@ -272,15 +257,19 @@ class BaseAPITestCase(TestCase):
         basic_fields = ["count", "results"]
         self.assert_response_contains_fields(response_data, basic_fields)
         self.assertIsInstance(response_data["results"], list)
-        
-        # Verificar si tiene formato estándar Django o formato personalizado
+
+        # Verificar si tiene formato personalizado con links o formato estándar Django
         if "links" in response_data:
             # Formato personalizado con links
             self.assertIn("links", response_data)
             self.assertIn("total_pages", response_data)
             self.assertIn("current_page", response_data)
+            # Verificar estructura de links
+            links = response_data["links"]
+            self.assertIn("next", links)
+            self.assertIn("previous", links)
         else:
-            # Formato estándar Django
+            # Formato estándar Django REST Framework
             pagination_fields = ["count", "next", "previous", "results"]
             self.assert_response_contains_fields(response_data, pagination_fields)
 
@@ -454,6 +443,11 @@ class BaseAPITestCase(TestCase):
         # Si no se proporciona cliente, crear uno
         if "cliente" not in kwargs:
             kwargs["cliente"] = ClienteFactory()
+
+        # Corregir campo 'estado' a 'estado_cita' si se proporciona
+        if "estado" in kwargs:
+            kwargs["estado_cita"] = kwargs.pop("estado")
+
         return CitaFactory(**kwargs)
 
     def create_detalle_cita_with_factory(self, **kwargs):
@@ -545,7 +539,7 @@ class BaseAPITestCase(TestCase):
             obj_id: ID del objeto a consultar
             expected_fields (list): Campos esperados en la respuesta
         """
-        response = self.api_get(url_name, {"pk": obj_id})
+        response = self.api_get(url_name, pk=obj_id)
         self.assert_response_status(response, status.HTTP_200_OK)
 
         if expected_fields:
@@ -565,7 +559,7 @@ class BaseAPITestCase(TestCase):
             update_data (dict): Datos para actualizar
             expected_fields (list): Campos esperados en la respuesta
         """
-        response = self.api_put(url_name, update_data, {"pk": obj_id})
+        response = self.api_put(url_name, update_data, pk=obj_id)
         self.assert_response_status(response, status.HTTP_200_OK)
 
         if expected_fields:
@@ -581,7 +575,7 @@ class BaseAPITestCase(TestCase):
             url_name (str): Nombre de la URL del endpoint
             obj_id: ID del objeto a eliminar
         """
-        response = self.api_delete(url_name, {"pk": obj_id})
+        response = self.api_delete(url_name, pk=obj_id)
         self.assert_response_status(response, status.HTTP_204_NO_CONTENT)
 
 

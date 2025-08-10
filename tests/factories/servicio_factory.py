@@ -5,6 +5,7 @@ Este módulo contiene factories para el modelo Servicio.
 """
 
 import factory
+import random
 from factory.django import DjangoModelFactory
 from factory import Faker
 from decimal import Decimal
@@ -20,16 +21,10 @@ class ServicioFactory(DjangoModelFactory):
     class Meta:
         model = Servicio
 
-    precio = factory.LazyFunction(
-        lambda: Decimal(
-            str(factory.Faker("random_int", min=15000, max=80000).generate())
-        )
-    )
+    precio = factory.LazyFunction(lambda: Decimal(str(random.randint(15000, 80000))))
     descripcion = Faker("text", max_nb_chars=300)
     duracion_estimada = factory.LazyFunction(
-        lambda: timedelta(
-            minutes=factory.Faker("random_int", min=30, max=180).generate()
-        )
+        lambda: timedelta(minutes=random.randint(30, 180))
     )
     activo = True
 

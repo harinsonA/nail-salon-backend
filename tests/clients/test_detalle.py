@@ -29,7 +29,7 @@ class TestDetalleCliente(BaseAPITestCase):
 
         # Verificar estructura de la respuesta
         expected_fields = [
-            "id",
+            "cliente_id",
             "nombre",
             "apellido",
             "telefono",
@@ -41,7 +41,7 @@ class TestDetalleCliente(BaseAPITestCase):
         self.assert_response_contains_fields(response.data, expected_fields)
 
         # Verificar valores
-        self.assertEqual(response.data["id"], self.cliente.cliente_id)
+        self.assertEqual(response.data["cliente_id"], self.cliente.cliente_id)
         self.assertEqual(response.data["nombre"], "Ana")
         self.assertEqual(response.data["apellido"], "García")
         self.assertEqual(response.data["email"], "ana.garcia@test.com")

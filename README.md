@@ -11,32 +11,38 @@ API REST robusta desarrollada con Django REST Framework para la gestión integra
 ## ✨ Características Principales
 
 ### 🔐 Autenticación y Seguridad
+
 - Autenticación basada en tokens
 - Permisos granulares por endpoint
 - Validaciones de datos robustas
 
 ### 👥 Gestión de Clientes
+
 - CRUD completo de clientes
 - Validación de emails y teléfonos únicos
 - Historial de citas por cliente
 - Estados activo/inactivo
 
 ### 💄 Catálogo de Servicios
+
 - Gestión de servicios de manicure/pedicure
 - Precios y duraciones configurables
 - Categorización de servicios
 
 ### 📅 Sistema de Citas
+
 - Programación de citas con validaciones
 - Estados: programada, confirmada, en_proceso, completada, cancelada
 - Asociación cliente-servicio-fecha
 
 ### 💰 Gestión de Pagos
+
 - Registro de pagos con múltiples métodos
 - Estados: pendiente, completado, cancelado
 - Vinculación con citas
 
 ### ⚙️ Configuración del Salón
+
 - Configuraciones globales del negocio
 - Horarios de atención
 - Información de contacto
@@ -54,17 +60,20 @@ API REST robusta desarrollada con Django REST Framework para la gestión integra
 ## 🚀 Instalación y Configuración
 
 ### Prerrequisitos
-- Python 3.8+ 
+
+- Python 3.8+
 - PostgreSQL 13+
 - Git
 
 ### 1. Clonar el Repositorio
+
 ```bash
 git clone https://github.com/harinsonA/nail-salon-backend.git
 cd nail-salon-backend
 ```
 
 ### 2. Configurar Entorno Virtual
+
 ```bash
 # Crear entorno virtual
 python -m venv venv
@@ -77,11 +86,13 @@ source venv/bin/activate
 ```
 
 ### 3. Instalar Dependencias
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4. Configurar Base de Datos
+
 ```bash
 # Crear bases de datos en PostgreSQL
 createdb manicuredb
@@ -93,6 +104,7 @@ cp .env.example .env
 ```
 
 ### 5. Ejecutar Migraciones
+
 ```bash
 # Aplicar migraciones en ambas bases de datos
 python manage.py migrate_all
@@ -103,11 +115,13 @@ python manage.py migrate --database=test_db
 ```
 
 ### 6. Crear Superusuario
+
 ```bash
 python manage.py createsuperuser
 ```
 
 ### 7. Ejecutar Servidor de Desarrollo
+
 ```bash
 python manage.py runserver
 ```
@@ -117,6 +131,7 @@ La API estará disponible en: `http://localhost:8000/api/v1/`
 ## 🧪 Testing
 
 ### Ejecutar Tests
+
 ```bash
 # Todos los tests
 python manage.py test
@@ -133,6 +148,7 @@ coverage html
 ```
 
 ### Comandos Personalizados de Base de Datos
+
 ```bash
 # Estado de ambas bases de datos
 python manage.py dbstatus
@@ -143,7 +159,8 @@ python manage.py sync_test_db
 # Crear migraciones y aplicarlas automáticamente
 python manage.py makemigrations_all
 ```
-```
+
+````
 
 3. Activar entorno virtual:
 
@@ -151,32 +168,34 @@ python manage.py makemigrations_all
 # Windows
 ## 📁 Estructura del Proyecto
 
-```
+````
+
 nail-salon-backend/
-├── 📁 apps/                     # Aplicaciones Django
-│   ├── 👥 clients/             # Gestión de clientes
-│   │   ├── models/             # Modelos de cliente
-│   │   ├── views/              # ViewSets de API
-│   │   ├── serializers/        # Serializadores DRF
-│   │   └── management/         # Comandos personalizados
-│   ├── 💄 services/            # Catálogo de servicios
-│   ├── 📅 appointments/        # Sistema de citas
-│   ├── 💰 payments/            # Gestión de pagos
-│   └── ⚙️ settings/            # Configuraciones del salón
-├── 🧪 tests/                   # Suite de tests
-│   ├── factories/              # Factory Boy factories
-│   ├── clients/                # Tests de clientes
-│   ├── services/               # Tests de servicios
-│   └── utils.py                # Utilidades de testing
-├── 🛠 utils/                    # Utilidades compartidas
-│   ├── validators.py           # Validadores custom
-│   ├── permissions.py          # Permisos personalizados
-│   └── pagination.py           # Paginación custom
-├── 📁 nail_salon_api/          # Configuración principal
-├── 📋 requirements.txt         # Dependencias Python
-├── 🔧 manage.py               # CLI de Django
-└── 📝 .env.example            # Variables de entorno ejemplo
-```
+├── 📁 apps/ # Aplicaciones Django
+│ ├── 👥 clients/ # Gestión de clientes
+│ │ ├── models/ # Modelos de cliente
+│ │ ├── views/ # ViewSets de API
+│ │ ├── serializers/ # Serializadores DRF
+│ │ └── management/ # Comandos personalizados
+│ ├── 💄 services/ # Catálogo de servicios
+│ ├── 📅 appointments/ # Sistema de citas
+│ ├── 💰 payments/ # Gestión de pagos
+│ └── ⚙️ settings/ # Configuraciones del salón
+├── 🧪 tests/ # Suite de tests
+│ ├── factories/ # Factory Boy factories
+│ ├── clients/ # Tests de clientes
+│ ├── services/ # Tests de servicios
+│ └── utils.py # Utilidades de testing
+├── 🛠 utils/ # Utilidades compartidas
+│ ├── validators.py # Validadores custom
+│ ├── permissions.py # Permisos personalizados
+│ └── pagination.py # Paginación custom
+├── 📁 nail_salon_api/ # Configuración principal
+├── 📋 requirements.txt # Dependencias Python
+├── 🔧 manage.py # CLI de Django
+└── 📝 .env.example # Variables de entorno ejemplo
+
+````
 
 ## 📊 API Endpoints
 
@@ -227,9 +246,10 @@ POST /api/v1/auth/login/
     "username": "tu_usuario",
     "password": "tu_password"
 }
-```
+````
 
 ### Usar Token en Requests
+
 ```bash
 curl -H "Authorization: Token your_token_here" \
      http://localhost:8000/api/v1/clientes/
@@ -238,6 +258,7 @@ curl -H "Authorization: Token your_token_here" \
 ## 📈 Características Avanzadas
 
 ### 🔍 Filtros y Búsqueda
+
 ```bash
 # Buscar clientes por nombre o email
 GET /api/v1/clientes/?search=ana
@@ -250,14 +271,16 @@ GET /api/v1/clientes/?ordering=-fecha_registro
 ```
 
 ### 📄 Paginación
+
 ```bash
 # Paginación automática
 GET /api/v1/clientes/?page=2&page_size=10
 ```
 
 ### ✅ Validaciones
+
 - Emails únicos por cliente
-- Teléfonos únicos por cliente  
+- Teléfonos únicos por cliente
 - Validación de formato de teléfono colombiano
 - Validación de fechas de citas futuras
 - Validación de estados de cita válidos
@@ -265,12 +288,13 @@ GET /api/v1/clientes/?page=2&page_size=10
 ## 🎯 Casos de Uso
 
 ### Crear Cliente y Agendar Cita
+
 ```python
 # 1. Crear cliente
 POST /api/v1/clientes/
 {
     "nombre": "Ana",
-    "apellido": "García", 
+    "apellido": "García",
     "telefono": "3001234567",
     "email": "ana@email.com"
 }
@@ -297,6 +321,7 @@ POST /api/v1/pagos/
 ## 🚀 Deployment
 
 ### Variables de Entorno Producción
+
 ```bash
 DEBUG=False
 DATABASE_URL=postgresql://user:pass@localhost/manicuredb
@@ -305,6 +330,7 @@ ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
 ```
 
 ### Docker (Opcional)
+
 ```dockerfile
 # Dockerfile ejemplo
 FROM python:3.9
@@ -324,6 +350,7 @@ CMD ["gunicorn", "nail_salon_api.wsgi:application"]
 5. 🔄 **Pull Request**: Crear PR desde GitHub
 
 ### 📋 Guías de Contribución
+
 - Seguir PEP 8 para estilo de código Python
 - Escribir tests para nuevas funcionalidades
 - Actualizar documentación cuando sea necesario

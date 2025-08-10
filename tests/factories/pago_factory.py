@@ -30,14 +30,16 @@ class PagoFactory(DjangoModelFactory):
     def monto_total(self):
         """Calcular monto basado en servicios de la cita."""
         # Por simplicidad, usar un monto aleatorio realista
-        return Decimal(
-            str(factory.Faker("random_int", min=20000, max=100000).generate())
-        )
+        import random
+
+        return Decimal(str(random.randint(20000, 100000)))
 
     @factory.LazyAttribute
     def metodo_pago(self):
         """Generar métodos de pago realistas."""
-        return factory.Faker("random_element", elements=PAYMENT_METHODS).generate()
+        import random
+
+        return random.choice(PAYMENT_METHODS)
 
     @factory.LazyAttribute
     def estado_pago(self):
