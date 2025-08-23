@@ -22,6 +22,7 @@ class Pago(models.Model):
     referencia_pago = models.CharField(max_length=100, blank=True, null=True)
     notas_pago = models.TextField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
     creado_por = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True
     )

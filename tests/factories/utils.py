@@ -54,13 +54,12 @@ SERVICE_CATEGORIES = [
 ]
 
 APPOINTMENT_STATES = [
-    "programada",
-    "confirmada",
-    "en_proceso",
-    "completada",
-    "cancelada",
+    "PENDIENTE",
+    "CONFIRMADA",
+    "CANCELADA",
+    "COMPLETADA",
 ]
 
-PAYMENT_METHODS = ["efectivo", "tarjeta", "transferencia", "nequi"]
+PAYMENT_METHODS = ["EFECTIVO", "TARJETA", "TRANSFERENCIA", "CHEQUE"]
 
-PAYMENT_STATES = ["pendiente", "pagado", "parcial", "reembolsado"]
+PAYMENT_STATES = ["PENDIENTE", "PAGADO", "CANCELADO"]

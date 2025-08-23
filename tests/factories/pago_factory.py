@@ -44,7 +44,9 @@ class PagoFactory(DjangoModelFactory):
     @factory.LazyAttribute
     def estado_pago(self):
         """Generar estados de pago realistas."""
-        return factory.Faker("random_element", elements=PAYMENT_STATES).generate()
+        import random
+
+        return random.choice(PAYMENT_STATES)
 
     @factory.PostGeneration
     def setup_cita(self, create, extracted, **kwargs):
