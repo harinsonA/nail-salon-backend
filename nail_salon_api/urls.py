@@ -25,7 +25,7 @@ urlpatterns = [
     path("api/v1/", include("apps.clients.urls")),
     path("api/v1/", include("apps.services.urls")),
     path("api/v1/", include("apps.appointments.urls")),
-    path("api/v1/", include("apps.payments.urls")),
+    path("api/v1/", include(("apps.payments.urls", "payments"), namespace="payments")),
 ]
 
 # Servir archivos de media en desarrollo

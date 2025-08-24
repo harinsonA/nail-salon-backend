@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
+from decimal import Decimal
 from utils.choices import MetodoPago, EstadoPago
 
 
@@ -11,7 +12,7 @@ class Pago(models.Model):
     )
     fecha_pago = models.DateTimeField()
     monto_total = models.DecimalField(
-        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0"))]
     )
     metodo_pago = models.CharField(max_length=20, choices=MetodoPago.CHOICES)
     estado_pago = models.CharField(

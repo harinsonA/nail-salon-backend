@@ -174,7 +174,7 @@ class TestActualizarPagos(BaseAPITestCase):
 
     def test_actualizar_cambiar_cita(self):
         """Test que verifica cambio de cita asociada al pago."""
-        nueva_cita = self.create_cita_with_factory()
+        nueva_cita = self.create_cita_with_factory(estado_cita="PROGRAMADA")
         data = {"cita": nueva_cita.cita_id}
 
         response = self.api_patch(self.url_name, data, pk=self.pago.pago_id)

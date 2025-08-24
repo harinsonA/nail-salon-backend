@@ -221,10 +221,6 @@ class TestEliminarPagos(BaseAPITestCase):
     def test_eliminar_pago_con_cita_futura(self):
         """Test que verifica eliminación de pago de cita futura."""
         # Crear cita futura
-        from datetime import datetime, timedelta
-        from django.utils import timezone
-
-        fecha_futura = timezone.now() + timedelta(days=7)
         cita_futura = self.create_cita_with_factory()
         # Aquí podrías establecer la fecha futura si el factory lo permite
 
@@ -269,10 +265,6 @@ class TestEliminarPagos(BaseAPITestCase):
     def test_eliminar_pago_auditoria(self):
         """Test que verifica que la eliminación queda registrada para auditoría."""
         pago_id = self.pago.pago_id
-
-        # Registrar información antes de eliminar
-        monto_original = self.pago.monto_total
-        estado_original = self.pago.estado_pago
 
         response = self.api_delete(self.url_name, pk=pago_id)
 
