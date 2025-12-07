@@ -7,6 +7,11 @@ el código limpio y fácil de mantener.
 
 # Importar todas las factories para facilitar el uso
 from .user_factory import UserFactory, AdminUserFactory
+from .custom_user_factory import (
+    CustomUserFactory,
+    AdminCustomUserFactory,
+    EmployeeCustomUserFactory,
+)
 from .cliente_factory import (
     ClienteFactory,
     ClienteActivoFactory,
@@ -35,6 +40,10 @@ __all__ = [
     # User factories
     "UserFactory",
     "AdminUserFactory",
+    # Custom User factories
+    "CustomUserFactory",
+    "AdminCustomUserFactory",
+    "EmployeeCustomUserFactory",
     # Cliente factories
     "ClienteFactory",
     "ClienteActivoFactory",

@@ -1,3 +1,2 @@
-from .pago_views import PagoViewSet
+# Views package for payments app
 
-__all__ = ["PagoViewSet"]

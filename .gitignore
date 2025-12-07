@@ -127,3 +127,8 @@ pg_hba.conf
 logs/
 app_logs/
 error_logs/
+
+# Documentación privada del proyecto (contiene información sensible)
+AUTHENTICATION_SYSTEM_DOCS.md
+*_DOCS.md
+*_SYSTEM_*.md

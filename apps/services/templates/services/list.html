@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block view_title %}
+Lista de servicios
+{% endblock %}
+
+{% block content %}
+{% include 'bs_modal.html' %}
+<section>
+	<section>
+		<a id="service-create-btn" data-form-url="{%  url 'service_create_modal' %}"
+			class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+			Servicio
+			<span class="material-symbols-outlined">
+				add
+			</span>
+		</a>
+	</section>
+	<section class="mt-3 d-inline-block">
+		<div>
+			<label class="form-check-label form-label--custom" for="{{ filter_form.status.id_for_label }}">
+				{{ filter_form.status.label }}
+			</label>
+			{{ filter_form.status }}
+		</div>
+	</section>
+	<section class="table-container--custom">
+		<table id="service_table" class="table table-hover ">
+			<thead>
+				<tr>
+					<th scope="col">Nombre</th>
+					<th scope="col">Estado</th>
+					<th scope="col">Precio</th>
+					<th scope="col">Duración</th>
+					<th scope="col"></th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+	$(() => {
+		const statusColumn = (status) => status ? `
+		<span class="material-symbols-outlined text-success">
+			check_circle
+		</span>` : `
+		<span class="material-symbols-outlined text-danger">
+			cancel
+		</span>`;
+
+		const filterData = {
+			status: $('#{{ filter_form.status.id_for_label }}').val(),
+		};
+		const dataTableConfig = {
+			tableID: '#service_table',
+			url: '{{ url_service_list }}',
+			requestData: filterData,
+			columns: [
+				{ data: 'nombre', className: 'fs-7 w-auto text-nowrap' },
+				{ data: ({ activo }) => statusColumn(activo), className: 'fs-7 w-auto text-center' },
+				{ data: 'price_formatted', className: 'fs-7 w-auto text-center' },
+				{ data: 'estimated_duration_display', className: 'fs-7 w-auto text-center' },
+				{ data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
+			],
+			extraConfig: {
+				drawCallback: () => {
+					initializeAllBSModals();
+				},
+			},
+		};
+
+		const table = renderDataTable(dataTableConfig);
+		$('#{{ filter_form.status.id_for_label }}').on('change', ({ target }) => {
+			filterData.status = target.value;
+			table.draw()
+		});
+
+		initializeBSModals('#service-create-btn');
+		$('#modal').on('show.bs.modal', ({ target }) => {
+			const submitBtn = target.querySelector('#service_submit_btn') || target.querySelector('#delete_submit_btn');
+			$(submitBtn).click(async () => {
+				submitBtn.disabled = true;
+				const modalForm = target.querySelector('#service-form-modal') || target.querySelector('#common-form-modal');
+				const reloadTable = (form, response, statusCode) => {
+					if ([200].includes(statusCode)) {
+						$('#modal').modal('hide');
+						table.draw();
+					}
+					submitBtn.disabled = statusCode === 200;
+					return [response, statusCode];
+				};
+				const [response, statusCode] = await submitRequestBSModal(modalForm, false, reloadTable);
+			});
+		});
+
+	});
+</script>
+{% endblock %}

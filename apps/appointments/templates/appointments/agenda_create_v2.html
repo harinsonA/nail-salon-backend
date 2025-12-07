@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block view_title %}
+<a href="{{ cancel_url }}" class="btn btn-outline-secondary">
+  <i class="material-symbols-outlined me-1">arrow_back</i>
+  Volver
+</a>
+Crear Cita
+{% endblock %}
+
+{% block content %}
+<form id="agenda-form-v2" method="post">{% csrf_token %}
+  <section class="row">
+    <div class="col-12 col-lg-3">
+      <h5 class="mb-3 text-primary">
+        <i class="material-symbols-outlined me-2">event</i>
+        Datos de la Cita
+      </h5>
+      <div class="mb-3">
+        <label for="{{ form.client.id_for_label }}" class="form-label form-label--custom">
+          {{ form.client.label }} <span class="text-danger">*</span>
+        </label>
+        {{ form.client }}
+        {% if form.client.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.client.errors.0 }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="{{ form.date_agenda.id_for_label }}" class="form-label form-label--custom">
+          {{ form.date_agenda.label }} <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+          {{ form.date_agenda }}
+          <div class="input-group-text">
+            <i class="material-symbols-outlined">schedule</i>
+          </div>
+          {{ form.time_agenda }}
+        </div>
+        {% if form.date_agenda.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.date_agenda.errors.0 }}
+        </div>
+        {% endif %}
+        {% if form.time_agenda.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.time_agenda.errors.0 }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="{{ form.observations.id_for_label }}" class="form-label form-label--custom">
+          {{ form.observations.label }}
+        </label>
+        {{ form.observations }}
+        {% if form.observations.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.observations.errors.0 }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-12 col-lg-3">
+      <div class="p-2">
+        <table id="available_hours_table" class="table">
+          <thead>
+            <tr>
+              <th>Horas</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <section>
+        <h5 class="mb-3 text-primary">
+          <i class="material-symbols-outlined me-2">design_services</i>
+          Datos del Servicio
+        </h5>
+        <div class="mb-3">
+          <label for="{{ form.service.id_for_label }}" class="form-label form-label--custom">
+            {{ form.service.label }} <span class="text-danger">*</span>
+          </label>
+          {{ form.service }}
+          {% if form.service.errors %}
+          <div class="invalid-feedback d-block">
+            {{ form.service.errors.0 }}
+          </div>
+          {% endif %}
+          <p class="m-0 mt-1 small text-muted">
+            <b>Tiempo estimado:</b> <span id="service-duration">0</span> minutos
+          </p>
+        </div>
+      </section>
+      <section>
+        <div class="pricing-receipt">
+          <div class="pricing-receipt-content">
+            <div class="pricing-receipt-row pricing-receipt-service">
+              <span class="pricing-receipt-label">Precio</span>
+              <span id="service-price" class="pricing-receipt-price">$ 0</span>
+            </div>
+            <div class="pricing-receipt-row align-items-center pb-2 border-bottom">
+              <label for="{{ form.quantity.id_for_label }}" class="pricing-receipt-label mb-0">
+                {{ form.quantity.label }}
+              </label>
+              <div class="pricing-receipt-input-wrapper">
+                <span class="pricing-receipt-currency">x</span>
+                {{ form.quantity }}
+              </div>
+            </div>
+            <div class="pricing-receipt-discount-section">
+              <label for="{{ form.discount_amount.id_for_label }}" class="pricing-receipt-label">
+                {{ form.discount_amount.label }}
+              </label>
+              <div class="pricing-receipt-input-wrapper">
+                <span class="pricing-receipt-currency">-$</span>
+                {{ form.discount_amount }}
+              </div>
+              {% if form.discount_amount.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.discount_amount.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+            <div class="pricing-receipt-row pricing-receipt-total">
+              <span class="pricing-receipt-total-label">Total</span>
+              <span id="total-amount" class="pricing-receipt-total-amount">$ 0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="my-3 d-flex align-items-center justify-content-end">
+    <div id="service-alert-added" class="me-2 d-none" data-bs-toggle="tooltip" data-bs-placement="left"
+      title="El servicio seleccionado ya se encuentra añadido para el cliente seleccionado.">
+      <span class="material-symbols-outlined text-warning">
+        info
+      </span>
+    </div>
+    <button id="add-service-btn" type="button" class="btn btn-sm btn-success bg-gradient" disabled>
+      <span class="material-symbols-outlined fs-6">
+        add_circle
+      </span>
+      Añadir servicio
+    </button>
+  </section>
+  <section>
+    <table id="services_added_table" class="table">
+      <thead>
+        <tr>
+          <th>Servicio Añadido</th>
+        </tr>
+      </thead>
+    </table>
+  </section>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    initializeDatePickers();
+    initTooltips();
+    const servicesSet = new Set();
+    const agendaSet = new Set();
+
+    const getServicePrice = () => {
+      let servicePrice = 0;
+      servicesSet.forEach(({ precio }) => {
+        servicePrice = precio || 0;
+      });
+      return servicePrice;
+    }
+
+    const handlerPricingReceipt = () => {
+      if (!servicesSet.size) return;
+      const discountAmount = parseInt($('#{{ form.discount_amount.id_for_label }}').val()) || 0;
+      const quantity = parseInt($('#{{ form.quantity.id_for_label }}').val()) || 1;
+      const servicePrice = getServicePrice();
+      const totalAmount = ((parseInt(servicePrice, 10) || 0) * quantity) - discountAmount;
+      $('#service-price').text(`$ ${servicePrice}`);
+      $('#total-amount').text(`$ ${totalAmount}`);
+    }
+
+    $('#{{ form.discount_amount.id_for_label }}').change((e) => {
+      if (!servicesSet.size) return;
+      const discountAmount = parseInt($(e.currentTarget).val()) || 0;
+      const servicePrice = getServicePrice();
+      const totalAmount = servicePrice - discountAmount;
+      $('#total-amount').text(`$ ${totalAmount}`);
+    });
+
+    $('#{{ form.quantity.id_for_label }}').on('input change', (e) => {
+      if (!servicesSet.size) {
+        // Si no hay servicio, forzar a 1
+        $(e.currentTarget).val(1);
+        return;
+      }
+      handlerPricingReceipt();
+    });
+
+    const handlerService = async (serviceID) => {
+      const url = "{% url 'service_details_ajax' %}";
+      const data = { service_id: serviceID };
+      const [response = {}, status] = await getResponseToRequest(url, data, "GET");
+      servicesSet.clear();
+      servicesSet.add({ ...response });
+      const { duracion_estimada = 0 } = response;
+      handlerPricingReceipt();
+      $('#service-duration').text(duracion_estimada);
+      if ([500].includes(status)) {
+        notifyAlert(response, status);
+      }
+    }
+
+    const resetPricingReceipt = ({ initializeService = false } = {}) => {
+      $('#service-price').text(`$ 0`);
+      $('#total-amount').text(`$ 0`);
+      $('#service-duration').text(`0`);
+      $('#{{ form.discount_amount.id_for_label }}').val('0');
+      $('#{{ form.quantity.id_for_label }}').val('1');
+      servicesSet.clear();
+      if (initializeService) {
+        $('#{{ form.service.id_for_label }}').val(null);
+        $('#{{ form.service.id_for_label }}').trigger('change');
+      }
+    }
+
+    $('#{{ form.service.id_for_label }}').on('change', (e) => {
+      const serviceID = $(e.currentTarget).val();
+      if (serviceID) {
+        handlerService(serviceID);
+        return;
+      }
+      resetPricingReceipt();
+    });
+
+    const isServiceIncluded = () => {
+      const targetServiceId = $('#{{ form.service.id_for_label }}').val();
+      const targetClientId = $('#{{ form.client.id_for_label }}').val();
+      if (!targetServiceId || !targetClientId) return false;
+
+      for (const { idCliente, servicios } of agendaSet) {
+        if (String(idCliente) === String(targetClientId)) {
+          return servicios.some(({ id }) => String(id) === String(targetServiceId));
+        }
+      }
+      return false;
+    }
+
+    const fieldRequiredList = [
+      '#{{ form.client.id_for_label }}',
+      '#{{ form.service.id_for_label }}',
+      '#{{ form.date_agenda.id_for_label }}',
+      '#{{ form.time_agenda.id_for_label }}'
+    ];
+    $(fieldRequiredList.join(',')).on('change', ({ target }) => {
+      const areFieldsFilled = fieldRequiredList.every((fieldSelector) => {
+        const fieldValue = $(fieldSelector).val();
+        return fieldValue && fieldValue.trim() !== '';
+      });
+      const _isServiceIncluded = isServiceIncluded();
+      const isDisable = _isServiceIncluded || !areFieldsFilled;
+      $('#add-service-btn').prop('disabled', isDisable);
+      $('#service-alert-added').toggleClass('d-none', !_isServiceIncluded);
+    });
+
+    const availableHoursFilter = {
+      date_agenda: $('#{{ form.date_agenda.id_for_label }}').val(),
+      time_agenda: $('#{{ form.time_agenda.id_for_label }}').val(),
+    }
+    const availableHoursTableConfig = {
+      tableID: '#available_hours_table',
+      url: '{{ available_hours_url }}',
+      requestData: availableHoursFilter,
+      columns: [
+        { data: 'hora_agenda' },
+      ],
+      extraConfig: {
+        searching: false,
+        info: false,
+      }
+    };
+    const availableHoursTable = renderDataTable(availableHoursTableConfig);
+    $('#{{ form.date_agenda.id_for_label }}, #{{ form.time_agenda.id_for_label }}').change(({ target }) => {
+      availableHoursFilter[target.name] = target.value;
+      availableHoursTable.draw();
+    });
+
+    const servicesTemplate = (clientId, services) => {
+      return services.map(({ id, nombre, fecha, hora, total, descuento, cantidad }) => `
+        <div class="service-added-item" id="service_added_${id}">
+          <div class="service-added-info-wrapper">
+            <a role="button" class="btn btn-danger btn-sm service-added-remove-btn" data-client-id="${clientId}" data-service-id="${id}">
+              <span class="material-symbols-outlined service-added-icon service-added-icon--remove">
+                delete
+              </span>
+            </a>
+            <div class="service-added-info">
+              <p class="service-added-name">
+                ${nombre} <span class="badge bg-secondary ms-1">x${cantidad}</span>
+              </p>
+              <div class="service-added-datetime">
+                <div class="service-added-date">
+                  <span class="material-symbols-outlined service-added-icon">
+                    calendar_today
+                  </span>
+                  <span class="service-added-date-value">
+                    ${fecha}
+                  </span>
+                </div>
+                <div class="service-added-time">
+                  <span class="material-symbols-outlined service-added-icon">
+                    schedule
+                  </span>
+                  <span class="service-added-time-value">
+                    ${hora}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="service-added-price">
+            <p class="service-added-price-total">
+              $ ${total}
+            </p>
+            <p class="service-added-discount">
+              $ ${descuento}
+            </p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    const columnServicesAdded = ({ idCliente, nombreCliente, servicios }) => {
+      const servicesCounter = servicios.length;
+      const servicesTotal = servicios.reduce((serviceTotal, { total }) => serviceTotal + (total || 0), 0);
+      return `<section class="accordion accordion-custom" id="accordion_${idCliente}">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_${idCliente}" aria-expanded="true" aria-controls="collapse_${idCliente}">
+              <div class="w-100 d-flex justify-content-between">
+                <div>
+                  <p class="accordion-header-element client-name">
+                    ${nombreCliente}
+                  </p>
+                  <p class="accordion-header-element client-services-count">
+                    ${servicesCounter} servicios añadidos
+                  </p>
+                </div>
+                <div class="client-total-wrapper">
+                  <p class="accordion-header-element client-total-amount">
+                    $${servicesTotal}
+                  </p>
+                  <p class="accordion-header-element client-total-label">
+                    Total
+                  </p>
+                </div>
+              </div>
+            </button>
+          </h2>
+          <div id="collapse_${idCliente}" class="accordion-collapse collapse" data-bs-parent="#accordion_${idCliente}">
+            <div class="accordion-body services-list-added">
+              ${servicesTemplate(idCliente, servicios)}
+            </div>
+          </div>
+        </div>
+      </section>`;
+    };
+
+    const customStartTop = () => `
+      <button type ="button" class="btn btn-primary btn-sm d-none" id="add-agenda-btn">
+        <span class="material-symbols-outlined">
+          add
+        </span>
+        Guardar Agenda
+      </button>
+    `;
+
+    const handlerAgendaButton = () => {
+      $('#add-agenda-btn').click(async () => {
+        if (!agendaSet.size) return;
+        const agendaData = Array.from(agendaSet);
+        const url = "{{ agenda_create_url }}";
+        const data = { agenda: JSON.stringify(agendaData) };
+        const [response = {}, status] = await getResponseToRequest(url, data);
+        console.log({ response, status });
+      });
+    }
+
+    const servicesAddedTableConfig = {
+      tableID: '#services_added_table',
+      columns: [
+        { data: (data) => columnServicesAdded(data) },
+      ],
+      extraConfig: {
+        data: () => Array.from(agendaSet),
+        customStartTop,
+        searching: false,
+        info: false,
+        serverSide: false,
+        drawCallback: () => {
+          $('.service-added-remove-btn').click(({ currentTarget }) => {
+            const serviceID = $(currentTarget).data('service-id');
+            const clientID = $(currentTarget).data('client-id');
+            deleteServiceFromAgenda(clientID, serviceID);
+          });
+        },
+        initComplete: () => {
+          handlerAgendaButton();
+        }
+      }
+    };
+    const servicesAddedTable = renderDataTable(servicesAddedTableConfig);
+
+    const toggleAddAgendaButton = () => {
+      const hasAgendas = Boolean(agendaSet.size);
+      $('#add-agenda-btn').toggleClass('d-none', !hasAgendas);
+    }
+
+    const deleteServiceFromAgenda = (clientID, serviceID) => {
+      for (const agenda of agendaSet) {
+        if (String(agenda.idCliente) === String(clientID)) {
+          agenda.servicios = agenda.servicios.filter(({ id }) => String(id) !== String(serviceID));
+          if (!agenda.servicios.length) {
+            agendaSet.delete(agenda);
+          }
+          break;
+        }
+      }
+      servicesAddedTable.clear().rows.add(Array.from(agendaSet)).draw();
+      toggleAddAgendaButton();
+    }
+
+
+    $('#add-service-btn').click(() => {
+      const getClientData = () => {
+        const clientID = $('#{{ form.client.id_for_label }}').val();
+        const clientName = $('#{{ form.client.id_for_label }} option:selected').text();
+        return { idCliente: clientID, nombreCliente: clientName };
+      }
+      const getServiceData = () => {
+        const service = {};
+        const serviceDiscount = parseInt($('#{{ form.discount_amount.id_for_label }}').val()) || 0;
+        const quantity = parseInt($('#{{ form.quantity.id_for_label }}').val()) || 1;
+        servicesSet.forEach((serviceData) => {
+          const { precio } = serviceData;
+          const total = ((precio || 0) * quantity) - serviceDiscount;
+          const serviceDate = $('#{{ form.date_agenda.id_for_label }}').val();
+          const serviceTime = $('#{{ form.time_agenda.id_for_label }}').val();
+          const observations = $('#{{ form.observations.id_for_label }}').val();
+          Object.assign(service, {
+            ...serviceData,
+            total,
+            descuento: serviceDiscount,
+            cantidad: quantity,
+            fecha: serviceDate,
+            hora: serviceTime,
+            observaciones: observations
+          });
+        });
+        return service;
+      }
+
+      const serviceData = getServiceData();
+      const clientData = getClientData();
+
+      if (!agendaSet.size) {
+        agendaSet.add({ ...clientData, servicios: [serviceData] });
+        servicesAddedTable.clear().rows.add(Array.from(agendaSet)).draw();
+        resetPricingReceipt({ initializeService: true });
+        toggleAddAgendaButton();
+        return;
+      }
+      const { idCliente: clientID } = clientData;
+      let found = false;
+      for (const agenda of agendaSet) {
+        if (agenda.idCliente === clientID) {
+          agenda.servicios.push(serviceData);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        agendaSet.add({ ...clientData, servicios: [serviceData] });
+      }
+      servicesAddedTable.clear().rows.add(Array.from(agendaSet)).draw();
+      resetPricingReceipt({ initializeService: true });
+      toggleAddAgendaButton();
+    });
+  });
+</script>
+{% endblock %}

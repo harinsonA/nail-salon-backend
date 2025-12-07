@@ -1,0 +1,56 @@
+<form method="post" id="common-form-modal" action="{{ modal_url }}">
+	{% csrf_token %}
+	<div class="modal-header bg-warning bg-gradient">
+		<h5 class="modal-title text-black d-inline-flex align-items-center">
+			<span class="material-symbols-outlined text-color-destructive me-2">
+				warning
+			</span>
+			<span class="pb-1 text-color-destructive">
+				{{ name_register }}
+			</span>
+		</h5>
+		<button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+	</div>
+	<div class="modal-body">
+		<p class="m-0 mb-2 text-color-muted">
+			<b>Estás a punto de eliminar el siguiente cliente:</b>
+		</p>
+		<div class="delete-information-container">
+			<p class="delete-information-name">ID: {{ id_register }} - {{ name_register }}</p>
+			{% for information in aditional_information %}
+			<p class="delete-information-detail">
+				{% if information.icon %}
+				<span class="material-symbols-outlined me-2">
+					{{ information.icon }}
+				</span>
+				{% endif %}
+				{{ information.text }}
+			</p>
+			{% endfor %}
+		</div>
+		<div class="delete-warning-container">
+			<div class="delete-warning-header">
+				<span class="material-symbols-outlined text-color-destructive me-2">
+					warning
+				</span>
+			</div>
+			<div>
+				<p class="m-0 text-destructive">
+					Advertencia: Esta acción es irreversible.
+				</p>
+				<p class="m-0 text-muted-foreground">
+					Esta acción es irreversible. Al eliminar este registro, también se eliminarán permanentemente
+					todos los registros que puedan estar relacionado a él.
+				</p>
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer bg-black bg-gradient">
+		<button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+			Cancelar
+		</button>
+		<button id="delete_submit_btn" type="button" class="btn btn-sm btn-warning bg-gradient">
+			Eliminar
+		</button>
+	</div>
+</form>

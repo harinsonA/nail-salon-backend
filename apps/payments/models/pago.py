@@ -1,8 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from decimal import Decimal
-from utils.choices import MetodoPago, EstadoPago
+from apps.payments.choices import MetodoPago, EstadoPago
 
 
 class Pago(models.Model):
@@ -24,9 +23,6 @@ class Pago(models.Model):
     notas_pago = models.TextField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
-    creado_por = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True
-    )
 
     class Meta:
         app_label = "payments"
@@ -36,7 +32,7 @@ class Pago(models.Model):
         ordering = ["-fecha_pago"]
 
     def __str__(self):
-        return f"Pago {self.pago_id} - Cita {self.cita.cita_id} - ${self.monto_total}"
+        return f"Pago {self.pago_id} - Cita {self.cita.pk} - ${self.monto_total}"
 
     @property
     def es_pago_completo(self):
@@ -55,5 +51,5 @@ class Pago(models.Model):
 
         # Si el pago está completo, actualizar estado de la cita
         if self.es_pago_completo:
-            self.cita.estado_cita = "COMPLETADA"
+            self.cita.estado = "COMPLETADA"
             self.cita.save()

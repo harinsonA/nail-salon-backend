@@ -28,7 +28,7 @@ class ServicioFactory(DjangoModelFactory):
     activo = True
 
     @factory.LazyAttribute
-    def nombre_servicio(self):
+    def nombre(self):
         """Generar nombres de servicios realistas."""
         return random.choice(NAIL_SERVICES)
 

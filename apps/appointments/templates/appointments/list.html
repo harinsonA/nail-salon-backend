@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block view_title %}
+Agenda de citas
+{% endblock %}
+
+{% block content %}
+{% include 'canvas_modal.html' %}
+<section>
+	<section class="row">
+		<div class="col-12 col-lg-4">
+			<div class="card rounded-4 agenda-card">
+				<div class="card-body">
+					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
+						<span>Total de Citas</span>
+						<span class="material-symbols-outlined text-primary">
+							calendar_today
+						</span>
+					</h6>
+					<h4 class="card-title">144</h4>
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-lg-4">
+			<div class="card rounded-4 agenda-card">
+				<div class="card-body">
+					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
+						<span>Citas Atendidas</span>
+						<span class="material-symbols-outlined text-success">
+							check_circle
+						</span>
+						<h4 class="card-title">80</h4>
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-lg-4">
+			<div class="card rounded-4 agenda-card">
+				<div class="card-body">
+					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
+						<span>Citas Pendientes</span>
+						<span class="material-symbols-outlined text-warning">
+							pending_actions
+						</span>
+						<h4 class="card-title">64</h4>
+				</div>
+			</div>
+		</div>
+	</section>
+	<section class="mt-3">
+		<button type="button" class="btn btn-primary canvas-modal" data-form-url="{%  url 'agenda_create_modal' %}">
+			<span class="material-symbols-outlined fs-6">
+				edit
+			</span>
+			Agendar
+		</button>
+	</section>
+	<section class="table-container--custom">
+		<table id="agenda_table" class="table table-hover ">
+			<thead>
+				<tr>
+					<th scope="col">Nombre</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</section>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+	$(() => {
+		// Inicializar modal lateral
+		initializeCanvasBSModals();
+
+		const filterData = {
+			months: $('#{{ filter_form.months.id_for_label }}').val(),
+		};
+		const dataTableConfig = {
+			tableID: '#agenda_table',
+			url: '{{ url_agenda_list }}',
+			requestData: filterData,
+			columns: [
+				{ data: () => 'Hola', className: 'fs-7 w-auto text-nowrap' },
+			],
+			extraConfig: {
+				customStartTop: () => `
+					<div class="input-group">
+						<span class="input-group-text">
+							<span class="material-symbols-outlined text-primary">
+								calendar_month
+							</span>
+						</span>
+						{{ filter_form.months }}
+					</div>
+				`,
+				drawCallback: () => {
+					initializeMonthPickers();
+				},
+			},
+		};
+		const table = renderDataTable(dataTableConfig);
+		$('#{{ filter_form.months.id_for_label }}').on('change', ({ target }) => {
+			filterData.months = target.value;
+			table.draw()
+		});
+	});
+</script>
+{% endblock %}

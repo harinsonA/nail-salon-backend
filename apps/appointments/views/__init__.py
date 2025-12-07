@@ -1,3 +1,17 @@
 # Importar desde el directorio views
-from .cita_views import CitaViewSet
-from .detalle_cita_views import DetalleCitaViewSet
+# Web Views
+from .agenda import (
+    AppointmentsView,
+    AgendaListView,
+    AgendaCreateModalView,
+    ServiceDetailsAjax,
+    AvailableHoursAjax,
+)
+
+__all__ = [
+    "AppointmentsView",
+    "AgendaListView",
+    "AgendaCreateModalView",
+    "ServiceDetailsAjax",
+    "AvailableHoursAjax",
+]

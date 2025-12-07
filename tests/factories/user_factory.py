@@ -1,16 +1,18 @@
 """
 User factories para generar datos de test.
 
-Este módulo contiene factories para el modelo User de Django.
+Este módulo contiene factories para el modelo User personalizado.
 """
 
 import factory
 from factory.django import DjangoModelFactory
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class UserFactory(DjangoModelFactory):
-    """Factory para crear usuarios de Django."""
+    """Factory para crear usuarios personalizados."""
 
     class Meta:
         model = User
@@ -20,6 +22,7 @@ class UserFactory(DjangoModelFactory):
     email = factory.Faker("email")
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
+    role = "salon_admin"  # Valor por defecto
     is_active = True
     is_staff = False
     is_superuser = False
@@ -40,5 +43,6 @@ class AdminUserFactory(UserFactory):
 
     username = "admin_test"
     email = "admin@test.com"
+    role = "super_admin"
     is_staff = True
     is_superuser = True

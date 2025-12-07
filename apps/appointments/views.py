@@ -1,3 +1,3 @@
 # Importar desde el directorio views
-from .views.cita_views import CitaViewSet
-from .views.detalle_cita_views import DetalleCitaViewSet
+from .views.api.agenda import CitaViewSet
+from .views.api.detalle_cita import DetalleCitaViewSet

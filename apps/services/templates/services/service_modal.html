@@ -1,0 +1,76 @@
+<form id="service-form-modal" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title text-white d-inline-flex align-items-center">
+      <span class="material-symbols-outlined me-2">
+        handyman
+      </span>
+      <span class="pb-1">
+        {% if service_name %}
+        {{ service_name }}
+        {% else %}
+        Nuevo servicio
+        {% endif %}
+      </span>
+    </h5>
+    <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="mb-2">
+      <label for="{{ form.name.id_for_label }}" class="form-label form-label--custom">
+        {{ form.name.label }}
+      </label>
+      {{ form.name }}
+      <span class="invalid-feedback invalid-feedback--custom {{ form.name.id_for_label }}">
+        {{ form.name.errors.0 }}
+      </span>
+    </div>
+    <div class="mb-2">
+      <label for="{{ form.description.id_for_label }}" class="form-label form-label--custom">
+        {{ form.description.label }}
+      </label>
+      {{ form.description }}
+      <span class="invalid-feedback invalid-feedback--custom {{ form.description.id_for_label }}">
+        {{ form.description.errors.0 }}
+      </span>
+    </div>
+    <div class="mb-2">
+      <label for="{{ form.price.id_for_label }}" class="form-label form-label--custom">
+        {{ form.price.label }}
+      </label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        {{ form.price }}
+      </div>
+      <span class="invalid-feedback invalid-feedback--custom {{ form.price.id_for_label }}">
+        {{ form.price.errors.0 }}
+      </span>
+    </div>
+    <div class="mb-2">
+      <label for="{{ form.duration.id_for_label }}" class="form-label form-label--custom">
+        {{ form.duration.label }}
+      </label>
+      <div class="input-group">
+        {{ form.duration }}
+        <span class="input-group-text">min</span>
+        <span class="invalid-feedback invalid-feedback--custom {{ form.duration.id_for_label }}">
+          {{ form.duration.errors.0 }}
+        </span>
+      </div>
+    </div>
+    <div class="form-check form-switch">
+      <label class="form-check-label form-label--custom" for="{{ form.status.id_for_label }}">
+        {{ form.status.label }}
+      </label>
+      {{ form.status }}
+    </div>
+  </div>
+  <div class="modal-footer bg-black bg-gradient">
+    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="service_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+      Guardar
+    </button>
+  </div>
+</form>

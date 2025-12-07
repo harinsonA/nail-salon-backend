@@ -1,12 +1,36 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views.servicio_views import ServicioViewSet
+from django.urls import path
+from apps.services.views.servicio import (
+    ServicesView,
+    ServiceListView,
+    ServiceCreateModalView,
+    ServiceDetailModalView,
+    ServiceDeleteModalView,
+)
 
-# Crear el router
-router = DefaultRouter()
-router.register(r"servicios", ServicioViewSet, basename="servicio")
-
-# URLs de la aplicación
 urlpatterns = [
-    path("", include(router.urls)),
+    path(
+        "servicios/",
+        ServicesView.as_view(),
+        name="services",
+    ),
+    path(
+        "servicios/lista/ajax",
+        ServiceListView.as_view(),
+        name="service_list",
+    ),
+    path(
+        "servicios/crear/",
+        ServiceCreateModalView.as_view(),
+        name="service_create_modal",
+    ),
+    path(
+        "servicios/<int:pk>/detalle/",
+        ServiceDetailModalView.as_view(),
+        name="service_detail_modal",
+    ),
+    path(
+        "servicios/<int:pk>/eliminar/",
+        ServiceDeleteModalView.as_view(),
+        name="service_delete_modal",
+    ),
 ]

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+{% load static %}
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>{% block title %}Administrador{% endblock %}</title>
+
+	<!-- Bootstrap CSS -->
+	<link href="{% static 'css/libs/bootstrap_v5.3.3/bootstrap.min.css' %}" rel="stylesheet">
+
+	<!-- Google Material Symbols -->
+	<link href="{% static 'css/libs/google_fonts/css2.css' %}" rel="stylesheet">
+	<link href="{% static 'css/custom/custom.icons.css' %}" rel="stylesheet">
+
+	<!-- DataTables CSS -->
+	<link href="{% static 'css/libs/datatables/base_v2.3.4/dataTables.dataTables.min.css' %}" rel="stylesheet">
+	<link href="{% static 'css/libs/datatables/responsive_v3.0.6/responsive.dataTables.min.css' %}" rel="stylesheet">
+	<link href="{% static 'css/libs/datatables/fixedcolumns_v5.0.5/fixedColumns.dataTables.min.css' %}"
+		rel="stylesheet">
+
+	<!-- Bootstrap Datepicker CSS -->
+	<link href="{% static 'css/libs/bootstrap_datepickers_v1.10.0/bootstrap-datepicker3.min.css' %}" rel="stylesheet">
+
+	<!-- Toastify CSS -->
+	<link href="{% static 'css/libs/toastify_v1.12.0/toastify.min.css' %}" rel="stylesheet">
+
+	<!-- Custom CSS -->
+	<link href="{% static 'css/custom/custom.main.css' %}" rel="stylesheet">
+	<link href="{% static 'css/custom/custom.modals.css' %}" rel="stylesheet">
+
+	<!-- Custom CSS -->
+	{% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-light bg-gradient">
+	<!-- Navbar que se expande en lg+ y usa offcanvas en pantallas menores -->
+	{% include 'menu.html' %}
+	<!-- Contenido principal con padding-top para el fixed navbar -->
+	<section class="container" style="padding-top: 60px;">
+		<section class="mt-3 mb-2">
+			<h3 class="m-0">
+				{% block view_title %}
+				Bienvenido
+				{% endblock %}
+			</h3>
+		</section>
+		<main class="container-main">
+			{% block content %}
+			{% endblock %}
+		</main>
+	</section>
+
+	<!-- jQuery (debe ir antes que otros JS) -->
+	<script src="{% static 'js/libs/jquery_v3.7.1/jquery-3.7.1.min.js' %}"></script>
+
+	<!-- Bootstrap JS -->
+	<script src="{% static 'js/libs/bootstrap_v5.3.3/bootstrap.bundle.min.js' %}"></script>
+
+	<!-- Bootstrap Datepicker JS -->
+	<script src="{% static 'js/libs/bootstrap_datepickers_v1.10.0/bootstrap-datepicker.min.js' %}"></script>
+	<script src="{% static 'js/libs/bootstrap_datepickers_v1.10.0/language/bootstrap-datepicker.es.min.js' %}"></script>
+
+	<!-- DataTables JS -->
+	<script src="{% static 'js/libs/datatables/base_v2.3.4/language.js' %}"></script>
+	<script src="{% static 'js/libs/datatables/base_v2.3.4/dataTables.min.js' %}"></script>
+	<script src="{% static 'js/libs/datatables/responsive_v3.0.6/dataTables.responsive.min.js' %}"></script>
+	<script src="{% static 'js/libs/datatables/fixedcolumns_v5.0.5/dataTables.fixedColumns.min.js' %}"></script>
+
+	<!-- Django Bootstrap Modal Forms -->
+	<script src="{% static 'js/libs/bootstrap.modal.forms/jquery.bootstrap.modal.forms.min.js' %}"></script>
+
+	<!-- Toastify JS -->
+	<script src="{% static 'js/libs/toastify_v1.12.0/toastify-js.js' %}"></script>
+
+	<!-- Custom JavaScript -->
+	<script src="{% static 'js/custom/custom.datepicker.js' %}"></script>
+	<script src="{% static 'js/custom/custom.main.js' %}"></script>
+	<script src="{% static 'js/custom/custom.bs_modals.js' %}"></script>
+	{% block extra_js %}{% endblock %}
+</body>
+
+</html>
