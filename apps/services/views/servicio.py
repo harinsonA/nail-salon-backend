@@ -27,8 +27,8 @@ FORM_SELECT_CLASS = "form-select form-select--custom"
 class ServicesFilterForm(BSModalForm):
     class StatusChoices(TextChoices):
         ALL = "all", "Todos"
-        ACTIVE = "active", "Activos"
-        DEACTIVE = "deactive", "Inactivos"
+        ACTIVE = "activo", "Activos"
+        INACTIVE = "inactivo", "Inactivos"
 
     status = forms.ChoiceField(
         choices=StatusChoices.choices,
@@ -45,10 +45,10 @@ class ServicesFilterForm(BSModalForm):
             return {}
 
         data_to_filter = {}
-        status = cleaned_data.get("status", "active")
+        status = cleaned_data.get("status", "activo")
         if status == self.StatusChoices.ALL:
             return data_to_filter
-        data_to_filter["activo"] = status == self.StatusChoices.ACTIVE
+        data_to_filter["estado"] = status
         return data_to_filter
 
 
@@ -135,17 +135,15 @@ class ServicesForm(BSModalForm):
 
     def clean_duration(self):
         duration = self.cleaned_data.get("duration")
-        print(
-            "\n Duration cleaned:",
-            duration,
-            type(duration),
-            duration.total_seconds(),
-            int(duration.total_seconds()),
-            "\n",
-        )
         if not int(duration.total_seconds()):
             raise forms.ValidationError("La duración debe ser mayor a cero.")
         return duration
+
+    def clean_status(self):
+        status = self.cleaned_data.get("status")
+        if not status:
+            return Servicio.EstadoChoices.INACTIVO
+        return Servicio.EstadoChoices.ACTIVO
 
     def clean(self):
         cleaned_data = super().clean()
@@ -162,7 +160,7 @@ class ServicesForm(BSModalForm):
             ("description", "descripcion"),
             ("price", "precio"),
             ("duration", "duracion_estimada"),
-            ("status", "activo"),
+            ("status", "estado"),
         ]
         for form_field, model_field in fields:
             value = data.get(form_field)
@@ -203,12 +201,12 @@ class ServiceListView(BaseListViewAjax):
         "descripcion",
         "precio",
         "duracion_estimada",
-        "activo",
+        "estado",
     ]
 
     ordering_fields = {
         "0": "nombre",
-        "1": "activo",
+        "1": "estado",
         "2": "precio",
         "3": "duracion_estimada",
     }
@@ -247,6 +245,7 @@ class ServiceListView(BaseListViewAjax):
                         estimated_duration=item.get("duracion_estimada")
                     ),
                     "price_formatted": f"$ {item.get('precio', 0):,.0f}",
+                    "status": item.get("estado") == Servicio.EstadoChoices.ACTIVO,
                 }
             )
         return values
@@ -323,7 +322,7 @@ class ServiceDetailModalView(BaseServiceModalView):
             "description": self.base_object.descripcion,
             "price": self.base_object.precio,
             "duration": self.get_duration_init(self.base_object.duracion_estimada),
-            "status": self.base_object.activo,
+            "status": self.base_object.estado == Servicio.EstadoChoices.ACTIVO,
         }
         return initial
 
@@ -370,11 +369,11 @@ class ServiceDeleteModalView(BSModalDeleteView):
 
     @staticmethod
     def get_aditional_information(service: Servicio) -> list:
-        fields = ["precio", "duracion_estimada", "fecha_creacion"]
+        fields = ["precio", "duracion_estimada", "created"]
         icons = {
             "precio": "attach_money",
             "duracion_estimada": "schedule",
-            "fecha_creacion": "calendar_today",
+            "created": "calendar_today",
         }
         additional_info = []
         for field in fields:
@@ -385,7 +384,7 @@ class ServiceDeleteModalView(BSModalDeleteView):
                 text = f"Precio: ${value:,.0f}"
             elif field == "duracion_estimada":
                 text = f"Duración: {value} minutos"
-            elif field == "fecha_creacion":
+            elif field == "created":
                 text = f"Registrado: {value.strftime('%d de %B de %Y')}"
             else:
                 text = str(value)

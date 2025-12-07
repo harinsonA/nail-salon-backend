@@ -28,8 +28,8 @@ FORM_SELECT_CLASS = "form-select form-select--custom"
 class ClientsFilterForm(BSModalForm):
     class StatusChoices(TextChoices):
         ALL = "all", "Todos"
-        ACTIVE = "active", "Activos"
-        DEACTIVE = "deactive", "Inactivos"
+        ACTIVE = "activo", "Activos"
+        INACTIVE = "inactivo", "Inactivos"
 
     status = forms.ChoiceField(
         choices=StatusChoices.choices,
@@ -46,10 +46,10 @@ class ClientsFilterForm(BSModalForm):
             return {}
 
         data_to_filter = {}
-        status = cleaned_data.get("status", "active")
+        status = cleaned_data.get("status", "activo")
         if status == self.StatusChoices.ALL:
             return data_to_filter
-        data_to_filter["activo"] = status == self.StatusChoices.ACTIVE
+        data_to_filter["estado"] = status
         return data_to_filter
 
 
@@ -151,6 +151,12 @@ class ClientsForm(BSModalForm):
             raise forms.ValidationError(result.value)
         return result.value
 
+    def clean_status(self):
+        status = self.cleaned_data.get("status")
+        if not status:
+            return Cliente.EstadoChoices.INACTIVO
+        return Cliente.EstadoChoices.ACTIVO
+
     def clean_notes(self):
         notes = self.cleaned_data.get("notes", "")
         if not notes:
@@ -175,7 +181,7 @@ class ClientsForm(BSModalForm):
             ("last_name", "apellido"),
             ("phone", "telefono"),
             ("email", "email"),
-            ("status", "activo"),
+            ("status", "estado"),
             ("notes", "notas"),
         ]
         for form_field, model_field in fields:
@@ -217,13 +223,13 @@ class ClientListView(BaseListViewAjax):
         "apellido",
         "telefono",
         "email",
-        "activo",
+        "estado",
         "full_name",
     ]
 
     ordering_fields = {
         "0": "full_name",
-        "1": "activo",
+        "1": "estado",
         "2": "telefono",
         "3": "email",
     }
@@ -234,6 +240,12 @@ class ClientListView(BaseListViewAjax):
             .get_queryset()
             .annotate(full_name=Concat("nombre", Value(" "), "apellido"))
         )
+
+    def get_values(self, queryset):
+        values = super().get_values(queryset)
+        for value in values:
+            value["status"] = value["estado"] == Cliente.EstadoChoices.ACTIVO
+        return values
 
     @staticmethod
     def add_options_column(data: list) -> list:
@@ -311,7 +323,7 @@ class ClientDetailModalView(BaseClientModalView):
     @staticmethod
     def get_phone_and_prefix(client: Cliente) -> tuple:
         if not client.telefono:
-            return "", ""
+            return CountryPhonePrefix.CHILE, ""
         prefixes = dict(CountryPhonePrefix.choices)
         phone_without_prefix = ""
         prefix = ""
@@ -332,7 +344,7 @@ class ClientDetailModalView(BaseClientModalView):
             "country_phone_prefix": prefix,
             "phone": phone,
             "email": self.base_object.email,
-            "status": self.base_object.activo,
+            "status": self.base_object.estado == Cliente.EstadoChoices.ACTIVO,
             "notes": self.base_object.notas,
         }
         return initial
@@ -380,11 +392,11 @@ class ClientDeleteModalView(BSModalDeleteView):
 
     @staticmethod
     def get_aditional_information(client: Cliente) -> list:
-        fields = ["telefono", "email", "fecha_registro"]
+        fields = ["telefono", "email", "created"]
         icons = {
             "telefono": "mobile",
             "email": "mail",
-            "fecha_registro": "calendar_today",
+            "created": "calendar_today",
         }
         additional_info = []
         for field in fields:
@@ -393,7 +405,7 @@ class ClientDeleteModalView(BSModalDeleteView):
                 continue
             text = (
                 value
-                if field != "fecha_registro"
+                if field != "created"
                 else f"Registrado: {value.strftime('%d de %B de %Y')}"
             )
             additional_info.append(

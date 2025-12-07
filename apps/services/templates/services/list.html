@@ -62,7 +62,7 @@ Lista de servicios
 			requestData: filterData,
 			columns: [
 				{ data: 'nombre', className: 'fs-7 w-auto text-nowrap' },
-				{ data: ({ activo }) => statusColumn(activo), className: 'fs-7 w-auto text-center' },
+				{ data: ({ status }) => statusColumn(status), className: 'fs-7 w-auto text-center' },
 				{ data: 'price_formatted', className: 'fs-7 w-auto text-center' },
 				{ data: 'estimated_duration_display', className: 'fs-7 w-auto text-center' },
 				{ data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },

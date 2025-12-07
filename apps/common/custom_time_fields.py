@@ -46,7 +46,6 @@ class CustomDateField(forms.CharField):
         value = super().to_python(value)
         if not value:
             return None
-        print(value)
         return value
 
 

@@ -61,7 +61,7 @@ Lista de clientes
       requestData: filterData,
       columns: [
         { data: 'full_name', className: 'fs-7 w-auto text-nowrap' },
-        { data: ({ activo }) => statusColumn(activo), className: 'fs-7 w-auto text-center' },
+        { data: ({ status }) => statusColumn(status), className: 'fs-7 w-auto text-center' },
         { data: 'telefono', className: 'fs-7 w-auto text-center' },
         { data: 'email', className: 'fs-7 w-auto' },
         { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
