@@ -1,8 +1,15 @@
 from django.db import models
-from apps.payments.choices import EstadoCita
+from model_utils.models import TimeStampedModel
+from simple_history.models import HistoricalRecords
 
 
-class Cita(models.Model):
+class Cita(TimeStampedModel):
+    class EstadoChoices(models.TextChoices):
+        PENDIENTE = "pendiente", "Pendiente"
+        CONFIRMADA = "confirmada", "Confirmada"
+        COMPLETADA = "completada", "Completada"
+        CANCELADA = "cancelada", "Cancelada"
+
     cliente = models.ForeignKey(
         "clients.Cliente", on_delete=models.CASCADE, related_name="citas"
     )
@@ -10,12 +17,14 @@ class Cita(models.Model):
     hora_agenda = models.TimeField()
     estado = models.CharField(
         max_length=20,
-        choices=EstadoCita.CHOICES,
-        default=EstadoCita.PENDIENTE,
+        choices=EstadoChoices.choices,
+        default=EstadoChoices.PENDIENTE,
+        db_index=True,
     )
     observaciones = models.TextField(blank=True, null=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    # Auditoría completa (crítico para cambios de estado)
+    history = HistoricalRecords()
 
     class Meta:
         app_label = "appointments"
@@ -25,7 +34,7 @@ class Cita(models.Model):
         ordering = ["-fecha_agenda"]
 
     def __str__(self):
-        return f"Cita {self.pk} - {self.fecha_agenda.strftime('%d/%m/%Y %H:%M')}"
+        return f"Cita {self.pk} - {self.fecha_agenda.strftime('%d/%m/%Y')}"
 
     @property
     def monto_total(self):
@@ -44,4 +53,7 @@ class Cita(models.Model):
 
     def puede_ser_modificada(self):
         """Verifica si la cita puede ser modificada"""
-        return self.estado not in [EstadoCita.COMPLETADA, EstadoCita.CANCELADA]
+        return self.estado not in [
+            Cita.EstadoChoices.COMPLETADA,
+            Cita.EstadoChoices.CANCELADA,
+        ]

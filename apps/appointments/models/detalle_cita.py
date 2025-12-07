@@ -1,8 +1,9 @@
 from django.db import models
 from decimal import Decimal
+from model_utils.models import TimeStampedModel
 
 
-class DetalleCita(models.Model):
+class DetalleCita(TimeStampedModel):
     cita = models.ForeignKey(
         "appointments.Cita", on_delete=models.CASCADE, related_name="detalles"
     )
@@ -15,7 +16,6 @@ class DetalleCita(models.Model):
         decimal_places=0,
         default=0,
     )
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         app_label = "appointments"

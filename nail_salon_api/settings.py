@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_filters",
     "bootstrap_modal_forms",
+    "simple_history",
     # Local apps
     "apps.clients",
     "apps.services",
@@ -62,6 +63,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]

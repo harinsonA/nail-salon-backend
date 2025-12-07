@@ -43,13 +43,17 @@ class AgendaFilterForm(forms.Form):
 
 class AgendaModalForm(BSModalForm):
     client = forms.ModelChoiceField(
-        queryset=Cliente.active_objects.all(),
+        queryset=Cliente.objects.filter(
+            estado=Cliente.EstadoChoices.ACTIVO, is_removed=False
+        ),
         required=True,
         label="Cliente",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
     service = forms.ModelChoiceField(
-        queryset=Servicio.active_objects.all(),
+        queryset=Servicio.objects.filter(
+            estado=Servicio.EstadoChoices.ACTIVO, is_removed=False
+        ),
         required=True,
         label="Servicio",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
@@ -97,13 +101,17 @@ class AgendaForm(forms.Form):
     """Formulario normal (no modal) para crear citas de agenda"""
 
     client = forms.ModelChoiceField(
-        queryset=Cliente.active_objects.all(),
+        queryset=Cliente.objects.filter(
+            estado=Cliente.EstadoChoices.ACTIVO, is_removed=False
+        ),
         required=True,
         label="Cliente",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
     service = forms.ModelChoiceField(
-        queryset=Servicio.active_objects.all(),
+        queryset=Servicio.objects.filter(
+            estado=Servicio.EstadoChoices.ACTIVO, is_removed=False
+        ),
         required=True,
         label="Servicio",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
@@ -281,8 +289,8 @@ class ServiceDetailsAjax(TemplateView):
                 {"message": "El ID del servicio es requerido."},
                 status=HTTP_400_BAD_REQUEST,
             )
-        service = Servicio.active_objects.filter(
-            pk=service_id,
+        service = Servicio.objects.filter(
+            pk=service_id, estado=Servicio.EstadoChoices.ACTIVO, is_removed=False
         ).first()
         if not service:
             return JsonResponse(

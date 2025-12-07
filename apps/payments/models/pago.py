@@ -2,20 +2,29 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 from apps.payments.choices import MetodoPago, EstadoPago
+from simple_history.models import HistoricalRecords
 
 
 class Pago(models.Model):
-    pago_id = models.AutoField(primary_key=True)
     cita = models.ForeignKey(
-        "appointments.Cita", on_delete=models.CASCADE, related_name="pagos"
+        "appointments.Cita",
+        on_delete=models.CASCADE,
+        related_name="pagos",
     )
     fecha_pago = models.DateTimeField()
     monto_total = models.DecimalField(
-        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0"))]
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0"))],
     )
-    metodo_pago = models.CharField(max_length=20, choices=MetodoPago.CHOICES)
+    metodo_pago = models.CharField(
+        max_length=20,
+        choices=MetodoPago.CHOICES,
+    )
     estado_pago = models.CharField(
-        max_length=20, choices=EstadoPago.CHOICES, default=EstadoPago.PENDIENTE
+        max_length=20,
+        choices=EstadoPago.CHOICES,
+        default=EstadoPago.PENDIENTE,
     )
 
     # Campos adicionales
@@ -23,6 +32,9 @@ class Pago(models.Model):
     notas_pago = models.TextField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    # Auditoría histórica
+    history = HistoricalRecords()
 
     class Meta:
         app_label = "payments"

@@ -1,25 +1,29 @@
 import datetime
 from django.db import models
+from model_utils.models import TimeStampedModel, SoftDeletableModel
+from simple_history.models import HistoricalRecords
 
 
-class ActiveManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(activo=True)
+class Servicio(TimeStampedModel, SoftDeletableModel):
+    class EstadoChoices(models.TextChoices):
+        ACTIVO = "activo", "Activo"
+        INACTIVO = "inactivo", "Inactivo"
 
-
-class Servicio(models.Model):
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoChoices.choices,
+        default=EstadoChoices.ACTIVO,
+        db_index=True,
+    )
     nombre = models.CharField(max_length=200)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     descripcion = models.TextField(blank=True, null=True)
     duracion_estimada = models.DurationField(
         blank=True, null=True, default=datetime.timedelta(minutes=30)
     )
-    activo = models.BooleanField(default=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
 
-    objects = models.Manager()
-    active_objects = ActiveManager()
+    # Auditoría completa (crítico para cambios de precio)
+    history = HistoricalRecords(inherit=True)
 
     class Meta:
         app_label = "services"

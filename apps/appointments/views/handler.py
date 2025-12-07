@@ -10,11 +10,15 @@ class Agenda:
 
     @staticmethod
     def __get_clients(clients_id: list) -> list:
-        return Cliente.active_objects.filter(id__in=clients_id).in_bulk()
+        return Cliente.objects.filter(
+            id__in=clients_id, estado=Cliente.EstadoChoices.ACTIVO, is_removed=False
+        ).in_bulk()
 
     @staticmethod
     def __get_services(services_id: list) -> list:
-        return Servicio.active_objects.filter(id__in=services_id).in_bulk()
+        return Servicio.objects.filter(
+            id__in=services_id, estado=Servicio.EstadoChoices.ACTIVO, is_removed=False
+        ).in_bulk()
 
     @staticmethod
     def __cleaned_agenda_data(agenda_data: dict) -> dict:
