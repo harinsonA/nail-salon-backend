@@ -17,7 +17,7 @@ Agenda de citas
 							calendar_today
 						</span>
 					</h6>
-					<h4 class="card-title">144</h4>
+					<h4 id="agenda_totals_id" class="card-title">0</h4>
 				</div>
 			</div>
 		</div>
@@ -29,7 +29,8 @@ Agenda de citas
 						<span class="material-symbols-outlined text-success">
 							check_circle
 						</span>
-						<h4 class="card-title">80</h4>
+					</h6>
+					<h4 class="card-title">80</h4>
 				</div>
 			</div>
 		</div>
@@ -41,24 +42,25 @@ Agenda de citas
 						<span class="material-symbols-outlined text-warning">
 							pending_actions
 						</span>
-						<h4 class="card-title">64</h4>
+					</h6>
+					<h4 class="card-title">64</h4>
 				</div>
 			</div>
 		</div>
 	</section>
 	<section class="mt-3">
-		<button type="button" class="btn btn-primary canvas-modal" data-form-url="{%  url 'agenda_create_modal' %}">
+		<a type="button" class="btn btn-primary" href="{{ url_agenda_create }}">
 			<span class="material-symbols-outlined fs-6">
 				edit
 			</span>
 			Agendar
-		</button>
+		</a>
 	</section>
 	<section class="table-container--custom">
 		<table id="agenda_table" class="table table-hover ">
 			<thead>
 				<tr>
-					<th scope="col">Nombre</th>
+					<th scope="col">Días</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -69,21 +71,96 @@ Agenda de citas
 {% endblock %}
 {% block extra_js %}
 <script>
+	const agendaStatusIcon = {
+		pendiente: {
+			icon: 'pending_actions',
+			color: 'text-warning',
+		},
+		completada: {
+			icon: 'check_circle',
+			color: 'text-success',
+		},
+		cancelada: {
+			icon: 'cancel',
+			color: 'text-danger',
+		},
+	};
 	$(() => {
 		// Inicializar modal lateral
-		initializeCanvasBSModals();
+		// initializeCanvasBSModals();
 
 		const filterData = {
 			months: $('#{{ filter_form.months.id_for_label }}').val(),
 		};
+
+		const accordionItemTemplate = (accordionId, collapseId, data) => {
+			console.log('data', data);
+			return `<div id="${collapseId}" class="accordion-collapse collapse show" data-bs-parent="#${accordionId}">
+				<div class="accordion-body ps-md-5">
+					${Array.from(data).map(({ cliente_full_name, formatted_time, estado, cantidad_servicios }) => {
+				return `<div class="mb-3 d-flex justify-content-between align-items-center">
+					<div>
+						<p class="mb-1">
+							<b>
+								<span class="material-symbols-outlined"> nest_clock_farsight_analog </span> ${formatted_time} -
+							</b>
+							${cliente_full_name} - 
+							<span class="material-symbols-outlined ${agendaStatusIcon[estado].color}">${agendaStatusIcon[estado].icon}</span>
+						</p>
+						<p class="mb-0 ps-3 text-body-secondary text-small font-monospace">
+							Servicios: ${cantidad_servicios}
+						</p>
+					</div>
+					<div class="btn-group dropstart">
+						<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="material-symbols-outlined">
+								more_vert
+							</span>
+						</button>
+						<ul class="dropdown-menu">
+							<li><a class="dropdown-item" href="#">Action</a></li>
+							<li><a class="dropdown-item" href="#">Another action</a></li>
+							<li><a class="dropdown-item" href="#">Something else here</a></li>
+						</ul>
+					</div>
+				</div>`;
+			}).join('')}
+				</div>
+			</div>
+			`;
+		}
+
+		const columnTemplate = ({ pk, date, agendas }) => {
+			console.log('pk, date, agendas', pk, date, agendas);
+			return `<div class="accordion" id="${pk}">
+				<div class="accordion-item">
+					<h2 class="accordion-header">
+						<button class="accordion-button collapsed bg-primary-subtle bg-gradient" type="button" data-bs-toggle="collapse" data-bs-target="#${pk}_collapse" aria-expanded="true" aria-controls="${pk}_collapse">
+							<b>${date}</b>
+						</button>
+					</h2>
+				${accordionItemTemplate(pk, `${pk}_collapse`, agendas)}
+				</div>
+			</div>`;
+		}
+
 		const dataTableConfig = {
 			tableID: '#agenda_table',
 			url: '{{ url_agenda_list }}',
 			requestData: filterData,
 			columns: [
-				{ data: () => 'Hola', className: 'fs-7 w-auto text-nowrap' },
+				{ data: (data) => columnTemplate(data), className: 'w-100' },
 			],
 			extraConfig: {
+				ordering: false,
+				paging: false,
+				info: false,
+				ajax: {
+					dataSrc: (json) => {
+						$('#agenda_totals_id').text(json.recordsTotal);
+						return json.data;
+					},
+				},
 				customStartTop: () => `
 					<div class="input-group">
 						<span class="input-group-text">

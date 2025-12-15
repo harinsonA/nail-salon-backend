@@ -1,5 +1,4 @@
 from django.db import models
-from decimal import Decimal
 from model_utils.models import TimeStampedModel
 
 

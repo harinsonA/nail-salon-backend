@@ -3,7 +3,7 @@ from apps.appointments.views.agenda import (
     AppointmentsView,
     AgendaListView,
     AgendaCreateModalView,
-    AgendaCreateV2View,
+    AgendaCreateView,
     ServiceDetailsAjax,
     AvailableHoursAjax,
 )
@@ -20,14 +20,14 @@ urlpatterns = [
         name="agenda_list",
     ),
     path(
-        "agenda/crear/",
-        AgendaCreateModalView.as_view(),
-        name="agenda_create_modal",
+        "agenda/crear",
+        AgendaCreateView.as_view(),
+        name="agenda_create",
     ),
     path(
-        "agenda/crear/version/dos/",
-        AgendaCreateV2View.as_view(),
-        name="agenda_create_v2",
+        "agenda/crear/modal",
+        AgendaCreateModalView.as_view(),
+        name="agenda_create_modal",
     ),
     path(
         "agenda/servicio/detalles/ajax/",

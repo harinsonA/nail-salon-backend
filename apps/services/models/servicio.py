@@ -4,6 +4,30 @@ from model_utils.models import TimeStampedModel, SoftDeletableModel
 from simple_history.models import HistoricalRecords
 
 
+class ServicioActivoManager(models.Manager):
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                estado=self.model.EstadoChoices.ACTIVO,
+                is_removed=False,
+            )
+        )
+
+
+class ServicioInactivoManager(models.Manager):
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                estado=self.model.EstadoChoices.INACTIVO,
+                is_removed=False,
+            )
+        )
+
+
 class Servicio(TimeStampedModel, SoftDeletableModel):
     class EstadoChoices(models.TextChoices):
         ACTIVO = "activo", "Activo"
@@ -24,6 +48,11 @@ class Servicio(TimeStampedModel, SoftDeletableModel):
 
     # Auditoría completa (crítico para cambios de precio)
     history = HistoricalRecords(inherit=True)
+
+    # Managers
+    objects = models.Manager()  # Manager por defecto (todos)
+    activos = ServicioActivoManager()  # Solo activos
+    inactivos = ServicioInactivoManager()  # Solo inactivos
 
     class Meta:
         app_label = "services"

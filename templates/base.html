@@ -79,6 +79,16 @@
 	<script src="{% static 'js/custom/custom.datepicker.js' %}"></script>
 	<script src="{% static 'js/custom/custom.main.js' %}"></script>
 	<script src="{% static 'js/custom/custom.bs_modals.js' %}"></script>
+	<script>
+		$(() => {
+			{% if messages %}
+			{% for message in messages %}
+			const msg = "{{ message }}";
+			notifyAlert({ message: msg });
+			{% endfor %}
+			{% endif %}
+		});
+	</script>
 	{% block extra_js %}{% endblock %}
 </body>
 

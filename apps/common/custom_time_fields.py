@@ -70,10 +70,23 @@ class CustomMonthField(forms.CharField):
             **date_time,
         )
 
+    @staticmethod
+    def __get_range_today():
+        today = datetime.today()
+        first_day = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day = today.replace(
+            day=monthrange(today.year, today.month)[1],
+            hour=23,
+            minute=59,
+            second=59,
+            microsecond=999999,
+        )
+        return [first_day, last_day]
+
     def to_python(self, value):
         value = super().to_python(value)
         if not value:
-            return None
+            return self.__get_range_today()
 
         period_selected = value.strip().replace(" ", "-")
         month, year = period_selected.split("-")

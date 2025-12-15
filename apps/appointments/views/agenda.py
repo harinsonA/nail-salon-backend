@@ -2,6 +2,9 @@ import json
 
 from datetime import date, datetime
 from django import forms
+from django.contrib import messages
+from django.contrib.postgres.aggregates import ArrayAgg, StringAgg
+from django.db.models import Count
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView, FormView
@@ -13,6 +16,7 @@ from bootstrap_modal_forms.generic import BSModalFormView
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import CustomMonthField, CustomDateField
 from apps.appointments.models.agenda import Cita
+from apps.appointments.views.handler import HandlerAgenda, HandlerAgendaList
 from apps.clients.models import Cliente
 from apps.services.models import Servicio
 
@@ -38,22 +42,22 @@ class AgendaFilterForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        return cleaned_data
+        first_day, last_day = cleaned_data.get("months", (None, None))
+        return {
+            "fecha_agenda__gte": first_day,
+            "fecha_agenda__lte": last_day,
+        }
 
 
 class AgendaModalForm(BSModalForm):
     client = forms.ModelChoiceField(
-        queryset=Cliente.objects.filter(
-            estado=Cliente.EstadoChoices.ACTIVO, is_removed=False
-        ),
+        queryset=Cliente.activos.all(),
         required=True,
         label="Cliente",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
     service = forms.ModelChoiceField(
-        queryset=Servicio.objects.filter(
-            estado=Servicio.EstadoChoices.ACTIVO, is_removed=False
-        ),
+        queryset=Servicio.activos.all(),
         required=True,
         label="Servicio",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
@@ -101,17 +105,13 @@ class AgendaForm(forms.Form):
     """Formulario normal (no modal) para crear citas de agenda"""
 
     client = forms.ModelChoiceField(
-        queryset=Cliente.objects.filter(
-            estado=Cliente.EstadoChoices.ACTIVO, is_removed=False
-        ),
+        queryset=Cliente.activos.all(),
         required=True,
         label="Cliente",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
     service = forms.ModelChoiceField(
-        queryset=Servicio.objects.filter(
-            estado=Servicio.EstadoChoices.ACTIVO, is_removed=False
-        ),
+        queryset=Servicio.activos.all(),
         required=True,
         label="Servicio",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
@@ -190,6 +190,8 @@ class AppointmentsView(TemplateView):
                     initial={"months": self.get_initial_month()}
                 ),
                 "url_agenda_list": reverse_lazy("agenda_list"),
+                "url_agenda_create_modal": reverse_lazy("agenda_create_modal"),
+                "url_agenda_create": reverse_lazy("agenda_create"),
             }
         )
         return context
@@ -199,22 +201,34 @@ class AgendaListView(BaseListViewAjax):
     model = Cita
     filter_form_class = AgendaFilterForm
 
-    def get(self, request, *args, **kwargs):
-        return JsonResponse(self.get_context_data())
+    field_list = [
+        "pk",
+        "cliente__nombre",
+        "cliente__apellido",
+        "fecha_agenda",
+        "hora_agenda",
+        "estado",
+        "cantidad_servicios",
+    ]
 
-    def get_context_data(self, **kwargs):
-        filter_form_class = AgendaFilterForm(self.request.GET or None)
-        is_valid = filter_form_class.is_valid()
-        print("\nIS FILTER FORM VALID?:", is_valid, "\n")
-        if is_valid:
-            print("\nFILTER FORM CLEANED DATA:", filter_form_class.cleaned_data, "\n")
-        print("\nFILTERS APPLIED IN AGENDA LIST VIEW AJAX:", self.request.GET, "\n")
-        print(self.get_filters())
-        return {
-            "data": [],
-            "recordsTotal": 0,
-            "recordsFiltered": 0,
-        }
+    ordering_fields = {
+        "0": "fecha_agenda",
+    }
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related("cliente")
+            .prefetch_related("detalles")
+            .annotate(cantidad_servicios=Count("detalles"))
+        )
+
+    def get_values(self, queryset):
+        values = [
+            *queryset.values(*self.field_list).order_by("fecha_agenda", "hora_agenda")
+        ]
+        return HandlerAgendaList().get_data(values)
 
 
 class AgendaCreateModalView(BSModalFormView):
@@ -235,8 +249,8 @@ class AgendaCreateModalView(BSModalFormView):
         return reverse_lazy("agenda_list")
 
 
-class AgendaCreateV2View(FormView):
-    template_name = "appointments/agenda_create_v2.html"
+class AgendaCreateView(FormView):
+    template_name = "appointments/agenda_create.html"
     form_class = AgendaForm
 
     def get_initial(self):
@@ -259,26 +273,56 @@ class AgendaCreateV2View(FormView):
                 "page_title": "Crear Nueva Cita",
                 "breadcrumb": "Agenda / Crear Cita",
                 "cancel_url": reverse_lazy("appointments"),
-                "agenda_create_url": reverse_lazy("agenda_create_v2"),
+                "agenda_create_url": reverse_lazy("agenda_create"),
                 "service_details_url": reverse_lazy("service_details_ajax"),
                 "available_hours_url": reverse_lazy("available_hours_ajax"),
             }
         )
         return context
 
+    @staticmethod
+    def __get_clients_ids(agendas_data: list) -> list:
+        clients_ids = set()
+        for agenda in agendas_data:
+            client_id = agenda.get("idCliente")
+            if not client_id or client_id in clients_ids:
+                continue
+            clients_ids.add(client_id)
+        return list(clients_ids)
+
+    @staticmethod
+    def __get_service_ids(agendas_data: list) -> list:
+        services_ids = set()
+        for agenda in agendas_data:
+            _services = agenda.get("servicios")
+            if not _services:
+                continue
+            for service in _services:
+                service_id = service.get("id")
+                if not service_id or service_id in services_ids:
+                    continue
+                services_ids.add(service_id)
+        return list(services_ids)
+
     def post(self, request, *args, **kwargs):
-        print("\n\nPOST DATA RECEIVED IN AGENDA CREATE V2 VIEW:", request.POST, "\n\n")
         agendas = request.POST.get("agenda", None)
-        print("\n\nagendas:", type(agendas), agendas, "\n\n")
         if not agendas:
             return JsonResponse(
                 {"message": "No se recibieron datos de agenda."},
                 status=HTTP_400_BAD_REQUEST,
             )
         agendas = json.loads(agendas)
-
-        print("\n\nagendas:", type(agendas), agendas, "\n\n")
-        return JsonResponse({"hola": "mundo"})
+        clients_ids = self.__get_clients_ids(agendas)
+        services_ids = self.__get_service_ids(agendas)
+        handler = HandlerAgenda(clients_ids, services_ids)
+        result = handler.create(agendas)
+        if result.is_err():
+            return JsonResponse(
+                {"message": result.err()},
+                status=HTTP_400_BAD_REQUEST,
+            )
+        messages.success(request, result.ok())
+        return JsonResponse({"success_url": reverse_lazy("appointments")})
 
 
 class ServiceDetailsAjax(TemplateView):
@@ -289,9 +333,7 @@ class ServiceDetailsAjax(TemplateView):
                 {"message": "El ID del servicio es requerido."},
                 status=HTTP_400_BAD_REQUEST,
             )
-        service = Servicio.objects.filter(
-            pk=service_id, estado=Servicio.EstadoChoices.ACTIVO, is_removed=False
-        ).first()
+        service = Servicio.activos.filter(pk=service_id).first()
         if not service:
             return JsonResponse(
                 {"error": "Servicios no encontrados"},

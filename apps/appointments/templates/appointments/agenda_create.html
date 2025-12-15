@@ -189,8 +189,9 @@ Crear Cita
     $('#{{ form.discount_amount.id_for_label }}').change((e) => {
       if (!servicesSet.size) return;
       const discountAmount = parseInt($(e.currentTarget).val()) || 0;
+      const quantity = parseInt($('#{{ form.quantity.id_for_label }}').val()) || 1;
       const servicePrice = getServicePrice();
-      const totalAmount = servicePrice - discountAmount;
+      const totalAmount = (servicePrice * quantity) - discountAmount;
       $('#total-amount').text(`$ ${totalAmount}`);
     });
 
@@ -242,11 +243,14 @@ Crear Cita
     const isServiceIncluded = () => {
       const targetServiceId = $('#{{ form.service.id_for_label }}').val();
       const targetClientId = $('#{{ form.client.id_for_label }}').val();
-      if (!targetServiceId || !targetClientId) return false;
+      const targetDate = $('#{{ form.date_agenda.id_for_label }}').val();
+      if (!targetServiceId || !targetClientId || !targetDate) return false;
 
       for (const { idCliente, servicios } of agendaSet) {
         if (String(idCliente) === String(targetClientId)) {
-          return servicios.some(({ id }) => String(id) === String(targetServiceId));
+          return servicios.some(({ id, fecha }) =>
+            String(id) === String(targetServiceId) && fecha === targetDate
+          );
         }
       }
       return false;
@@ -295,7 +299,7 @@ Crear Cita
       return services.map(({ id, nombre, fecha, hora, total, descuento, cantidad }) => `
         <div class="service-added-item" id="service_added_${id}">
           <div class="service-added-info-wrapper">
-            <a role="button" class="btn btn-danger btn-sm service-added-remove-btn" data-client-id="${clientId}" data-service-id="${id}">
+            <a role="button" class="btn btn-danger btn-sm service-added-remove-btn" data-client-id="${clientId}" data-service-id="${id}" data-service-date="${fecha}">
               <span class="material-symbols-outlined service-added-icon service-added-icon--remove">
                 delete
               </span>
@@ -388,7 +392,11 @@ Crear Cita
         const url = "{{ agenda_create_url }}";
         const data = { agenda: JSON.stringify(agendaData) };
         const [response = {}, status] = await getResponseToRequest(url, data);
-        console.log({ response, status });
+        if ([200].includes(status)) {
+          console.log(response);
+          window.location.href = response.success_url;
+          return;
+        }
       });
     }
 
@@ -407,7 +415,8 @@ Crear Cita
           $('.service-added-remove-btn').click(({ currentTarget }) => {
             const serviceID = $(currentTarget).data('service-id');
             const clientID = $(currentTarget).data('client-id');
-            deleteServiceFromAgenda(clientID, serviceID);
+            const serviceDate = $(currentTarget).data('service-date');
+            deleteServiceFromAgenda(clientID, serviceID, serviceDate);
           });
         },
         initComplete: () => {
@@ -422,10 +431,12 @@ Crear Cita
       $('#add-agenda-btn').toggleClass('d-none', !hasAgendas);
     }
 
-    const deleteServiceFromAgenda = (clientID, serviceID) => {
+    const deleteServiceFromAgenda = (clientID, serviceID, serviceDate) => {
       for (const agenda of agendaSet) {
         if (String(agenda.idCliente) === String(clientID)) {
-          agenda.servicios = agenda.servicios.filter(({ id }) => String(id) !== String(serviceID));
+          agenda.servicios = agenda.servicios.filter(({ id, fecha }) =>
+            !(String(id) === String(serviceID) && fecha === serviceDate)
+          );
           if (!agenda.servicios.length) {
             agendaSet.delete(agenda);
           }

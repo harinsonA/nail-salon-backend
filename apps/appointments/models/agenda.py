@@ -6,7 +6,6 @@ from simple_history.models import HistoricalRecords
 class Cita(TimeStampedModel):
     class EstadoChoices(models.TextChoices):
         PENDIENTE = "pendiente", "Pendiente"
-        CONFIRMADA = "confirmada", "Confirmada"
         COMPLETADA = "completada", "Completada"
         CANCELADA = "cancelada", "Cancelada"
 
