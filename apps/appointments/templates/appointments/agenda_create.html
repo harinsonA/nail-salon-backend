@@ -67,7 +67,7 @@ Crear Cita
         <table id="available_hours_table" class="table">
           <thead>
             <tr>
-              <th>Horas</th>
+              <th>Horas no disponibles</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -287,7 +287,13 @@ Crear Cita
       extraConfig: {
         searching: false,
         info: false,
-      }
+        language: {
+          paginate: {
+            first: "",
+            last: "",
+          },
+        },
+      },
     };
     const availableHoursTable = renderDataTable(availableHoursTableConfig);
     $('#{{ form.date_agenda.id_for_label }}, #{{ form.time_agenda.id_for_label }}').change(({ target }) => {

@@ -1,9 +1,9 @@
 import json
 
 from datetime import date, datetime
+from calendar import monthrange
 from django import forms
 from django.contrib import messages
-from django.contrib.postgres.aggregates import ArrayAgg, StringAgg
 from django.db.models import Count
 from django.http import JsonResponse
 from django.urls import reverse_lazy
@@ -36,14 +36,23 @@ FORM_SELECT_CLASS = "form-select form-select--custom"
 
 class AgendaFilterForm(forms.Form):
     months = CustomMonthField(
-        required=False,
         label="Mes",
+        required=False,
+    )
+    status = forms.ChoiceField(
+        label="Estado",
+        required=False,
+        initial=Cita.EstadoChoices.PENDIENTE,
+        choices=Cita.EstadoChoices.choices,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
 
     def clean(self):
         cleaned_data = super().clean()
+        agendaStatus = cleaned_data.get("status", Cita.EstadoChoices.PENDIENTE)
         first_day, last_day = cleaned_data.get("months", (None, None))
         return {
+            "estado": agendaStatus,
             "fecha_agenda__gte": first_day,
             "fecha_agenda__lte": last_day,
         }
@@ -166,6 +175,38 @@ class AgendaForm(forms.Form):
             }
         ),
     )
+
+
+class AvailableHoursFilterForm(forms.Form):
+    date_agenda = CustomDateField(
+        required=True,
+        label="Fecha de la cita",
+    )
+    time_agenda = forms.TimeField(
+        required=True,
+        label="Hora de la cita",
+        widget=forms.TimeInput(
+            attrs={
+                "type": "time",
+                "class": FORM_CONTROL_CLASS,
+                "format": "%H:%M",
+            }
+        ),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        date_agenda = cleaned_data.get("date_agenda", None)
+        if not date_agenda:
+            return {}
+        __, month, year = map(int, date_agenda.split("/"))
+        first_day = date(year=year, month=month, day=1)
+        last_day_num = monthrange(year, month)[1]
+        last_day = date(year=year, month=month, day=last_day_num)
+        return {
+            "fecha_agenda__gte": first_day,
+            "fecha_agenda__lte": last_day,
+        }
 
 
 # endregion
@@ -350,6 +391,7 @@ class ServiceDetailsAjax(TemplateView):
 
 class AvailableHoursAjax(BaseListViewAjax):
     model = Cita
+    filter_form_class = AvailableHoursFilterForm
 
     field_list = [
         "pk",
@@ -358,12 +400,6 @@ class AvailableHoursAjax(BaseListViewAjax):
     ordering_fields = {
         "0": "hora_agenda",
     }
-
-    def get_queryset(self):
-        date_agenda_str = self.request.GET
-        if date_agenda_str:
-            print("\nDATE AGENDA SELECTED:", date_agenda_str, "\n")
-        return super().get_queryset()
 
 
 # endregion

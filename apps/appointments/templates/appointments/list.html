@@ -56,6 +56,14 @@ Agenda de citas
 			Agendar
 		</a>
 	</section>
+	<section class="mt-3 d-inline-block">
+		<div>
+			<label class="form-check-label form-label--custom" for="{{ filter_form.status.id_for_label }}">
+				{{ filter_form.status.label }}
+			</label>
+			{{ filter_form.status }}
+		</div>
+	</section>
 	<section class="table-container--custom">
 		<table id="agenda_table" class="table table-hover ">
 			<thead>
@@ -91,10 +99,10 @@ Agenda de citas
 
 		const filterData = {
 			months: $('#{{ filter_form.months.id_for_label }}').val(),
+			status: $('#{{ filter_form.status.id_for_label }}').val(),
 		};
 
 		const accordionItemTemplate = (accordionId, collapseId, data) => {
-			console.log('data', data);
 			return `<div id="${collapseId}" class="accordion-collapse collapse show" data-bs-parent="#${accordionId}">
 				<div class="accordion-body ps-md-5">
 					${Array.from(data).map(({ cliente_full_name, formatted_time, estado, cantidad_servicios }) => {
@@ -131,7 +139,6 @@ Agenda de citas
 		}
 
 		const columnTemplate = ({ pk, date, agendas }) => {
-			console.log('pk, date, agendas', pk, date, agendas);
 			return `<div class="accordion" id="${pk}">
 				<div class="accordion-item">
 					<h2 class="accordion-header">
@@ -177,8 +184,8 @@ Agenda de citas
 			},
 		};
 		const table = renderDataTable(dataTableConfig);
-		$('#{{ filter_form.months.id_for_label }}').on('change', ({ target }) => {
-			filterData.months = target.value;
+		$('#{{ filter_form.months.id_for_label }}, #{{ filter_form.status.id_for_label }}').on('change', ({ target }) => {
+			filterData[target.name] = target.value;
 			table.draw()
 		});
 	});
