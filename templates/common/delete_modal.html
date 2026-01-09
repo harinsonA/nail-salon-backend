@@ -13,10 +13,11 @@
 	</div>
 	<div class="modal-body">
 		<p class="m-0 mb-2 text-color-muted">
-			<b>Estás a punto de eliminar el siguiente cliente:</b>
+			<b>Estás a punto de eliminar el siguiente registro:</b>
 		</p>
 		<div class="delete-information-container">
-			<p class="delete-information-name">ID: {{ id_register }} - {{ name_register }}</p>
+			<p class="delete-information-name m-0">ID: {{ id_register }}</p>
+			<p class="delete-information-name">Nombre: {{ name_register }}</p>
 			{% for information in aditional_information %}
 			<p class="delete-information-detail">
 				{% if information.icon %}

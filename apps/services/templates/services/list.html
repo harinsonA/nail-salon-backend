@@ -5,7 +5,7 @@ Lista de servicios
 {% endblock %}
 
 {% block content %}
-{% include 'bs_modal.html' %}
+{% include 'common/bs_modal.html' %}
 <section>
 	<section>
 		<a id="service-create-btn" data-form-url="{%  url 'service_create_modal' %}"
@@ -94,7 +94,7 @@ Lista de servicios
 					submitBtn.disabled = statusCode === 200;
 					return [response, statusCode];
 				};
-				const [response, statusCode] = await submitRequestBSModal(modalForm, false, reloadTable);
+				const [response, statusCode] = await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
 			});
 		});
 

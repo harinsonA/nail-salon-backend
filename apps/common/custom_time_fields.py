@@ -21,6 +21,12 @@ class MonthChoiceField(TextChoices):
     DECEMBER = "Diciembre", "12"
 
 
+MONTH_NUMBER_TO_NAME = {
+    int(month_number): month_name
+    for month_name, month_number in MonthChoiceField.choices
+}
+
+
 """========================================================================="""
 # region ........ Minutes
 

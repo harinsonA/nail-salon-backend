@@ -5,7 +5,7 @@ Lista de clientes
 {% endblock %}
 
 {% block content %}
-{% include 'bs_modal.html' %}
+{% include 'common/bs_modal.html' %}
 <section>
   <section>
     <a id="client-create-btn" data-form-url="{%  url 'client_create_modal' %}"
@@ -93,7 +93,7 @@ Lista de clientes
           submitBtn.disabled = statusCode === 200;
           return [response, statusCode];
         };
-        const [response, statusCode] = await submitRequestBSModal(modalForm, false, reloadTable);
+        const [response, statusCode] = await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
       });
     });
 

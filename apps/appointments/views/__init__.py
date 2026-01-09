@@ -3,7 +3,11 @@
 from .agenda import (
     AppointmentsView,
     AgendaListView,
-    AgendaCreateModalView,
+    AgendaUpdateModalView,
+    AgendaCancelModalView,
+)
+from .agenda_create import (
+    AgendaCreateView,
     ServiceDetailsAjax,
     AvailableHoursAjax,
 )
@@ -11,7 +15,9 @@ from .agenda import (
 __all__ = [
     "AppointmentsView",
     "AgendaListView",
-    "AgendaCreateModalView",
-    "ServiceDetailsAjax",
+    "AgendaCancelModalView",
+    "AgendaCreateView",
+    "AgendaUpdateModalView",
     "AvailableHoursAjax",
+    "ServiceDetailsAjax",
 ]

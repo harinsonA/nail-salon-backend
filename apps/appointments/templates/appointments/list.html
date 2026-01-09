@@ -5,7 +5,9 @@ Agenda de citas
 {% endblock %}
 
 {% block content %}
-{% include 'canvas_modal.html' %}
+{% include 'common/canvas_modal.html' %}
+{% include 'common/bs_modal.html' %}
+{% include 'common/bs_xl_modal.html' %}
 <section>
 	<section class="row">
 		<div class="col-12 col-lg-4">
@@ -95,7 +97,6 @@ Agenda de citas
 	};
 	$(() => {
 		// Inicializar modal lateral
-		// initializeCanvasBSModals();
 
 		const filterData = {
 			months: $('#{{ filter_form.months.id_for_label }}').val(),
@@ -105,7 +106,7 @@ Agenda de citas
 		const accordionItemTemplate = (accordionId, collapseId, data) => {
 			return `<div id="${collapseId}" class="accordion-collapse collapse show" data-bs-parent="#${accordionId}">
 				<div class="accordion-body ps-md-5">
-					${Array.from(data).map(({ cliente_full_name, formatted_time, estado, cantidad_servicios }) => {
+					${Array.from(data).map(({ cliente_full_name, formatted_time, estado, cantidad_servicios, agenda_update_modal_url, agenda_cancel_modal_url, agenda_delete_modal_url, agenda_confirmation_modal_url }) => {
 				return `<div class="mb-3 d-flex justify-content-between align-items-center">
 					<div>
 						<p class="mb-1">
@@ -126,9 +127,38 @@ Agenda de citas
 							</span>
 						</button>
 						<ul class="dropdown-menu">
-							<li><a class="dropdown-item" href="#">Action</a></li>
-							<li><a class="dropdown-item" href="#">Another action</a></li>
-							<li><a class="dropdown-item" href="#">Something else here</a></li>
+							<li>
+								<a class="dropdown-item canvas-modal fs-6" data-form-url="${agenda_update_modal_url}">
+									<span class="material-symbols-outlined text-primary">
+										edit
+									</span>
+									Editar
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item bs-xl-modal fs-6" data-form-url="${agenda_confirmation_modal_url}">
+									<span class="material-symbols-outlined text-success">
+										check_circle
+									</span>
+									Completada
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_cancel_modal_url}">
+									<span class="material-symbols-outlined text-secondary">
+										content_paste_off
+									</span>
+									Cancelar
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_delete_modal_url}">
+									<span class="material-symbols-outlined text-danger">
+										delete
+									</span>
+									Eliminar
+								</a>
+							</li>
 						</ul>
 					</div>
 				</div>`;
@@ -180,13 +210,39 @@ Agenda de citas
 				`,
 				drawCallback: () => {
 					initializeMonthPickers();
+					initializeAllCanvasBSModals();
+					initializeAllBSModals();
+					initializeAllBSXLModals();
 				},
 			},
 		};
 		const table = renderDataTable(dataTableConfig);
 		$('#{{ filter_form.months.id_for_label }}, #{{ filter_form.status.id_for_label }}').on('change', ({ target }) => {
 			filterData[target.name] = target.value;
-			table.draw()
+			table.draw();
+		});
+
+		$('#modal').on('show.bs.modal', function ({ currentTarget }) {
+			$('#agenda_cancel_btn').off('click').on('click', async () => {
+				const form = $(currentTarget).find('form');
+				const url = form.attr('action');
+				const [response = {}, status] = await getResponseToRequest(url);
+				notifyAlert(response, status);
+				if ([200].includes(status)) {
+					$(currentTarget).modal('hide');
+					table.draw();
+				}
+			});
+			$('#delete_submit_btn').off('click').on('click', async () => {
+				const form = $(currentTarget).find('form');
+				const url = form.attr('action');
+				const [response = {}, status] = await getResponseToRequest(url);
+				notifyAlert(response, status);
+				if ([200].includes(status)) {
+					$(currentTarget).modal('hide');
+					table.draw();
+				}
+			});
 		});
 	});
 </script>

@@ -282,7 +282,7 @@ Crear Cita
       url: '{{ available_hours_url }}',
       requestData: availableHoursFilter,
       columns: [
-        { data: 'hora_agenda' },
+        { data: ({ hora_agenda, client_full_name }) => `${hora_agenda} - ${client_full_name}`, className: 'text-danger' },
       ],
       extraConfig: {
         searching: false,
@@ -292,6 +292,7 @@ Crear Cita
             first: "",
             last: "",
           },
+          emptyTable: "No tienes ninguna cita en este día.",
         },
       },
     };
@@ -418,7 +419,7 @@ Crear Cita
         info: false,
         serverSide: false,
         drawCallback: () => {
-          $('.service-added-remove-btn').click(({ currentTarget }) => {
+          $('.service-added-remove-btn').off('click').on('click', ({ currentTarget }) => {
             const serviceID = $(currentTarget).data('service-id');
             const clientID = $(currentTarget).data('client-id');
             const serviceDate = $(currentTarget).data('service-date');

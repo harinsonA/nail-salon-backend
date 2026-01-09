@@ -1,0 +1,17 @@
+<form id="completion_status_form" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header bg-success bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center text-white">
+      <span class="material-symbols-outlined me-2">
+        calendar_month
+      </span>
+      <span>
+        {{ client_full_name }} - {{ date_formatted }} {{ time_formatted }}
+      </span>
+    </h5>
+    <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+
+  </div>
+</form>

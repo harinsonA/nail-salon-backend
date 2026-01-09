@@ -1,9 +1,14 @@
 from django.db import models
-from model_utils.models import TimeStampedModel
+from model_utils.models import TimeStampedModel, SoftDeletableModel
 from simple_history.models import HistoricalRecords
 
 
-class Cita(TimeStampedModel):
+class CitaManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_removed=False)
+
+
+class Cita(TimeStampedModel, SoftDeletableModel):
     class EstadoChoices(models.TextChoices):
         PENDIENTE = "pendiente", "Pendiente"
         COMPLETADA = "completada", "Completada"
@@ -23,7 +28,11 @@ class Cita(TimeStampedModel):
     observaciones = models.TextField(blank=True, null=True)
 
     # Auditoría completa (crítico para cambios de estado)
-    history = HistoricalRecords()
+    history = HistoricalRecords(inherit=True)
+
+    # Managers
+    objects = CitaManager()  # Manager por defecto (excluye eliminados)
+    all_objects = models.Manager()  # Manager que incluye eliminados
 
     class Meta:
         app_label = "appointments"

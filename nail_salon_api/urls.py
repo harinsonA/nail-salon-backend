@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path("", include("dashboard.urls")),
     path("", include("apps.clients.urls")),
     path("", include("apps.services.urls")),
     path("", include("apps.appointments.urls")),

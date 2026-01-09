@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "bootstrap_modal_forms",
     "simple_history",
     # Local apps
+    "dashboard",
     "apps.clients",
     "apps.services",
     "apps.appointments",

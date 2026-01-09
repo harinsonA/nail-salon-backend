@@ -1,5 +1,6 @@
 from datetime import date, time
 from decimal import Decimal
+from django.urls import reverse_lazy
 from result import Ok, Err, Result
 
 from apps.appointments.models.agenda import Cita
@@ -124,7 +125,7 @@ class HandlerAgendaList:
         return f"{day} - {weekday_name}"
 
     @staticmethod
-    def __get_client_full_name(**kwargs) -> str:
+    def get_client_full_name(**kwargs) -> str:
         first_name = kwargs.get("cliente__nombre", "")
         last_name = kwargs.get("cliente__apellido", "")
         return f"{first_name} {last_name}".strip()
@@ -146,11 +147,24 @@ class HandlerAgendaList:
                     "date": self.__get_date_formatted(**agenda),
                     "agendas": [],
                 }
+            agenda_id = agenda.get("pk")
             agendas_by_date[date_id]["agendas"].append(
                 {
                     **agenda,
-                    "cliente_full_name": self.__get_client_full_name(**agenda),
+                    "cliente_full_name": self.get_client_full_name(**agenda),
                     "formatted_time": self.__get_formatted_time(**agenda),
+                    "agenda_update_modal_url": reverse_lazy(
+                        "agenda_update_modal", args=[agenda_id]
+                    ),
+                    "agenda_cancel_modal_url": reverse_lazy(
+                        "agenda_cancel_modal", args=[agenda_id]
+                    ),
+                    "agenda_delete_modal_url": reverse_lazy(
+                        "agenda_delete_modal", args=[agenda_id]
+                    ),
+                    "agenda_confirmation_modal_url": reverse_lazy(
+                        "agenda_confirmation_modal", args=[agenda_id]
+                    ),
                 }
             )
         return [agenda for agenda in agendas_by_date.values()]
