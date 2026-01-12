@@ -135,6 +135,79 @@ class AgendaModalForm(BSModalModelForm):
         return self.instance
 
 
+class AgendaConfirmationForm(BSModalModelForm):
+    full_payment = forms.BooleanField(
+        label="Pago completo",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(
+            attrs={
+                "class": "form-check-input",
+            }
+        ),
+    )
+    remaining_payment = forms.IntegerField(
+        label="Restante",
+        initial=0,
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "min": "0",
+                "placeholder": "0",
+                "readonly": "readonly",
+            }
+        ),
+    )
+    down_payment = forms.IntegerField(
+        label="Monto abonado",
+        initial=0,
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "min": "0",
+                "placeholder": "0",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.remaining_payment_value = self.__get_initial_remaining_payment()
+        self.fields["remaining_payment"].initial = self.remaining_payment_value
+
+    def __get_initial_remaining_payment(self) -> int:
+        total_amount = 0
+        details = self.instance.detalles.values_list("precio_acordado")
+        for detail in details:
+            price_acorded = detail[0]
+            total_amount += price_acorded
+        return total_amount
+
+    class Meta:
+        model = Cita
+        fields = []
+
+    def save(self, commit=False):
+        return self.instance
+
+    def clean_down_payment(self):
+        down_payment = self.cleaned_data.get("down_payment", 0)
+        full_payment = self.cleaned_data.get("full_payment", False)
+        if not full_payment and not down_payment:
+            raise forms.ValidationError(
+                "El monto abonado debe ser mayor a cero si no es pago completo."
+            )
+        if down_payment >= self.remaining_payment_value:
+            raise forms.ValidationError(
+                "El monto abonado no puede ser mayor o igual al total de la cita."
+            )
+        return down_payment
+
+
 # endregion
 """========================================================================="""
 """========================================================================="""
@@ -350,34 +423,53 @@ class AgendaUpdateModalView(BSModalUpdateView):
         )
 
 
-class AgendaCancelModalView(BSModalReadView):
-    template_name = "appointments/agenda_cancel_modal.html"
-    model = Cita
+class AgendaBaseModalView:
+    """Base class for agenda modal views that provides common context data"""
 
     @staticmethod
-    def __get_client_full_name(object_base) -> str:
+    def _get_client_full_name(object_base) -> str:
         first_name = object_base.cliente.nombre or ""
         last_name = object_base.cliente.apellido or ""
         return f"{first_name} {last_name}".strip()
 
     @staticmethod
-    def __get_date_formatted(object_base) -> str:
+    def _get_date_formatted(object_base) -> str:
         day = object_base.fecha_agenda.day
         month = MONTH_NUMBER_TO_NAME[object_base.fecha_agenda.month]
         year = object_base.fecha_agenda.year
         return f"{day} de {month} del {year}"
 
     @staticmethod
-    def __get_time_formatted(object_base) -> str:
+    def _get_time_formatted(object_base) -> str:
         return object_base.hora_agenda.strftime("%H:%M")
 
     @staticmethod
-    def __get_phone_number(object_base) -> str:
+    def _get_phone_number(object_base) -> str:
         return object_base.cliente.telefono or "Sin teléfono"
 
     @staticmethod
-    def __get_services_count(object_base) -> int:
-        return object_base.detalles.count()
+    def _get_details(object_base) -> int:
+        counts = object_base.detalles.count()
+        details = object_base.detalles.values_list(
+            "precio_acordado",
+            "descuento",
+            "cantidad_servicios",
+            "servicio__precio",
+        )
+        service_totals = 0
+        detail_totals = 0
+        descount_totals = 0
+        for detail in details:
+            total, discount, quantity, service_price = detail
+            detail_totals += total
+            descount_totals += discount
+            service_totals += service_price * quantity
+        return {
+            "services_count": counts,
+            "detail_totals": detail_totals,
+            "discount_totals": descount_totals,
+            "service_totals": service_totals,
+        }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -386,14 +478,19 @@ class AgendaCancelModalView(BSModalReadView):
         context.update(
             {
                 "appointment_id": object_base.pk,
-                "client_full_name": self.__get_client_full_name(object_base),
-                "date_formatted": self.__get_date_formatted(object_base),
-                "time_formatted": self.__get_time_formatted(object_base),
-                "phone_number": self.__get_phone_number(object_base),
-                "services_count": self.__get_services_count(object_base),
+                "client_full_name": self._get_client_full_name(object_base),
+                "date_formatted": self._get_date_formatted(object_base),
+                "time_formatted": self._get_time_formatted(object_base),
+                "phone_number": self._get_phone_number(object_base),
+                **self._get_details(object_base),
             }
         )
         return context
+
+
+class AgendaCancelModalView(AgendaBaseModalView, BSModalReadView):
+    template_name = "appointments/agenda_cancel_modal.html"
+    model = Cita
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -408,9 +505,9 @@ class AgendaCancelModalView(BSModalReadView):
         message = (
             "La agenda de %(client_name)s para el día %(date)s a las %(time)s fue cancelada."
         ) % {
-            "client_name": self.__get_client_full_name(self.object),
-            "date": self.__get_date_formatted(self.object),
-            "time": self.__get_time_formatted(self.object),
+            "client_name": self._AgendaBaseModalView__get_client_full_name(self.object),
+            "date": self._AgendaBaseModalView__get_date_formatted(self.object),
+            "time": self._AgendaBaseModalView__get_time_formatted(self.object),
         }
         return JsonResponse(
             {"message": message},
@@ -493,22 +590,33 @@ class AgendaDeleteModalView(BSModalReadView):
         )
 
 
-class AgendaConfirmationModal(BSModalUpdateView):
+class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
     template_name = "appointments/agenda_confirmation_modal.html"
     model = Cita
-    form_class = AgendaModalForm
+    form_class = AgendaConfirmationForm
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        object_base = context["object"]
-        context.update(
-            {
-                "client_full_name": f"{object_base.cliente.nombre} {object_base.cliente.apellido}",
-                "date_formatted": object_base.fecha_agenda.strftime("%d/%m/%Y"),
-                "time_formatted": object_base.hora_agenda.strftime("%H:%M"),
-            }
-        )
-        return context
+    def __get_message_success(self) -> str:
+        return (
+            "La cita de %(client_name)s para el día %(date)s a las %(time)s fue "
+            "completada."
+        ) % {
+            "client_name": self._get_client_full_name(self.object),
+            "date": self._get_date_formatted(self.object),
+            "time": self._get_time_formatted(self.object),
+        }
+
+    def form_valid(self, form):
+        cleaned_data = form.cleaned_data
+        full_payment = cleaned_data.get("full_payment", False)
+        self.object.estado = Cita.EstadoChoices.COMPLETADA
+
+        print(cleaned_data)
+        message = self.__get_message_success()
+        return JsonResponse({"message": message}, status=200)
+
+    def form_invalid(self, form):
+        errors = get_errors_to_response(form.errors)
+        return JsonResponse({"errors": errors}, status=HTTP_400_BAD_REQUEST)
 
 
 # endregion

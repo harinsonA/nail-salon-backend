@@ -1,3 +1,4 @@
+{% load humanize %}
 <form id="agenda-confirmation-modal" action="{{ modal_url }}" method="post">
   {% csrf_token %}
   <div class="modal-header bg-secondary bg-gradient">
@@ -32,9 +33,21 @@
         <b>Teléfono</b>
         <span>{{ phone_number }}</span>
       </p>
-      <p class="m-0 py-1 d-flex justify-content-between fs-6">
+      <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
         <b>Servicios</b>
         <span>{{ services_count }} servicio{{ services_count|pluralize }}</span>
+      </p>
+      <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+        <b>Monto</b>
+        <span>$ {{ service_totals|intcomma }}</span>
+      </p>
+      <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+        <b>Descuento</b>
+        <span>$ {{ discount_totals|intcomma }}</span>
+      </p>
+      <p class="m-0 py-1 d-flex justify-content-between fs-6">
+        <b>Total a pagar</b>
+        <span>$ {{ detail_totals|intcomma }}</span>
       </p>
     </div>
   </div>

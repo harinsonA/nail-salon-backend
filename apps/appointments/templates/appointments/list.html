@@ -7,7 +7,6 @@ Agenda de citas
 {% block content %}
 {% include 'common/canvas_modal.html' %}
 {% include 'common/bs_modal.html' %}
-{% include 'common/bs_xl_modal.html' %}
 <section>
 	<section class="row">
 		<div class="col-12 col-lg-4">
@@ -136,7 +135,7 @@ Agenda de citas
 								</a>
 							</li>
 							<li>
-								<a class="dropdown-item bs-xl-modal fs-6" data-form-url="${agenda_confirmation_modal_url}">
+								<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_confirmation_modal_url}">
 									<span class="material-symbols-outlined text-success">
 										check_circle
 									</span>
@@ -212,7 +211,6 @@ Agenda de citas
 					initializeMonthPickers();
 					initializeAllCanvasBSModals();
 					initializeAllBSModals();
-					initializeAllBSXLModals();
 				},
 			},
 		};
@@ -238,6 +236,14 @@ Agenda de citas
 				const url = form.attr('action');
 				const [response = {}, status] = await getResponseToRequest(url);
 				notifyAlert(response, status);
+				if ([200].includes(status)) {
+					$(currentTarget).modal('hide');
+					table.draw();
+				}
+			});
+			$('#agenda_confirmation_btn').off('click').on('click', async () => {
+				const form = $(currentTarget).find('form');
+				const [response = {}, status] = await submitRequestBSModal(form[0]);
 				if ([200].includes(status)) {
 					$(currentTarget).modal('hide');
 					table.draw();
