@@ -1,0 +1,62 @@
+{% load humanize %}
+<form id="agenda-restore-modal" action="{{ modal_url }}" method="post">
+    {% csrf_token %}
+    <div class="modal-header bg-success bg-gradient">
+        <h5 class="modal-title text-white d-inline-flex align-items-center">
+            <span class="material-symbols-outlined me-2">
+                restore
+            </span>
+            <span class="pb-1">
+                Restaurar cita
+            </span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <p class="m-0 mb-2 text-color-muted">
+            <b>Estás a punto de restaurar la siguiente cita:</b>
+        </p>
+        <div class="delete-information-container">
+            <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+                <b>ID</b>
+                <span>{{ appointment_id }}</span>
+            </p>
+            <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+                <b>Fecha y Hora</b>
+                <span>{{ date_formatted }} - {{ time_formatted }}</span>
+            </p>
+            <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+                <b>Cliente</b>
+                <span>{{ client_full_name }}</span>
+            </p>
+            <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+                <b>Teléfono</b>
+                <span>{{ phone_number }}</span>
+            </p>
+            <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+                <b>Servicios</b>
+                <span>{{ services_count }} servicio{{ services_count|pluralize }}</span>
+            </p>
+            <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+                <b>Monto</b>
+                <span>$ {{ service_totals|intcomma }}</span>
+            </p>
+            <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
+                <b>Descuento</b>
+                <span>$ {{ discount_totals|intcomma }}</span>
+            </p>
+            <p class="m-0 py-1 d-flex justify-content-between fs-6">
+                <b>Total a pagar</b>
+                <span>$ {{ detail_totals|intcomma }}</span>
+            </p>
+        </div>
+    </div>
+    <div class="modal-footer bg-black bg-gradient">
+        <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+            Cerrar
+        </button>
+        <button id="agenda_restore_btn" type="button" class="btn btn-sm btn-success bg-gradient">
+            Restaurar cita
+        </button>
+    </div>
+</form>

@@ -2,8 +2,10 @@ from django.urls import path
 from apps.appointments.views.agenda import (
     AppointmentsView,
     AgendaListView,
+    AgendaSeeModalView,
     AgendaUpdateModalView,
     AgendaCancelModalView,
+    AgendaRestoreModalView,
     AgendaConfirmationModal,
     AgendaDeleteModalView,
 )
@@ -35,6 +37,11 @@ urlpatterns = [
         name="agenda_update_modal",
     ),
     path(
+        "agenda/detalle/<str:pk>/ver/modal/",
+        AgendaSeeModalView.as_view(),
+        name="agenda_see_modal",
+    ),
+    path(
         "agenda/detalle/<str:pk>/confirmar/modal/",
         AgendaConfirmationModal.as_view(),
         name="agenda_confirmation_modal",
@@ -43,6 +50,11 @@ urlpatterns = [
         "agenda/detalle/<str:pk>/cancelar/modal/",
         AgendaCancelModalView.as_view(),
         name="agenda_cancel_modal",
+    ),
+    path(
+        "agenda/detalle/<str:pk>/restaurar/modal/",
+        AgendaRestoreModalView.as_view(),
+        name="agenda_restore_modal",
     ),
     path(
         "agenda/detalle/<str:pk>/eliminar/modal/",

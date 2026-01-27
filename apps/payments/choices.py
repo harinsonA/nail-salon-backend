@@ -30,12 +30,14 @@ class MetodoPago:
 
 
 class EstadoPago:
-    PAGADO = "PAGADO"
     PENDIENTE = "PENDIENTE"
-    CANCELADO = "CANCELADO"
+    COMPLETADO = "COMPLETADO"
+    REEMBOLSADO = "REEMBOLSADO"
+    IMPAGO = "IMPAGO"
 
     CHOICES = [
-        (PAGADO, "Pagado"),
         (PENDIENTE, "Pendiente"),
-        (CANCELADO, "Cancelado"),
+        (COMPLETADO, "Completado"),
+        (REEMBOLSADO, "Reembolsado"),
+        (IMPAGO, "Impago"),
     ]

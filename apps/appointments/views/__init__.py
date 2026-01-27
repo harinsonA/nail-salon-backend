@@ -5,6 +5,7 @@ from .agenda import (
     AgendaListView,
     AgendaUpdateModalView,
     AgendaCancelModalView,
+    AgendaSeeModalView,
 )
 from .agenda_create import (
     AgendaCreateView,
@@ -17,6 +18,7 @@ __all__ = [
     "AgendaListView",
     "AgendaCancelModalView",
     "AgendaCreateView",
+    "AgendaSeeModalView",
     "AgendaUpdateModalView",
     "AvailableHoursAjax",
     "ServiceDetailsAjax",

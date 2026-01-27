@@ -1,0 +1,41 @@
+{% load humanize %}
+<form id="agenda-see-modal" action="{{ modal_url }}" method="get">
+	{% csrf_token %}
+	<div class="modal-header bg-dark-subtle bg-gradient">
+		<h5 class="modal-title text-black d-inline-flex align-items-center">
+			<span class="material-symbols-outlined me-2">
+				info
+			</span>
+			<span>
+				Detalle de los servicios
+			</span>
+		</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	</div>
+	<div class="modal-body">
+		<section class="table-container--custom">
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th scope="col" class="text-left">Servicio</th>
+						<th scope="col" class="text-center">Cantidad</th>
+						<th scope="col" class="text-center">Precio</th>
+						<th scope="col" class="text-center">Total</th>
+						<th scope="col" class="text-center text-danger">Descuento</th>
+						<th scope="col" class="text-center text-success">Total a Pagar</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="text-left">Servicio I</td>
+						<td class="text-center">1</td>
+						<td class="text-center">$ 10000</td>
+						<td class="text-center">$ 10000</td>
+						<td class="text-center text-danger">$ 0</td>
+						<td class="text-center text-success">$ 10000</td>
+					</tr>
+				</tbody>
+			</table>
+		</section>
+	</div>
+</form>

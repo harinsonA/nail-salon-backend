@@ -1,11 +1,12 @@
 import json
 
-from datetime import date
+from datetime import date, datetime
 from django import forms
 from django.contrib import messages
 from django.db.models import Count
 from django.http import JsonResponse
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from rest_framework.status import HTTP_400_BAD_REQUEST
@@ -16,6 +17,8 @@ from apps.appointments.models import DetalleCita
 from apps.appointments.models.agenda import Cita
 from apps.appointments.views.handler import HandlerAgendaList
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.payments.choices import MetodoPago, EstadoPago
+from apps.payments.models import Pago, DetallePago
 from apps.common.custom_time_fields import (
     CustomMonthField,
     CustomDateField,
@@ -136,6 +139,28 @@ class AgendaModalForm(BSModalModelForm):
 
 
 class AgendaConfirmationForm(BSModalModelForm):
+    payment_method = forms.ChoiceField(
+        label="Método de pago",
+        choices=MetodoPago.CHOICES,
+        required=False,
+        initial=MetodoPago.EFECTIVO,
+        widget=forms.Select(
+            attrs={
+                "class": FORM_SELECT_CLASS,
+            }
+        ),
+    )
+    payment_reference = forms.CharField(
+        label="Referencia de pago",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "placeholder": "Nro. de recibo, transacción, etc.",
+            }
+        ),
+    )
     full_payment = forms.BooleanField(
         label="Pago completo",
         required=False,
@@ -174,6 +199,17 @@ class AgendaConfirmationForm(BSModalModelForm):
         ),
     )
 
+    observations = forms.CharField(
+        required=False,
+        label="Observaciones",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "class": FORM_CONTROL_TEXTAREA_CLASS,
+            }
+        ),
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.remaining_payment_value = self.__get_initial_remaining_payment()
@@ -206,6 +242,18 @@ class AgendaConfirmationForm(BSModalModelForm):
                 "El monto abonado no puede ser mayor o igual al total de la cita."
             )
         return down_payment
+
+    def clean_payment_reference(self):
+        payment_reference = self.cleaned_data.get("payment_reference", "")
+        payment_method = self.cleaned_data.get("payment_method", "")
+
+        is_cash = payment_method == MetodoPago.EFECTIVO
+        has_no_reference = not payment_reference or not payment_reference.strip()
+
+        if not is_cash and has_no_reference:
+            raise forms.ValidationError("Debe ingresar una referencia de pago.")
+
+        return payment_reference
 
 
 # endregion
@@ -423,6 +471,11 @@ class AgendaUpdateModalView(BSModalUpdateView):
         )
 
 
+class AgendaSeeModalView(BSModalReadView):
+    template_name = "appointments/agenda_see_modal.html"
+    model = Cita
+
+
 class AgendaBaseModalView:
     """Base class for agenda modal views that provides common context data"""
 
@@ -458,16 +511,16 @@ class AgendaBaseModalView:
         )
         service_totals = 0
         detail_totals = 0
-        descount_totals = 0
+        discount_totals = 0
         for detail in details:
             total, discount, quantity, service_price = detail
             detail_totals += total
-            descount_totals += discount
+            discount_totals += discount
             service_totals += service_price * quantity
         return {
             "services_count": counts,
             "detail_totals": detail_totals,
-            "discount_totals": descount_totals,
+            "discount_totals": discount_totals,
             "service_totals": service_totals,
         }
 
@@ -505,9 +558,36 @@ class AgendaCancelModalView(AgendaBaseModalView, BSModalReadView):
         message = (
             "La agenda de %(client_name)s para el día %(date)s a las %(time)s fue cancelada."
         ) % {
-            "client_name": self._AgendaBaseModalView__get_client_full_name(self.object),
-            "date": self._AgendaBaseModalView__get_date_formatted(self.object),
-            "time": self._AgendaBaseModalView__get_time_formatted(self.object),
+            "client_name": self._get_client_full_name(self.object),
+            "date": self._get_date_formatted(self.object),
+            "time": self._get_time_formatted(self.object),
+        }
+        return JsonResponse(
+            {"message": message},
+            status=200,
+        )
+
+
+class AgendaRestoreModalView(AgendaBaseModalView, BSModalReadView):
+    template_name = "appointments/agenda_restore_modal.html"
+    model = Cita
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.estado != Cita.EstadoChoices.CANCELADA:
+            message = "Solo se pueden restaurar las agendas en estado Cancelada."
+            return JsonResponse(
+                {"message": message},
+                status=HTTP_400_BAD_REQUEST,
+            )
+        self.object.estado = Cita.EstadoChoices.PENDIENTE
+        self.object.save()
+        message = (
+            "La agenda de %(client_name)s para el día %(date)s a las %(time)s fue restaurada a Pendiente."
+        ) % {
+            "client_name": self._get_client_full_name(self.object),
+            "date": self._get_date_formatted(self.object),
+            "time": self._get_time_formatted(self.object),
         }
         return JsonResponse(
             {"message": message},
@@ -605,12 +685,74 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
             "time": self._get_time_formatted(self.object),
         }
 
+    @staticmethod
+    def __get_payment_instance(
+        object_base: Cita,
+        client_full_name: str,
+        full_payment: bool,
+        details: dict,
+    ) -> Pago:
+        total_amount = details.get("detail_totals", 0)
+        discount_amount = details.get("discount_totals", 0)
+        appointment_date_time = timezone.make_aware(
+            datetime.combine(object_base.fecha_agenda, object_base.hora_agenda)
+        )
+        payment_instance = Pago(
+            cita=object_base,
+            monto_total_cita=total_amount,
+            cliente_nombre=client_full_name,
+            fecha_cita=appointment_date_time,
+            descuento_total=discount_amount,
+        )
+        if full_payment:
+            payment_instance.estado_pago = EstadoPago.COMPLETADO
+            payment_instance.fecha_pago_completado = timezone.now()
+        payment_instance.save()
+        return payment_instance
+
+    @staticmethod
+    def __save_payment_details(
+        payment_instance: Pago,
+        cleaned_data: dict,
+        full_payment: bool,
+    ) -> None:
+        amount_paid = (
+            payment_instance.monto_total_cita
+            if full_payment
+            else cleaned_data.get("down_payment", 0)
+        )
+        payment_method = cleaned_data.get("payment_method", MetodoPago.EFECTIVO)
+        observation = cleaned_data.get("observations", "")
+        payment_detail_instance = DetallePago(
+            pago=payment_instance,
+            fecha_pago=timezone.now(),
+            monto_pago=amount_paid,
+            metodo_pago=payment_method,
+            notas_detalle=observation,
+        )
+        if payment_method != MetodoPago.EFECTIVO:
+            payment_reference = cleaned_data.get("payment_reference", "")
+            payment_detail_instance.referencia_pago = payment_reference
+        payment_detail_instance.save()
+
     def form_valid(self, form):
         cleaned_data = form.cleaned_data
+        details = self._get_details(self.object)
+        client_full_name = self._get_client_full_name(self.object)
         full_payment = cleaned_data.get("full_payment", False)
+        payment_instance = self.__get_payment_instance(
+            object_base=self.object,
+            client_full_name=client_full_name,
+            full_payment=full_payment,
+            details=details,
+        )
+        self.__save_payment_details(
+            payment_instance=payment_instance,
+            cleaned_data=cleaned_data,
+            full_payment=full_payment,
+        )
         self.object.estado = Cita.EstadoChoices.COMPLETADA
-
-        print(cleaned_data)
+        self.object.save()
         message = self.__get_message_success()
         return JsonResponse({"message": message}, status=200)
 

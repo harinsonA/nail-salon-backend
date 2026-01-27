@@ -7,6 +7,7 @@ Agenda de citas
 {% block content %}
 {% include 'common/canvas_modal.html' %}
 {% include 'common/bs_modal.html' %}
+{% include 'common/bs_xl_modal.html' %}
 <section>
 	<section class="row">
 		<div class="col-12 col-lg-4">
@@ -95,28 +96,99 @@ Agenda de citas
 		},
 	};
 	$(() => {
-		// Inicializar modal lateral
-
 		const filterData = {
 			months: $('#{{ filter_form.months.id_for_label }}').val(),
 			status: $('#{{ filter_form.status.id_for_label }}').val(),
 		};
 
+		const optionsBuilder = (options) => {
+			const {
+				agenda_update_modal_url = '',
+				agenda_cancel_modal_url = '',
+				agenda_delete_modal_url = '',
+				agenda_confirmation_modal_url = '',
+				agenda_restore_modal_url = '',
+				is_agenda_completed = false,
+			} = options;
+			if (agenda_restore_modal_url) {
+				return `<li>
+					<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_restore_modal_url}">
+						<span class="material-symbols-outlined text-success">
+							restore
+						</span>
+						Restaurar
+					</a>
+				</li>`;
+			}
+
+			if (is_agenda_completed) {
+				return `<li>
+					<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_delete_modal_url}">
+						<span class="material-symbols-outlined text-danger">
+							delete
+						</span>
+						Eliminar
+					</a>
+				</li>`;
+			}
+
+			return `<li>
+				<a class="dropdown-item canvas-modal fs-6" data-form-url="${agenda_update_modal_url}">
+					<span class="material-symbols-outlined text-primary">
+						edit
+					</span>
+					Editar
+				</a>
+			</li>
+			<li>
+				<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_confirmation_modal_url}">
+					<span class="material-symbols-outlined text-success">
+						check_circle
+					</span>
+					Completada
+				</a>
+			</li>
+			<li>
+				<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_cancel_modal_url}">
+					<span class="material-symbols-outlined text-secondary">
+						content_paste_off
+					</span>
+					Cancelar
+				</a>
+			</li>
+			<li>
+				<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_delete_modal_url}">
+					<span class="material-symbols-outlined text-danger">
+						delete
+					</span>
+					Eliminar
+				</a>
+			</li>`;
+		};
+
 		const accordionItemTemplate = (accordionId, collapseId, data) => {
 			return `<div id="${collapseId}" class="accordion-collapse collapse show" data-bs-parent="#${accordionId}">
 				<div class="accordion-body ps-md-5">
-					${Array.from(data).map(({ cliente_full_name, formatted_time, estado, cantidad_servicios, agenda_update_modal_url, agenda_cancel_modal_url, agenda_delete_modal_url, agenda_confirmation_modal_url }) => {
+					${Array.from(data).map(({ cliente_full_name, formatted_time, estado, cantidad_servicios, ...options }) => {
 				return `<div class="mb-3 d-flex justify-content-between align-items-center">
 					<div>
 						<p class="mb-1">
 							<b>
 								<span class="material-symbols-outlined"> nest_clock_farsight_analog </span> ${formatted_time} -
 							</b>
-							${cliente_full_name} - 
-							<span class="material-symbols-outlined ${agendaStatusIcon[estado].color}">${agendaStatusIcon[estado].icon}</span>
+							${cliente_full_name}
+							<span class="material-symbols-outlined ${agendaStatusIcon[estado].color}">
+								${agendaStatusIcon[estado].icon}
+							</span>
 						</p>
 						<p class="mb-0 ps-3 text-body-secondary text-small font-monospace">
-							Servicios: ${cantidad_servicios}
+							Servicios: ${cantidad_servicios} 
+							<a role="button" data-form-url="${options.agenda_see_modal_url}" class="ms-2 bs-xl-modal text-decoration-none">
+								<span class="material-symbols-outlined fs-6">
+									visibility
+								</span>
+								Ver 
+							</a>
 						</p>
 					</div>
 					<div class="btn-group dropstart">
@@ -126,38 +198,7 @@ Agenda de citas
 							</span>
 						</button>
 						<ul class="dropdown-menu">
-							<li>
-								<a class="dropdown-item canvas-modal fs-6" data-form-url="${agenda_update_modal_url}">
-									<span class="material-symbols-outlined text-primary">
-										edit
-									</span>
-									Editar
-								</a>
-							</li>
-							<li>
-								<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_confirmation_modal_url}">
-									<span class="material-symbols-outlined text-success">
-										check_circle
-									</span>
-									Completada
-								</a>
-							</li>
-							<li>
-								<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_cancel_modal_url}">
-									<span class="material-symbols-outlined text-secondary">
-										content_paste_off
-									</span>
-									Cancelar
-								</a>
-							</li>
-							<li>
-								<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_delete_modal_url}">
-									<span class="material-symbols-outlined text-danger">
-										delete
-									</span>
-									Eliminar
-								</a>
-							</li>
+							${optionsBuilder(options)}
 						</ul>
 					</div>
 				</div>`;
@@ -211,6 +252,7 @@ Agenda de citas
 					initializeMonthPickers();
 					initializeAllCanvasBSModals();
 					initializeAllBSModals();
+					initializeAllBSXLModals();
 				},
 			},
 		};
@@ -221,7 +263,7 @@ Agenda de citas
 		});
 
 		$('#modal').on('show.bs.modal', function ({ currentTarget }) {
-			$('#agenda_cancel_btn').off('click').on('click', async () => {
+			const handleSimpleModalAction = async () => {
 				const form = $(currentTarget).find('form');
 				const url = form.attr('action');
 				const [response = {}, status] = await getResponseToRequest(url);
@@ -230,17 +272,8 @@ Agenda de citas
 					$(currentTarget).modal('hide');
 					table.draw();
 				}
-			});
-			$('#delete_submit_btn').off('click').on('click', async () => {
-				const form = $(currentTarget).find('form');
-				const url = form.attr('action');
-				const [response = {}, status] = await getResponseToRequest(url);
-				notifyAlert(response, status);
-				if ([200].includes(status)) {
-					$(currentTarget).modal('hide');
-					table.draw();
-				}
-			});
+			};
+			$('#agenda_cancel_btn, #agenda_restore_btn, #delete_submit_btn').off('click').on('click', handleSimpleModalAction);
 			$('#agenda_confirmation_btn').off('click').on('click', async () => {
 				const form = $(currentTarget).find('form');
 				const [response = {}, status] = await submitRequestBSModal(form[0]);
