@@ -16,7 +16,10 @@
       <div class="offcanvas-body">
         <ul class="navbar-nav justify-content-center flex-grow-1 pe-3">
           <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="#">Dashboard</a>
+            <a class="nav-link active" aria-current="page" href="{% url 'home' %}">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="{% url 'calendar' %}">Calendario</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'appointments' %}">Agenda</a>
@@ -30,15 +33,12 @@
           <!-- Usuario y Configuración -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Usuario
+              Pagos
             </a>
             <ul class="dropdown-menu dropdown-menu-dark">
-              <li>
-                <h6 class="dropdown-header">Cuenta</h6>
-              </li>
-              <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
-              <li><a class="dropdown-item" href="#">Configuración</a></li>
-              <li><a class="dropdown-item" href="#">Cambiar Contraseña</a></li>
+              <li><a class="dropdown-item" href="{% url 'payments' %}">Completados</a></li>
+              <li><a class="dropdown-item" href="#">Recibidos</a></li>
+              <li><a class="dropdown-item" href="#">Deudores</a></li>
               <li>
                 <hr class="dropdown-divider">
               </li>

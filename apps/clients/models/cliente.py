@@ -48,9 +48,9 @@ class Cliente(TimeStampedModel, SoftDeletableModel):
     history = HistoricalRecords(inherit=True)
 
     # Managers
+    objects = models.Manager()  # Manager por defecto (todos)
     activos = ClienteActivoManager()  # Solo activos
     inactivos = ClienteInactivoManager()  # Solo inactivos
-    objects = models.Manager()  # Manager por defecto (todos)
 
     class Meta:
         app_label = "clients"

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block view_title %}
+Lista de pagos
+{% endblock %}
+
+{% block content %}
+{% include 'common/bs_modal.html' %}
+<section>
+  <section class="row justify-content-center">
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Total de pagos</span>
+            <span class="material-symbols-outlined text-primary ms-2">
+              info
+            </span>
+          </h6>
+          <h4 class="card-title text-end">
+            <span id="payments_totals_id">0</span>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Total de descuentos</span>
+            <span class="material-symbols-outlined text-primary ms-2">
+              info
+            </span>
+          </h6>
+          <h4 class="card-title text-end">
+            <span id="payments_discounts_id">0</span>
+          </h4>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="table-container--custom">
+    <table id="payments_table" class="table table-hover ">
+      <thead>
+        <tr>
+          <th scope="col" class="text-start">Cliente</th>
+          <th scope="col" class="text-center">Fecha cita</th>
+          <th scope="col" class="text-end text-black">Descuento</th>
+          <th scope="col" class="text-end text-black">Monto pagado</th>
+          <th scope="col" class="text-center">Fecha pago completado</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    const dataTableConfig = {
+      tableID: '#payments_table',
+      url: '{{ url_payments_list }}',
+      requestData: {},
+      extraConfig: {
+        ajax: {
+          dataSrc: (json) => {
+            $('#payments_totals_id').text(json.monto_total_cita);
+            $('#payments_discounts_id').text(json.descuento_total);
+            return json.data;
+          },
+        },
+      },
+      columns: [
+        { data: 'cliente_nombre', className: 'fs-7 w-auto text-start text-nowrap' },
+        { data: 'fecha_cita_display', className: 'fs-7 w-auto text-center' },
+        { data: 'descuento_total_formatted', className: 'fs-7 w-auto text-end text-danger' },
+        { data: 'monto_total_cita_formatted', className: 'fs-7 w-auto text-end text-success' },
+        { data: 'fecha_pago_completado_display', className: 'fs-7 w-auto text-center' },
+      ],
+    };
+
+    renderDataTable(dataTableConfig);
+  });
+</script>
+{% endblock %}

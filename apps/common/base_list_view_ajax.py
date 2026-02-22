@@ -65,6 +65,10 @@ class BaseListViewAjax(ListView):
     def add_options_column(data: list) -> list:
         return data
 
+    @staticmethod
+    def additional_data(queryset) -> dict:
+        return {}
+
     def get_context_data(self, **kwargs):
         queryset = self.get_queryset()
 
@@ -81,6 +85,7 @@ class BaseListViewAjax(ListView):
             "data": data,
             "recordsTotal": total_records,
             "recordsFiltered": total_records,
+            **self.additional_data(queryset),
         }
 
     def render_to_response(self, context, **response_kwargs):

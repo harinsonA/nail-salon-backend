@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block view_title %}
+Calendario
+{% endblock %}
+
+{% block content %}
+<section>
+  <section class="table-calendar-container--custom">
+    <table id="calendar_table" class="table table-calendar--custom">
+      <thead>
+        <tr>
+          <th scope="col">Lunes</th>
+          <th scope="col">Martes</th>
+          <th scope="col">Miércoles</th>
+          <th scope="col">Jueves</th>
+          <th scope="col">Viernes</th>
+          <th scope="col">Sábado</th>
+          <th scope="col">Domingo</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </section>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+  $(() => {
+    const filterData = {
+      months: $('#{{ filter_form.months.id_for_label }}').val(),
+    };
+
+    const dayColumn = ({ day, in_month, is_today }) => {
+      return `<a class="day-card ${in_month ? '' : 'day-card--disabled'}" href="#">
+        <div class="day-card-header">
+          <p class="text ${is_today ? 'text--today' : ''}">${day}</p>
+        </div>
+        <div class="day-card-body">
+          <p class="text">Citas: 0</p>
+        </div>
+      </a>`;
+    }
+
+    const dataTableConfig = {
+      tableID: '#calendar_table',
+      url: '{{ url_calendar_list }}',
+      requestData: filterData,
+      columns: [
+        { data: ({ monday }) => dayColumn(monday), className: "day-card-container", width: "14.2%" },
+        { data: ({ tuesday }) => dayColumn(tuesday), className: "day-card-container", width: "14.2%" },
+        { data: ({ wednesday }) => dayColumn(wednesday), className: "day-card-container", width: "14.2%" },
+        { data: ({ thursday }) => dayColumn(thursday), className: "day-card-container", width: "14.2%" },
+        { data: ({ friday }) => dayColumn(friday), className: "day-card-container", width: "14.2%" },
+        { data: ({ saturday }) => dayColumn(saturday), className: "day-card-container", width: "14.2%" },
+        { data: ({ sunday }) => dayColumn(sunday), className: "day-card-container", width: "14.2%" },
+      ],
+      extraConfig: {
+        ordering: false,
+        paging: false,
+        info: false,
+        customStartTop: () => `
+					<div class="input-group">
+						<span class="input-group-text">
+							<span class="material-symbols-outlined text-primary">
+								calendar_month
+							</span>
+						</span>
+						{{ filter_form.months }}
+					</div>
+				`,
+        drawCallback: () => {
+          initializeMonthPickers();
+        },
+      },
+    };
+    const calendarTable = renderDataTable(dataTableConfig);
+    $('#{{ filter_form.months.id_for_label }}').on('change', ({ target }) => {
+      filterData[target.name] = target.value;
+      calendarTable.draw();
+    });
+  })
+</script>
+{% endblock %}

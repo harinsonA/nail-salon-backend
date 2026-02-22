@@ -1,4 +1,5 @@
 from django.urls import path
+from apps.appointments.views.calendar.view import CalendarView, CalendarListView
 from apps.appointments.views.agenda import (
     AppointmentsView,
     AgendaListView,
@@ -16,6 +17,16 @@ from apps.appointments.views.agenda_create import (
 )
 
 urlpatterns = [
+    path(
+        "calendario/",
+        CalendarView.as_view(),
+        name="calendar",
+    ),
+    path(
+        "calendario/lista/ajax/",
+        CalendarListView.as_view(),
+        name="calendar_list",
+    ),
     path(
         "agenda/",
         AppointmentsView.as_view(),

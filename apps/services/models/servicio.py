@@ -50,9 +50,9 @@ class Servicio(TimeStampedModel, SoftDeletableModel):
     history = HistoricalRecords(inherit=True)
 
     # Managers
+    objects = models.Manager()  # Manager por defecto (todos)
     activos = ServicioActivoManager()  # Solo activos
     inactivos = ServicioInactivoManager()  # Solo inactivos
-    objects = models.Manager()  # Manager por defecto (todos)
 
     class Meta:
         app_label = "services"
