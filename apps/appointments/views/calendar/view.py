@@ -131,6 +131,10 @@ class CalendarListView(BaseListViewAjax):
                     "day": day["day"],
                     "in_month": day["in_month"],
                     "is_today": _date == _today,
+                    "calendar_appointments_url": reverse_lazy(
+                        "calendar_appointments",
+                        kwargs={"date": _date.strftime("%Y-%m-%d")},
+                    ),
                 }
             data.append(base_week)
         return data
@@ -140,7 +144,6 @@ class CalendarListView(BaseListViewAjax):
         _date = _filters.get("fecha_agenda__gte")
         year = _date.year
         month = _date.month
-        print("_filters", _filters)
         weeks = self.get_detailed_weeks(year, month)
         calendar_data = self.get_calendar_data(weeks)
         return {

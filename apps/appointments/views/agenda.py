@@ -20,10 +20,10 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.payments.choices import MetodoPago, EstadoPago
 from apps.payments.models import Pago, DetallePago
 from apps.common.custom_time_fields import (
-    CustomMonthField,
     CustomDateField,
     MONTH_NUMBER_TO_NAME,
 )
+from apps.common.utils.dates import format_full_date
 from apps.common.utils.utils import get_errors_to_response
 from apps.services.models import Servicio
 
@@ -42,10 +42,6 @@ FORM_SELECT_CLASS = "form-select form-select--custom"
 
 
 class AgendaFilterForm(forms.Form):
-    months = CustomMonthField(
-        label="Mes",
-        required=False,
-    )
     status = forms.ChoiceField(
         label="Estado",
         required=False,
@@ -53,16 +49,23 @@ class AgendaFilterForm(forms.Form):
         choices=Cita.EstadoChoices.choices,
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
+    date_selected = CustomDateField(
+        required=False,
+        label="Fecha de la cita",
+    )
 
     def clean(self):
         cleaned_data = super().clean()
+        print("\n\n cleaned_data", cleaned_data, "\n\n")
         agendaStatus = cleaned_data.get("status", Cita.EstadoChoices.PENDIENTE)
-        first_day, last_day = cleaned_data.get("months", (None, None))
-        return {
-            "estado": agendaStatus,
-            "fecha_agenda__gte": first_day,
-            "fecha_agenda__lte": last_day,
-        }
+        date_selected = cleaned_data.get("date_selected")
+
+        filters = {"estado": agendaStatus}
+
+        if date_selected:
+            filters["fecha_agenda"] = date_selected
+        print("\n\n filters", filters, "\n\n")
+        return filters
 
 
 class AgendaModalForm(BSModalModelForm):
@@ -124,11 +127,11 @@ class AgendaModalForm(BSModalModelForm):
     )
 
     def clean_date_agenda(self):
-        date_agenda = self.cleaned_data.get("date_agenda", "")
+        date_agenda = self.cleaned_data.get("date_agenda")
         if not date_agenda:
             raise forms.ValidationError("La fecha de la cita es obligatoria.")
-        day, month, year = date_agenda.split("/")
-        return date(year=int(year), month=int(month), day=int(day))
+        # CustomDateField.to_python() ya convirtió el string a objeto date
+        return date_agenda
 
     class Meta:
         model = Cita
@@ -270,15 +273,34 @@ class AppointmentsView(TemplateView):
         today = date.today()
         return f"{today.strftime('%B %Y')}".capitalize()
 
+    @staticmethod
+    def get_date_instance(**kwargs) -> date:
+        _date = kwargs.get("date", "")
+        date_instance = (
+            datetime.strptime(_date, "%Y-%m-%d").date() if _date else date.today()
+        )
+        return date_instance
+
+    def get_date_initial(self, **kwargs):
+        _date = kwargs.get("date", "")
+        if _date:
+            date_instance = datetime.strptime(_date, "%Y-%m-%d").date()
+            return date_instance.strftime("%d/%m/%Y")
+        return ""
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        date_instance = self.get_date_instance(**kwargs)
+        date_initial = self.get_date_initial(**kwargs)
         context.update(
             {
                 "filter_form": AgendaFilterForm(
-                    initial={"months": self.get_initial_month()}
+                    initial={"date_selected": date_initial}
                 ),
                 "url_agenda_list": reverse_lazy("agenda_list"),
                 "url_agenda_create": reverse_lazy("agenda_create"),
+                "full_date": format_full_date(date_instance),
+                "date_initial": date_initial,
             }
         )
         return context
@@ -312,9 +334,8 @@ class AgendaListView(BaseListViewAjax):
         )
 
     def get_values(self, queryset):
-        values = [
-            *queryset.values(*self.field_list).order_by("fecha_agenda", "hora_agenda")
-        ]
+        print("\n\n self.field_list", self.field_list, "\n\n")
+        values = [*queryset.values(*self.field_list).order_by("hora_agenda")]
         return HandlerAgendaList().get_data(values)
 
 

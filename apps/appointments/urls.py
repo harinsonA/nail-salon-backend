@@ -28,6 +28,11 @@ urlpatterns = [
         name="calendar_list",
     ),
     path(
+        "calendario/agenda/<str:date>/",
+        AppointmentsView.as_view(),
+        name="calendar_appointments",
+    ),
+    path(
         "agenda/",
         AppointmentsView.as_view(),
         name="appointments",

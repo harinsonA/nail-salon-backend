@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from calendar import monthrange
 from django import forms
 from django.db.models import TextChoices
@@ -52,7 +52,10 @@ class CustomDateField(forms.CharField):
         value = super().to_python(value)
         if not value:
             return None
-        return value
+        if isinstance(value, date):
+            return value
+        day, month, year = value.split("/")
+        return date(year=int(year), month=int(month), day=int(day))
 
 
 class CustomMonthField(forms.CharField):

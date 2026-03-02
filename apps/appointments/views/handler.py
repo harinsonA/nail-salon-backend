@@ -140,6 +140,7 @@ class HandlerAgendaList:
     def __get_agendas_grouped_by_date(self, values: list) -> dict:
         agendas_by_date = {}
         for agenda in values:
+            print("\n\n agenda sin agrupar", agenda, "\n\n")
             date_id = agenda.get("fecha_agenda").strftime("%Y_%m_%d")
             if date_id not in agendas_by_date:
                 agendas_by_date[date_id] = {
@@ -148,7 +149,6 @@ class HandlerAgendaList:
                     "agendas": [],
                 }
             agenda_id = agenda.get("pk")
-            print(agenda)
             agenda_object = {
                 **agenda,
                 "cliente_full_name": self.get_client_full_name(**agenda),

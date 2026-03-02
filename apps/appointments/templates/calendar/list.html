@@ -32,8 +32,8 @@ Calendario
       months: $('#{{ filter_form.months.id_for_label }}').val(),
     };
 
-    const dayColumn = ({ day, in_month, is_today }) => {
-      return `<a class="day-card ${in_month ? '' : 'day-card--disabled'}" href="#">
+    const dayColumn = ({ day, in_month, is_today, calendar_appointments_url }) => {
+      return `<a class="day-card ${in_month ? '' : 'day-card--disabled'}" href="${calendar_appointments_url}">
         <div class="day-card-header">
           <p class="text ${is_today ? 'text--today' : ''}">${day}</p>
         </div>

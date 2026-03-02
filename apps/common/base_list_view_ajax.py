@@ -49,6 +49,7 @@ class BaseListViewAjax(ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        print("\n\n self.get_filters()", self.get_filters(), "\n\n")
         return queryset.filter(**self.get_filters())
 
     def get_values(self, queryset):

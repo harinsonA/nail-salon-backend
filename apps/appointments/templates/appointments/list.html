@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block view_title %}
-Agenda de citas
+Citas: {{ full_date }}
 {% endblock %}
 
 {% block content %}
@@ -97,7 +97,7 @@ Agenda de citas
 	};
 	$(() => {
 		const filterData = {
-			months: $('#{{ filter_form.months.id_for_label }}').val(),
+			date_selected: $('#{{ filter_form.date_selected.id_for_label }}').val() || '{{ date_initial }}',
 			status: $('#{{ filter_form.status.id_for_label }}').val(),
 		};
 
@@ -235,6 +235,7 @@ Agenda de citas
 				ajax: {
 					dataSrc: (json) => {
 						$('#agenda_totals_id').text(json.recordsTotal);
+						console.log("\n\n ajax dataSrc", json.data, "\n\n");
 						return json.data;
 					},
 				},
@@ -245,11 +246,13 @@ Agenda de citas
 								calendar_month
 							</span>
 						</span>
-						{{ filter_form.months }}
+						{{ filter_form.date_selected }}
 					</div>
 				`,
+				initComplete: () => {
+					initializeDatePickers();
+				},
 				drawCallback: () => {
-					initializeMonthPickers();
 					initializeAllCanvasBSModals();
 					initializeAllBSModals();
 					initializeAllBSXLModals();
@@ -257,8 +260,9 @@ Agenda de citas
 			},
 		};
 		const table = renderDataTable(dataTableConfig);
-		$('#{{ filter_form.months.id_for_label }}, #{{ filter_form.status.id_for_label }}').on('change', ({ target }) => {
+		$('#{{ filter_form.date_selected.id_for_label }}, #{{ filter_form.status.id_for_label }}').on('change', ({ target }) => {
 			filterData[target.name] = target.value;
+			console.log("\n\n filterData change", filterData, "\n\n");
 			table.draw();
 		});
 

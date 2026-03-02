@@ -119,10 +119,9 @@ class AvailableHoursFilterForm(forms.Form):
         date_agenda = cleaned_data.get("date_agenda", None)
         if not date_agenda:
             return {}
-        day, month, year = map(int, date_agenda.split("/"))
-        date_selected = date(year=year, month=month, day=day)
+        # CustomDateField.to_python() ya convirtió el string a objeto date
         return {
-            "fecha_agenda": date_selected,
+            "fecha_agenda": date_agenda,
         }
 
 
