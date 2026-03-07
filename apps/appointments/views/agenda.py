@@ -3,7 +3,8 @@ import json
 from datetime import date, datetime
 from django import forms
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Value
+from django.db.models.functions import Concat
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -13,8 +14,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from bootstrap_modal_forms.forms import BSModalModelForm
 from bootstrap_modal_forms.generic import BSModalUpdateView, BSModalReadView
 
-from apps.appointments.models import DetalleCita
-from apps.appointments.models.agenda import Cita
+from apps.appointments.models import DetalleCita, Cita
 from apps.appointments.views.handler import HandlerAgendaList
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.payments.choices import MetodoPago, EstadoPago
@@ -56,15 +56,13 @@ class AgendaFilterForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        print("\n\n cleaned_data", cleaned_data, "\n\n")
         agendaStatus = cleaned_data.get("status", Cita.EstadoChoices.PENDIENTE)
         date_selected = cleaned_data.get("date_selected")
 
         filters = {"estado": agendaStatus}
 
         if date_selected:
-            filters["fecha_agenda"] = date_selected
-        print("\n\n filters", filters, "\n\n")
+            filters["fecha_agenda__in"] = [date_selected]
         return filters
 
 
@@ -290,15 +288,18 @@ class AppointmentsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        date_instance = self.get_date_instance(**kwargs)
-        date_initial = self.get_date_initial(**kwargs)
+        _date_selected = context["date"]
+        date_instance = self.get_date_instance(date=_date_selected)
+        date_initial = self.get_date_initial(date=_date_selected)
         context.update(
             {
                 "filter_form": AgendaFilterForm(
                     initial={"date_selected": date_initial}
                 ),
                 "url_agenda_list": reverse_lazy("agenda_list"),
-                "url_agenda_create": reverse_lazy("agenda_create"),
+                "url_agenda_create": reverse_lazy(
+                    "create_appointment_from_calendar", args=[_date_selected]
+                ),
                 "full_date": format_full_date(date_instance),
                 "date_initial": date_initial,
             }
@@ -312,16 +313,17 @@ class AgendaListView(BaseListViewAjax):
 
     field_list = [
         "pk",
-        "cliente__nombre",
-        "cliente__apellido",
-        "fecha_agenda",
+        "cliente_full_name",
         "hora_agenda",
         "estado",
         "cantidad_servicios",
     ]
 
     ordering_fields = {
-        "0": "fecha_agenda",
+        "0": "hora_agenda",
+        "1": "cliente_full_name",
+        "2": "estado",
+        "3": "cantidad_servicios",
     }
 
     def get_queryset(self):
@@ -330,13 +332,23 @@ class AgendaListView(BaseListViewAjax):
             .get_queryset()
             .select_related("cliente")
             .prefetch_related("detalles")
-            .annotate(cantidad_servicios=Count("detalles"))
+            .annotate(
+                cantidad_servicios=Count("detalles"),
+                cliente_full_name=Concat(
+                    "cliente__nombre", Value(" "), "cliente__apellido"
+                ),
+            )
         )
 
     def get_values(self, queryset):
-        print("\n\n self.field_list", self.field_list, "\n\n")
-        values = [*queryset.values(*self.field_list).order_by("hora_agenda")]
-        return HandlerAgendaList().get_data(values)
+        values = super().get_values(queryset)
+        for value in values:
+            value["formatted_time"] = HandlerAgendaList.get_formatted_time(**value)
+            value["agenda_see_modal_url"] = reverse_lazy(
+                "agenda_see_modal", args=[value["pk"]]
+            )
+            value.update(HandlerAgendaList.get_options(value["pk"], value["estado"]))
+        return values
 
 
 class AgendaUpdateModalView(BSModalUpdateView):
@@ -495,6 +507,49 @@ class AgendaUpdateModalView(BSModalUpdateView):
 class AgendaSeeModalView(BSModalReadView):
     template_name = "appointments/agenda_see_modal.html"
     model = Cita
+
+    @staticmethod
+    def get_services_data(object_base):
+        appointment_details = (
+            object_base.detalles.all()
+            .select_related("servicio")
+            .values_list(
+                "pk",
+                "servicio__nombre",
+                "cantidad_servicios",
+                "servicio__precio",
+                "precio_acordado",
+                "descuento",
+            )
+        )
+        services_data = []
+        for detail in appointment_details:
+            (
+                detail_id,
+                service_name,
+                quantity_services,
+                service_price,
+                price_acorded,
+                discount,
+            ) = detail
+            services_data.append(
+                {
+                    "detail_id": detail_id,
+                    "name": service_name,
+                    "quantity": quantity_services,
+                    "price": service_price,
+                    "total": service_price * quantity_services,
+                    "discount": discount,
+                    "price_acorded": price_acorded,
+                }
+            )
+        return services_data
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        object_base = context["object"]
+        context.update({"services": self.get_services_data(object_base)})
+        return context
 
 
 class AgendaBaseModalView:

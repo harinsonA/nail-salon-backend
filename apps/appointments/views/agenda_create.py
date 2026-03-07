@@ -137,23 +137,31 @@ class AgendaCreateView(FormView):
 
     def get_initial(self):
         initial = super().get_initial()
+        _date_selected = self.kwargs.get("date", date.today().strftime("%Y-%m-%d"))
+        _year, _month, _day = _date_selected.split("-")
         initial.update(
             {
-                "date_agenda": date.today().strftime("%d/%m/%Y"),
-                "time_agenda": datetime.now().strftime("%H:%M"),
+                "date_agenda": f"{_day}/{_month}/{_year}",
+                "time_agenda": "09:00",
             }
         )
         return initial
 
-    def get_success_url(self):
-        return reverse_lazy("agenda_list")
+    def get_success_url(self, **kwargs):
+        _date_selected = kwargs.get("date", date.today().strftime("%Y-%m-%d"))
+        return reverse_lazy("calendar_appointments", kwargs={"date": _date_selected})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        _date_selected = self.kwargs.get("date", date.today().strftime("%Y-%m-%d"))
         context.update(
             {
-                "cancel_url": reverse_lazy("appointments"),
-                "agenda_create_url": reverse_lazy("agenda_create"),
+                "cancel_url": reverse_lazy(
+                    "calendar_appointments", kwargs={"date": _date_selected}
+                ),
+                "agenda_create_url": reverse_lazy(
+                    "create_appointment_from_calendar", kwargs={"date": _date_selected}
+                ),
                 "service_details_url": reverse_lazy("service_details_ajax"),
                 "available_hours_url": reverse_lazy("available_hours_ajax"),
             }
@@ -202,7 +210,7 @@ class AgendaCreateView(FormView):
                 status=HTTP_400_BAD_REQUEST,
             )
         messages.success(request, result.ok())
-        return JsonResponse({"success_url": reverse_lazy("appointments")})
+        return JsonResponse({"success_url": self.get_success_url(**kwargs)})
 
 
 class ServiceDetailsAjax(TemplateView):

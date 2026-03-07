@@ -107,92 +107,53 @@ class HandlerAgenda:
 
 class HandlerAgendaList:
     @staticmethod
-    def __get_date_formatted(**kwargs) -> str:
-        fecha_agenda = kwargs.get("fecha_agenda")
-        if not fecha_agenda:
-            return "--"
-        day = fecha_agenda.strftime("%d")
-        weekdays = [
-            "lunes",
-            "martes",
-            "miércoles",
-            "jueves",
-            "viernes",
-            "sábado",
-            "domingo",
-        ]
-        weekday_name = weekdays[fecha_agenda.weekday()].capitalize()
-        return f"{day} - {weekday_name}"
-
-    @staticmethod
     def get_client_full_name(**kwargs) -> str:
         first_name = kwargs.get("cliente__nombre", "")
         last_name = kwargs.get("cliente__apellido", "")
         return f"{first_name} {last_name}".strip()
 
     @staticmethod
-    def __get_formatted_time(**kwargs) -> str:
+    def get_formatted_time(**kwargs) -> str:
         hora_agenda = kwargs.get("hora_agenda")
         if not hora_agenda:
             return "--:--"
         return hora_agenda.strftime("%H:%M")
 
-    def __get_agendas_grouped_by_date(self, values: list) -> dict:
-        agendas_by_date = {}
-        for agenda in values:
-            print("\n\n agenda sin agrupar", agenda, "\n\n")
-            date_id = agenda.get("fecha_agenda").strftime("%Y_%m_%d")
-            if date_id not in agendas_by_date:
-                agendas_by_date[date_id] = {
-                    "pk": date_id,
-                    "date": self.__get_date_formatted(**agenda),
-                    "agendas": [],
-                }
-            agenda_id = agenda.get("pk")
-            agenda_object = {
-                **agenda,
-                "cliente_full_name": self.get_client_full_name(**agenda),
-                "formatted_time": self.__get_formatted_time(**agenda),
-                "agenda_see_modal_url": reverse_lazy(
-                    "agenda_see_modal", args=[agenda_id]
+    @staticmethod
+    def get_options(agenda_id, agenda_status) -> dict:
+        options = {}
+        if agenda_status == Cita.EstadoChoices.PENDIENTE:
+            options["options"] = {
+                "agenda_update_modal_url": reverse_lazy(
+                    "agenda_update_modal", args=[agenda_id]
+                ),
+                "agenda_cancel_modal_url": reverse_lazy(
+                    "agenda_cancel_modal", args=[agenda_id]
+                ),
+                "agenda_delete_modal_url": reverse_lazy(
+                    "agenda_delete_modal", args=[agenda_id]
+                ),
+                "agenda_confirmation_modal_url": reverse_lazy(
+                    "agenda_confirmation_modal", args=[agenda_id]
                 ),
             }
-            if Cita.EstadoChoices.PENDIENTE == agenda.get("estado"):
-                agenda_object = {
-                    **agenda_object,
-                    "agenda_update_modal_url": reverse_lazy(
-                        "agenda_update_modal", args=[agenda_id]
-                    ),
-                    "agenda_cancel_modal_url": reverse_lazy(
-                        "agenda_cancel_modal", args=[agenda_id]
-                    ),
-                    "agenda_delete_modal_url": reverse_lazy(
-                        "agenda_delete_modal", args=[agenda_id]
-                    ),
-                    "agenda_confirmation_modal_url": reverse_lazy(
-                        "agenda_confirmation_modal", args=[agenda_id]
-                    ),
-                }
-            if Cita.EstadoChoices.COMPLETADA == agenda.get("estado"):
-                agenda_object = {
-                    **agenda_object,
-                    "agenda_delete_modal_url": reverse_lazy(
-                        "agenda_delete_modal", args=[agenda_id]
-                    ),
-                    "is_agenda_completed": True,
-                }
-            if Cita.EstadoChoices.CANCELADA == agenda.get("estado"):
-                agenda_object = {
-                    **agenda_object,
-                    "agenda_restore_modal_url": reverse_lazy(
-                        "agenda_restore_modal", args=[agenda_id]
-                    ),
-                    "agenda_delete_modal_url": reverse_lazy(
-                        "agenda_delete_modal", args=[agenda_id]
-                    ),
-                }
-            agendas_by_date[date_id]["agendas"].append(agenda_object)
-        return [agenda for agenda in agendas_by_date.values()]
-
-    def get_data(self, values: list) -> list:
-        return self.__get_agendas_grouped_by_date(values)
+            return options
+        if agenda_status == Cita.EstadoChoices.COMPLETADA:
+            options["options"] = {
+                "agenda_delete_modal_url": reverse_lazy(
+                    "agenda_delete_modal", args=[agenda_id]
+                ),
+                "is_agenda_completed": True,
+            }
+            return options
+        if agenda_status == Cita.EstadoChoices.CANCELADA:
+            options["options"] = {
+                "agenda_restore_modal_url": reverse_lazy(
+                    "agenda_restore_modal", args=[agenda_id]
+                ),
+                "agenda_delete_modal_url": reverse_lazy(
+                    "agenda_delete_modal", args=[agenda_id]
+                ),
+            }
+            return options
+        return options

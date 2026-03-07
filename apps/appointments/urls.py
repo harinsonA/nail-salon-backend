@@ -33,19 +33,14 @@ urlpatterns = [
         name="calendar_appointments",
     ),
     path(
-        "agenda/",
-        AppointmentsView.as_view(),
-        name="appointments",
+        "calendario/agenda/<str:date>/crear/",
+        AgendaCreateView.as_view(),
+        name="create_appointment_from_calendar",
     ),
     path(
         "agenda/lista/ajax/",
         AgendaListView.as_view(),
         name="agenda_list",
-    ),
-    path(
-        "agenda/crear",
-        AgendaCreateView.as_view(),
-        name="agenda_create",
     ),
     path(
         "agenda/detalle/<str:pk>/editar/modal/",

@@ -26,14 +26,16 @@
 					</tr>
 				</thead>
 				<tbody>
+					{% for service in services %}
 					<tr>
-						<td class="text-left">Servicio I</td>
-						<td class="text-center">1</td>
-						<td class="text-center">$ 10000</td>
-						<td class="text-center">$ 10000</td>
-						<td class="text-center text-danger">$ 0</td>
-						<td class="text-center text-success">$ 10000</td>
+						<td class="text-left">{{ service.name }}</td>
+						<td class="text-center">{{ service.quantity }}</td>
+						<td class="text-center">$ {{ service.price }}</td>
+						<td class="text-center">$ {{ service.total }}</td>
+						<td class="text-center text-danger">$ {{ service.discount }}</td>
+						<td class="text-center text-success">$ {{ service.price_acorded }}</td>
 					</tr>
+					{% endfor %}
 				</tbody>
 			</table>
 		</section>

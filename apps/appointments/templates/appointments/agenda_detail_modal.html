@@ -354,7 +354,6 @@
       });
       const _isServiceIncluded = isServiceIncluded();
       const isDisable = _isServiceIncluded || !areFieldsFilled;
-      console.log({ isDisable, _isServiceIncluded, areFieldsFilled });
       $('#add-service-btn').prop('disabled', isDisable);
       $('#service-alert-added').toggleClass('d-none', !_isServiceIncluded);
     });

@@ -400,7 +400,6 @@ Crear Cita
         const data = { agenda: JSON.stringify(agendaData) };
         const [response = {}, status] = await getResponseToRequest(url, data);
         if ([200].includes(status)) {
-          console.log(response);
           window.location.href = response.success_url;
           return;
         }
