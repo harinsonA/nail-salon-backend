@@ -116,7 +116,41 @@ class CalendarListView(BaseListViewAjax):
         return weeks
 
     @staticmethod
-    def get_calendar_data(weeks: dict) -> list:
+    def _get_queryset(_filters: dict) -> dict:
+        first_day = _filters.get("fecha_agenda__gte")
+        last_day = _filters.get("fecha_agenda__lte")
+        queryset = (
+            Cita.objects.exclude(estado=Cita.EstadoChoices.CANCELADA)
+            .filter(
+                fecha_agenda__gte=first_day,
+                fecha_agenda__lte=last_day,
+            )
+            .values_list("pk", "fecha_agenda", "estado")
+        )
+        return queryset
+
+    def get_aggregate_appointments_by_date(self, _filters: dict) -> dict:
+        queryset = self._get_queryset(_filters)
+        data = {}
+        for __, appointment_date, appointment_status in queryset:
+            if appointment_date not in data:
+                data[appointment_date] = {
+                    "pending_totals": 0,
+                    "completed_totals": 0,
+                    "is_all_completed": False,
+                }
+            if appointment_status == Cita.EstadoChoices.PENDIENTE:
+                data[appointment_date]["pending_totals"] += 1
+            elif appointment_status == Cita.EstadoChoices.COMPLETADA:
+                data[appointment_date]["completed_totals"] += 1
+            data[appointment_date]["is_all_completed"] = (
+                data[appointment_date]["pending_totals"] == 0
+                and data[appointment_date]["completed_totals"] > 0
+            )
+        return data
+
+    @staticmethod
+    def get_calendar_data(weeks: dict, appointments_by_date: dict) -> list:
         data = []
         _today = date.today()
         for week_number, days in weeks.items():
@@ -135,17 +169,19 @@ class CalendarListView(BaseListViewAjax):
                         "calendar_appointments",
                         kwargs={"date": _date.strftime("%Y-%m-%d")},
                     ),
+                    **appointments_by_date.get(_date, {}),
                 }
             data.append(base_week)
         return data
 
     def get_context_data(self, **kwargs):
         _filters = self.get_filters()
+        appointments_by_date = self.get_aggregate_appointments_by_date(_filters)
         _date = _filters.get("fecha_agenda__gte")
         year = _date.year
         month = _date.month
         weeks = self.get_detailed_weeks(year, month)
-        calendar_data = self.get_calendar_data(weeks)
+        calendar_data = self.get_calendar_data(weeks, appointments_by_date)
         return {
             "data": calendar_data,
             "recordsTotal": len(calendar_data),

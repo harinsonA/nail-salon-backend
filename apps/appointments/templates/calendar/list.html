@@ -10,13 +10,13 @@ Calendario
     <table id="calendar_table" class="table table-calendar--custom">
       <thead>
         <tr>
-          <th scope="col">Lunes</th>
-          <th scope="col">Martes</th>
-          <th scope="col">Miércoles</th>
-          <th scope="col">Jueves</th>
-          <th scope="col">Viernes</th>
-          <th scope="col">Sábado</th>
-          <th scope="col">Domingo</th>
+          <th scope="col" class="text-center">Lunes</th>
+          <th scope="col" class="text-center">Martes</th>
+          <th scope="col" class="text-center">Miércoles</th>
+          <th scope="col" class="text-center">Jueves</th>
+          <th scope="col" class="text-center">Viernes</th>
+          <th scope="col" class="text-center">Sábado</th>
+          <th scope="col" class="text-center">Domingo</th>
         </tr>
       </thead>
       <tbody>
@@ -32,13 +32,32 @@ Calendario
       months: $('#{{ filter_form.months.id_for_label }}').val(),
     };
 
-    const dayColumn = ({ day, in_month, is_today, calendar_appointments_url }) => {
+    const totalsDisplay = (pendingTotals, completedTotals) => {
+      if (pendingTotals === 0 && completedTotals === 0) return '';
+      return `<div class="totals-container">
+        <div class="totals-item totals-item-pending">
+          <p class="totals-item-title">Pendientes</p>
+          <p class="totals-item-amount">${pendingTotals}</p>
+        </div>
+        <div class="totals-item totals-item-completed">
+          <p class="totals-item-title">Completados</p>
+          <p class="totals-item-amount">${completedTotals}</p>
+        </div>
+      </div>`;
+    }
+
+    const dayColumn = ({ day, in_month, is_today, calendar_appointments_url, ...arguments }) => {
+      const {
+        pending_totals: pendingTotals = 0,
+        completed_totals: completedTotals = 0,
+        is_all_completed: isAllCompleted = false,
+      } = arguments;
       return `<a class="day-card ${in_month ? '' : 'day-card--disabled'}" href="${calendar_appointments_url}">
         <div class="day-card-header">
           <p class="text ${is_today ? 'text--today' : ''}">${day}</p>
         </div>
         <div class="day-card-body">
-          <p class="text">Citas: 0</p>
+          ${totalsDisplay(pendingTotals, completedTotals)}
         </div>
       </a>`;
     }
