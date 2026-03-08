@@ -14,38 +14,38 @@ Citas: {{ full_date }}
 			<div class="card rounded-4 agenda-card">
 				<div class="card-body">
 					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
-						<span>Total de Citas</span>
-						<span class="material-symbols-outlined text-primary">
-							calendar_today
-						</span>
-					</h6>
-					<h4 id="agenda_totals_id" class="card-title">0</h4>
-				</div>
-			</div>
-		</div>
-		<div class="col-12 col-lg-4">
-			<div class="card rounded-4 agenda-card">
-				<div class="card-body">
-					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
-						<span>Citas Atendidas</span>
-						<span class="material-symbols-outlined text-success">
-							check_circle
-						</span>
-					</h6>
-					<h4 class="card-title">80</h4>
-				</div>
-			</div>
-		</div>
-		<div class="col-12 col-lg-4">
-			<div class="card rounded-4 agenda-card">
-				<div class="card-body">
-					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
-						<span>Citas Pendientes</span>
+						<span>Total de Pendientes</span>
 						<span class="material-symbols-outlined text-warning">
 							pending_actions
 						</span>
 					</h6>
-					<h4 class="card-title">64</h4>
+					<h4 id="pending_totals_id" class="card-title">0</h4>
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-lg-4">
+			<div class="card rounded-4 agenda-card">
+				<div class="card-body">
+					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
+						<span>Citas Completadas</span>
+						<span class="material-symbols-outlined text-success">
+							check_circle
+						</span>
+					</h6>
+					<h4 id="completed_totals_id" class="card-title">0</h4>
+				</div>
+			</div>
+		</div>
+		<div class="col-12 col-lg-4">
+			<div class="card rounded-4 agenda-card">
+				<div class="card-body">
+					<h6 class="card-subtitle d-flex justify-content-between mb-2 text-body-secondary mb-2 mb-lg-4">
+						<span>Citas Canceladas</span>
+						<span class="material-symbols-outlined text-danger">
+							cancel
+						</span>
+					</h6>
+					<h4 id="cancelled_totals_id" class="card-title">0</h4>
 				</div>
 			</div>
 		</div>
@@ -209,7 +209,9 @@ Citas: {{ full_date }}
 			extraConfig: {
 				ajax: {
 					dataSrc: (json) => {
-						$('#agenda_totals_id').text(json.recordsTotal);
+						$('#pending_totals_id').text(json.total_pendientes || 0);
+						$('#completed_totals_id').text(json.total_completadas || 0);
+						$('#cancelled_totals_id').text(json.total_canceladas || 0);
 						return json.data;
 					},
 				},

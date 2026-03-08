@@ -3,7 +3,7 @@ import json
 from datetime import date, datetime
 from django import forms
 from django.contrib import messages
-from django.db.models import Count, Value
+from django.db.models import Count, Q, Value
 from django.db.models.functions import Concat
 from django.http import JsonResponse
 from django.urls import reverse_lazy
@@ -349,6 +349,22 @@ class AgendaListView(BaseListViewAjax):
             )
             value.update(HandlerAgendaList.get_options(value["pk"], value["estado"]))
         return values
+
+    def additional_data(self, queryset):
+        _filters = self.get_filters()
+        date_selected = _filters.get("fecha_agenda__in", None)
+        if not date_selected:
+            return {}
+        additional_data = self.model.objects.filter(
+            fecha_agenda__in=date_selected
+        ).aggregate(
+            total_pendientes=Count("pk", filter=Q(estado=Cita.EstadoChoices.PENDIENTE)),
+            total_completadas=Count(
+                "pk", filter=Q(estado=Cita.EstadoChoices.COMPLETADA)
+            ),
+            total_canceladas=Count("pk", filter=Q(estado=Cita.EstadoChoices.CANCELADA)),
+        )
+        return {**additional_data}
 
 
 class AgendaUpdateModalView(BSModalUpdateView):
