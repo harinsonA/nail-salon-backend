@@ -43,9 +43,13 @@ class HandlerAgenda:
     def __get_agenda_detail_instance(
         self, agenda_instance: Cita, service: dict
     ) -> DetalleCita:
+        servicio = self.services.get(service.get("id"))
         return DetalleCita(
             cita=agenda_instance,
-            servicio=self.services.get(service.get("id")),
+            servicio=servicio,
+            nombre_servicio=servicio.nombre,
+            precio_servicio=servicio.precio,
+            duracion_estimada_servicio=servicio.duracion_estimada,
             precio_acordado=Decimal(f"{service.get('total', 0)}"),
             cantidad_servicios=service.get("cantidad", 1),
             notas_detalle=service.get("observaciones", ""),

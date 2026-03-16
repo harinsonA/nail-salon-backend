@@ -1,0 +1,33 @@
+<div class="modal fade" id="welcomeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  aria-labelledby="welcomeModalLabel" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="welcomeModalLabel">¡Bienvenido a Hi Agenda!</h5>
+      </div>
+      <div class="modal-body">
+        <p>Para comenzar a agendar citas en el calendario, primero necesitas registrar tus primeros clientes y los
+          servicios que vas a
+          ofrecer.</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <a href="{% url 'clients' %}" class="btn btn-primary">
+          <b>
+            <span class="material-symbols-outlined">
+              person
+            </span>
+            Ir a Clientes
+          </b>
+        </a>
+        <a href="{% url 'services' %}" class="btn btn-primary">
+          <b>
+            <span class="material-symbols-outlined">
+              build
+            </span>
+            Ir a Servicios
+          </b>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

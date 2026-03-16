@@ -8,6 +8,7 @@ from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import DurationInMinutesField
+from apps.common.utils.currency import format_currency
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from ..models.servicio import Servicio
 
@@ -244,7 +245,7 @@ class ServiceListView(BaseListViewAjax):
                     "estimated_duration_display": self.get_estimated_duration_display(
                         estimated_duration=item.get("duracion_estimada")
                     ),
-                    "price_formatted": f"$ {item.get('precio', 0):,.0f}",
+                    "price_formatted": format_currency(item.get("precio", 0)),
                     "status": item.get("estado") == Servicio.EstadoChoices.ACTIVO,
                 }
             )

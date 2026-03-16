@@ -148,7 +148,7 @@ Crear Cita
       Añadir servicio
     </button>
   </section>
-  <section>
+  <section class="mt-4">
     <table id="services_added_table" class="table">
       <thead>
         <tr>
@@ -383,8 +383,8 @@ Crear Cita
       </section>`;
     };
 
-    const customStartTop = () => `
-      <button type ="button" class="btn btn-primary btn-sm d-none" id="add-agenda-btn">
+    const topEnd = () => `
+      <button type ="button" class="btn btn-primary btn-sm" id="add-agenda-btn" disabled>
         <span class="material-symbols-outlined">
           add
         </span>
@@ -413,7 +413,7 @@ Crear Cita
       ],
       extraConfig: {
         data: () => Array.from(agendaSet),
-        customStartTop,
+        layout: { topEnd },
         searching: false,
         info: false,
         serverSide: false,
@@ -434,7 +434,7 @@ Crear Cita
 
     const toggleAddAgendaButton = () => {
       const hasAgendas = Boolean(agendaSet.size);
-      $('#add-agenda-btn').toggleClass('d-none', !hasAgendas);
+      $('#add-agenda-btn').prop('disabled', !hasAgendas);
     }
 
     const deleteServiceFromAgenda = (clientID, serviceID, serviceDate) => {

@@ -24,10 +24,16 @@ Calendario
     </table>
   </section>
 </section>
+
+{% include "calendar/_welcome_modal.html" %}
 {% endblock %}
 {% block extra_js %}
 <script>
+  const canCreateAgenda = '{{ can_create_agenda }}' === 'True';
   $(() => {
+    if (!canCreateAgenda) {
+      $('#welcomeModal').modal('show');
+    }
     const filterData = {
       months: $('#{{ filter_form.months.id_for_label }}').val(),
     };

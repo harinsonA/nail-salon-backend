@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block view_title %}
+Lista de deudores
+{% endblock %}
+
+{% block content %}
+{% include 'common/bs_modal.html' %}
+{% include 'common/bs_xl_modal.html' %}
+<section>
+  <section class="row justify-content-center">
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Total pendiente</span>
+            <span class="material-symbols-outlined text-primary ms-2">
+              info
+            </span>
+          </h6>
+          <h4 class="card-title text-end text-primary">
+            <b id="debtors_totals_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Total abonado</span>
+            <span class="material-symbols-outlined text-primary ms-2">
+              info
+            </span>
+          </h6>
+          <h4 class="card-title text-end text-success">
+            <b id="debtors_total_paid_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="table-container--custom">
+    <table id="debtors_table" class="table table-hover table-striped">
+      <thead>
+        <tr>
+          <th scope="col" class="text-start">Fecha cita</th>
+          <th scope="col" class="text-start">Cliente</th>
+          <th scope="col" class="text-center text-black">Total servicio</th>
+          <th scope="col" class="text-center text-black">Total Abonado</th>
+          <th scope="col" class="text-center text-black">Total Pendiente</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    const debtDetailColumn = ({ fecha_cita_display: fechaCitaDisplay, debt_detail_url: debtDetailUrl }) => `
+    <a class="bs-xl-modal estilos-anclas" data-form-url="${debtDetailUrl}">
+      <b>${fechaCitaDisplay}</b>
+    </a>`;
+
+    const dataTableConfig = {
+      tableID: '#debtors_table',
+      url: '{{ url_debtors_list }}',
+      requestData: {},
+      extraConfig: {
+        ajax: {
+          dataSrc: (json) => {
+            $('#debtors_totals_id').text(json.monto_total_cita);
+            $('#debtors_total_paid_id').text(json.total_abonado);
+            return json.data;
+          },
+        },
+        drawCallback: () => {
+          initializeAllCanvasBSModals();
+          initializeAllBSModals();
+          initializeAllBSXLModals();
+        },
+      },
+      columns: [
+        { data: (data) => debtDetailColumn(data), className: 'fs-7 w-auto text-start' },
+        { data: 'cliente_nombre', className: 'fs-7 w-auto text-start text-nowrap' },
+        { data: 'monto_total_cita_formatted', className: 'fs-7 w-auto text-center text-primary' },
+        { data: 'total_abonado_formatted', className: 'fs-7 w-auto text-center text-success' },
+        { data: 'saldo_pendiente_formatted', className: 'fs-7 w-auto text-center' },
+      ],
+    };
+
+    renderDataTable(dataTableConfig);
+  });
+</script>
+{% endblock %}

@@ -6,7 +6,15 @@ class DetalleCita(TimeStampedModel):
     cita = models.ForeignKey(
         "appointments.Cita", on_delete=models.CASCADE, related_name="detalles"
     )
-    servicio = models.ForeignKey("services.Servicio", on_delete=models.CASCADE)
+    servicio = models.ForeignKey(
+        "services.Servicio", on_delete=models.SET_NULL, null=True
+    )
+
+    # Snapshot del servicio al momento de agendar
+    nombre_servicio = models.CharField(max_length=200)
+    precio_servicio = models.DecimalField(max_digits=10, decimal_places=0)
+    duracion_estimada_servicio = models.DurationField(blank=True, null=True)
+
     precio_acordado = models.DecimalField(max_digits=10, decimal_places=0)
     cantidad_servicios = models.PositiveIntegerField(default=1)
     notas_detalle = models.TextField(blank=True, null=True)
@@ -21,13 +29,18 @@ class DetalleCita(TimeStampedModel):
         db_table = "detalle_cita"
         verbose_name = "Detalle de Cita"
         verbose_name_plural = "Detalles de Citas"
-        unique_together = ["cita", "servicio"]  # Un servicio por cita
+        unique_together = ["cita", "servicio"]
 
     def __str__(self):
-        return f"Detalle {self.pk} - {self.servicio.nombre} - Cita {self.cita.pk}"
+        return f"Detalle {self.pk} - {self.nombre_servicio} - Cita {self.cita.pk}"
 
     def save(self, *args, **kwargs):
-        # Si no se especifica un precio acordado, usar el precio del servicio
+        if self.servicio and not self.nombre_servicio:
+            self.nombre_servicio = self.servicio.nombre
+        if self.servicio and not self.precio_servicio:
+            self.precio_servicio = self.servicio.precio
+        if self.servicio and not self.duracion_estimada_servicio:
+            self.duracion_estimada_servicio = self.servicio.duracion_estimada
         if not self.precio_acordado:
-            self.precio_acordado = self.servicio.precio
+            self.precio_acordado = self.precio_servicio
         super().save(*args, **kwargs)

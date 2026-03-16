@@ -47,15 +47,16 @@ class Cita(TimeStampedModel, SoftDeletableModel):
     @property
     def monto_total(self):
         """Calcula el monto total de la cita basado en los detalles"""
-        return sum(detalle.subtotal for detalle in self.detalles.all())
+        return sum(detalle.precio_acordado for detalle in self.detalles.all())
 
     @property
     def duracion_total(self):
         """Calcula la duración total estimada de la cita"""
         total_segundos = sum(
-            detalle.servicio.duracion_estimada.total_seconds()
+            detalle.duracion_estimada_servicio.total_seconds()
             * detalle.cantidad_servicios
             for detalle in self.detalles.all()
+            if detalle.duracion_estimada_servicio
         )
         return total_segundos / 60  # Retorna en minutos
 

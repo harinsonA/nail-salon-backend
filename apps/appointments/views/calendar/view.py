@@ -4,8 +4,10 @@ from django import forms
 from django.views.generic import TemplateView
 from django.urls import reverse_lazy
 from apps.appointments.models.agenda import Cita
+from apps.clients.models import Cliente
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import CustomMonthField
+from apps.services.models import Servicio
 
 
 """========================================================================="""
@@ -79,6 +81,10 @@ class CalendarView(TemplateView):
         today = date.today()
         return f"{today.strftime('%B %Y')}".capitalize()
 
+    @staticmethod
+    def can_create_agenda() -> bool:
+        return Cliente.objects.exists() and Servicio.objects.exists()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(
@@ -87,6 +93,7 @@ class CalendarView(TemplateView):
                     initial={"months": self.get_initial_month()}
                 ),
                 "url_calendar_list": reverse_lazy("calendar_list"),
+                "can_create_agenda": self.can_create_agenda(),
             }
         )
         return context

@@ -1,0 +1,176 @@
+<form id="debt-detail-modal" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header">
+    <h5 class="modal-title">Detalle de deuda</h5>
+    <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <section class="row justify-content-center mb-3">
+      <div class="col-3">
+        <div class="card rounded-4 agenda-card">
+          <div class="card-body px-2">
+            <h6 class="card-subtitle d-flex text-body-secondary mb-2">
+              <span>Total servicio</span>
+            </h6>
+            <h4 class="card-title text-end m-0 text-primary">
+              <b id="modal_total_service_id">0</b>
+            </h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="card rounded-4 agenda-card">
+          <div class="card-body px-2">
+            <h6 class="card-subtitle d-flex text-body-secondary mb-2">
+              <span>Total pagado</span>
+            </h6>
+            <h4 class="card-title text-end text-success m-0">
+              <b id="modal_total_paid_id">0</b>
+            </h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="card rounded-4 agenda-card">
+          <div class="card-body px-2">
+            <h6 class="card-subtitle d-flex text-body-secondary mb-2">
+              <span>Total pendiente</span>
+            </h6>
+            <h4 class="card-title text-end m-0">
+              <b id="modal_total_pending_id">0</b>
+            </h4>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="row">
+      <section class="col-6">
+        <h6 class="mb-3 text-primary">Información cliente</h6>
+        <div class="row">
+          <div class="col-6 mb-2">
+            <strong>Nombre Completo:</strong>
+            <p>{{ client_full_name }}</p>
+          </div>
+          <div class="col-6 mb-2">
+            <strong>Estado:</strong>
+            <p>{{ client_status }}</p>
+          </div>
+          <div class="col-6 mb-2">
+            <strong>Teléfono:</strong>
+            <p>{{ client_phone }}</p>
+          </div>
+          <div class="col-6 mb-2">
+            <strong>Email:</strong>
+            <p>{{ client_email }}</p>
+          </div>
+        </div>
+      </section>
+      <section class="col-6">
+        <h6 class="mb-0 text-primary">Información pagos</h6>
+        <section class="table-container--custom table-container--no-shadow px-0 mt-0">
+          <table id="payment_detail" class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col" class="text-start">Fecha</th>
+                <th scope="col" class="text-start">Metodo</th>
+                <th scope="col" class="text-end">Referencia</th>
+                <th scope="col" class="text-end text-success">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </section>
+      </section>
+    </section>
+    <section class="mt-3">
+      <h6 class="m-0 text-primary">Información servicios</h6>
+    </section>
+    <section class="table-container--custom table-container--no-shadow p-0 m-0">
+      <table id="services_detail" class="table table-hover table-striped">
+        <thead>
+          <tr>
+            <th scope="col" class="text-start">Nombre</th>
+            <th scope="col" class="text-start">Precio</th>
+            <th scope="col" class="text-start">Cantidad</th>
+            <th scope="col" class="text-end text-black">Monto total</th>
+            <th scope="col" class="text-end text-black">Descuento</th>
+            <th scope="col" class="text-end text-primary">Precio acordado</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</form>
+{% block extra_js %}
+<script>
+  $(() => {
+    const pendingAmount = {
+      totalPaid: 0,
+      totalService: 0,
+      refresh() {
+        const pendingAmount = this.totalService - this.totalPaid;
+        $('#modal_total_pending_id').text(`$ ${Math.round(pendingAmount).toLocaleString('en-US')}`);
+      },
+    }
+    const serviceDetailDataTableConfig = {
+      tableID: '#services_detail',
+      url: '{{ services_detail_list_url }}',
+      extraConfig: {
+        searching: false,
+        info: false,
+        ajax: {
+          dataSrc: (json) => {
+            $('#modal_total_service_id').text(json.total_price_formatted || '$0');
+            return json.data;
+          },
+        },
+        drawCallback: (settings) => {
+          console.log(settings.json);
+          const totalService = settings.json.total_price || 0;
+          pendingAmount.totalService = totalService;
+          pendingAmount.refresh();
+        },
+      },
+      columns: [
+        { data: 'nombre_servicio', className: 'fs-7 w-auto text-start', orderable: false },
+        { data: 'precio_formatted', className: 'fs-7 w-auto text-end', orderable: false },
+        { data: 'cantidad_servicios', className: 'fs-7 w-auto text-end', orderable: false },
+        { data: 'total_servicio_formatted', className: 'fs-7 w-auto text-end', orderable: false },
+        { data: 'descuento_formatted', className: 'fs-7 w-auto text-end', orderable: false },
+        { data: 'precio_acordado_formatted', className: 'fs-7 w-auto text-end', orderable: false },
+      ],
+    };
+    renderDataTable(serviceDetailDataTableConfig);
+
+    const paymentDetailDataTableConfig = {
+      tableID: '#payment_detail',
+      url: '{{ payment_detail_list_url }}',
+      extraConfig: {
+        searching: false,
+        info: false,
+        ajax: {
+          dataSrc: (json) => {
+            $('#modal_total_paid_id').text(json.total_paid_formatted || '$0');
+            return json.data;
+          },
+        },
+        drawCallback: (settings) => {
+          const totalPaid = settings.json.total_paid || 0;
+          pendingAmount.totalPaid = totalPaid;
+          pendingAmount.refresh();
+        },
+      },
+      columns: [
+        { data: 'fecha_pago_display', className: 'fs-7 w-auto text-start', orderable: false },
+        { data: 'metodo_pago_display', className: 'fs-7 w-auto text-start', orderable: false },
+        { data: 'referencia_pago', className: 'fs-7 w-auto text-end', orderable: false },
+        { data: 'monto_pago_formatted', className: 'fs-7 w-auto text-end', orderable: false },
+      ],
+    };
+    renderDataTable(paymentDetailDataTableConfig);
+  })
+</script>
+{% endblock %}

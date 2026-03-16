@@ -2,7 +2,6 @@
 <!-- Navbar que se expande en lg+ y usa offcanvas en pantallas menores -->
 <nav class="navbar navbar--custom navbar-expand-lg navbar-dark bg-primary bg-gradient fixed-top">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Salón Isidora</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar"
       aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -16,10 +15,7 @@
       <div class="offcanvas-body">
         <ul class="navbar-nav justify-content-center flex-grow-1 pe-3">
           <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="{% url 'home' %}">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="{% url 'calendar' %}">Calendario</a>
+            <a class="nav-link" aria-current="page" href="{% url 'calendar' %}">Calendario</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'clients' %}">Clientes</a>
@@ -33,13 +29,16 @@
               Pagos
             </a>
             <ul class="dropdown-menu dropdown-menu-dark">
-              <li><a class="dropdown-item" href="{% url 'payments' %}">Completados</a></li>
-              <li><a class="dropdown-item" href="#">Recibidos</a></li>
-              <li><a class="dropdown-item" href="#">Deudores</a></li>
               <li>
-                <hr class="dropdown-divider">
+                <a class="dropdown-item" href="{% url 'payments' %}">
+                  Completados
+                </a>
               </li>
-              <li><a class="dropdown-item text-danger" href="#">Cerrar Sesión</a></li>
+              <li>
+                <a class="dropdown-item" href="{% url 'debtors' %}">
+                  Deudores
+                </a>
+              </li>
             </ul>
           </li>
         </ul>

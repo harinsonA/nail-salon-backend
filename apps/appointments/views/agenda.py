@@ -233,11 +233,6 @@ class AgendaConfirmationForm(BSModalModelForm):
 
     def clean_down_payment(self):
         down_payment = self.cleaned_data.get("down_payment", 0)
-        full_payment = self.cleaned_data.get("full_payment", False)
-        if not full_payment and not down_payment:
-            raise forms.ValidationError(
-                "El monto abonado debe ser mayor a cero si no es pago completo."
-            )
         if down_payment >= self.remaining_payment_value:
             raise forms.ValidationError(
                 "El monto abonado no puede ser mayor o igual al total de la cita."
@@ -254,7 +249,7 @@ class AgendaConfirmationForm(BSModalModelForm):
         if not is_cash and has_no_reference:
             raise forms.ValidationError("Debe ingresar una referencia de pago.")
 
-        return payment_reference
+        return payment_reference.strip()
 
 
 # endregion
@@ -401,10 +396,12 @@ class AgendaUpdateModalView(BSModalUpdateView):
 
     @staticmethod
     def __get_duration_in_minutes(detail) -> int:
-        return int(detail.servicio.duracion_estimada.total_seconds() / 60)
+        if not detail.duracion_estimada_servicio:
+            return 0
+        return int(detail.duracion_estimada_servicio.total_seconds() / 60)
 
     def __get_service_data(self, object_base) -> list:
-        agenda_details = list(object_base.detalles.all().select_related("servicio"))
+        agenda_details = list(object_base.detalles.all())
         if not agenda_details:
             return []
         return [
@@ -413,9 +410,9 @@ class AgendaUpdateModalView(BSModalUpdateView):
                 "total": float(detail.precio_acordado),
                 "cantidad": detail.cantidad_servicios,
                 "descuento": float(detail.descuento),
-                "id": detail.servicio.pk,
-                "nombre": detail.servicio.nombre,
-                "precio": float(detail.servicio.precio),
+                "id": detail.servicio_id,
+                "nombre": detail.nombre_servicio,
+                "precio": float(detail.precio_servicio),
                 "duracion_estimada": self.__get_duration_in_minutes(detail),
             }
             for detail in agenda_details
@@ -462,11 +459,17 @@ class AgendaUpdateModalView(BSModalUpdateView):
 
             if is_service_ready:
                 continue
+            servicio = Servicio.objects.filter(pk=service.get("id")).first()
             new_services.append(
                 DetalleCita(
                     cita=self.object,
+                    servicio=servicio,
+                    nombre_servicio=servicio.nombre if servicio else "",
+                    precio_servicio=servicio.precio if servicio else 0,
+                    duracion_estimada_servicio=servicio.duracion_estimada
+                    if servicio
+                    else None,
                     cantidad_servicios=service.get("cantidad", 1),
-                    servicio_id=service.get("id"),
                     precio_acordado=service.get("total", 0),
                     descuento=service.get("descuento", 0),
                     notas_detalle=service.get("observaciones", ""),
@@ -526,17 +529,13 @@ class AgendaSeeModalView(BSModalReadView):
 
     @staticmethod
     def get_services_data(object_base):
-        appointment_details = (
-            object_base.detalles.all()
-            .select_related("servicio")
-            .values_list(
-                "pk",
-                "servicio__nombre",
-                "cantidad_servicios",
-                "servicio__precio",
-                "precio_acordado",
-                "descuento",
-            )
+        appointment_details = object_base.detalles.all().values_list(
+            "pk",
+            "nombre_servicio",
+            "cantidad_servicios",
+            "precio_servicio",
+            "precio_acordado",
+            "descuento",
         )
         services_data = []
         for detail in appointment_details:
@@ -599,7 +598,7 @@ class AgendaBaseModalView:
             "precio_acordado",
             "descuento",
             "cantidad_servicios",
-            "servicio__precio",
+            "precio_servicio",
         )
         service_totals = 0
         detail_totals = 0
@@ -808,6 +807,9 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
         cleaned_data: dict,
         full_payment: bool,
     ) -> None:
+        down_payment = cleaned_data.get("down_payment", 0)
+        if not full_payment and not down_payment:
+            return
         amount_paid = (
             payment_instance.monto_total_cita
             if full_payment

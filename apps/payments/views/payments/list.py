@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django import forms
 from django.db.models import Sum, TextChoices
 from django.urls import reverse_lazy
@@ -7,8 +5,9 @@ from django.views.generic import TemplateView
 from bootstrap_modal_forms.forms import BSModalForm
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.utils.currency import format_currency
 from apps.payments.models import Pago
-from ..choices import EstadoPago, MetodoPago
+from ...choices import EstadoPago, MetodoPago
 
 """========================================================================="""
 # region ........ Constants
@@ -146,11 +145,6 @@ class PaymentsListView(BaseListViewAjax):
             return "-- --"
         return value.strftime("%d/%m/%Y %H:%M")
 
-    @staticmethod
-    def _format_currency(value) -> str:
-        value = value or Decimal("0")
-        return f"$ {value:,.0f}"
-
     def get_values(self, queryset):
         values = super().get_values(queryset)
         for item in values:
@@ -160,10 +154,10 @@ class PaymentsListView(BaseListViewAjax):
                     "fecha_pago_completado_display": self._format_datetime(
                         item.get("fecha_pago_completado")
                     ),
-                    "descuento_total_formatted": self._format_currency(
+                    "descuento_total_formatted": format_currency(
                         item.get("descuento_total")
                     ),
-                    "monto_total_cita_formatted": self._format_currency(
+                    "monto_total_cita_formatted": format_currency(
                         item.get("monto_total_cita")
                     ),
                 }
@@ -178,8 +172,8 @@ class PaymentsListView(BaseListViewAjax):
         total = additional_data.get("monto_total_cita", 0)
         discount = additional_data.get("descuento_total", 0)
         return {
-            "monto_total_cita": self._format_currency(total),
-            "descuento_total": self._format_currency(discount),
+            "monto_total_cita": format_currency(total),
+            "descuento_total": format_currency(discount),
         }
 
 
