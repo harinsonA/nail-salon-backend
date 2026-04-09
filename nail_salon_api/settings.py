@@ -11,10 +11,18 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config
-import locale
+from decouple import config, Csv
+import dj_database_url
 
-locale.setlocale(locale.LC_TIME, "es_ES.utf8")
+try:
+    import locale
+
+    locale.setlocale(locale.LC_TIME, "es_ES.utf8")
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, "es_CL.UTF-8")
+    except locale.Error:
+        pass
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,13 +31,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-sk1l32-z_p2p^369f6l773)l$$4)je=)vfbfir^*os&_g-*p(d"
+SECRET_KEY = config(
+    "SECRET_KEY", default="django-insecure-dev-key-change-in-production"
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+
+RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # Application definition
@@ -62,6 +74,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -98,26 +111,31 @@ WSGI_APPLICATION = "nail_salon_api.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Configuración para PostgreSQL
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DATABASE_NAME", default="manicuredb"),
-        "USER": config("DATABASE_USER", default="postgres"),
-        "PASSWORD": config("DATABASE_PASSWORD", default="harinson"),
-        "HOST": config("DATABASE_HOST", default="127.0.0.1"),
-        "PORT": config("DATABASE_PORT", default="5432"),
-    },
-    # Base de datos para tests (existente, no se crea/destruye automáticamente)
-    "test_db": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("TEST_DATABASE_NAME", default="test_manicuredb"),
-        "USER": config("DATABASE_USER", default="postgres"),
-        "PASSWORD": config("DATABASE_PASSWORD", default="harinson"),
-        "HOST": config("DATABASE_HOST", default="127.0.0.1"),
-        "PORT": config("DATABASE_PORT", default="5432"),
-    },
-}
+DATABASE_URL = config("DATABASE_URL", default="")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600),
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DATABASE_NAME", default="manicuredb"),
+            "USER": config("DATABASE_USER", default="postgres"),
+            "PASSWORD": config("DATABASE_PASSWORD", default=""),
+            "HOST": config("DATABASE_HOST", default="127.0.0.1"),
+            "PORT": config("DATABASE_PORT", default="5432"),
+        },
+        "test_db": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("TEST_DATABASE_NAME", default="test_manicuredb"),
+            "USER": config("DATABASE_USER", default="postgres"),
+            "PASSWORD": config("DATABASE_PASSWORD", default=""),
+            "HOST": config("DATABASE_HOST", default="127.0.0.1"),
+            "PORT": config("DATABASE_PORT", default="5432"),
+        },
+    }
 
 
 # Password validation
@@ -163,6 +181,13 @@ STATICFILES_DIRS = [
 
 # Directorio donde se recopilarán todos los archivos estáticos para producción
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# WhiteNoise para servir archivos estáticos en producción
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
