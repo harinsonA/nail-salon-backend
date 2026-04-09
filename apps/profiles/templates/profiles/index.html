@@ -1,0 +1,75 @@
+<form id="profile-form-modal" action="{% url 'profile_modal' %}" method="post">
+	{% csrf_token %}
+	<div class="modal-header bg-primary bg-gradient">
+		<h5 class="modal-title text-white d-inline-flex align-items-center">
+			<span class="material-symbols-outlined me-2">
+				person
+			</span>
+			<span class="pb-1">
+				{{ profile_full_name }}
+			</span>
+		</h5>
+		<button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+	</div>
+	<div class="modal-body">
+		<div class="mb-3">
+			<label class="form-label">{{ form.username.label }}</label>
+			{{ form.username }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.username.id_for_label }}">
+				{{ form.username.errors.0 }}
+			</span>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">{{ form.first_name.label }}</label>
+			{{ form.first_name }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.first_name.id_for_label }}">
+				{{ form.first_name.errors.0 }}
+			</span>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">{{ form.last_name.label }}</label>
+			{{ form.last_name }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.last_name.id_for_label }}">
+				{{ form.last_name.errors.0 }}
+			</span>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">{{ form.email.label }}</label>
+			{{ form.email }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.email.id_for_label }}">
+				{{ form.email.errors.0 }}
+			</span>
+		</div>
+		<hr>
+		<p class="text-muted small mb-2"><b>Nota:</b> **Deja los campos de contraseña vacíos si no deseas cambiarla.**</p>
+		<div class="mb-3">
+			<label class="form-label">{{ form.current_password.label }}</label>
+			{{ form.current_password }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.current_password.id_for_label }}">
+				{{ form.current_password.errors.0 }}
+			</span>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">{{ form.new_password.label }}</label>
+			{{ form.new_password }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.new_password.id_for_label }}">
+				{{ form.new_password.errors.0 }}
+			</span>
+		</div>
+		<div class="mb-3">
+			<label class="form-label">{{ form.confirm_password.label }}</label>
+			{{ form.confirm_password }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.confirm_password.id_for_label }}">
+				{{ form.confirm_password.errors.0 }}
+			</span>
+		</div>
+	</div>
+	<div class="modal-footer bg-black bg-gradient">
+		<button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+			Cancelar
+		</button>
+		<button id="profile_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+			Guardar
+		</button>
+	</div>
+</form>

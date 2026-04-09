@@ -7,6 +7,7 @@ from apps.appointments.models.agenda import Cita
 from apps.clients.models import Cliente
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import CustomMonthField
+from apps.common.views.base_views import ProtectedView
 from apps.services.models import Servicio
 
 
@@ -45,6 +46,8 @@ WEEKDAYS = {
     },
 }
 
+KEY_MONTH_SELECTED = "previous_month_selected"
+
 
 # endregion
 """========================================================================="""
@@ -73,11 +76,13 @@ class CalendarFilterForm(forms.Form):
 # region ........ Views
 
 
-class CalendarView(TemplateView):
+class CalendarView(ProtectedView, TemplateView):
     template_name = "calendar/list.html"
 
-    @staticmethod
-    def get_initial_month() -> str:
+    def get_initial_month(self) -> str:
+        selected_month = self.request.session.get(KEY_MONTH_SELECTED)
+        if selected_month:
+            return selected_month
         today = date.today()
         return f"{today.strftime('%B %Y')}".capitalize()
 
@@ -87,13 +92,17 @@ class CalendarView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        initial_month = self.get_initial_month()
         context.update(
             {
                 "filter_form": CalendarFilterForm(
-                    initial={"months": self.get_initial_month()}
+                    initial={
+                        "months": initial_month,
+                    }
                 ),
                 "url_calendar_list": reverse_lazy("calendar_list"),
                 "can_create_agenda": self.can_create_agenda(),
+                "initial_month": initial_month,
             }
         )
         return context
@@ -172,6 +181,7 @@ class CalendarListView(BaseListViewAjax):
                     "day": day["day"],
                     "in_month": day["in_month"],
                     "is_today": _date == _today,
+                    "is_past_date": _date < _today,
                     "calendar_appointments_url": reverse_lazy(
                         "calendar_appointments",
                         kwargs={"date": _date.strftime("%Y-%m-%d")},
@@ -181,6 +191,9 @@ class CalendarListView(BaseListViewAjax):
             data.append(base_week)
         return data
 
+    def _save_month_selected(self, month_selected: str):
+        self.request.session[KEY_MONTH_SELECTED] = f"{month_selected}".capitalize()
+
     def get_context_data(self, **kwargs):
         _filters = self.get_filters()
         appointments_by_date = self.get_aggregate_appointments_by_date(_filters)
@@ -189,6 +202,7 @@ class CalendarListView(BaseListViewAjax):
         month = _date.month
         weeks = self.get_detailed_weeks(year, month)
         calendar_data = self.get_calendar_data(weeks, appointments_by_date)
+        self._save_month_selected(_date.strftime("%B %Y"))
         return {
             "data": calendar_data,
             "recordsTotal": len(calendar_data),

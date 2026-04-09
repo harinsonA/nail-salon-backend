@@ -144,9 +144,6 @@ class HandlerAgendaList:
             return options
         if agenda_status == Cita.EstadoChoices.COMPLETADA:
             options["options"] = {
-                "agenda_delete_modal_url": reverse_lazy(
-                    "agenda_delete_modal", args=[agenda_id]
-                ),
                 "is_agenda_completed": True,
             }
             return options

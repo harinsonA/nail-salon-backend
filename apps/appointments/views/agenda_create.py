@@ -1,6 +1,6 @@
 import json
 
-from datetime import date, datetime
+from datetime import date
 from django import forms
 from django.contrib import messages
 from django.http import JsonResponse
@@ -11,6 +11,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import CustomDateField
+from apps.common.views.base_views import ProtectedView, ProtectedAjaxView
 from apps.appointments.models.agenda import Cita
 from apps.appointments.views.handler import HandlerAgenda, HandlerAgendaList
 from apps.clients.models import Cliente
@@ -131,7 +132,7 @@ class AvailableHoursFilterForm(forms.Form):
 # region ........ Views
 
 
-class AgendaCreateView(FormView):
+class AgendaCreateView(ProtectedView, FormView):
     template_name = "appointments/agenda_create.html"
     form_class = AgendaForm
 
@@ -213,7 +214,7 @@ class AgendaCreateView(FormView):
         return JsonResponse({"success_url": self.get_success_url(**kwargs)})
 
 
-class ServiceDetailsAjax(TemplateView):
+class ServiceDetailsAjax(ProtectedAjaxView, TemplateView):
     def get(self, request, *args, **kwargs):
         service_id = request.GET.get("service_id", None)
         if not service_id:
@@ -239,6 +240,7 @@ class ServiceDetailsAjax(TemplateView):
 class AvailableHoursAjax(BaseListViewAjax):
     model = Cita
     filter_form_class = AvailableHoursFilterForm
+    _filters = {"estado": Cita.EstadoChoices.PENDIENTE}
 
     field_list = [
         "pk",

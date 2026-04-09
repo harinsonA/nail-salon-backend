@@ -10,6 +10,7 @@ from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.views.base_views import ProtectedView
 from ..models.cliente import Cliente
 
 """========================================================================="""
@@ -199,7 +200,7 @@ class ClientsForm(BSModalForm):
 # region ........ Views
 
 
-class ClientsView(TemplateView):
+class ClientsView(ProtectedView, TemplateView):
     template_name = "clients/list.html"
 
     def get_context_data(self, **kwargs):
@@ -273,7 +274,7 @@ class ClientListView(BaseListViewAjax):
         return data
 
 
-class BaseClientModalView(BSModalFormView):
+class BaseClientModalView(ProtectedView, BSModalFormView):
     template_name = "clients/client_modal.html"
     form_class = ClientsForm
     modal_url = None
@@ -366,7 +367,7 @@ class ClientDetailModalView(BaseClientModalView):
         )
 
 
-class ClientDeleteModalView(BSModalDeleteView):
+class ClientDeleteModalView(ProtectedView, BSModalDeleteView):
     template_name = "common/delete_modal.html"
     success_message = "Cliente %(client_full_name)s eliminado exitosamente."
 

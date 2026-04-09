@@ -3,6 +3,7 @@ from django.urls import reverse_lazy
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.utils.currency import format_currency
+from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago, DetallePago
 from apps.payments.choices import MetodoPago
 from apps.appointments.models import DetalleCita
@@ -13,7 +14,7 @@ from bootstrap_modal_forms.generic import BSModalReadView
 # region ........ Views
 
 
-class DebtDetailModalView(BSModalReadView):
+class DebtDetailModalView(ProtectedView, BSModalReadView):
     template_name = "debtors/_debt_detail_modal.html"
     model = Pago
 

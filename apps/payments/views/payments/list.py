@@ -1,101 +1,34 @@
+from datetime import date
+
 from django import forms
-from django.db.models import Sum, TextChoices
+from django.db.models import Sum
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
-from bootstrap_modal_forms.forms import BSModalForm
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.custom_time_fields import CustomMonthField
 from apps.common.utils.currency import format_currency
+from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
-from ...choices import EstadoPago, MetodoPago
-
-"""========================================================================="""
-# region ........ Constants
-
-FORM_CONTROL_CLASS = "form-control form-control--custom"
-FORM_SELECT_CLASS = "form-select form-select--custom"
-
-# endregion
-"""========================================================================="""
+from ...choices import EstadoPago
 
 """========================================================================="""
 # region ........ Form
 
 
-# class PaymentsFilterForm(BSModalForm):
-#     class StatusChoices(TextChoices):
-#         ALL = "all", "Todos"
-#         PENDING = EstadoPago.PENDIENTE, "Pendientes"
-#         COMPLETED = EstadoPago.COMPLETADO, "Completados"
-#         REFUNDED = EstadoPago.REEMBOLSADO, "Reembolsados"
-#         UNPAID = EstadoPago.IMPAGO, "Impagos"
+class PaymentsFilterForm(forms.Form):
+    months = CustomMonthField(
+        label="Mes",
+        required=False,
+    )
 
-#     class PaymentMethodChoices(TextChoices):
-#         ALL = "all", "Todos"
-#         CASH = MetodoPago.EFECTIVO, "Efectivo"
-#         CARD = MetodoPago.TARJETA, "Tarjeta"
-#         TRANSFER = MetodoPago.TRANSFERENCIA, "Transferencia"
-#         CHECK = MetodoPago.CHEQUE, "Cheque"
-
-#     status = forms.ChoiceField(
-#         choices=StatusChoices.choices,
-#         label="Estado",
-#         initial=StatusChoices.ALL,
-#         required=False,
-#         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-#     )
-
-#     payment_method = forms.ChoiceField(
-#         choices=PaymentMethodChoices.choices,
-#         label="Método de Pago",
-#         initial=PaymentMethodChoices.ALL,
-#         required=False,
-#         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-#     )
-
-#     date_from = forms.DateField(
-#         label="Desde",
-#         required=False,
-#         widget=forms.DateInput(
-#             attrs={
-#                 "class": FORM_CONTROL_CLASS,
-#                 "type": "date",
-#             }
-#         ),
-#     )
-
-#     date_to = forms.DateField(
-#         label="Hasta",
-#         required=False,
-#         widget=forms.DateInput(
-#             attrs={
-#                 "class": FORM_CONTROL_CLASS,
-#                 "type": "date",
-#             }
-#         ),
-#     )
-
-#     def clean(self):
-#         cleaned_data = super().clean()
-#         data_to_filter = {}
-
-#         status = cleaned_data.get("status")
-#         if status and status != self.StatusChoices.ALL:
-#             data_to_filter["estado"] = status
-
-#         payment_method = cleaned_data.get("payment_method")
-#         if payment_method and payment_method != self.PaymentMethodChoices.ALL:
-#             data_to_filter["metodo_pago"] = payment_method
-
-#         date_from = cleaned_data.get("date_from")
-#         if date_from:
-#             data_to_filter["fecha__gte"] = date_from
-
-#         date_to = cleaned_data.get("date_to")
-#         if date_to:
-#             data_to_filter["fecha__lte"] = date_to
-
-#         return data_to_filter
+    def clean(self):
+        cleaned_data = super().clean()
+        first_day, last_day = cleaned_data.get("months", (None, None))
+        return {
+            "fecha_cita__gte": first_day,
+            "fecha_cita__lte": last_day,
+        }
 
 
 # endregion
@@ -105,14 +38,22 @@ FORM_SELECT_CLASS = "form-select form-select--custom"
 # region ........ Views
 
 
-class PaymentsView(TemplateView):
+class PaymentsView(ProtectedView, TemplateView):
     template_name = "payments/list.html"
+
+    @staticmethod
+    def get_initial_month() -> str:
+        today = date.today()
+        return f"{today.strftime('%B %Y')}".capitalize()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(
             {
                 "url_payments_list": reverse_lazy("payments_list"),
+                "filter_form": PaymentsFilterForm(
+                    initial={"months": self.get_initial_month()}
+                ),
             }
         )
         return context
@@ -121,6 +62,7 @@ class PaymentsView(TemplateView):
 class PaymentsListView(BaseListViewAjax):
     model = Pago
     include_options_column = False
+    filter_form_class = PaymentsFilterForm
     _filters = {"estado_pago__in": [EstadoPago.COMPLETADO]}
 
     field_list = [
@@ -132,8 +74,8 @@ class PaymentsListView(BaseListViewAjax):
     ]
 
     ordering_fields = {
-        "0": "cliente_nombre",
-        "1": "fecha_cita",
+        "0": "fecha_cita",
+        "1": "cliente_nombre",
         "2": "descuento_total",
         "3": "monto_total_cita",
         "4": "fecha_pago_completado",
@@ -171,9 +113,16 @@ class PaymentsListView(BaseListViewAjax):
         )
         total = additional_data.get("monto_total_cita", 0)
         discount = additional_data.get("descuento_total", 0)
+        _filters = self.get_filters()
+        received = queryset.filter(
+            fecha_pago_completado__gte=_filters.get("fecha_cita__gte"),
+            fecha_pago_completado__lte=_filters.get("fecha_cita__lte"),
+        ).aggregate(total=Sum("monto_total_cita"))
+
         return {
             "monto_total_cita": format_currency(total),
             "descuento_total": format_currency(discount),
+            "monto_recibido_mes": format_currency(received.get("total", 0)),
         }
 
 

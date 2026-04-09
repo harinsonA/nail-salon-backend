@@ -4,9 +4,10 @@ from functools import reduce
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views.generic import ListView
+from apps.common.views.base_views import ProtectedAjaxView
 
 
-class BaseListViewAjax(ListView):
+class BaseListViewAjax(ProtectedAjaxView, ListView):
     http_method_names = ["get"]
     model = None
     filter_form_class = None
@@ -45,7 +46,10 @@ class BaseListViewAjax(ListView):
         filter_form_class = self.filter_form_class(self.request.GET or None)
         if not filter_form_class.is_valid():
             return self._filters
-        return {**filter_form_class.cleaned_data}
+        return {
+            **self._filters,
+            **filter_form_class.cleaned_data,
+        }
 
     def get_queryset(self):
         queryset = super().get_queryset()

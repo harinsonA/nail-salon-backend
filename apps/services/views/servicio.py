@@ -10,6 +10,7 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import DurationInMinutesField
 from apps.common.utils.currency import format_currency
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
+from apps.common.views.base_views import ProtectedView
 from ..models.servicio import Servicio
 
 """========================================================================="""
@@ -178,7 +179,7 @@ class ServicesForm(BSModalForm):
 # region ........ Views
 
 
-class ServicesView(TemplateView):
+class ServicesView(ProtectedView, TemplateView):
     template_name = "services/list.html"
 
     def get_context_data(self, **kwargs):
@@ -263,7 +264,7 @@ class ServiceListView(BaseListViewAjax):
         return f"{minutes}m"
 
 
-class BaseServiceModalView(BSModalFormView):
+class BaseServiceModalView(ProtectedView, BSModalFormView):
     template_name = "services/service_modal.html"
     form_class = ServicesForm
     modal_url = None
@@ -344,7 +345,7 @@ class ServiceDetailModalView(BaseServiceModalView):
         )
 
 
-class ServiceDeleteModalView(BSModalDeleteView):
+class ServiceDeleteModalView(ProtectedView, BSModalDeleteView):
     template_name = "common/delete_modal.html"
     success_message = "Servicio %(service_name)s eliminado exitosamente."
 

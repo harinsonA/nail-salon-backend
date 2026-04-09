@@ -1,0 +1,164 @@
+<form id="add-payment-modal" action="{{ modal_url }}" method="post">
+	{% csrf_token %}
+	<div class="modal-header bg-primary bg-gradient">
+		<h5 class="modal-title text-white">Abonar deuda</h5>
+		<button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+	</div>
+	<div class="modal-body">
+		<section class="row">
+			<div class="col-6">
+				<strong>Fecha Cita:</strong>
+				<p>{{ fecha_cita }}</p>
+			</div>
+			<div class="col-6">
+				<strong>Nombre Completo:</strong>
+				<p>{{ cliente_nombre }}</p>
+			</div>
+		</section>
+		<section class="row justify-content-center mb-3">
+			<div class="col-6">
+				<div class="card rounded-4 agenda-card">
+					<div class="card-body px-2">
+						<h6 class="card-subtitle d-flex text-body-secondary mb-2">
+							<span>Total servicio</span>
+						</h6>
+						<h4 class="card-title text-end m-0 text-primary">
+							<b>{{ monto_total_cita_formatted }}</b>
+						</h4>
+					</div>
+				</div>
+			</div>
+			<div class="col-6">
+				<div class="card rounded-4 agenda-card">
+					<div class="card-body px-2">
+						<h6 class="card-subtitle d-flex text-body-secondary mb-2">
+							<span>Saldo pendiente</span>
+						</h6>
+						<h4 class="card-title text-end m-0">
+							<b>{{ saldo_pendiente_formatted }}</b>
+						</h4>
+					</div>
+				</div>
+			</div>
+		</section>
+		<div class="row">
+			<div class="col-6">
+				<label for="{{ form.payment_method.id_for_label }}" class="form-label form-label--custom">
+					{{ form.payment_method.label }}
+				</label>
+				{{ form.payment_method }}
+				<span class="invalid-feedback invalid-feedback--custom {{ form.payment_method.id_for_label }}">
+					{{ form.payment_method.errors.0 }}
+				</span>
+			</div>
+			<div id="payment_reference_container" class="col-6 d-none">
+				<label for="{{ form.payment_reference.id_for_label }}" class="form-label form-label--custom">
+					{{ form.payment_reference.label }}
+				</label>
+				{{ form.payment_reference }}
+				<span class="invalid-feedback invalid-feedback--custom {{ form.payment_reference.id_for_label }}">
+					{{ form.payment_reference.errors.0 }}
+				</span>
+			</div>
+		</div>
+		<div class="row mt-2">
+			<div class="col-6">
+				<label for="{{ form.payment_date.id_for_label }}" class="form-label form-label--custom">
+					{{ form.payment_date.label }}
+				</label>
+				{{ form.payment_date }}
+				<span class="invalid-feedback invalid-feedback--custom {{ form.payment_date.id_for_label }}">
+					{{ form.payment_date.errors.0 }}
+				</span>
+			</div>
+			<div class="col-6">
+				<label for="{{ form.payment_time.id_for_label }}" class="form-label form-label--custom">
+					{{ form.payment_time.label }}
+				</label>
+				{{ form.payment_time }}
+				<span class="invalid-feedback invalid-feedback--custom {{ form.payment_time.id_for_label }}">
+					{{ form.payment_time.errors.0 }}
+				</span>
+			</div>
+		</div>
+		<div class="form-check form-switch my-2">
+			<label class="form-check-label form-label--custom" for="{{ form.full_payment.id_for_label }}">
+				{{ form.full_payment.label }}
+			</label>
+			{{ form.full_payment }}
+		</div>
+		<div id="down_payment_container" class="row d-none">
+			<div class="col-6">
+				<label for="{{ form.down_payment.id_for_label }}" class="form-label form-label--custom">
+					{{ form.down_payment.label }}
+				</label>
+				<div class="input-group mb-3">
+					<span class="input-group-text">$</span>
+					{{ form.down_payment }}
+					<span class="invalid-feedback invalid-feedback--custom {{ form.down_payment.id_for_label }}">
+						{{ form.down_payment.errors.0 }}
+					</span>
+				</div>
+			</div>
+			<div class="col-6">
+				<label for="{{ form.remaining_payment.id_for_label }}" class="form-label form-label--custom">
+					{{ form.remaining_payment.label }}
+				</label>
+				<div class="input-group mb-3">
+					<span class="input-group-text">$</span>
+					{{ form.remaining_payment }}
+				</div>
+				<span class="invalid-feedback invalid-feedback--custom {{ form.remaining_payment.id_for_label }}">
+					{{ form.remaining_payment.errors.0 }}
+				</span>
+			</div>
+		</div>
+		<div class="mt-2">
+			<label for="{{ form.observations.id_for_label }}" class="form-label form-label--custom">
+				{{ form.observations.label }}
+			</label>
+			{{ form.observations }}
+			<span class="invalid-feedback invalid-feedback--custom {{ form.observations.id_for_label }}">
+				{{ form.observations.errors.0 }}
+			</span>
+		</div>
+	</div>
+	<div class="modal-footer bg-black bg-gradient">
+		<button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+			Cerrar
+		</button>
+		<button id="add_payment_btn" type="button" class="btn btn-sm btn-success bg-gradient">
+			Abonar
+		</button>
+	</div>
+</form>
+{% block extra_js %}
+<script>
+	$(() => {
+		initializeDatePickers();
+		$('#id_full_payment').on('change', function () {
+			$('#down_payment_container').toggleClass('d-none', this.checked);
+		});
+
+		$('#{{ form.payment_method.id_for_label }}').on('change', function () {
+			const isCash = this.value === 'EFECTIVO';
+			$('#payment_reference_container').toggleClass('d-none', isCash);
+		});
+
+		$('#{{ form.down_payment.id_for_label }}').on('change', ({ target }) => {
+			const totalAmount = parseInt('{{ saldo_pendiente }}') || 0;
+			if (target.value.startsWith('-')) {
+				$('#{{ form.remaining_payment.id_for_label }}').val(totalAmount);
+				return;
+			}
+			const downPayment = parseInt(target.value) || 0;
+			if (!downPayment || !totalAmount || downPayment >= totalAmount) {
+				$('#{{ form.remaining_payment.id_for_label }}').val(totalAmount);
+				return;
+			}
+			const remainingPayment = totalAmount - downPayment;
+			$('#{{ form.remaining_payment.id_for_label }}').val(remainingPayment);
+		});
+	});
+</script>
+{% endblock %}

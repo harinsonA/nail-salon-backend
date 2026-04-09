@@ -25,6 +25,7 @@ urlpatterns = [
     path("", include("apps.services.urls")),
     path("", include("apps.appointments.urls")),
     path("", include("apps.payments.urls")),
+    path("", include("apps.profiles.urls")),
 ]
 
 # Servir archivos de media en desarrollo

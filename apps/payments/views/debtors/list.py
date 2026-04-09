@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.utils.currency import format_currency
+from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
 from ...choices import EstadoPago
 
@@ -15,7 +16,7 @@ from ...choices import EstadoPago
 # region ........ Views
 
 
-class DebtorsView(TemplateView):
+class DebtorsView(ProtectedView, TemplateView):
     template_name = "debtors/list.html"
 
     def get_context_data(self, **kwargs):
@@ -75,6 +76,7 @@ class DebtorsListView(BaseListViewAjax):
     def get_values(self, queryset):
         values = super().get_values(queryset)
         for item in values:
+            payment_id = item.get("pk")
             item.update(
                 {
                     "fecha_cita_display": self._format_datetime(item.get("fecha_cita")),
@@ -88,7 +90,10 @@ class DebtorsListView(BaseListViewAjax):
                         item.get("saldo_pendiente")
                     ),
                     "debt_detail_url": reverse_lazy(
-                        "debt_detail_modal", kwargs={"pk": item.get("pk")}
+                        "debt_detail_modal", kwargs={"pk": payment_id}
+                    ),
+                    "add_payment_url": reverse_lazy(
+                        "add_payment_modal", kwargs={"pk": payment_id}
                     ),
                 }
             )

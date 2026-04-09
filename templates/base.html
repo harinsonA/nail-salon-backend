@@ -50,6 +50,7 @@
 			</h3>
 		</section>
 		<main class="container-main">
+			{% include 'common/bs_modal.html' with modal_id='profile_modal' %}
 			{% block content %}
 			{% endblock %}
 		</main>
@@ -89,6 +90,8 @@
 			notifyAlert({ message: msg });
 			{% endfor %}
 			{% endif %}
+			initializeBSModals('#profile-modal-btn', { modalID: '#profile_modal' });
+			$('#profile_modal').on('show.bs.modal', ({ target }) => submitProfileModalForm(target));
 		});
 	</script>
 	{% block extra_js %}{% endblock %}

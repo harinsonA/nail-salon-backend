@@ -1,4 +1,3 @@
-{% load humanize %}
 <form id="agenda-see-modal" action="{{ modal_url }}" method="get">
 	{% csrf_token %}
 	<div class="modal-header bg-dark-subtle bg-gradient">
@@ -13,6 +12,44 @@
 		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
+		<section class="row justify-content-center">
+			<div class="col-4">
+				<div class="card rounded-4 agenda-card">
+					<div class="card-body">
+						<h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+							<span>Total</span>
+						</h6>
+						<h4 class="card-title text-end text-primary">
+							<b>{{ total_amount }}</b>
+						</h4>
+					</div>
+				</div>
+			</div>
+			<div class="col-4">
+				<div class="card rounded-4 agenda-card">
+					<div class="card-body">
+						<h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+							<span>Total descuentos</span>
+						</h6>
+						<h4 class="card-title text-end text-danger">
+							<b>{{ total_discount }}</b>
+						</h4>
+					</div>
+				</div>
+			</div>
+			<div class="col-4">
+				<div class="card rounded-4 agenda-card">
+					<div class="card-body">
+						<h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+							<span>Total a pagar</span>
+						</h6>
+						<h4 class="card-title text-end text-success">
+							<b>{{ total_to_pay }}</b>
+						</h4>
+					</div>
+				</div>
+			</div>
+		</section>
 		<section class="table-container--custom">
 			<table class="table table-hover">
 				<thead>
@@ -20,9 +57,9 @@
 						<th scope="col" class="text-left">Servicio</th>
 						<th scope="col" class="text-center">Cantidad</th>
 						<th scope="col" class="text-center">Precio</th>
-						<th scope="col" class="text-center">Total</th>
+						<th scope="col" class="text-center text-primary">Total</th>
 						<th scope="col" class="text-center text-danger">Descuento</th>
-						<th scope="col" class="text-center text-success">Total a Pagar</th>
+						<th scope="col" class="text-center text-success">Total a pagar</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -30,10 +67,10 @@
 					<tr>
 						<td class="text-left">{{ service.name }}</td>
 						<td class="text-center">{{ service.quantity }}</td>
-						<td class="text-center">$ {{ service.price }}</td>
-						<td class="text-center">$ {{ service.total }}</td>
-						<td class="text-center text-danger">$ {{ service.discount }}</td>
-						<td class="text-center text-success">$ {{ service.price_acorded }}</td>
+						<td class="text-center">{{ service.price }}</td>
+						<td class="text-center text-primary">{{ service.total }}</td>
+						<td class="text-center text-danger">{{ service.discount }}</td>
+						<td class="text-center text-success">{{ service.price_acorded }}</td>
 					</tr>
 					{% endfor %}
 				</tbody>

@@ -1,6 +1,7 @@
 from django.urls import path
 from apps.payments.views.payments.list import PaymentsView, PaymentsListView
 from apps.payments.views.debtors.list import DebtorsView, DebtorsListView
+from apps.payments.views.debtors.add_payment import AddPaymentModalView
 from apps.payments.views.debtors.debt_detail import (
     DebtDetailModalView,
     ServicesDetailListView,
@@ -37,6 +38,11 @@ urlpatterns = [
         "deudores/<int:pk>/detalle-deudor/pagos",
         PaymentDetailListView.as_view(),
         name="payment_detail_list",
+    ),
+    path(
+        "deudores/<int:pk>/detalle-deudor/agregar-pago/",
+        AddPaymentModalView.as_view(),
+        name="add_payment_modal",
     ),
     path(
         "deudores/<int:pk>/detalle-deudor/servicios/<int:appointment_id>/",

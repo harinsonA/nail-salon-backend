@@ -35,7 +35,7 @@ Calendario
       $('#welcomeModal').modal('show');
     }
     const filterData = {
-      months: $('#{{ filter_form.months.id_for_label }}').val(),
+      months: $('#{{ filter_form.months.id_for_label }}').val() || '{{ initial_month }}',
     };
 
     const totalsDisplay = (pendingTotals, completedTotals) => {
@@ -52,7 +52,7 @@ Calendario
       </div>`;
     }
 
-    const dayColumn = ({ day, in_month, is_today, calendar_appointments_url, ...arguments }) => {
+    const dayColumn = ({ day, in_month, is_today, is_past_date, calendar_appointments_url, ...arguments }) => {
       const {
         pending_totals: pendingTotals = 0,
         completed_totals: completedTotals = 0,
@@ -60,7 +60,7 @@ Calendario
       } = arguments;
       return `<a class="day-card ${in_month ? '' : 'day-card--disabled'}" href="${calendar_appointments_url}">
         <div class="day-card-header">
-          <p class="text ${is_today ? 'text--today' : ''}">${day}</p>
+          <p class="text ${is_today ? 'text--today' : is_past_date ? 'text--past' : ''}">${day}</p>
         </div>
         <div class="day-card-body">
           ${totalsDisplay(pendingTotals, completedTotals)}
@@ -85,6 +85,7 @@ Calendario
         ordering: false,
         paging: false,
         info: false,
+        searching: false,
         customStartTop: () => `
 					<div class="input-group">
 						<span class="input-group-text">

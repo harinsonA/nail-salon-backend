@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+{% load static %}
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Iniciar Sesión</title>
+
+	<!-- Bootstrap CSS -->
+	<link href="{% static 'css/libs/bootstrap_v5.3.3/bootstrap.min.css' %}" rel="stylesheet">
+
+	<!-- Google Material Symbols -->
+	<link href="{% static 'css/libs/google_fonts/css2.css' %}" rel="stylesheet">
+	<link href="{% static 'css/custom/custom.icons.css' %}" rel="stylesheet">
+
+	<style>
+		html,
+		body {
+			height: 100%;
+		}
+
+		.form-signin {
+			max-width: 330px;
+			padding: 1rem;
+		}
+
+		.form-signin .form-floating:focus-within {
+			z-index: 2;
+		}
+
+		.form-signin input[type="text"] {
+			margin-bottom: -1px;
+			border-bottom-right-radius: 0;
+			border-bottom-left-radius: 0;
+		}
+
+		.form-signin input[type="password"] {
+			margin-bottom: 10px;
+			border-top-left-radius: 0;
+			border-top-right-radius: 0;
+		}
+	</style>
+</head>
+
+<body class="d-flex align-items-center py-4 bg-body-tertiary">
+
+	<main class="form-signin w-100 m-auto">
+		<form method="post">
+			{% csrf_token %}
+			<div class="text-center mb-4">
+				<span class="material-symbols-outlined" style="font-size: 72px; color: #dc3545;">spa</span>
+				<h1 class="h3 mb-3 fw-normal">Iniciar Sesión</h1>
+			</div>
+
+			{% if form.errors %}
+			<div class="alert alert-danger" role="alert">
+				Usuario o contraseña incorrectos.
+			</div>
+			{% endif %}
+
+			<div class="form-floating">
+				<input type="text" name="username" class="form-control" id="id_username" placeholder="Usuario" required
+					autofocus value="{{ form.username.value|default:'' }}">
+				<label for="id_username">Usuario</label>
+			</div>
+			<div class="form-floating">
+				<input type="password" name="password" class="form-control" id="id_password" placeholder="Contraseña" required>
+				<label for="id_password">Contraseña</label>
+			</div>
+
+			<button class="btn btn-danger w-100 py-2 mt-2" type="submit">Ingresar</button>
+			<p class="mt-4 mb-3 text-body-secondary text-center">&copy; {% now "Y" %}</p>
+		</form>
+	</main>
+
+	<!-- Bootstrap JS -->
+	<script src="{% static 'js/libs/bootstrap_v5.3.3/bootstrap.bundle.min.js' %}"></script>
+</body>
+
+</html>

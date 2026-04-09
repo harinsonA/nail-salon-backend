@@ -17,8 +17,23 @@ Lista de pagos
               info
             </span>
           </h6>
-          <h4 class="card-title text-end">
-            <span id="payments_totals_id">0</span>
+          <h4 class="card-title text-end text-primary">
+            <b id="payments_totals_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Total pagos recibidos del mes</span>
+            <span class="material-symbols-outlined text-primary ms-2">
+              info
+            </span>
+          </h6>
+          <h4 class="card-title text-end text-success">
+            <b id="payments_received_id">0</b>
           </h4>
         </div>
       </div>
@@ -33,7 +48,7 @@ Lista de pagos
             </span>
           </h6>
           <h4 class="card-title text-end">
-            <span id="payments_discounts_id">0</span>
+            <b id="payments_discounts_id">0</b>
           </h4>
         </div>
       </div>
@@ -43,10 +58,10 @@ Lista de pagos
     <table id="payments_table" class="table table-hover ">
       <thead>
         <tr>
-          <th scope="col" class="text-start">Cliente</th>
           <th scope="col" class="text-center">Fecha cita</th>
-          <th scope="col" class="text-end text-black">Descuento</th>
-          <th scope="col" class="text-end text-black">Monto pagado</th>
+          <th scope="col" class="text-start">Cliente</th>
+          <th scope="col" class="text-center text-black">Descuento</th>
+          <th scope="col" class="text-center text-black">Monto pagado</th>
           <th scope="col" class="text-center">Fecha pago completado</th>
         </tr>
       </thead>
@@ -60,29 +75,52 @@ Lista de pagos
 {% block extra_js %}
 <script>
   $(() => {
+    const filterData = {
+      months: $('#{{ filter_form.months.id_for_label }}').val(),
+    };
+
     const dataTableConfig = {
       tableID: '#payments_table',
       url: '{{ url_payments_list }}',
-      requestData: {},
+      requestData: filterData,
       extraConfig: {
         ajax: {
           dataSrc: (json) => {
             $('#payments_totals_id').text(json.monto_total_cita);
             $('#payments_discounts_id').text(json.descuento_total);
+            $('#payments_received_id').text(json.monto_recibido_mes);
             return json.data;
           },
         },
+        customStartTop: () => `
+          <div class="input-group">
+            <span class="input-group-text">
+              <span class="material-symbols-outlined text-primary">
+                calendar_month
+              </span>
+            </span>
+            {{ filter_form.months }}
+          </div>
+        `,
+        drawCallback: () => {
+          initializeMonthPickers();
+        },
       },
       columns: [
-        { data: 'cliente_nombre', className: 'fs-7 w-auto text-start text-nowrap' },
         { data: 'fecha_cita_display', className: 'fs-7 w-auto text-center' },
-        { data: 'descuento_total_formatted', className: 'fs-7 w-auto text-end text-danger' },
-        { data: 'monto_total_cita_formatted', className: 'fs-7 w-auto text-end text-success' },
+        { data: 'cliente_nombre', className: 'fs-7 w-auto text-start text-nowrap' },
+        { data: 'descuento_total_formatted', className: 'fs-7 w-auto text-center text-danger' },
+        { data: 'monto_total_cita_formatted', className: 'fs-7 w-auto text-center text-success' },
         { data: 'fecha_pago_completado_display', className: 'fs-7 w-auto text-center' },
       ],
     };
 
-    renderDataTable(dataTableConfig);
+    const paymentsTable = renderDataTable(dataTableConfig);
+
+    $('#{{ filter_form.months.id_for_label }}').on('change', ({ target }) => {
+      filterData[target.name] = target.value;
+      paymentsTable.draw();
+    });
   });
 </script>
 {% endblock %}

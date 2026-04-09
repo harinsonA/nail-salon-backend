@@ -17,14 +17,16 @@ from bootstrap_modal_forms.generic import BSModalUpdateView, BSModalReadView
 from apps.appointments.models import DetalleCita, Cita
 from apps.appointments.views.handler import HandlerAgendaList
 from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.payments.choices import MetodoPago, EstadoPago
-from apps.payments.models import Pago, DetallePago
 from apps.common.custom_time_fields import (
     CustomDateField,
     MONTH_NUMBER_TO_NAME,
 )
 from apps.common.utils.dates import format_full_date
+from apps.common.utils.currency import format_currency
 from apps.common.utils.utils import get_errors_to_response
+from apps.common.views.base_views import ProtectedView
+from apps.payments.choices import MetodoPago, EstadoPago
+from apps.payments.models import Pago, DetallePago
 from apps.services.models import Servicio
 
 """========================================================================="""
@@ -258,7 +260,7 @@ class AgendaConfirmationForm(BSModalModelForm):
 # region ........ Views
 
 
-class AppointmentsView(TemplateView):
+class AppointmentsView(ProtectedView, TemplateView):
     template_name = "appointments/list.html"
 
     @staticmethod
@@ -267,12 +269,12 @@ class AppointmentsView(TemplateView):
         return f"{today.strftime('%B %Y')}".capitalize()
 
     @staticmethod
-    def get_date_instance(**kwargs) -> date:
+    def get_date_instance(**kwargs) -> tuple:
         _date = kwargs.get("date", "")
-        date_instance = (
-            datetime.strptime(_date, "%Y-%m-%d").date() if _date else date.today()
-        )
-        return date_instance
+        _today = date.today()
+        date_instance = datetime.strptime(_date, "%Y-%m-%d").date() if _date else _today
+        is_past_date = date_instance < _today
+        return date_instance, is_past_date
 
     def get_date_initial(self, **kwargs):
         _date = kwargs.get("date", "")
@@ -284,7 +286,7 @@ class AppointmentsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         _date_selected = context["date"]
-        date_instance = self.get_date_instance(date=_date_selected)
+        date_instance, is_past_date = self.get_date_instance(date=_date_selected)
         date_initial = self.get_date_initial(date=_date_selected)
         context.update(
             {
@@ -297,6 +299,8 @@ class AppointmentsView(TemplateView):
                 ),
                 "full_date": format_full_date(date_instance),
                 "date_initial": date_initial,
+                "is_past_date": is_past_date,
+                "cancel_url": reverse_lazy("calendar"),
             }
         )
         return context
@@ -362,7 +366,7 @@ class AgendaListView(BaseListViewAjax):
         return {**additional_data}
 
 
-class AgendaUpdateModalView(BSModalUpdateView):
+class AgendaUpdateModalView(ProtectedView, BSModalUpdateView):
     template_name = "appointments/agenda_detail_modal.html"
     model = Cita
     form_class = AgendaModalForm
@@ -523,7 +527,7 @@ class AgendaUpdateModalView(BSModalUpdateView):
         )
 
 
-class AgendaSeeModalView(BSModalReadView):
+class AgendaSeeModalView(ProtectedView, BSModalReadView):
     template_name = "appointments/agenda_see_modal.html"
     model = Cita
 
@@ -538,6 +542,9 @@ class AgendaSeeModalView(BSModalReadView):
             "descuento",
         )
         services_data = []
+        total_amount = 0
+        total_discount = 0
+        total_to_pay = 0
         for detail in appointment_details:
             (
                 detail_id,
@@ -547,27 +554,46 @@ class AgendaSeeModalView(BSModalReadView):
                 price_acorded,
                 discount,
             ) = detail
+            total = service_price * quantity_services
+            total_amount += total
+            total_discount += discount
+            total_to_pay += price_acorded
             services_data.append(
                 {
                     "detail_id": detail_id,
                     "name": service_name,
                     "quantity": quantity_services,
-                    "price": service_price,
-                    "total": service_price * quantity_services,
-                    "discount": discount,
-                    "price_acorded": price_acorded,
+                    "price": format_currency(service_price),
+                    "total": format_currency(total),
+                    "discount": format_currency(discount),
+                    "price_acorded": format_currency(price_acorded),
                 }
             )
-        return services_data
+        return (
+            services_data,
+            format_currency(total_amount),
+            format_currency(total_discount),
+            format_currency(total_to_pay),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         object_base = context["object"]
-        context.update({"services": self.get_services_data(object_base)})
+        (services_data, total_amount, total_discount, total_to_pay) = (
+            self.get_services_data(object_base)
+        )
+        context.update(
+            {
+                "services": services_data,
+                "total_amount": total_amount,
+                "total_discount": total_discount,
+                "total_to_pay": total_to_pay,
+            }
+        )
         return context
 
 
-class AgendaBaseModalView:
+class AgendaBaseModalView(ProtectedView):
     """Base class for agenda modal views that provides common context data"""
 
     @staticmethod
@@ -686,7 +712,7 @@ class AgendaRestoreModalView(AgendaBaseModalView, BSModalReadView):
         )
 
 
-class AgendaDeleteModalView(BSModalReadView):
+class AgendaDeleteModalView(ProtectedView, BSModalReadView):
     template_name = "common/delete_modal.html"
     model = Cita
     success_message = "Cita de %(client_full_name)s eliminada exitosamente."
