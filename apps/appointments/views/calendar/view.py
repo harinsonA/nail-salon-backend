@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from apps.appointments.models.agenda import Cita
 from apps.clients.models import Cliente
 from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.common.custom_time_fields import CustomMonthField
+from apps.common.custom_time_fields import CustomMonthField, MONTH_NUMBER_TO_NAME
 from apps.common.views.base_views import ProtectedView
 from apps.services.models import Servicio
 
@@ -83,8 +83,8 @@ class CalendarView(ProtectedView, TemplateView):
         selected_month = self.request.session.get(KEY_MONTH_SELECTED)
         if selected_month:
             return selected_month
-        today = date.today()
-        return f"{today.strftime('%B %Y')}".capitalize()
+        year, month = date.today().strftime("%Y-%m").split("-")
+        return f"{MONTH_NUMBER_TO_NAME[int(month)]} {year}"
 
     @staticmethod
     def can_create_agenda() -> bool:
@@ -191,8 +191,11 @@ class CalendarListView(BaseListViewAjax):
             data.append(base_week)
         return data
 
-    def _save_month_selected(self, month_selected: str):
-        self.request.session[KEY_MONTH_SELECTED] = f"{month_selected}".capitalize()
+    def _save_month_selected(self, date_selected: date) -> None:
+        year, month = date_selected.strftime("%Y-%m").split("-")
+        self.request.session[KEY_MONTH_SELECTED] = (
+            f"{MONTH_NUMBER_TO_NAME[int(month)]} {year}"
+        )
 
     def get_context_data(self, **kwargs):
         _filters = self.get_filters()
@@ -202,7 +205,7 @@ class CalendarListView(BaseListViewAjax):
         month = _date.month
         weeks = self.get_detailed_weeks(year, month)
         calendar_data = self.get_calendar_data(weeks, appointments_by_date)
-        self._save_month_selected(_date.strftime("%B %Y"))
+        self._save_month_selected(_date)
         return {
             "data": calendar_data,
             "recordsTotal": len(calendar_data),
