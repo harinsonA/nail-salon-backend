@@ -1,0 +1,474 @@
+:root {
+	--alert-color-destructive: #e7000b;
+	--text-muted: #6c757d;
+	--shadow-extra-light: 0px 4px 10px -5px rgba(8, 0, 255, 0.44);
+	--shadow-light: 0px 5px 12px -6px rgba(8, 0, 255, 0.55);
+	--shadow-medium: 0px 7px 18px -6px rgba(8, 0, 255, 0.55);
+
+	/* Colores del componente Accordion */
+	--accordion-primary: #1e293b;
+	--accordion-primary-light: rgba(30, 41, 59, 0.1);
+	/* Colores de fondo */
+	--accordion-background: #ffffff;
+	--accordion-card-bg: #ffffff;
+	--accordion-muted-bg: #f1f5f9;
+	/* Colores de texto */
+	--accordion-foreground: #0f172a;
+	--accordion-muted-foreground: #64748b;
+	--accordion-border: #e2e8f0;
+	--accordion-radius: 0.5rem;
+}
+
+.estilos-anclas {
+	text-decoration: none;
+	color: #007bff;
+	cursor: pointer;
+}
+
+.navbar--custom {
+	-webkit-box-shadow: 0px 5px 4px -2px rgba(0, 0, 0, 0.55);
+	box-shadow: 0px 5px 4px -2px rgba(0, 0, 0, 0.55);
+}
+
+.navbar--custom .nav-link {
+	color: #fff !important;
+}
+
+
+.container-main {
+	min-height: 500px;
+	border-radius: 15px;
+	background-color: #fff;
+	padding: 20px 20px 40px 20px;
+	-webkit-box-shadow: var(--shadow-light);
+	box-shadow: var(--shadow-light);
+}
+
+.dropstart .dropdown-toggle--not-icon::after,
+.dropstart .dropdown-toggle--not-icon::before {
+	display: none;
+}
+
+.form-label--custom {
+	font-size: .75rem;
+	font-weight: 500;
+	font-style: italic;
+}
+
+.form-control--textarea {
+	resize: none;
+}
+
+.invalid-feedback--custom {
+	font-size: .7rem;
+}
+
+.form-control--custom,
+.form-select--custom,
+.dropdown-item--custom {
+	font-size: .85rem;
+}
+
+.dropdown-item--custom {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+}
+
+.table-container--custom {
+	border: 1px solid transparent;
+	border-radius: 15px;
+	padding: 15px;
+	margin-top: 20px;
+	-webkit-box-shadow: var(--shadow-medium);
+	box-shadow: var(--shadow-medium);
+}
+
+.table-container--no-shadow {
+	-webkit-box-shadow: none;
+	box-shadow: none;
+}
+
+.delete-warning-container {
+	background-color: #fff5f5;
+	border: 2px solid var(--alert-color-destructive);
+	border-radius: 8px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: row;
+}
+
+.text-destructive {
+	color: var(--alert-color-destructive);
+	font-size: .875rem;
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.text-color-destructive {
+	color: var(--alert-color-destructive);
+}
+
+.text-color-muted {
+	color: var(--text-muted);
+}
+
+.text-muted-foreground {
+	color: var(--text-muted);
+	font-size: .75rem;
+	line-height: 15px;
+}
+
+.delete-information-container {
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
+	border-radius: 8px;
+	padding: 1.25rem;
+	margin-bottom: 15px;
+}
+
+.delete-information-name {
+	font-size: 0.95rem;
+	color: #212529;
+	font-weight: 500;
+}
+
+.delete-information-detail {
+	font-size: 0.75rem;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 0.25rem;
+	font-weight: 600;
+}
+
+.agenda-card {
+	border-color: transparent;
+	box-shadow: var(--shadow-extra-light);
+	margin-bottom: 8px;
+}
+
+/**** Pricing Receipt Component ****/
+
+.pricing-receipt {
+	width: 100%;
+	border-radius: 8px;
+	border: 2px dashed #cbd5e1;
+	background-color: #F7F9FB;
+	padding: 12px 6px;
+	font-family: "Courier New", Courier, monospace;
+}
+
+.pricing-receipt-content {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.pricing-receipt-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid #e2e8f0;
+	padding-bottom: 4px;
+}
+
+.pricing-receipt-service {
+	border-bottom: 1px solid #e2e8f0;
+	padding-bottom: 4px;
+}
+
+.pricing-receipt-label {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #64748b;
+	font-weight: bold;
+}
+
+.pricing-receipt-price {
+	font-size: 13px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.pricing-receipt-discount-section {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	border-bottom: 1px solid #e2e8f0;
+	padding-bottom: 12px;
+}
+
+.pricing-receipt-input-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.pricing-receipt-currency {
+	color: #475569;
+}
+
+.pricing-receipt-input {
+	flex: 1;
+	font-family: "Courier New", Courier, monospace;
+	text-align: right;
+	padding: 4px 6px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	font-size: 12px;
+	outline: none;
+	transition: border-color 0.2s;
+}
+
+.pricing-receipt-input:focus {
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.pricing-receipt-input::placeholder {
+	color: #94a3b8;
+}
+
+/* Remove spinner arrows from number input */
+.pricing-receipt-input::-webkit-outer-spin-button,
+.pricing-receipt-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.pricing-receipt-input[type="number"] {
+	-moz-appearance: textfield;
+}
+
+.pricing-receipt-total {
+	padding-bottom: 10px;
+	border-bottom: 2px solid #0f172a;
+}
+
+.pricing-receipt-total-label {
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #0f172a;
+}
+
+.pricing-receipt-total-amount {
+	font-size: 14px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.pricing-receipt-footer {
+	margin-top: 15px;
+	border-top: 2px solid #0f172a;
+	padding-top: 4px;
+}
+
+.pricing-receipt-thanks {
+	text-align: center;
+	font-size: 9px;
+	color: #94a3b8;
+}
+
+/**** End Pricing Receipt Component ****/
+
+/**** Accordion Component ****/
+
+.accordion-custom .accordion-header-element {
+	margin: 0;
+}
+
+.accordion-custom .accordion-item {
+	border: none;
+	margin-bottom: 0;
+}
+
+.accordion-custom .accordion-button {
+	outline: none;
+	border: none;
+	padding: 0;
+}
+
+.accordion-custom .accordion-button:focus {
+	box-shadow: none;
+}
+
+.accordion-custom .accordion-button:not(.collapsed) {
+	background-color: #fff;
+	box-shadow: none;
+}
+
+.accordion-custom .accordion-item:last-child {
+	border-bottom: none;
+}
+
+.accordion-custom .client-name {
+	font-weight: 600;
+	font-size: 1rem;
+	color: var(--accordion-foreground);
+}
+
+.accordion-custom .client-services-count {
+	font-size: 0.75rem;
+	color: var(--accordion-muted-foreground);
+	margin-top: 0.125rem;
+}
+
+.accordion-custom .client-total-wrapper {
+	text-align: right;
+	padding-right: 1rem;
+}
+
+.accordion-custom .client-total-amount {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: var(--accordion-primary);
+}
+
+.accordion-custom .client-total-label,
+.accordion-custom .services-list-added .service-added-item .service-added-price .service-added-discount {
+	font-size: 0.75rem;
+	color: var(--accordion-muted-foreground);
+	margin-top: 0.125rem;
+}
+
+.accordion-custom .services-list-added {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding-top: 0.5rem;
+	padding-left: 1rem;
+}
+
+.accordion-custom .services-list-added .service-added-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-radius: var(--accordion-radius);
+	border: 1px solid var(--accordion-border);
+	background-color: var(--accordion-card-bg);
+	padding: 0.75rem;
+}
+
+.accordion-custom .services-list-added .service-added-item:hover {
+	background-color: rgba(241, 245, 249, 0.5);
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-info,
+.accordion-custom .services-list-added .service-added-item .service-added-price {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-info-wrapper {
+	display: flex;
+	gap: 0.7rem;
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-info-wrapper .service-added-remove-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-info .service-added-name {
+	display: inline-flex;
+	align-items: center;
+	border-radius: 0.375rem;
+	border: 1px solid var(--accordion-border);
+	background-color: var(--accordion-background);
+	padding: 0.25rem 0.625rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--accordion-foreground);
+	margin: 0;
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-info .service-added-datetime {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-size: 0.75rem;
+	color: var(--accordion-muted-foreground);
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-info .service-added-datetime .service-added-date,
+.accordion-custom .services-list-added .service-added-item .service-added-info .service-added-datetime .service-added-time {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-info .service-added-datetime .service-added-icon {
+	font-size: 1rem;
+	color: var(--accordion-primary);
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-price .service-added-price-total {
+	text-align: right;
+	font-weight: 600;
+	font-size: 1rem;
+	color: var(--accordion-foreground);
+	margin: 0;
+}
+
+.accordion-custom .services-list-added .service-added-item .service-added-price .service-added-discount {
+	color: var(--alert-color-destructive);
+	margin-bottom: 0;
+	text-align: right;
+}
+
+/**** End Accordion Component ****/
+
+/**** Appointment Details Component ****/
+
+.appointment-details {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+	margin-bottom: 16px;
+	padding: 12px;
+	background: white;
+	border-radius: 6px;
+	border: 1px solid #e5e7eb;
+}
+
+.appointment-details__item {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.appointment-details__label {
+	font-size: 11px;
+	text-transform: uppercase;
+	color: #6b7280;
+	font-weight: 600;
+	letter-spacing: 0.3px;
+}
+
+.appointment-details__value {
+	font-size: 14px;
+	font-weight: 600;
+	color: #111827;
+}
+
+.appointment-details__value--discount {
+	color: #dc2626;
+}
+
+.appointment-details__value--duration {
+	color: #3b82f6;
+}
+
+/**** End Appointment Details Component ****/
+
+.dropstart .dropdown-toggle::before,
+.dropdown-toggle::after {
+	display: none;
+}

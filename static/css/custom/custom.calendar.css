@@ -1,0 +1,92 @@
+tbody .day-card-container {
+    height: 120px;
+    border: 1px solid #ddd;
+    padding: 0px !important;
+}
+
+tbody .day-card-container .day-card {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 8px 10px;
+    text-decoration: none;
+    color: #000;
+
+}
+
+tbody .day-card-container .day-card.day-card--disabled,
+tbody .day-card-container .day-card.day-card--disabled:hover {
+    background-color: #E4E4E4;
+    color: #aaa;
+    pointer-events: none;
+}
+
+tbody .day-card-container .day-card:hover {
+    background-color: #f0f0f0;
+}
+
+tbody .day-card-container .day-card .text {
+    margin: 0;
+}
+
+tbody .day-card-container .day-card .day-card-body,
+tbody .day-card-container .day-card .day-card-header {
+    height: 100%;
+}
+
+tbody .day-card-container .day-card .day-card-header {
+    width: 70px;
+}
+
+tbody .day-card-container .day-card .day-card-header .text {
+    font-family: monospace;
+    font-size: 3em;
+    height: 100%;
+    text-align: left;
+}
+
+tbody .day-card-container .day-card .day-card-header .text.text--today {
+    color: #007bff;
+    font-weight: 700;
+}
+
+tbody .day-card-container .day-card .day-card-header .text.text--past {
+    color: #6c757d;
+    font-weight: 400;
+}
+
+tbody .day-card-container .day-card .day-card-body .text {
+    font-size: 12px;
+}
+
+.totals-container {
+    height: 100%;
+}
+
+.totals-container .totals-item {
+    border-left: 4px solid #ccc;
+    padding: 4px;
+    margin-bottom: 4px;
+}
+
+.totals-container .totals-item .totals-item-title {
+    font-size: 12px;
+    margin: 0;
+}
+
+.totals-container .totals-item .totals-item-amount {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.totals-container .totals-item.totals-item-pending {
+    border-color: #ffc107;
+}
+
+.totals-container .totals-item.totals-item-completed {
+    border-color: #28a745;
+}

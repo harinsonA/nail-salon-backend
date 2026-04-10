@@ -43,6 +43,14 @@ RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="",
+    cast=Csv(),
+)
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
 
 # Application definition
 
@@ -174,24 +182,21 @@ USE_TZ = True
 
 STATIC_URL = config("STATIC_URL", default="static/")
 
-# Directorios donde Django buscará archivos estáticos durante el desarrollo
-IS_STATICFILES_DIRS_ALLOWED = config("STATICFILES_DIRS", default=False, cast=bool)
-if IS_STATICFILES_DIRS_ALLOWED:
-    STATICFILES_DIRS = [
-        BASE_DIR / "static",  # Carpeta principal de archivos estáticos
-    ]
-else:
-    STATICFILES_DIRS = []
+# Directorios donde Django buscará archivos estáticos
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # Directorio donde se recopilarán todos los archivos estáticos para producción
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # WhiteNoise para servir archivos estáticos en producción
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+if not DEBUG:
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

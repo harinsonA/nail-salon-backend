@@ -1,0 +1,70 @@
+/* 
+=================================
+MATERIAL SYMBOLS CONFIGURATION
+=================================
+Material Symbols son fuentes variables que permiten ajustar:
+- FILL: 0 = outlined (vacío), 1 = filled (relleno)
+- wght: 100-700 = grosor de la línea
+- GRAD: -50 a 200 = contraste/gradación
+- opsz: 20-48 = tamaño óptico para diferentes resoluciones
+*/
+
+/* Configuración base - estos valores se aplicarán por defecto */
+.material-symbols-outlined {
+    font-variation-settings:
+        'FILL' 0,
+        /* Outlined (sin relleno) */
+        'wght' 400,
+        /* Grosor normal */
+        'GRAD' 0,
+        /* Contraste normal */
+        'opsz' 24;
+    /* Tamaño óptico estándar */
+    vertical-align: middle;
+}
+
+/* Clases de utilidad para diferentes tamaños */
+.icon-sm {
+    font-size: 18px;
+}
+
+.icon-md {
+    font-size: 24px;
+}
+
+.icon-lg {
+    font-size: 32px;
+}
+
+.icon-xl {
+    font-size: 48px;
+}
+
+/* Variaciones de relleno */
+.icon-filled {
+    font-variation-settings:
+        'FILL' 1,
+        /* Filled (con relleno) */
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+}
+
+/* Variaciones de grosor */
+.icon-light {
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 200,
+        /* Más delgado */
+        'GRAD' 0,
+        'opsz' 24;
+}
+
+.icon-bold {
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 600,
+        /* Más grueso */
+        'GRAD' 0,
+        'opsz' 24;
+}

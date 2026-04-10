@@ -1,0 +1,266 @@
+/**
+ * Custom Modal Components CSS
+ * Estilos personalizados para modales laterales tipo offcanvas
+ * Compatible con Bootstrap 5.3 y django-bootstrap-modal-forms
+ */
+
+/* ========================================
+   MODAL SIDEBAR - BASE STYLES
+   ======================================== */
+
+.modal-sidebar {
+    --sidebar-width: 600px;
+    --sidebar-max-width: 90vw;
+    --sidebar-transition: transform 0.3s ease-out;
+}
+
+.modal-sidebar .modal-dialog {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    margin: 0;
+    width: var(--sidebar-width);
+    max-width: var(--sidebar-max-width);
+    height: 100vh;
+    max-height: none;
+    transition: var(--sidebar-transition);
+}
+
+.modal-sidebar .modal-content {
+    height: 100%;
+    border: none;
+    border-radius: 0;
+    box-shadow: var(--bs-box-shadow-lg);
+}
+
+/* ========================================
+   POSICIONAMIENTO
+   ======================================== */
+
+/* Modal Lateral Derecho (default) */
+.modal-sidebar-right .modal-dialog {
+    right: 0;
+    border-left: 1px solid var(--bs-modal-border-color);
+}
+
+/* Modal Lateral Izquierdo */
+.modal-sidebar-left .modal-dialog {
+    left: 0;
+    border-right: 1px solid var(--bs-modal-border-color);
+}
+
+/* ========================================
+   ANIMACIONES
+   ======================================== */
+
+/* Animación desde la derecha */
+.modal-sidebar-right.fade .modal-dialog {
+    transform: translateX(100%);
+}
+
+/* Animación desde la izquierda */
+.modal-sidebar-left.fade .modal-dialog {
+    transform: translateX(-100%);
+}
+
+.modal-sidebar-left .modal-dialog .modal-content,
+.modal-sidebar-right .modal-dialog .modal-content {
+    overflow-y: auto;
+}
+
+/* Estado mostrado */
+.modal-sidebar.show .modal-dialog {
+    transform: translateX(0);
+}
+
+/* ========================================
+   HEADER OPTIMIZADO
+   ======================================== */
+
+.modal-sidebar .modal-header {
+    background: var(--bs-modal-bg);
+    border-bottom: var(--bs-modal-header-border-width) solid var(--bs-modal-header-border-color);
+    padding: var(--bs-modal-header-padding);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.modal-sidebar .modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* ========================================
+   BODY SCROLLABLE
+   ======================================== */
+
+.modal-sidebar .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--bs-modal-padding);
+}
+
+/* ========================================
+   FOOTER FIXED (OPCIONAL)
+   ======================================== */
+
+.modal-sidebar-fixed-footer .modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--bs-modal-bg);
+    border-top: var(--bs-modal-footer-border-width) solid var(--bs-modal-footer-border-color);
+    z-index: 1020;
+}
+
+/* ========================================
+   VARIANTES DE TAMAÑO
+   ======================================== */
+
+/* Sidebar Narrow */
+.modal-sidebar-sm {
+    --sidebar-width: 300px;
+}
+
+/* Sidebar Wide */
+.modal-sidebar-lg {
+    --sidebar-width: 500px;
+}
+
+/* Sidebar Extra Wide */
+.modal-sidebar-xl {
+    --sidebar-width: 600px;
+}
+
+/* ========================================
+   RESPONSIVIDAD
+   ======================================== */
+
+/* Tablets */
+@media (max-width: 992px) {
+    .modal-sidebar {
+        --sidebar-width: 350px;
+        --sidebar-max-width: 85vw;
+    }
+}
+
+/* Móviles - Comportamiento como modal normal */
+@media (max-width: 768px) {
+    .modal-sidebar .modal-dialog {
+        position: relative;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        left: auto;
+        width: auto;
+        max-width: 500px;
+        height: auto;
+        max-height: calc(100% - 1rem);
+        margin: 0.5rem auto;
+        border: none;
+    }
+
+    .modal-sidebar .modal-content {
+        height: auto;
+        border: var(--bs-modal-border-width) solid var(--bs-modal-border-color);
+        border-radius: var(--bs-modal-border-radius);
+        box-shadow: var(--bs-modal-box-shadow);
+    }
+
+    .modal-sidebar.fade .modal-dialog {
+        transform: var(--bs-modal-fade-transform);
+    }
+
+    .modal-sidebar .modal-header {
+        position: static;
+    }
+
+    .modal-sidebar-fixed-footer .modal-footer {
+        position: static;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 576px) {
+    .modal-sidebar .modal-dialog {
+        max-width: calc(100% - 1rem);
+        margin: 0.5rem;
+    }
+}
+
+/* ========================================
+   TEMA OSCURO (OPCIONAL)
+   ======================================== */
+
+[data-bs-theme="dark"] .modal-sidebar .modal-content {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+}
+
+[data-bs-theme="dark"] .modal-sidebar .modal-dialog {
+    border-color: var(--bs-border-color-translucent);
+}
+
+/* ========================================
+   UTILIDADES ADICIONALES
+   ======================================== */
+
+/* Scroll suave en el body */
+.modal-sidebar .modal-body {
+    scroll-behavior: smooth;
+}
+
+/* Separador visual en el header */
+.modal-sidebar .modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            var(--bs-modal-header-border-color) 20%,
+            var(--bs-modal-header-border-color) 80%,
+            transparent 100%);
+}
+
+/* Focus ring personalizado para mejor accesibilidad */
+.modal-sidebar .btn-close:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Mejora visual del backdrop para sidebar */
+.modal-sidebar.show~.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   ANIMACIONES SUAVES ADICIONALES
+   ======================================== */
+
+/* Fade-in del contenido */
+.modal-sidebar.show .modal-content {
+    animation: modalSidebarFadeIn 0.2s ease-out 0.1s both;
+}
+
+@keyframes modalSidebarFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Efecto hover en botones del header */
+.modal-sidebar .modal-header .btn-close {
+    transition: all 0.2s ease;
+}
+
+.modal-sidebar .modal-header .btn-close:hover {
+    transform: scale(1.1);
+    background-color: rgba(var(--bs-danger-rgb), 0.1);
+}
