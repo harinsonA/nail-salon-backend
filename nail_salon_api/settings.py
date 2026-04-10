@@ -197,6 +197,10 @@ STORAGES = {
     },
 }
 
+# Permite a WhiteNoise encontrar archivos en sus directorios originales
+# sin depender exclusivamente de collectstatic
+WHITENOISE_USE_FINDERS = True
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
