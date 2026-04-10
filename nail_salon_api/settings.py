@@ -172,12 +172,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = config("STATIC_URL", default="static/")
 
 # Directorios donde Django buscará archivos estáticos durante el desarrollo
-STATICFILES_DIRS = [
-    BASE_DIR / "static",  # Carpeta principal de archivos estáticos
-]
+IS_STATICFILES_DIRS_ALLOWED = config("STATICFILES_DIRS", default=False, cast=bool)
+if IS_STATICFILES_DIRS_ALLOWED:
+    STATICFILES_DIRS = [
+        BASE_DIR / "static",  # Carpeta principal de archivos estáticos
+    ]
+else:
+    STATICFILES_DIRS = []
 
 # Directorio donde se recopilarán todos los archivos estáticos para producción
 STATIC_ROOT = BASE_DIR / "staticfiles"
