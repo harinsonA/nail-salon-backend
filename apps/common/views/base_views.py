@@ -3,11 +3,10 @@ from django.http import JsonResponse
 
 
 class ProtectedView(LoginRequiredMixin):
-    login_url = "/login/"
+    pass
 
 
 class ProtectedAjaxView(LoginRequiredMixin):
-    login_url = "/login/"
     error_message_unauthorized = "Usuario no autorizado"
     error_message_authentication_failed = (
         "Deber iniciar sesión para acceder a esta información"
