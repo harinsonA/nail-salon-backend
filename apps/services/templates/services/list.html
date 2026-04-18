@@ -16,6 +16,32 @@ Lista de servicios
 			</span>
 		</a>
 	</section>
+	<section class="row justify-content-center">
+		<div class="col-3">
+			<div class="card rounded-4 agenda-card">
+				<div class="card-body">
+					<h6 class="card-subtitle d-flex text-body-secondary m-0">
+						<span>Total activos</span>
+					</h6>
+					<h4 class="card-title text-end text-primary m-0">
+						<b id="active_services_id">0</b>
+					</h4>
+				</div>
+			</div>
+		</div>
+		<div class="col-3">
+			<div class="card rounded-4 agenda-card">
+				<div class="card-body">
+					<h6 class="card-subtitle d-flex text-body-secondary m-0">
+						<span>Total inactivos</span>
+					</h6>
+					<h4 class="card-title text-end text-primary m-0">
+						<b id="inactive_services_id">0</b>
+					</h4>
+				</div>
+			</div>
+		</div>
+	</section>
 	<section class="mt-3 d-inline-block">
 		<div>
 			<label class="form-check-label form-label--custom" for="{{ filter_form.status.id_for_label }}">
@@ -68,6 +94,13 @@ Lista de servicios
 				{ data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
 			],
 			extraConfig: {
+				ajax: {
+					dataSrc: (json) => {
+						$('#active_services_id').text(json.active_services_total);
+						$('#inactive_services_id').text(json.inactive_services_total);
+						return json.data;
+					},
+				},
 				drawCallback: () => {
 					initializeAllBSModals();
 				},

@@ -2,7 +2,7 @@ from django import forms
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
-from django.db.models import TextChoices
+from django.db.models import Count, TextChoices, Q
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
@@ -262,6 +262,18 @@ class ServiceListView(BaseListViewAjax):
         if hours > 0:
             return f"{hours}h {minutes}m"
         return f"{minutes}m"
+
+    @staticmethod
+    def additional_data(queryset) -> dict:
+        _additional_data = Servicio.objects.aggregate(
+            active_services_total=Count(
+                "pk", filter=Q(estado=Servicio.EstadoChoices.ACTIVO)
+            ),
+            inactive_services_total=Count(
+                "pk", filter=Q(estado=Servicio.EstadoChoices.INACTIVO)
+            ),
+        )
+        return _additional_data
 
 
 class BaseServiceModalView(ProtectedView, BSModalFormView):

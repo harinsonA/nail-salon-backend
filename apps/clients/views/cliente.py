@@ -2,7 +2,7 @@ from django import forms
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
-from django.db.models import Value, TextChoices
+from django.db.models import Count, Value, TextChoices, Q
 from django.db.models.functions import Concat
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from bootstrap_modal_forms.forms import BSModalForm
@@ -272,6 +272,18 @@ class ClientListView(BaseListViewAjax):
                 },
             ]
         return data
+
+    @staticmethod
+    def additional_data(queryset) -> dict:
+        _additional_data = Cliente.objects.aggregate(
+            active_clients_total=Count(
+                "pk", filter=Q(estado=Cliente.EstadoChoices.ACTIVO)
+            ),
+            inactive_clients_total=Count(
+                "pk", filter=Q(estado=Cliente.EstadoChoices.INACTIVO)
+            ),
+        )
+        return _additional_data
 
 
 class BaseClientModalView(ProtectedView, BSModalFormView):
