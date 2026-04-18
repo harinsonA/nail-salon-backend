@@ -54,7 +54,6 @@ Citas: {{ full_date }}
 			</div>
 		</div>
 	</section>
-	{% if not is_past_date %}
 	<section class="mt-3">
 		<a type="button" class="btn btn-primary" href="{{ url_agenda_create }}">
 			<span class="material-symbols-outlined fs-6">
@@ -63,7 +62,6 @@ Citas: {{ full_date }}
 			Agendar
 		</a>
 	</section>
-	{% endif %}
 	<section class="mt-3 d-inline-block">
 		<div>
 			<label class="form-check-label form-label--custom" for="{{ filter_form.status.id_for_label }}">

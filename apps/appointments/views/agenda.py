@@ -269,12 +269,11 @@ class AppointmentsView(ProtectedView, TemplateView):
         return f"{today.strftime('%B %Y')}".capitalize()
 
     @staticmethod
-    def get_date_instance(**kwargs) -> tuple:
+    def get_date_instance(**kwargs) -> date:
         _date = kwargs.get("date", "")
         _today = date.today()
         date_instance = datetime.strptime(_date, "%Y-%m-%d").date() if _date else _today
-        is_past_date = date_instance < _today
-        return date_instance, is_past_date
+        return date_instance
 
     def get_date_initial(self, **kwargs):
         _date = kwargs.get("date", "")
@@ -286,7 +285,7 @@ class AppointmentsView(ProtectedView, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         _date_selected = context["date"]
-        date_instance, is_past_date = self.get_date_instance(date=_date_selected)
+        date_instance = self.get_date_instance(date=_date_selected)
         date_initial = self.get_date_initial(date=_date_selected)
         context.update(
             {
@@ -299,7 +298,6 @@ class AppointmentsView(ProtectedView, TemplateView):
                 ),
                 "full_date": format_full_date(date_instance),
                 "date_initial": date_initial,
-                "is_past_date": is_past_date,
                 "cancel_url": reverse_lazy("calendar"),
             }
         )
