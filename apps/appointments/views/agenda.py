@@ -241,18 +241,6 @@ class AgendaConfirmationForm(BSModalModelForm):
             )
         return down_payment
 
-    def clean_payment_reference(self):
-        payment_reference = self.cleaned_data.get("payment_reference", "")
-        payment_method = self.cleaned_data.get("payment_method", "")
-
-        is_cash = payment_method == MetodoPago.EFECTIVO
-        has_no_reference = not payment_reference or not payment_reference.strip()
-
-        if not is_cash and has_no_reference:
-            raise forms.ValidationError("Debe ingresar una referencia de pago.")
-
-        return payment_reference.strip()
-
 
 # endregion
 """========================================================================="""
