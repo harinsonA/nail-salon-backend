@@ -21,23 +21,19 @@ from apps.common.custom_time_fields import (
     CustomDateField,
     MONTH_NUMBER_TO_NAME,
 )
+from apps.common.form_classes import (
+    FORM_CONTROL_CLASS,
+    FORM_CONTROL_TEXTAREA_CLASS,
+    FORM_SELECT_CLASS,
+    FORM_SELECT2_CLASS,
+)
 from apps.common.utils.dates import format_full_date
 from apps.common.utils.currency import format_currency
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.payments.choices import MetodoPago, EstadoPago
 from apps.payments.models import Pago, DetallePago
-from apps.services.models import Servicio
-
-"""========================================================================="""
-# region ........ Constants
-
-FORM_CONTROL_CLASS = "form-control form-control--custom"
-FORM_CONTROL_TEXTAREA_CLASS = f"{FORM_CONTROL_CLASS} form-control--textarea"
-FORM_SELECT_CLASS = "form-select form-select--custom"
-
-# endregion
-"""========================================================================="""
+from apps.services.models import Servicio, Categoria
 
 """========================================================================="""
 # region ........ Form
@@ -69,8 +65,15 @@ class AgendaFilterForm(forms.Form):
 
 
 class AgendaModalForm(BSModalModelForm):
+    category = forms.ModelChoiceField(
+        queryset=Categoria.activos.all(),
+        required=False,
+        label="Categoría",
+        empty_label="Sin definir",
+        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
+    )
     service = forms.ModelChoiceField(
-        queryset=Servicio.activos.all(),
+        queryset=Servicio.objects.none(),
         required=False,
         label="Servicio",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
@@ -518,7 +521,19 @@ class AgendaSeeModalView(ProtectedView, BSModalReadView):
     model = Cita
 
     @staticmethod
-    def get_services_data(object_base):
+    def get_categories_name(service_ids: list) -> dict:
+        categories = (
+            Servicio.objects.select_related(
+                "categoria",
+            )
+            .filter(
+                id__in=service_ids,
+            )
+            .values_list("pk", "categoria__nombre")
+        )
+        return {category_id: category_name for category_id, category_name in categories}
+
+    def get_services_data(self, object_base):
         appointment_details = object_base.detalles.all().values_list(
             "pk",
             "nombre_servicio",
@@ -526,11 +541,16 @@ class AgendaSeeModalView(ProtectedView, BSModalReadView):
             "precio_servicio",
             "precio_acordado",
             "descuento",
+            "servicio_id",
         )
         services_data = []
         total_amount = 0
         total_discount = 0
         total_to_pay = 0
+        service_ids = [detail[-1] for detail in appointment_details]
+        print("SERVICE IDS", service_ids)
+        categories_name = self.get_categories_name(service_ids=service_ids)
+        print("CATEGORIES NAME", categories_name)
         for detail in appointment_details:
             (
                 detail_id,
@@ -539,6 +559,7 @@ class AgendaSeeModalView(ProtectedView, BSModalReadView):
                 service_price,
                 price_acorded,
                 discount,
+                service_id,
             ) = detail
             total = service_price * quantity_services
             total_amount += total
@@ -548,6 +569,7 @@ class AgendaSeeModalView(ProtectedView, BSModalReadView):
                 {
                     "detail_id": detail_id,
                     "name": service_name,
+                    "category_name": categories_name.get(service_id) or "Sin definir",
                     "quantity": quantity_services,
                     "price": format_currency(service_price),
                     "total": format_currency(total),

@@ -91,6 +91,7 @@
         <thead>
           <tr>
             <th scope="col" class="text-start">Nombre</th>
+            <th scope="col" class="text-start">Categoría</th>
             <th scope="col" class="text-start">Precio</th>
             <th scope="col" class="text-start">Cantidad</th>
             <th scope="col" class="text-end text-black">Monto total</th>
@@ -135,7 +136,8 @@
         },
       },
       columns: [
-        { data: 'nombre_servicio', className: 'fs-7 w-auto text-start', orderable: false },
+        { data: 'nombre_servicio', className: 'fs-7 w-auto text-start', },
+        { data: ({ servicio__categoria__nombre: categoryName }) => categoryName || 'Sin definir', className: 'fs-7 w-auto text-start' },
         { data: 'precio_formatted', className: 'fs-7 w-auto text-end', orderable: false },
         { data: 'cantidad_servicios', className: 'fs-7 w-auto text-end', orderable: false },
         { data: 'total_servicio_formatted', className: 'fs-7 w-auto text-end', orderable: false },

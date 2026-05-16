@@ -8,19 +8,11 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
 from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.common.utils.utils import CommonCleaner, get_errors_to_response
+from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from ..models.cliente import Cliente
-
-"""========================================================================="""
-# region ........ Constants
-
-FORM_CONTROL_CLASS = "form-control form-control--custom"
-FORM_SELECT_CLASS = "form-select form-select--custom"
-
-# endregion
-"""========================================================================="""
 
 """========================================================================="""
 # region ........ Form

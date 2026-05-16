@@ -21,6 +21,9 @@
 	<link href="{% static 'css/libs/datatables/fixedcolumns_v5.0.5/fixedColumns.dataTables.min.css' %}"
 		rel="stylesheet">
 
+	<!-- Select2 CSS -->
+	<link href="{% static 'css/libs/select2_v4.0.13/select2.min.css' %}" rel="stylesheet">
+
 	<!-- Bootstrap Datepicker CSS -->
 	<link href="{% static 'css/libs/bootstrap_datepickers_v1.10.0/bootstrap-datepicker3.min.css' %}" rel="stylesheet">
 
@@ -31,6 +34,7 @@
 	<link href="{% static 'css/custom/custom.icons.css' %}" rel="stylesheet">
 	<link href="{% static 'css/custom/custom.modals.css' %}" rel="stylesheet">
 	<link href="{% static 'css/custom/custom.calendar.css' %}" rel="stylesheet">
+	<link href="{% static 'css/custom/custom.select2.css' %}" rel="stylesheet">
 	<link href="{% static 'css/custom/custom.main.css' %}" rel="stylesheet">
 
 	<!-- Custom CSS -->
@@ -72,6 +76,10 @@
 	<script src="{% static 'js/libs/datatables/responsive_v3.0.6/dataTables.responsive.min.js' %}"></script>
 	<script src="{% static 'js/libs/datatables/fixedcolumns_v5.0.5/dataTables.fixedColumns.min.js' %}"></script>
 
+	<!-- Select2 JS -->
+	<script src="{% static 'js/libs/select2_v4.0.13/select2.min.js' %}"></script>
+	<script src="{% static 'js/libs/select2_v4.0.13/i18n/es.min.js' %}"></script>
+
 	<!-- Django Bootstrap Modal Forms -->
 	<script src="{% static 'js/libs/bootstrap.modal.forms/jquery.bootstrap.modal.forms.min.js' %}"></script>
 
@@ -82,6 +90,7 @@
 	<script src="{% static 'js/custom/custom.datepicker.js' %}"></script>
 	<script src="{% static 'js/custom/custom.main.js' %}"></script>
 	<script src="{% static 'js/custom/custom.bs_modals.js' %}"></script>
+	<script src="{% static 'js/custom/custom.select2.js' %}"></script>
 	<script>
 		$(() => {
 			{% if messages %}

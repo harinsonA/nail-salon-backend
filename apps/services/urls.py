@@ -6,6 +6,13 @@ from apps.services.views.servicio import (
     ServiceDetailModalView,
     ServiceDeleteModalView,
 )
+from apps.services.views.categories.categoria import (
+    CategoriesView,
+    CategoryListView,
+    CategoryCreateModalView,
+    CategoryDetailModalView,
+    CategoryDeleteModalView,
+)
 
 urlpatterns = [
     path(
@@ -32,5 +39,30 @@ urlpatterns = [
         "servicios/<int:pk>/eliminar/",
         ServiceDeleteModalView.as_view(),
         name="service_delete_modal",
+    ),
+    path(
+        "categorias/",
+        CategoriesView.as_view(),
+        name="categories",
+    ),
+    path(
+        "categorias/lista/ajax",
+        CategoryListView.as_view(),
+        name="category_list",
+    ),
+    path(
+        "categorias/crear/",
+        CategoryCreateModalView.as_view(),
+        name="category_create_modal",
+    ),
+    path(
+        "categorias/<int:pk>/detalle/",
+        CategoryDetailModalView.as_view(),
+        name="category_detail_modal",
+    ),
+    path(
+        "categorias/<int:pk>/eliminar/",
+        CategoryDeleteModalView.as_view(),
+        name="category_delete_modal",
     ),
 ]

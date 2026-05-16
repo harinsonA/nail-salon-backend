@@ -9,15 +9,16 @@ from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from apps.common.utils.currency import format_currency
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.custom_time_fields import CustomDateField
+from apps.common.form_classes import (
+    FORM_CONTROL_CLASS,
+    FORM_CONTROL_TEXTAREA_CLASS,
+    FORM_SELECT_CLASS,
+)
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago, DetallePago
 from apps.payments.choices import MetodoPago, EstadoPago
 from bootstrap_modal_forms.forms import BSModalModelForm
 from bootstrap_modal_forms.generic import BSModalUpdateView
-
-FORM_CONTROL_CLASS = "form-control form-control--custom"
-FORM_CONTROL_TEXTAREA_CLASS = f"{FORM_CONTROL_CLASS} form-control--textarea"
-FORM_SELECT_CLASS = "form-select form-select--custom"
 
 
 """========================================================================="""

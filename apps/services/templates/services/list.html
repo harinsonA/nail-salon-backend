@@ -7,6 +7,20 @@ Lista de servicios
 {% block content %}
 {% include 'common/bs_modal.html' %}
 <section>
+	<section class="mb-4">
+		<ul class="nav nav-tabs justify-content-center">
+			<li class="nav-item">
+				<a class="nav-link active" aria-current="page" href="#">
+					<b>Servicios</b>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" href="{{ url_category_list }}">
+					<b>Categorias</b>
+				</a>
+			</li>
+		</ul>
+	</section>
 	<section>
 		<a id="service-create-btn" data-form-url="{%  url 'service_create_modal' %}"
 			class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
@@ -55,6 +69,7 @@ Lista de servicios
 			<thead>
 				<tr>
 					<th scope="col">Nombre</th>
+					<th scope="col">Categoria</th>
 					<th scope="col">Estado</th>
 					<th scope="col">Precio</th>
 					<th scope="col">Duración</th>
@@ -71,6 +86,7 @@ Lista de servicios
 {% block extra_js %}
 <script>
 	$(() => {
+		// $("#id_status").select2();
 		const statusColumn = (status) => status ? `
 		<span class="material-symbols-outlined text-success">
 			check_circle
@@ -88,6 +104,7 @@ Lista de servicios
 			requestData: filterData,
 			columns: [
 				{ data: 'nombre', className: 'fs-7 w-auto text-nowrap' },
+				{ data: 'category_name', className: 'fs-7 w-auto text-nowrap' },
 				{ data: ({ status }) => statusColumn(status), className: 'fs-7 w-auto text-center' },
 				{ data: 'price_formatted', className: 'fs-7 w-auto text-center' },
 				{ data: 'estimated_duration_display', className: 'fs-7 w-auto text-center' },

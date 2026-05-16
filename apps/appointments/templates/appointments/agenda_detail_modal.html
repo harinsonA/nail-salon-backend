@@ -49,6 +49,15 @@
           <b>Datos servicio</b>
         </p>
         <div class="mb-2">
+          <label for="{{ form.category.id_for_label }}" class="form-label form-label--custom">
+            {{ form.category.label }}
+          </label>
+          {{ form.category }}
+          <span class="invalid-feedback invalid-feedback--custom {{ form.category.id_for_label }}">
+            {{ form.category.errors.0 }}
+          </span>
+        </div>
+        <div class="mb-2">
           <label for="{{ form.service.id_for_label }}" class="form-label form-label--custom">
             {{ form.service.label }}*
           </label>
@@ -126,6 +135,16 @@
   $(() => {
     initializeDatePickers();
     initTooltips();
+    const categorySelect = $('#{{ form.category.id_for_label }}');
+    const serviceSelect = $('#{{ form.service.id_for_label }}');
+    const $modal = serviceSelect.closest('.modal');
+    initializeSelect2Ajax(serviceSelect, {
+      dropdownParent: $modal.length ? $modal : $(document.body),
+      ajax: {
+        url: '{% url "services_by_category_ajax" %}',
+        data: () => ({ category_id: categorySelect.val() ?? '' }),
+      },
+    });
     const serviceDataString = '{{ service_data| safe }}';
     const currentServiceData = JSON.parse(serviceDataString);
     const servicesSetSelected = new Set([...currentServiceData]);
@@ -321,6 +340,11 @@
         $('#{{ form.service.id_for_label }}').trigger('change');
       }
     }
+
+    categorySelect.on('change', () => {
+      serviceSelect.val(null).trigger('change');
+      resetPricingReceipt();
+    });
 
     $('#{{ form.service.id_for_label }}').on('change', (e) => {
       const serviceID = $(e.currentTarget).val();

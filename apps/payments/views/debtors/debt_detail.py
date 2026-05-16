@@ -67,15 +67,17 @@ class ServicesDetailListView(BaseListViewAjax):
         "total_servicio",
         "precio_acordado",
         "descuento",
+        "servicio__categoria__nombre",
     ]
 
     ordering_fields = {
         "0": "nombre_servicio",
-        "1": "precio_servicio",
-        "2": "cantidad_servicios",
-        "3": "total_servicio",
-        "4": "descuento",
-        "5": "precio_acordado",
+        "1": "servicio__categoria__nombre",
+        "2": "precio_servicio",
+        "3": "cantidad_servicios",
+        "4": "total_servicio",
+        "5": "descuento",
+        "6": "precio_acordado",
     }
 
     def get_queryset(self):

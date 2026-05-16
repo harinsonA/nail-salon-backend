@@ -6,21 +6,16 @@ from django.db.models import Count, TextChoices, Q
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
+from result import Result, Ok, Err
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import DurationInMinutesField
+from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.currency import format_currency
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from ..models.servicio import Servicio
+from ..models.categoria import Categoria
 
-"""========================================================================="""
-# region ........ Constants
-
-FORM_CONTROL_CLASS = "form-control form-control--custom"
-FORM_SELECT_CLASS = "form-select form-select--custom"
-
-# endregion
-"""========================================================================="""
 
 """========================================================================="""
 # region ........ Form
@@ -55,6 +50,17 @@ class ServicesFilterForm(BSModalForm):
 
 
 class ServicesForm(BSModalForm):
+    category = forms.ModelChoiceField(
+        label="Categoria",
+        required=True,
+        queryset=Categoria.objects.filter(is_removed=False),
+        widget=forms.Select(
+            attrs={
+                "class": FORM_SELECT_CLASS,
+            },
+        ),
+        empty_label="Selecciona una categoria",
+    )
     name = forms.CharField(
         label="Nombre del Servicio",
         max_length=100,
@@ -120,6 +126,12 @@ class ServicesForm(BSModalForm):
             raise forms.ValidationError(result.value)
         return name
 
+    def clean_category(self):
+        category = self.cleaned_data.get("category")
+        if not category:
+            raise forms.ValidationError("Debes seleccionar una categoria.")
+        return category
+
     def clean_description(self):
         description = self.cleaned_data.get("description", "").strip()
         if not description:
@@ -158,6 +170,7 @@ class ServicesForm(BSModalForm):
         """
         normalized_data = {}
         fields = [
+            ("category", "categoria"),
             ("name", "nombre"),
             ("description", "descripcion"),
             ("price", "precio"),
@@ -188,6 +201,7 @@ class ServicesView(ProtectedView, TemplateView):
             {
                 "filter_form": ServicesFilterForm(),
                 "url_service_list": reverse_lazy("service_list"),
+                "url_category_list": reverse_lazy("categories"),
             }
         )
         return context
@@ -200,6 +214,7 @@ class ServiceListView(BaseListViewAjax):
     field_list = [
         "pk",
         "nombre",
+        "categoria__nombre",
         "descripcion",
         "precio",
         "duracion_estimada",
@@ -208,9 +223,10 @@ class ServiceListView(BaseListViewAjax):
 
     ordering_fields = {
         "0": "nombre",
-        "1": "estado",
-        "2": "precio",
-        "3": "duracion_estimada",
+        "1": "categoria__nombre",
+        "2": "estado",
+        "3": "precio",
+        "4": "duracion_estimada",
     }
 
     @staticmethod
@@ -246,6 +262,7 @@ class ServiceListView(BaseListViewAjax):
                     "estimated_duration_display": self.get_estimated_duration_display(
                         estimated_duration=item.get("duracion_estimada")
                     ),
+                    "category_name": item.get("categoria__nombre") or "Sin definir",
                     "price_formatted": format_currency(item.get("precio", 0)),
                     "status": item.get("estado") == Servicio.EstadoChoices.ACTIVO,
                 }
@@ -332,6 +349,7 @@ class ServiceDetailModalView(BaseServiceModalView):
     def get_initial(self):
         self.base_object = self.get_object()
         initial = {
+            "category": self.base_object.categoria_id,
             "name": self.base_object.nombre,
             "description": self.base_object.descripcion,
             "price": self.base_object.precio,
@@ -345,9 +363,43 @@ class ServiceDetailModalView(BaseServiceModalView):
         context["service_name"] = self.base_object.nombre
         return context
 
+    @staticmethod
+    def validate_category_active_for_activation(
+        previous_status: str,
+        new_status: str,
+        category,
+    ) -> Result[str, str]:
+        is_transition_to_active = (
+            previous_status == Servicio.EstadoChoices.INACTIVO
+            and new_status == Servicio.EstadoChoices.ACTIVO
+        )
+        if not is_transition_to_active:
+            return Ok("valid")
+
+        is_category_active = (
+            category and category.estado == Categoria.EstadoChoices.ACTIVO
+        )
+        if is_category_active:
+            return Ok("valid")
+
+        return Err("No puedes activar un servicio con una categoria inactiva.")
+
     def form_valid(self, form):
         cleaned_data = form.cleaned_data
         service = self.get_object()
+        previous_status = service.estado
+        new_status = cleaned_data.get("estado", previous_status)
+        category = cleaned_data.get("categoria")
+
+        category_validation_result = self.validate_category_active_for_activation(
+            previous_status=previous_status,
+            new_status=new_status,
+            category=category,
+        )
+        if category_validation_result.is_err():
+            form.add_error("category", category_validation_result.err_value)
+            return self.form_invalid(form)
+
         for field, value in cleaned_data.items():
             setattr(service, field, value)
         service.save(update_fields=cleaned_data.keys())

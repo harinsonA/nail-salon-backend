@@ -11,21 +11,18 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import CustomDateField
+from apps.common.form_classes import (
+    FORM_CONTROL_CLASS,
+    FORM_CONTROL_TEXTAREA_CLASS,
+    FORM_SELECT_CLASS,
+    FORM_SELECT2_CLASS,
+)
 from apps.common.views.base_views import ProtectedView, ProtectedAjaxView
 from apps.appointments.models.agenda import Cita
 from apps.appointments.views.handler import HandlerAgenda, HandlerAgendaList
 from apps.clients.models import Cliente
-from apps.services.models import Servicio
+from apps.services.models import Categoria, Servicio
 
-"""========================================================================="""
-# region ........ Constants
-
-FORM_CONTROL_CLASS = "form-control form-control--custom"
-FORM_CONTROL_TEXTAREA_CLASS = f"{FORM_CONTROL_CLASS} form-control--textarea"
-FORM_SELECT_CLASS = "form-select form-select--custom"
-
-# endregion
-"""========================================================================="""
 
 """========================================================================="""
 # region ........ Form
@@ -38,10 +35,17 @@ class AgendaForm(forms.Form):
         queryset=Cliente.activos.all(),
         required=True,
         label="Cliente",
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
+    )
+    category = forms.ModelChoiceField(
+        queryset=Categoria.activos.all(),
+        required=False,
+        label="Categoría",
+        empty_label="Sin definir",
+        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
     )
     service = forms.ModelChoiceField(
-        queryset=Servicio.activos.all(),
+        queryset=Servicio.objects.none(),
         required=True,
         label="Servicio",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
@@ -258,6 +262,19 @@ class AvailableHoursAjax(BaseListViewAjax):
             value["hora_agenda"] = value["hora_agenda"].strftime("%H:%M")
             value["client_full_name"] = HandlerAgendaList.get_client_full_name(**value)
         return values
+
+
+class ServicesByCategoryAjax(ProtectedAjaxView, TemplateView):
+    def get(self, request, *args, **kwargs):
+        category_id = request.GET.get("category_id", None)
+        if category_id is None:
+            return JsonResponse({"results": []})
+        if category_id == "":
+            queryset = Servicio.activos.filter(categoria__isnull=True)
+        else:
+            queryset = Servicio.activos.filter(categoria_id=category_id)
+        results = [{"id": s.pk, "text": s.nombre} for s in queryset]
+        return JsonResponse({"results": results})
 
 
 # endregion

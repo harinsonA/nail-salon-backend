@@ -20,8 +20,22 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'clients' %}">Clientes</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'services' %}">Servicios</a>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Servicios
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark">
+              <li>
+                <a class="dropdown-item" href="{% url 'services' %}">
+                  Servicios
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="{% url 'categories' %}">
+                  Categorias
+                </a>
+              </li>
+            </ul>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

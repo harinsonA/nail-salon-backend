@@ -2,6 +2,12 @@ import datetime
 from django.db import models
 from model_utils.models import TimeStampedModel, SoftDeletableModel
 from simple_history.models import HistoricalRecords
+from .categoria import Categoria
+
+
+class Servicios(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_removed=False)
 
 
 class ServicioActivoManager(models.Manager):
@@ -45,12 +51,20 @@ class Servicio(TimeStampedModel, SoftDeletableModel):
     duracion_estimada = models.DurationField(
         blank=True, null=True, default=datetime.timedelta(minutes=30)
     )
+    categoria = models.ForeignKey(
+        Categoria,
+        on_delete=models.CASCADE,
+        related_name="servicios",
+        null=True,
+        blank=True,
+    )
 
     # Auditoría completa (crítico para cambios de precio)
     history = HistoricalRecords(inherit=True)
 
     # Managers
-    objects = models.Manager()  # Manager por defecto (todos)
+    objects = Servicios()  # Manager para excluir eliminados
+    all_objects = models.Manager()  # Manager por defecto (todos)
     activos = ServicioActivoManager()  # Solo activos
     inactivos = ServicioInactivoManager()  # Solo inactivos
 

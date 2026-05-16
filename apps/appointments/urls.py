@@ -14,6 +14,7 @@ from apps.appointments.views.agenda_create import (
     AgendaCreateView,
     ServiceDetailsAjax,
     AvailableHoursAjax,
+    ServicesByCategoryAjax,
 )
 
 urlpatterns = [
@@ -81,5 +82,10 @@ urlpatterns = [
         "agenda/horas/disponibles/ajax/",
         AvailableHoursAjax.as_view(),
         name="available_hours_ajax",
+    ),
+    path(
+        "agenda/servicios/por-categoria/ajax/",
+        ServicesByCategoryAjax.as_view(),
+        name="services_by_category_ajax",
     ),
 ]

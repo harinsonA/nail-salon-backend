@@ -27,6 +27,11 @@ class ClienteInactivoManager(models.Manager):
         )
 
 
+class ClientesManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_removed=False)
+
+
 class Cliente(TimeStampedModel, SoftDeletableModel):
     class EstadoChoices(models.TextChoices):
         ACTIVO = "activo", "Activo"
@@ -48,7 +53,8 @@ class Cliente(TimeStampedModel, SoftDeletableModel):
     history = HistoricalRecords(inherit=True)
 
     # Managers
-    objects = models.Manager()  # Manager por defecto (todos)
+    objects = ClientesManager()  # Manager por defecto (excluye eliminados)
+    all_objects = models.Manager()  # Manager que incluye eliminados
     activos = ClienteActivoManager()  # Solo activos
     inactivos = ClienteInactivoManager()  # Solo inactivos
 

@@ -55,6 +55,7 @@
 				<thead>
 					<tr>
 						<th scope="col" class="text-left">Servicio</th>
+						<th scope="col" class="text-center">Categoria</th>
 						<th scope="col" class="text-center">Cantidad</th>
 						<th scope="col" class="text-center">Precio</th>
 						<th scope="col" class="text-center text-primary">Total</th>
@@ -66,6 +67,7 @@
 					{% for service in services %}
 					<tr>
 						<td class="text-left">{{ service.name }}</td>
+						<td class="text-center">{{ service.category_name }}</td>
 						<td class="text-center">{{ service.quantity }}</td>
 						<td class="text-center">{{ service.price }}</td>
 						<td class="text-center text-primary">{{ service.total }}</td>
