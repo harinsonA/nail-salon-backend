@@ -864,6 +864,9 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
         payment_detail_instance.save()
 
     def form_valid(self, form):
+        if self.object.estado == Cita.EstadoChoices.COMPLETADA:
+            message = self.__get_message_success()
+            return JsonResponse({"message": message}, status=200)
         cleaned_data = form.cleaned_data
         details = self._get_details(self.object)
         client_full_name = self._get_client_full_name(self.object)
