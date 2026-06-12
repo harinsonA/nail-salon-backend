@@ -119,9 +119,9 @@ Citas: {{ full_date }}
 			agenda_cancel_modal_url,
 			agenda_delete_modal_url,
 		}) => (`<li>
-				<a class="dropdown-item canvas-modal fs-6" data-form-url="${agenda_update_modal_url}">
-					<span class="material-symbols-outlined text-primary">edit</span>
-					Editar
+				<a class="dropdown-item dropdown-item--custom canvas-modal" data-form-url="${agenda_update_modal_url}">
+					<span class="material-symbols-outlined">edit_document</span>
+					Ver detalle
 				</a>
 			</li>
 			<li>
@@ -137,15 +137,15 @@ Citas: {{ full_date }}
 				</a>
 			</li>
 			<li>
-				<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_delete_modal_url}">
-					<span class="material-symbols-outlined text-danger">delete</span>
+				<a class="dropdown-item dropdown-item--custom bs-modal text-color-destructive" data-form-url="${agenda_delete_modal_url}">
+					<span class="material-symbols-outlined">delete</span>
 					Eliminar
 				</a>
 			</li>`);
 
 		const completedOptions = ({ agenda_delete_modal_url }) => (`<li>
-				<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_delete_modal_url}">
-					<span class="material-symbols-outlined text-danger">delete</span>
+				<a class="dropdown-item dropdown-item--custom bs-modal text-color-destructive" data-form-url="${agenda_delete_modal_url}">
+					<span class="material-symbols-outlined">delete</span>
 					Eliminar
 				</a>
 			</li>`);
@@ -157,8 +157,8 @@ Citas: {{ full_date }}
 				</a>
 			</li>
 			<li>
-				<a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_delete_modal_url}">
-					<span class="material-symbols-outlined text-danger">delete</span>
+				<a class="dropdown-item dropdown-item--custom bs-modal text-color-destructive" data-form-url="${agenda_delete_modal_url}">
+					<span class="material-symbols-outlined">delete</span>
 					Eliminar
 				</a>
 			</li>`);
