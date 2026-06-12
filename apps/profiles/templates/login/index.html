@@ -52,70 +52,51 @@
 			height: 100%;
 		}
 
-		.soft-blob {
+		.sand-wave {
 			position: absolute;
-			border-radius: 50% 40% 60% 30%;
-			background: linear-gradient(45deg, rgba(240, 206, 170, 0.4), rgba(224, 190, 156, 0.3));
-			animation: softFloat 12s ease-in-out infinite;
-			filter: blur(80px);
+			bottom: 0;
+			left: 0;
+			width: 200%;
+			background-repeat: repeat-x;
+			background-size: 50% 100%;
+			animation: sandDrift linear infinite;
 		}
 
-		.blob-1 {
-			width: 300px;
-			height: 250px;
-			top: -10%;
-			left: -5%;
-			animation-delay: 0s;
+		.sand-waves-top {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 210px;
+			transform: scaleY(-1);
 		}
 
-		.blob-2 {
-			width: 200px;
-			height: 180px;
-			top: 60%;
-			right: -5%;
-			animation-delay: -4s;
-			background: linear-gradient(45deg, rgba(210, 180, 140, 0.3), rgba(195, 165, 125, 0.2));
+		.sand-wave.wave-1 {
+			height: 110px;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,70 C150,110 350,30 600,70 C850,110 1050,30 1200,70 L1200,120 L0,120 Z' fill='%23D7B28A' fill-opacity='0.5'/%3E%3C/svg%3E");
+			animation-duration: 16s;
 		}
 
-		.blob-3 {
-			width: 180px;
+		.sand-wave.wave-2 {
 			height: 160px;
-			top: 20%;
-			right: 20%;
-			animation-delay: -8s;
-			background: linear-gradient(45deg, rgba(230, 200, 160, 0.25), rgba(215, 185, 145, 0.2));
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,60 C200,20 400,100 600,60 C800,20 1000,100 1200,60 L1200,120 L0,120 Z' fill='%23D7B28A' fill-opacity='0.3'/%3E%3C/svg%3E");
+			animation-duration: 26s;
+			animation-direction: reverse;
 		}
 
-		.blob-4 {
-			width: 120px;
-			height: 100px;
-			bottom: 10%;
-			left: 15%;
-			animation-delay: -6s;
-			background: linear-gradient(45deg, rgba(220, 190, 150, 0.3), rgba(205, 175, 135, 0.25));
+		.sand-wave.wave-3 {
+			height: 210px;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,80 C180,40 380,110 600,75 C820,40 1020,110 1200,80 L1200,120 L0,120 Z' fill='%23D7B28A' fill-opacity='0.18'/%3E%3C/svg%3E");
+			animation-duration: 36s;
 		}
 
-		@keyframes softFloat {
+		@keyframes sandDrift {
+			0% {
+				transform: translateX(0);
+			}
 
-			0%,
 			100% {
-				transform: translate(0, 0) rotate(0deg) scale(1);
-				border-radius: 50% 40% 60% 30%;
-			}
-
-			25% {
-				transform: translate(30px, -20px) rotate(90deg) scale(1.1);
-				border-radius: 40% 60% 30% 50%;
-			}
-
-			50% {
-				transform: translate(-20px, -30px) rotate(180deg) scale(0.9);
-				border-radius: 60% 30% 50% 40%;
-			}
-
-			75% {
-				transform: translate(-30px, 20px) rotate(270deg) scale(1.05);
-				border-radius: 30% 50% 40% 60%;
+				transform: translateX(-50%);
 			}
 		}
 
@@ -133,10 +114,12 @@
 			border-radius: 32px;
 			padding: 48px 40px;
 			box-shadow:
-				0 20px 40px rgba(0, 0, 0, 0.03),
-				0 8px 24px rgba(0, 0, 0, 0.02),
-				inset 0 1px 0 rgba(255, 255, 255, 0.8);
-			border: 1px solid rgba(255, 255, 255, 0.4);
+				0 30px 60px rgba(139, 102, 85, 0.18),
+				0 12px 28px rgba(139, 102, 85, 0.12),
+				0 4px 10px rgba(139, 102, 85, 0.08),
+				inset 0 2px 0 rgba(255, 255, 255, 0.45),
+				inset 0 -3px 8px rgba(215, 178, 138, 0.09);
+			border: 1px solid rgba(255, 255, 255, 0.5);
 			position: relative;
 			overflow: hidden;
 		}
@@ -147,8 +130,8 @@
 			top: 0;
 			left: 0;
 			right: 0;
-			height: 1px;
-			background: linear-gradient(90deg, transparent, rgba(240, 206, 170, 0.5), transparent);
+			height: 2px;
+			background: linear-gradient(90deg, transparent, rgba(215, 178, 138, 0.45), transparent);
 		}
 
 		/* Header */
@@ -229,12 +212,24 @@
 		}
 
 		.soft-field input:focus+label,
-		.soft-field input:not(:placeholder-shown)+label {
+		.soft-field input:not(:placeholder-shown)+label,
+		.soft-field input:-webkit-autofill+label {
 			top: 4px;
 			font-size: 10px;
 			color: #8b6655;
 			transform: translateY(0);
 			font-weight: 500;
+		}
+
+		/* Autofill: mantener los colores del diseño en lugar del azul del navegador */
+		.soft-field input:-webkit-autofill,
+		.soft-field input:-webkit-autofill:hover,
+		.soft-field input:-webkit-autofill:focus {
+			-webkit-text-fill-color: #8b6655;
+			-webkit-box-shadow: 0 0 0 1000px #fefdfb inset;
+			box-shadow: 0 0 0 1000px #fefdfb inset;
+			caret-color: #8b6655;
+			transition: background-color 9999s ease-out 0s;
 		}
 
 		.field-accent {
@@ -387,6 +382,36 @@
 			font-size: 13px;
 		}
 
+		.footer-social {
+			display: flex;
+			justify-content: center;
+			gap: 12px;
+			margin-top: 12px;
+		}
+
+		.footer-social a {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 36px;
+			height: 36px;
+			border-radius: 12px;
+			color: rgba(139, 102, 85, 0.55);
+			background: rgba(215, 178, 138, 0.12);
+			transition: all 0.25s ease;
+		}
+
+		.footer-social a:hover {
+			color: #8b6655;
+			background: rgba(215, 178, 138, 0.3);
+			transform: translateY(-2px);
+		}
+
+		.footer-social svg {
+			width: 18px;
+			height: 18px;
+		}
+
 		/* Mobile Responsive */
 		@media (max-width: 480px) {
 			body {
@@ -405,10 +430,6 @@
 			.floating-shapes {
 				opacity: 0.5;
 			}
-
-			.soft-blob {
-				filter: blur(60px);
-			}
 		}
 	</style>
 </head>
@@ -416,10 +437,14 @@
 <body>
 	<div class="soft-background">
 		<div class="floating-shapes">
-			<div class="soft-blob blob-1"></div>
-			<div class="soft-blob blob-2"></div>
-			<div class="soft-blob blob-3"></div>
-			<div class="soft-blob blob-4"></div>
+			<div class="sand-waves-top">
+				<div class="sand-wave wave-3"></div>
+				<div class="sand-wave wave-2"></div>
+				<div class="sand-wave wave-1"></div>
+			</div>
+			<div class="sand-wave wave-3"></div>
+			<div class="sand-wave wave-2"></div>
+			<div class="sand-wave wave-1"></div>
 		</div>
 	</div>
 
@@ -427,9 +452,11 @@
 		<div class="soft-card">
 			<div class="comfort-header">
 				<div class="comfort-icon">
+					<img src="{% static 'images/logos/logo-3.png' %}" alt="Hi Agenda"
+						style="width: 300px; max-width: 100%;">
 				</div>
-				<h1 class="comfort-title">Bienvenido</h1>
-				<p class="gentle-subtitle">Inicia sesión en tu espacio</p>
+				<h1 class="comfort-title">¡Bienvenida!</h1>
+				<p class="gentle-subtitle">Tus citas y clientes, todo en un solo lugar</p>
 			</div>
 
 			{% if form.errors %}
@@ -464,12 +491,39 @@
 
 				<button type="submit" class="comfort-button">
 					<div class="button-background"></div>
-					<span class="button-text">Ingresar</span>
+					<span class="button-text">Iniciar sesión</span>
 					<div class="button-glow"></div>
 				</button>
 			</form>
 
-			<p class="comfort-footer">&copy; {% now "Y" %}</p>
+			<div class="comfort-footer">
+				<p>&copy; {% now "Y" %} Hi Agenda. Todos los derechos reservados.</p>
+				<div class="footer-social">
+					<a href="https://www.linkedin.com/in/harinsonarellanitanare/" target="_blank"
+						rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn">
+						<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+							<path
+								d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z" />
+						</svg>
+					</a>
+					<a href="https://www.instagram.com/harinson_arellan" target="_blank" rel="noopener noreferrer"
+						aria-label="Instagram" title="Instagram">
+						<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+							<path
+								d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.72 3.72 0 0 1-1.38-.9c-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07zM12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.88 5.88 0 0 0-2.13 1.39A5.88 5.88 0 0 0 .63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.31.8.72 1.47 1.39 2.13a5.88 5.88 0 0 0 2.13 1.39c.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.88 5.88 0 0 0 2.13-1.39 5.88 5.88 0 0 0 1.39-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.88 5.88 0 0 0-1.39-2.13A5.88 5.88 0 0 0 19.86.63c-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1 0 12 18.16 6.16 6.16 0 0 0 12 5.84zm0 10.16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm7.85-10.4a1.44 1.44 0 1 1-2.88 0 1.44 1.44 0 0 1 2.88 0z" />
+						</svg>
+					</a>
+					<a href="https://harinsonarellan.netlify.app/" target="_blank" rel="noopener noreferrer"
+						aria-label="Sitio web personal" title="Sitio web personal">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+							xmlns="http://www.w3.org/2000/svg">
+							<circle cx="12" cy="12" r="10" />
+							<path
+								d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+						</svg>
+					</a>
+				</div>
+			</div>
 		</div>
 	</div>
 
