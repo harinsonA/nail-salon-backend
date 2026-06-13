@@ -1,0 +1,262 @@
+/* ==========================================================================
+   HI AGENDA — PALETA DE COLORES GLOBAL (colors.main.css)
+   --------------------------------------------------------------------------
+   Paleta inspirada en el reloj de arena del logo y la arena misma.
+   Referencia visual: apps/profiles/templates/login/index.html
+
+   Organización:
+     1. Escalas de color base (arena, café, crema, neutros)
+     2. Variables semánticas (texto, fondos, bordes, estados)
+     3. Sombras y elevación
+     4. Degradados
+     5. Efecto global "olas de arena"
+
+   Uso: importar DESPUÉS de bootstrap y ANTES de los demás custom.*.css
+     <link href="{% static 'css/custom/colors.main.css' %}" rel="stylesheet">
+   ========================================================================== */
+
+:root {
+	/* ----------------------------------------------------------------------
+	   1. ESCALAS DE COLOR BASE
+	   ---------------------------------------------------------------------- */
+
+	/* Arena — color de marca principal (#D7B28A, el de las olas del login) */
+	--sand-100: #f7ede0;
+	--sand-200: #efdcc4;
+	--sand-300: #e6cba9;
+	--sand-400: #dfbe99;
+	--sand-500: #d7b28a;
+	/* ★ base */
+	--sand-600: #c29a6f;
+	--sand-700: #a67f56;
+	--sand-800: #866441;
+	--sand-900: #644a2f;
+
+	/* Café — color de texto y acentos oscuros (#8b6655, títulos del login) */
+	--cocoa-100: #ede4df;
+	--cocoa-200: #d9c6bd;
+	--cocoa-300: #c0a294;
+	--cocoa-400: #a5826f;
+	--cocoa-500: #8b6655;
+	/* ★ base */
+	--cocoa-600: #755446;
+	--cocoa-700: #5e4438;
+	--cocoa-800: #46332a;
+	--cocoa-900: #2f221c;
+
+	/* Durazno — acentos suaves y resplandores (#f0ceaa, destellos del login) */
+	--peach-100: #fcf3e8;
+	--peach-200: #f7e3cc;
+	--peach-300: #f0ceaa;
+	/* ★ base */
+	--peach-400: #e0be9c;
+	--peach-500: #d2ab85;
+
+	/* Crema — fondos cálidos (degradado de fondo del login) */
+	--cream-50: #fefdfb;
+	--cream-100: #faf9f6;
+	--cream-200: #f5f3f0;
+	--cream-300: #f0ede8;
+	--cream-400: #e8e3da;
+
+	/* Neutros cálidos — grises con temperatura para no romper la paleta */
+	--warm-white: #ffffff;
+	--warm-gray-100: #f6f4f1;
+	--warm-gray-200: #e9e5e0;
+	--warm-gray-300: #d4cec6;
+	--warm-gray-400: #a89f93;
+	--warm-gray-500: #7d7468;
+	--warm-gray-600: #5c554b;
+
+	/* ----------------------------------------------------------------------
+	   2. VARIABLES SEMÁNTICAS
+	   Las que se deben usar en los componentes. Apuntan a las escalas de
+	   arriba: si mañana cambia la marca, solo se retocan las escalas.
+	   ---------------------------------------------------------------------- */
+
+	/* Marca */
+	--color-primary: var(--sand-500);
+	--color-primary-hover: var(--sand-600);
+	--color-primary-active: var(--sand-700);
+	--color-primary-soft: rgba(215, 178, 138, 0.12);
+	/* fondos de chips/iconos */
+	--color-primary-soft-hover: rgba(215, 178, 138, 0.3);
+
+	--color-secondary: var(--cocoa-500);
+	--color-secondary-hover: var(--cocoa-700);
+
+	/* Texto */
+	--text-primary: var(--cocoa-500);
+	--text-strong: var(--cocoa-700);
+	--text-muted: rgba(139, 102, 85, 0.7);
+	--text-subtle: rgba(139, 102, 85, 0.5);
+	--text-on-primary: var(--warm-white);
+	--text-link: var(--sand-700);
+	--text-link-hover: var(--sand-800);
+
+	/* Fondos */
+	--bg-body: var(--cream-100);
+	--bg-surface: var(--warm-white);
+	--bg-surface-translucent: rgba(255, 255, 255, 0.85);
+	--bg-muted: var(--cream-200);
+	--bg-sunken: var(--cream-300);
+	--bg-autofill: var(--cream-50);
+
+	/* Bordes */
+	--border-soft: rgba(240, 206, 170, 0.3);
+	--border-medium: rgba(215, 178, 138, 0.5);
+	--border-strong: var(--sand-500);
+	--border-card: rgba(255, 255, 255, 0.5);
+
+	/* Estados (versiones cálidas, armonizadas con la paleta) */
+	--color-success: #7d9b76;
+	--color-success-bg: rgba(125, 155, 118, 0.12);
+	--color-warning: #d9a441;
+	--color-warning-bg: rgba(217, 164, 65, 0.12);
+	--color-danger: #d97757;
+	/* el del alert del login */
+	--color-danger-bg: rgba(217, 119, 87, 0.08);
+	--color-danger-border: rgba(217, 119, 87, 0.25);
+	--color-info: #8a9bb0;
+	--color-info-bg: rgba(138, 155, 176, 0.12);
+
+	/* Compatibilidad con variables existentes (custom.main.css) */
+	--alert-color-destructive: var(--color-danger);
+
+	/* ----------------------------------------------------------------------
+	   3. SOMBRAS Y ELEVACIÓN
+	   Sombras en tono café (cálidas) en lugar de azul/negro.
+	   ---------------------------------------------------------------------- */
+	--shadow-extra-light: 0 4px 10px -5px rgba(139, 102, 85, 0.25);
+	--shadow-light: 0 5px 12px -6px rgba(139, 102, 85, 0.3);
+	--shadow-medium: 0 7px 18px -6px rgba(139, 102, 85, 0.35);
+
+	/* Elevación 3D de tarjetas (la del soft-card del login) */
+	--shadow-card:
+		0 30px 60px rgba(139, 102, 85, 0.18),
+		0 12px 28px rgba(139, 102, 85, 0.12),
+		0 4px 10px rgba(139, 102, 85, 0.08),
+		inset 0 2px 0 rgba(255, 255, 255, 0.45),
+		inset 0 -3px 8px rgba(215, 178, 138, 0.09);
+
+	/* Anillo de foco para inputs (focus-within del login) */
+	--focus-ring: 0 0 0 3px rgba(240, 206, 170, 0.1);
+	--focus-border: var(--peach-300);
+
+	/* ----------------------------------------------------------------------
+	   4. DEGRADADOS
+	   ---------------------------------------------------------------------- */
+	--gradient-body: linear-gradient(135deg, var(--cream-100) 0%, var(--cream-200) 50%, var(--cream-300) 100%);
+	--gradient-primary: linear-gradient(90deg, var(--peach-300), var(--peach-400));
+	--gradient-glow-line: linear-gradient(90deg, transparent, rgba(215, 178, 138, 0.45), transparent);
+}
+
+/* ==========================================================================
+   5. EFECTO GLOBAL "OLAS DE ARENA"
+   --------------------------------------------------------------------------
+   El mismo efecto del login, listo para usar en cualquier pantalla:
+
+     <div class="sand-background">
+         <div class="sand-waves-top">          <!-- opcional: olas arriba -->
+             <div class="sand-wave wave-3"></div>
+             <div class="sand-wave wave-2"></div>
+             <div class="sand-wave wave-1"></div>
+         </div>
+         <div class="sand-wave wave-3"></div>
+         <div class="sand-wave wave-2"></div>
+         <div class="sand-wave wave-1"></div>
+     </div>
+
+   El contenedor padre de la pantalla debe tener position: relative
+   (o usar .sand-background tal cual, que es fixed a la ventana).
+   ========================================================================== */
+
+.sand-background {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 0;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.sand-wave {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 200%;
+	background-repeat: repeat-x;
+	background-size: 50% 100%;
+	animation: sandDrift linear infinite;
+}
+
+.sand-wave.wave-1 {
+	height: 110px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,70 C150,110 350,30 600,70 C850,110 1050,30 1200,70 L1200,120 L0,120 Z' fill='%23D7B28A' fill-opacity='0.5'/%3E%3C/svg%3E");
+	animation-duration: 16s;
+}
+
+.sand-wave.wave-2 {
+	height: 160px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,60 C200,20 400,100 600,60 C800,20 1000,100 1200,60 L1200,120 L0,120 Z' fill='%23D7B28A' fill-opacity='0.3'/%3E%3C/svg%3E");
+	animation-duration: 26s;
+	animation-direction: reverse;
+}
+
+.sand-wave.wave-3 {
+	height: 210px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,80 C180,40 380,110 600,75 C820,40 1020,110 1200,80 L1200,120 L0,120 Z' fill='%23D7B28A' fill-opacity='0.18'/%3E%3C/svg%3E");
+	animation-duration: 36s;
+}
+
+.sand-waves-top {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 210px;
+	transform: scaleY(-1);
+}
+
+/* Variante sutil: para pantallas con mucho contenido (tablas, formularios),
+   olas más bajas y tenues que no compiten con la información. */
+.sand-background--subtle .sand-wave.wave-1 {
+	height: 70px;
+	opacity: 0.6;
+}
+
+.sand-background--subtle .sand-wave.wave-2 {
+	height: 100px;
+	opacity: 0.6;
+}
+
+.sand-background--subtle .sand-wave.wave-3 {
+	height: 130px;
+	opacity: 0.6;
+}
+
+@keyframes sandDrift {
+	0% {
+		transform: translateX(0);
+	}
+
+	100% {
+		transform: translateX(-50%);
+	}
+}
+
+/* En móvil, bajar la presencia del efecto */
+@media (max-width: 480px) {
+	.sand-background {
+		opacity: 0.5;
+	}
+}
+
+/* Accesibilidad: respetar la preferencia de menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+	.sand-wave {
+		animation: none;
+	}
+}

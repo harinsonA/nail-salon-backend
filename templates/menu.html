@@ -1,75 +1,87 @@
 {% load static %}
 <!-- Navbar que se expande en lg+ y usa offcanvas en pantallas menores -->
-<nav class="navbar navbar--custom navbar-expand-lg navbar-dark bg-primary bg-gradient fixed-top">
-  <div class="container-fluid">
-    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar"
-      aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
+<nav class="menu navbar navbar-expand-lg fixed-top">
+  <div class="container">
+    <a class="menu__brand navbar-brand" href="{% url 'calendar' %}" aria-label="Ir al calendario"
+      title="Ir al calendario">
+      <img class="menu__brand-icon" src="{% static 'images/icons/icono-1.png' %}" alt="Hi Agenda">
+    </a>
+    <button class="menu__toggler navbar-toggler" type="button" data-bs-toggle="offcanvas"
+      data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
+      <span class="menu__toggler-icon navbar-toggler-icon"></span>
     </button>
-    <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar"
+    <div class="menu__offcanvas offcanvas offcanvas-end" tabindex="-1" id="offcanvasDarkNavbar"
       aria-labelledby="offcanvasDarkNavbarLabel">
       <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasDarkNavbarLabel">Menú</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <h5 class="menu__offcanvas-title offcanvas-title" id="offcanvasDarkNavbarLabel">Menú</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
       <div class="offcanvas-body">
-        <ul class="navbar-nav justify-content-center flex-grow-1 pe-3">
+        <ul class="menu__nav navbar-nav justify-content-lg-end flex-grow-1">
           <li class="nav-item">
-            <a class="nav-link" aria-current="page" href="{% url 'calendar' %}">Calendario</a>
+            <a class="menu__link nav-link" aria-current="page" href="{% url 'calendar' %}">Calendario</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'clients' %}">Clientes</a>
+            <a class="menu__link nav-link" href="{% url 'clients' %}">Clientes</a>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <a class="menu__link nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
               Servicios
             </a>
-            <ul class="dropdown-menu dropdown-menu-dark">
+            <ul class="menu__dropdown dropdown-menu">
               <li>
-                <a class="dropdown-item" href="{% url 'services' %}">
+                <a class="menu__dropdown-item dropdown-item" href="{% url 'services' %}">
                   Servicios
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="{% url 'categories' %}">
+                <a class="menu__dropdown-item dropdown-item" href="{% url 'categories' %}">
                   Categorias
                 </a>
               </li>
             </ul>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <a class="menu__link nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
               Pagos
             </a>
-            <ul class="dropdown-menu dropdown-menu-dark">
+            <ul class="menu__dropdown dropdown-menu">
               <li>
-                <a class="dropdown-item" href="{% url 'payments' %}">
+                <a class="menu__dropdown-item dropdown-item" href="{% url 'payments' %}">
                   Completados
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="{% url 'debtors' %}">
+                <a class="menu__dropdown-item dropdown-item" href="{% url 'debtors' %}">
                   Deudores
                 </a>
               </li>
             </ul>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <a class="menu__link nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
               <span class="material-symbols-outlined">
                 settings
               </span>
             </a>
-            <ul class="dropdown-menu dropdown-menu-dark">
+            <ul class="menu__dropdown dropdown-menu">
               <li>
-                <a id="profile-modal-btn" class="dropdown-item" data-form-url="{% url 'profile_modal' %}">
+                <a id="profile-modal-btn" class="menu__dropdown-item dropdown-item"
+                  data-form-url="{% url 'profile_modal' %}">
                   Perfil
                 </a>
               </li>
               <li>
-                <hr class="dropdown-divider">
+                <hr class="menu__divider dropdown-divider">
               </li>
-              <li><a class="dropdown-item bg-danger" href="{% url 'logout' %}">Cerrar sesión</a></li>
+              <li>
+                <a class="menu__dropdown-item menu__dropdown-item--danger dropdown-item" href="{% url 'logout' %}">
+                  Cerrar sesión
+                </a>
+              </li>
             </ul>
           </li>
         </ul>

@@ -1,0 +1,158 @@
+/* ==========================================================================
+   HI AGENDA — MENÚ PRINCIPAL (custom.menu.css)
+   --------------------------------------------------------------------------
+   Estilos del navbar/offcanvas principal usando metodología BEM.
+   Bloque: .menu | Elementos: .menu__* | Modificadores: .menu__*--*
+
+   Depende de las variables definidas en colors.main.css.
+   Las clases de Bootstrap (navbar-expand-lg, offcanvas, dropdown, etc.)
+   se conservan solo por su comportamiento; la apariencia vive aquí.
+   ========================================================================== */
+
+/* Bloque: barra principal.
+   Nota: el backdrop-filter solo se aplica en escritorio (≥992px) porque
+   crea un containing block para position: fixed y rompe el offcanvas
+   móvil, que es fixed y quedaría anclado a la barra en vez de a la ventana. */
+.menu {
+	background: var(--bg-surface);
+	border-bottom: 1px solid var(--border-soft);
+	box-shadow: var(--shadow-light);
+}
+
+@media (min-width: 992px) {
+	.menu {
+		background: var(--bg-surface-translucent);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+	}
+}
+
+/* Marca: icono que lleva a la sección inicial (calendario) */
+.menu__brand {
+	display: flex;
+	align-items: center;
+	padding: 4px 8px;
+	border-radius: 12px;
+	transition: all 0.25s ease;
+}
+
+.menu__brand:hover,
+.menu__brand:focus {
+	background: var(--color-primary-soft);
+}
+
+.menu__brand-icon {
+	height: 38px;
+	width: auto;
+	display: block;
+}
+
+/* Botón hamburguesa (móvil) */
+.menu__toggler {
+	border: 1.5px solid var(--border-medium);
+	border-radius: 12px;
+	transition: all 0.25s ease;
+}
+
+.menu__toggler:focus {
+	box-shadow: var(--focus-ring);
+}
+
+.menu__toggler-icon {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='%238b6655' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* Lista de navegación: alineada a la derecha con separación entre opciones */
+.menu__nav {
+	gap: 4px;
+}
+
+/* Enlaces de navegación */
+.menu__link {
+	color: var(--text-primary) !important;
+	font-weight: 500;
+	font-size: 15px;
+	border-radius: 12px;
+	padding: 8px 16px !important;
+	transition: all 0.25s ease;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.menu__link:hover,
+.menu__link:focus {
+	color: var(--text-strong) !important;
+	background: var(--color-primary-soft);
+}
+
+.menu__link.active,
+.menu__link[aria-expanded="true"] {
+	color: var(--text-strong) !important;
+	background: var(--color-primary-soft-hover);
+}
+
+/* Menús desplegables */
+.menu__dropdown {
+	background: var(--bg-surface);
+	border: 1px solid var(--border-soft);
+	border-radius: 16px;
+	box-shadow: var(--shadow-medium);
+	padding: 8px;
+	margin-top: 8px;
+}
+
+.menu__dropdown-item {
+	color: var(--text-primary);
+	font-size: 14px;
+	font-weight: 400;
+	border-radius: 10px;
+	padding: 8px 12px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.menu__dropdown-item:hover,
+.menu__dropdown-item:focus {
+	color: var(--text-strong);
+	background: var(--color-primary-soft);
+}
+
+/* Modificador: acción destructiva (cerrar sesión) */
+.menu__dropdown-item--danger {
+	color: var(--color-danger);
+}
+
+.menu__dropdown-item--danger:hover,
+.menu__dropdown-item--danger:focus {
+	color: var(--color-danger);
+	background: var(--color-danger-bg);
+}
+
+.menu__divider {
+	border-color: var(--border-soft);
+	opacity: 1;
+	margin: 6px 4px;
+}
+
+/* Offcanvas (panel lateral en móvil) */
+.menu__offcanvas {
+	background: var(--cream-100);
+	color: var(--text-primary);
+}
+
+.menu__offcanvas-title {
+	color: var(--text-strong);
+	font-weight: 600;
+}
+
+/* En móvil los dropdowns se despliegan dentro del offcanvas:
+   quitarles la "tarjeta" para que se integren al panel */
+@media (max-width: 991.98px) {
+	.menu__dropdown {
+		box-shadow: none;
+		border: none;
+		background: var(--color-primary-soft);
+		margin-top: 4px;
+	}
+}

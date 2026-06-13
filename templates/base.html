@@ -6,7 +6,9 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>{% block title %}Hi Agenda!{% endblock %}</title>
+	<title>{% block title %}Hi Agenda{% endblock %}</title>
+	<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/icons/icono-32x32.png' %}">
+	<link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/icons/icono-16x16.png' %}">
 
 	<!-- Bootstrap CSS -->
 	<link href="{% static 'css/libs/bootstrap_v5.3.3/bootstrap.min.css' %}" rel="stylesheet">
@@ -35,7 +37,10 @@
 	<link href="{% static 'css/custom/custom.modals.css' %}" rel="stylesheet">
 	<link href="{% static 'css/custom/custom.calendar.css' %}" rel="stylesheet">
 	<link href="{% static 'css/custom/custom.select2.css' %}" rel="stylesheet">
+	<link href="{% static 'css/custom/custom.menu.css' %}" rel="stylesheet">
 	<link href="{% static 'css/custom/custom.main.css' %}" rel="stylesheet">
+	<!-- Paleta de colores global (debe ir al final para que sus variables prevalezcan) -->
+	<link href="{% static 'css/custom/colors.main.css' %}" rel="stylesheet">
 
 	<!-- Custom CSS -->
 	{% block extra_css %}{% endblock %}
