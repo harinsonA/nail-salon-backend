@@ -79,16 +79,19 @@ class BaseListViewAjax(ProtectedAjaxView, ListView):
         ordering = self.get_order_by()
         if ordering:
             queryset = queryset.order_by(*ordering)
-        queryset = queryset.filter(self.get_filter_by_search())
 
         total_records = queryset.count()
+
+        queryset = queryset.filter(self.get_filter_by_search())
+        filtered_records = queryset.count()
+
         data = self.get_values(queryset)
         if self.include_options_column:
             data = self.add_options_column(data)
         return {
             "data": data,
             "recordsTotal": total_records,
-            "recordsFiltered": total_records,
+            "recordsFiltered": filtered_records,
             **self.additional_data(queryset),
         }
 

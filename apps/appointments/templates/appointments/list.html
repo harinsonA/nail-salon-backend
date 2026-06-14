@@ -183,9 +183,7 @@ Citas: {{ full_date }}
 			return `
 				<div class="btn-group dropstart">
 					<a class="dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-						<span class="material-symbols-outlined">
-							more_horiz
-						</span>
+						<img src="/static/images/tables/options.svg" alt="Opciones" width="24" height="24">
 					</a>
 					<ul class="dropdown-menu">
 						${menuOptions[status] ? menuOptions[status](options) : ''}
@@ -195,8 +193,11 @@ Citas: {{ full_date }}
 		};
 
 		const servicesColumn = (cantidad_servicios, agenda_see_modal_url) => {
-			return `<a class="dropdown-item bs-xl-modal fs-6" data-form-url="${agenda_see_modal_url}">
+			return `
+			<b class="me-2">
 				${cantidad_servicios}
+			</b>
+			<a class="bs-xl-modal fs-6" data-form-url="${agenda_see_modal_url}">
 				<span class="material-symbols-outlined text-primary">
 					visibility
 				</span>

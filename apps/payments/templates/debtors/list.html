@@ -46,9 +46,9 @@ Lista de deudores
         <tr>
           <th scope="col" class="text-start">Fecha cita</th>
           <th scope="col" class="text-start">Cliente</th>
-          <th scope="col" class="text-center text-black">Total servicio</th>
-          <th scope="col" class="text-center text-black">Total Abonado</th>
-          <th scope="col" class="text-center text-black">Total Pendiente</th>
+          <th scope="col" class="text-center ">Total servicio</th>
+          <th scope="col" class="text-center ">Total Abonado</th>
+          <th scope="col" class="text-center ">Total Pendiente</th>
           <th scope="col" class="text-center"></th>
         </tr>
       </thead>
@@ -70,9 +70,7 @@ Lista de deudores
     const optionColumn = ({ add_payment_url: addPaymentUrl }) => `
       <div class="btn-group dropstart">
         <a class="dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="material-symbols-outlined">
-            more_horiz
-          </span>
+          <img src="/static/images/tables/options.svg" alt="Opciones" width="24" height="24">
         </a>
         <ul class="dropdown-menu">
           <li>
@@ -108,7 +106,7 @@ Lista de deudores
         { data: 'monto_total_cita_formatted', className: 'fs-7 w-auto text-center text-primary' },
         { data: 'total_abonado_formatted', className: 'fs-7 w-auto text-center text-success' },
         { data: 'saldo_pendiente_formatted', className: 'fs-7 w-auto text-center' },
-        { data: (data) => optionColumn(data), className: 'text-center' },
+        { data: (data) => optionColumn(data), className: 'text-center', orderable: false, searchable: false },
       ],
     };
 

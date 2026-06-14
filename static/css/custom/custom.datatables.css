@@ -1,0 +1,223 @@
+/* ==========================================================================
+   HI AGENDA — TEMA DE TABLAS (custom.datatables.css)
+   --------------------------------------------------------------------------
+   Aplica la paleta global (colors.main.css) a las tablas renderizadas por
+   DataTables, sin tocar los archivos minificados de la librería.
+
+   Cubre:
+     1. Contenedor / superficie de la tabla
+     2. Cabecera (thead)
+     3. Iconos de ordenamiento (SVG: arrow_up / arrow_down / neutral)
+     4. Filas y hover
+     5. Buscador
+     6. Paginación
+     7. Info y processing
+
+   Uso: cargar en base.html DESPUÉS de los .min.css de DataTables y DESPUÉS
+   de colors.main.css (para disponer de sus variables).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CONTENEDOR / SUPERFICIE
+   El .table-container--custom ya aporta radio y sombra (custom.main.css);
+   aquí le damos la superficie translúcida tipo tarjeta del login.
+   -------------------------------------------------------------------------- */
+.table-container--custom {
+	background-color: var(--bg-surface-translucent);
+	border-color: var(--border-card);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+}
+
+/* Variables de DataTables redefinidas a tonos de la paleta (arena) */
+table.dataTable {
+	--dt-row-hover: 215, 178, 138;
+	/* sand-500 */
+	--dt-row-hover-alpha: 0.16;
+	--dt-row-stripe: 215, 178, 138;
+	--dt-column-ordering: 139, 102, 85;
+	/* cocoa-500 */
+	color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   2. CABECERA
+   -------------------------------------------------------------------------- */
+table.dataTable>thead>tr>th,
+table.dataTable>thead>tr>td {
+	color: var(--text-strong);
+	border-bottom: 1px solid var(--border-medium);
+	font-weight: 600;
+	font-size: 14px;
+}
+
+/* Hover sobre cabeceras ordenables: sin borde/outline (DataTables lo agrega) */
+table.dataTable thead>tr>th.dt-orderable-asc:hover,
+table.dataTable thead>tr>th.dt-orderable-desc:hover,
+table.dataTable thead>tr>td.dt-orderable-asc:hover,
+table.dataTable thead>tr>td.dt-orderable-desc:hover {
+	outline: none;
+}
+
+/* Icono de orden SIEMPRE a la derecha del título (text [icono]).
+   DataTables usa flex-direction: row-reverse en columnas numéricas, de fecha
+   o alineadas a la derecha, lo que mandaría el icono a la izquierda. */
+table.dataTable thead>tr>th div.dt-column-header,
+table.dataTable thead>tr>td div.dt-column-header,
+table.dataTable tfoot>tr>th div.dt-column-footer,
+table.dataTable tfoot>tr>td div.dt-column-footer {
+	flex-direction: row !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. ICONOS DE ORDENAMIENTO
+   DataTables dibuja ▲ (:before) y ▼ (:after) sobre span.dt-column-order.
+   Los neutralizamos y usamos los SVG de static/images/tables.
+   -------------------------------------------------------------------------- */
+
+/* Quitar los caracteres unicode por defecto */
+table.dataTable thead>tr>th span.dt-column-order:before,
+table.dataTable thead>tr>th span.dt-column-order:after,
+table.dataTable thead>tr>td span.dt-column-order:before,
+table.dataTable thead>tr>td span.dt-column-order:after {
+	content: none !important;
+}
+
+/* Estado NEUTRAL (columna ordenable, sin orden activo) */
+table.dataTable thead>tr>th span.dt-column-order,
+table.dataTable thead>tr>td span.dt-column-order {
+	width: 18px;
+	height: 18px;
+	background-image: url("../../images/tables/neutral.svg");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 16px 16px;
+	opacity: 0.45;
+	transition: opacity 0.15s ease;
+}
+
+/* Estado ASCENDENTE activo */
+table.dataTable thead>tr>th.dt-ordering-asc span.dt-column-order,
+table.dataTable thead>tr>td.dt-ordering-asc span.dt-column-order {
+	background-image: url("../../images/tables/arrow_up.svg");
+	opacity: 1;
+}
+
+/* Estado DESCENDENTE activo */
+table.dataTable thead>tr>th.dt-ordering-desc span.dt-column-order,
+table.dataTable thead>tr>td.dt-ordering-desc span.dt-column-order {
+	background-image: url("../../images/tables/arrow_down.svg");
+	opacity: 1;
+}
+
+/* Realce del icono neutral al pasar el mouse por la cabecera */
+table.dataTable thead>tr>th.dt-orderable-asc:hover span.dt-column-order,
+table.dataTable thead>tr>th.dt-orderable-desc:hover span.dt-column-order,
+table.dataTable thead>tr>td.dt-orderable-asc:hover span.dt-column-order,
+table.dataTable thead>tr>td.dt-orderable-desc:hover span.dt-column-order {
+	opacity: 0.8;
+}
+
+/* --------------------------------------------------------------------------
+   4. FILAS / CUERPO
+   -------------------------------------------------------------------------- */
+table.dataTable>tbody>tr>th,
+table.dataTable>tbody>tr>td {
+	color: var(--text-primary);
+	font-size: 14px;
+}
+
+table.dataTable.row-border>tbody>tr>*,
+table.dataTable.display>tbody>tr>* {
+	border-top: 1px solid var(--border-soft);
+}
+
+
+/* --------------------------------------------------------------------------
+   5. BUSCADOR
+   -------------------------------------------------------------------------- */
+div.dt-container .dt-search input {
+	border: 1px solid var(--border-medium);
+	border-radius: 8px;
+	padding: 6px 10px;
+	background-color: var(--bg-surface);
+	color: var(--text-primary);
+}
+
+div.dt-container .dt-search input:focus {
+	outline: none;
+	border-color: var(--focus-border);
+	box-shadow: var(--focus-ring);
+}
+
+/* --------------------------------------------------------------------------
+   6. PAGINACIÓN
+   -------------------------------------------------------------------------- */
+div.dt-container .dt-paging .dt-paging-button {
+	border-radius: 8px;
+	border: 1px solid transparent;
+	color: var(--text-primary) !important;
+	padding: 2px;
+	margin: 4px;
+}
+
+div.dt-container .dt-paging .dt-paging-button.current,
+div.dt-container .dt-paging .dt-paging-button.current:hover {
+	color: var(--text-on-primary) !important;
+	border: 1px solid var(--color-primary);
+	background: var(--color-primary);
+}
+
+div.dt-container .dt-paging .dt-paging-button:hover {
+	color: var(--text-strong) !important;
+	border: 1px solid var(--border-medium);
+	background: var(--color-primary-soft);
+}
+
+div.dt-container .dt-paging .dt-paging-button.disabled,
+div.dt-container .dt-paging .dt-paging-button.disabled:hover,
+div.dt-container .dt-paging .dt-paging-button.disabled:active {
+	color: var(--text-subtle) !important;
+	border: 1px solid transparent;
+	background: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   7. INFO Y PROCESSING
+   -------------------------------------------------------------------------- */
+div.dt-container .dt-info {
+	color: var(--text-muted);
+	font-size: 0.85rem;
+}
+
+div.dt-processing>div:last-child>div {
+	background: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   8. ESTADOS VACÍOS (sin registros / sin resultados de búsqueda)
+   Generados por emptyStateTemplate() en custom.main.js.
+   -------------------------------------------------------------------------- */
+.dt-empty-state {
+	max-width: 250px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	gap: 12px;
+	padding: 24px 0;
+}
+
+.dt-empty-state__img {
+	width: 96px;
+	height: auto;
+	max-width: 100%;
+}
+
+.dt-empty-state__text {
+	color: var(--text-muted);
+	font-size: 14px;
+	line-height: 1.4;
+}

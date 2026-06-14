@@ -5,9 +5,7 @@ const optionsColumn = (options = []) => {
   if (!options.length) return "";
   return `<div class="btn-group dropstart">
       <a role="button" class="dropdown-toggle dropdown-toggle--not-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <span class="material-symbols-outlined">
-          more_horiz
-        </span>
+        <img src="/static/images/tables/options.svg" alt="Opciones" width="24" height="24">
       </a>
       <ul class="dropdown-menu">
         ${options
@@ -33,6 +31,15 @@ const optionsColumn = (options = []) => {
       </ul>
     </div>`;
 };
+
+const emptyStateTemplate = (
+  image = "/static/images/icons/icono-1.png",
+  message = "Sin registros para esta sección",
+) => `
+  <div class="dt-empty-state">
+    <img class="dt-empty-state__img" src="${image}" alt="">
+    <b class="dt-empty-state__text">${message}</b>
+  </div>`;
 
 const renderDataTable = ({
   tableID = "#id_table",
@@ -64,6 +71,14 @@ const renderDataTable = ({
       ...DATATABLES_LANGUAGE,
       info: "Total resultado: _TOTAL_",
       infoEmpty: "Total resultado: 0",
+      infoFiltered: "",
+      search: "",
+      searchPlaceholder: "Buscar",
+      emptyTable: emptyStateTemplate(),
+      zeroRecords: emptyStateTemplate(
+        "/static/images/tables/empty-1.png",
+        "Sin resultados encontrados",
+      ),
       ...customLanguage,
     },
     layout: {
@@ -74,6 +89,7 @@ const renderDataTable = ({
       ...customLayout,
     },
     paging: true,
+    pagingType: "simple_numbers",
     pageLength: 10,
     searching: true,
     lengthChange: false,
