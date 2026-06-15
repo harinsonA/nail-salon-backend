@@ -41,6 +41,41 @@ const emptyStateTemplate = (
     <b class="dt-empty-state__text">${message}</b>
   </div>`;
 
+// Loader "gooey" del indicador de carga (processing) de las tablas.
+// El marcado vive aquí; los colores/animación se definen en
+// custom.datatables.css (sección 7) usando la paleta global.
+const LOADER_HALVAN_PATH =
+  "m 164,100 c 0,-35.346224 -28.65378,-64 -64,-64 -35.346224,0 -64,28.653776 -64,64 0,35.34622 28.653776,64 64,64 35.34622,0 64,-26.21502 64,-64 0,-37.784981 -26.92058,-64 -64,-64 -37.079421,0 -65.267479,26.922736 -64,64 1.267479,37.07726 26.703171,65.05317 64,64 37.29683,-1.05317 64,-64 64,-64";
+
+const processingLoaderTemplate = (message = "Procesando…") => `
+  <div class="dt-loader" role="status" aria-label="${message}">
+    <svg class="dt-loader__gegga" aria-hidden="true">
+      <defs>
+        <filter id="dtLoaderGoo">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -10" result="inreGegga" />
+          <feComposite in="SourceGraphic" in2="inreGegga" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+    <svg class="dt-loader__snurra" viewBox="0 0 200 200" aria-hidden="true">
+      <defs>
+        <linearGradient id="dtLoaderGradientStops">
+          <stop class="dt-loader__stop1" offset="0" />
+          <stop class="dt-loader__stop2" offset="1" />
+        </linearGradient>
+        <linearGradient y2="160" x2="160" y1="40" x1="40" gradientUnits="userSpaceOnUse" id="dtLoaderGradient" href="#dtLoaderGradientStops" />
+      </defs>
+      <path class="halvan" d="${LOADER_HALVAN_PATH}" />
+      <circle class="strecken" cx="100" cy="100" r="64" />
+    </svg>
+    <svg class="dt-loader__skugga" viewBox="0 0 200 200" aria-hidden="true">
+      <path class="halvan" d="${LOADER_HALVAN_PATH}" />
+      <circle class="strecken" cx="100" cy="100" r="64" />
+    </svg>
+    <span class="visually-hidden">${message}</span>
+  </div>`;
+
 const renderDataTable = ({
   tableID = "#id_table",
   url = "",
@@ -74,6 +109,8 @@ const renderDataTable = ({
       infoFiltered: "",
       search: "",
       searchPlaceholder: "Buscar",
+      processing: processingLoaderTemplate(),
+      loadingRecords: "",
       emptyTable: emptyStateTemplate(),
       zeroRecords: emptyStateTemplate(
         "/static/images/tables/empty-1.png",

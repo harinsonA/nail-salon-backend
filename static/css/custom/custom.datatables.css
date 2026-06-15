@@ -190,8 +190,111 @@ div.dt-container .dt-info {
 	font-size: 0.85rem;
 }
 
-div.dt-processing>div:last-child>div {
-	background: var(--color-primary);
+/* Altura mínima de la celda de la tabla: garantiza que el overlay de
+   carga (absoluto, al 100%) siempre tenga área que cubrir, incluso con
+   pocas filas o tabla vacía. */
+div.dt-container .dt-layout-cell.dt-layout-full {
+	/* min-height: 250px; */
+}
+
+/* Indicador de carga (processing): loader "gooey" generado por
+   processingLoaderTemplate() en custom.main.js.
+   DataTables anexa SIEMPRE sus 4 puntos por defecto como último hijo
+   del contenedor; los ocultamos para mostrar solo nuestro loader. */
+div.dt-container div.dt-processing {
+	width: 100%;
+	height: 100%;
+	min-height: 100px;
+	top: 0;
+	left: 0;
+	margin-left: 0px;
+	margin-top: 0px;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--bg-surface-translucent);
+}
+
+div.dt-container div.dt-processing>div:last-child {
+	display: none;
+}
+
+.dt-loader {
+	position: relative;
+	width: 100px;
+	height: 100px;
+}
+
+.dt-loader__snurra,
+.dt-loader__skugga {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.dt-loader__gegga {
+	position: absolute;
+	width: 0;
+	height: 0;
+}
+
+.dt-loader__snurra {
+	filter: url(#dtLoaderGoo);
+}
+
+.dt-loader__skugga {
+	/* filter: blur(4px); */
+	/* opacity: 0.25; */
+	transform: translate(2px, 2px);
+}
+
+/* Paleta de marca: café medio → durazno claro (en lugar del
+   magenta/naranja del demo original). */
+.dt-loader__stop1 {
+	stop-color: var(--sand-700);
+}
+
+.dt-loader__stop2 {
+	stop-color: var(--peach-300);
+}
+
+.dt-loader .halvan {
+	animation: dtLoaderSpin 10s infinite linear;
+	stroke-dasharray: 180 800;
+	fill: none;
+	stroke: url(#dtLoaderGradient);
+	stroke-width: 23;
+	stroke-linecap: round;
+}
+
+.dt-loader .strecken {
+	animation: dtLoaderSpin 3s infinite linear;
+	stroke-dasharray: 26 54;
+	fill: none;
+	stroke: url(#dtLoaderGradient);
+	stroke-width: 23;
+	stroke-linecap: round;
+}
+
+@keyframes dtLoaderSpin {
+	0% {
+		stroke-dashoffset: 0;
+	}
+
+	100% {
+		stroke-dashoffset: -403px;
+	}
+}
+
+/* Accesibilidad: respetar la preferencia de menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+
+	.dt-loader .halvan,
+	.dt-loader .strecken {
+		animation: none;
+	}
 }
 
 /* --------------------------------------------------------------------------
