@@ -36,6 +36,7 @@ Calendario
     }
     const filterData = {
       months: $('#{{ filter_form.months.id_for_label }}').val() || '{{ initial_month }}',
+      search: '',
     };
 
     const totalsDisplay = (pendingTotals, completedTotals) => {
@@ -86,16 +87,25 @@ Calendario
         paging: false,
         info: false,
         searching: false,
-        customStartTop: () => `
-					<div class="input-group">
-						<span class="input-group-text">
-							<span class="material-symbols-outlined text-primary">
-								calendar_month
+        layout: {
+          topStart: () => `
+						<div class="input-group">
+							<span class="input-group-text">
+								<span class="material-symbols-outlined text-primary">
+									calendar_month
+								</span>
 							</span>
-						</span>
-						{{ filter_form.months }}
-					</div>
-				`,
+							{{ filter_form.months }}
+						</div>
+					`,
+          topEnd: () => `
+						<div class="dt-search">
+							<input type="search" id="id_calendar_search" name="search"
+								placeholder="Buscar cliente" aria-label="Buscar cliente"
+								autocomplete="off" />
+						</div>
+					`,
+        },
         drawCallback: () => {
           initializeMonthPickers();
         },
@@ -105,6 +115,15 @@ Calendario
     $('#{{ filter_form.months.id_for_label }}').on('change', ({ target }) => {
       filterData[target.name] = target.value;
       calendarTable.draw();
+    });
+
+    let searchDebounce;
+    $(document).on('input', '#id_calendar_search', ({ target }) => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        filterData.search = target.value.trim();
+        calendarTable.draw();
+      }, 400);
     });
   })
 </script>

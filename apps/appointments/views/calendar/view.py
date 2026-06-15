@@ -1,6 +1,7 @@
 import calendar
 from datetime import date
 from django import forms
+from django.db.models import Q
 from django.views.generic import TemplateView
 from django.urls import reverse_lazy
 from apps.appointments.models.agenda import Cita
@@ -60,14 +61,22 @@ class CalendarFilterForm(forms.Form):
         label="Mes",
         required=False,
     )
+    search = forms.CharField(
+        label="Buscar cliente",
+        required=False,
+    )
 
     def clean(self):
         cleaned_data = super().clean()
         first_day, last_day = cleaned_data.get("months", (None, None))
-        return {
+        filters = {
             "fecha_agenda__gte": first_day,
             "fecha_agenda__lte": last_day,
         }
+        search = (cleaned_data.get("search") or "").strip()
+        if search:
+            filters["search"] = search
+        return filters
 
 
 # endregion
@@ -131,22 +140,23 @@ class CalendarListView(BaseListViewAjax):
                 )
         return weeks
 
-    @staticmethod
-    def _get_queryset(_filters: dict) -> dict:
-        first_day = _filters.get("fecha_agenda__gte")
-        last_day = _filters.get("fecha_agenda__lte")
-        queryset = (
-            Cita.objects.exclude(estado=Cita.EstadoChoices.CANCELADA)
-            .filter(
-                fecha_agenda__gte=first_day,
-                fecha_agenda__lte=last_day,
-            )
-            .values_list("pk", "fecha_agenda", "estado")
+    def get_queryset(self):
+        _filters = self.get_filters()
+        queryset = Cita.objects.exclude(
+            estado=Cita.EstadoChoices.CANCELADA
+        ).filter(
+            fecha_agenda__gte=_filters.get("fecha_agenda__gte"),
+            fecha_agenda__lte=_filters.get("fecha_agenda__lte"),
         )
-        return queryset
+        search = _filters.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(cliente__nombre__icontains=search)
+                | Q(cliente__apellido__icontains=search)
+            )
+        return queryset.values_list("pk", "fecha_agenda", "estado")
 
-    def get_aggregate_appointments_by_date(self, _filters: dict) -> dict:
-        queryset = self._get_queryset(_filters)
+    def get_aggregate_appointments_by_date(self, queryset) -> dict:
         data = {}
         for __, appointment_date, appointment_status in queryset:
             if appointment_date not in data:
@@ -199,7 +209,9 @@ class CalendarListView(BaseListViewAjax):
 
     def get_context_data(self, **kwargs):
         _filters = self.get_filters()
-        appointments_by_date = self.get_aggregate_appointments_by_date(_filters)
+        appointments_by_date = self.get_aggregate_appointments_by_date(
+            self.object_list
+        )
         _date = _filters.get("fecha_agenda__gte")
         year = _date.year
         month = _date.month
