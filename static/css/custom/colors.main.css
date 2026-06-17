@@ -150,6 +150,12 @@
 	   adopten la paleta "Tierra". (Los .btn-* se ajustan más abajo, fuera
 	   de :root, porque Bootstrap compila su color fijo.)
 	   ---------------------------------------------------------------------- */
+	--bs-primary: var(--color-primary);
+	--bs-primary-rgb: 215, 178, 138;
+	--bs-primary-text-emphasis: var(--cocoa-700);
+	--bs-primary-bg-subtle: var(--color-primary-soft);
+	--bs-primary-border-subtle: var(--border-medium);
+
 	--bs-success: var(--color-success);
 	--bs-success-rgb: 125, 139, 78;
 	--bs-success-text-emphasis: var(--color-success-text);
@@ -211,6 +217,23 @@
    sobre los fondos crema de la app.
    ========================================================================== */
 
+/* primary — acción de crear/editar: degradado arena dorado + texto café
+   (mismo lenguaje que el botón principal del login). */
+.btn-primary {
+	--bs-btn-bg: var(--peach-300);
+	--bs-btn-border-color: var(--peach-300);
+	--bs-btn-color: var(--cocoa-600);
+	--bs-btn-hover-bg: var(--peach-400);
+	--bs-btn-hover-border-color: var(--peach-400);
+	--bs-btn-hover-color: var(--cocoa-700);
+	--bs-btn-active-bg: var(--peach-400);
+	--bs-btn-active-border-color: var(--peach-400);
+	--bs-btn-active-color: var(--cocoa-700);
+	--bs-btn-disabled-bg: var(--peach-300);
+	--bs-btn-disabled-border-color: var(--peach-300);
+	--bs-btn-disabled-color: var(--cocoa-600);
+}
+
 .btn-success {
 	--bs-btn-bg: var(--color-success);
 	--bs-btn-border-color: var(--color-success);
@@ -253,6 +276,29 @@
 	--bs-btn-active-border-color: var(--color-info-text);
 	--bs-btn-disabled-bg: var(--color-info);
 	--bs-btn-disabled-border-color: var(--color-info);
+}
+
+/* Texto/acento primary — café de marca legible sobre crema (antes azul BS) */
+.text-primary {
+	color: var(--text-primary) !important;
+}
+
+/* Header de modales de crear/editar — barra arena dorado con texto oscuro.
+   Sobrescribe el .bg-primary plano para reproducir el degradado del login. */
+.modal-header.bg-primary {
+	background-image: var(--gradient-primary) !important;
+	color: var(--cocoa-700);
+}
+
+.modal-header.bg-primary .modal-title,
+.modal-header.bg-primary .modal-title * {
+	color: var(--cocoa-700);
+}
+
+/* Header de modales de detalle/solo-lectura — azul invierno suave (info). */
+.modal-header.bg-info-subtle .modal-title,
+.modal-header.bg-info-subtle .modal-title * {
+	color: var(--color-info-text);
 }
 
 /* Texto de estado — variantes oscuras para legibilidad sobre crema */
