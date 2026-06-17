@@ -234,6 +234,21 @@
 	--bs-btn-disabled-color: var(--cocoa-600);
 }
 
+/* outline-secondary — usado por el botón "Volver": contorno cálido suave. */
+.btn-outline-secondary {
+	--bs-btn-color: var(--color-secondary);
+	--bs-btn-border-color: var(--border-medium);
+	--bs-btn-hover-bg: var(--color-primary-soft);
+	--bs-btn-hover-color: var(--cocoa-700);
+	--bs-btn-hover-border-color: var(--color-primary);
+	--bs-btn-active-bg: var(--color-primary-soft-hover);
+	--bs-btn-active-color: var(--cocoa-700);
+	--bs-btn-active-border-color: var(--color-primary);
+	--bs-btn-focus-shadow-rgb: 215, 178, 138;
+	--bs-btn-disabled-color: var(--text-muted);
+	--bs-btn-disabled-border-color: var(--border-soft);
+}
+
 .btn-success {
 	--bs-btn-bg: var(--color-success);
 	--bs-btn-border-color: var(--color-success);

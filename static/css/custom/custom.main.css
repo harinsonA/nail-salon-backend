@@ -481,6 +481,41 @@
 }
 
 /* ==========================================================================
+   TÍTULO DE SECCIÓN (view_title) + botón "Volver"
+   --------------------------------------------------------------------------
+   El h3 muestra el nombre de la sección. Como puede contener un botón
+   "Volver" seguido del texto, se usa flex con gap para separarlos bien y
+   que el botón no herede el tamaño del título.
+   ========================================================================== */
+.view-title {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .85rem;
+	margin: 0;
+	font-size: 1.4rem;
+	font-weight: 600;
+	line-height: 1.2;
+	letter-spacing: -.01em;
+	color: var(--text-strong);
+}
+
+.view-title .btn {
+	font-size: .85rem;
+	font-weight: 500;
+	line-height: 1;
+	letter-spacing: normal;
+	padding: .4rem .75rem;
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+}
+
+.view-title .btn .material-symbols-outlined {
+	font-size: 1.15rem;
+}
+
+/* ==========================================================================
    FORMULARIOS — paleta Tierra
    --------------------------------------------------------------------------
    Campos (input/select/textarea), labels, checkbox/switch y datepicker.
