@@ -39,18 +39,40 @@ Calendario
       search: '',
     };
 
-    const totalsDisplay = (pendingTotals, completedTotals) => {
-      if (pendingTotals === 0 && completedTotals === 0) return '';
-      return `<div class="totals-container">
-        <div class="totals-item totals-item-pending">
-          <p class="totals-item-title">Pendientes</p>
-          <p class="totals-item-amount">${pendingTotals}</p>
-        </div>
-        <div class="totals-item totals-item-completed">
-          <p class="totals-item-title">Completados</p>
-          <p class="totals-item-amount">${completedTotals}</p>
-        </div>
+    const totalsItem = (type, amount, label) => `
+      <div class="totals-item totals-item-${type}" title="${label}">
+        <span class="totals-item-icon" aria-hidden="true"></span>
+        <p class="totals-item-amount">${amount}</p>
       </div>`;
+
+    const totalsDisplay = (pendingTotals, completedTotals, isAllCompleted) => {
+      if (pendingTotals === 0 && completedTotals === 0) return '';
+      // Día completo: solo el check + total, centrados.
+      if (isAllCompleted || pendingTotals === 0) {
+        return `<div class="totals-container totals-container--single">
+          ${totalsItem('completed', completedTotals, 'Día completado')}
+        </div>`;
+      }
+      // Solo pendientes: mismo trato, ícono + total centrados.
+      if (completedTotals === 0) {
+        return `<div class="totals-container totals-container--single">
+          ${totalsItem('pending', pendingTotals, 'Citas pendientes')}
+        </div>`;
+      }
+      // Mixto: ambos bloques (íconos y texto más grandes).
+      return `<div class="totals-container totals-container--dual">
+        ${totalsItem('pending', pendingTotals, 'Citas pendientes')}
+        ${totalsItem('completed', completedTotals, 'Citas completadas')}
+      </div>`;
+    }
+
+    // Devuelve el atributo style con la variable --progress (porcentaje de
+    // citas completadas). El gradiente success/warning de .day-card la lee.
+    const progressStyle = (pendingTotals, completedTotals, isAllCompleted) => {
+      const total = pendingTotals + completedTotals;
+      if (total === 0) return '';
+      const percent = isAllCompleted ? 100 : Math.round((completedTotals / total) * 100);
+      return `style="--progress: ${percent}%"`;
     }
 
     const dayColumn = ({ day, in_month, is_today, is_past_date, calendar_appointments_url, ...arguments }) => {
@@ -59,12 +81,20 @@ Calendario
         completed_totals: completedTotals = 0,
         is_all_completed: isAllCompleted = false,
       } = arguments;
-      return `<a class="day-card ${in_month ? '' : 'day-card--disabled'}" href="${calendar_appointments_url}">
+      const hasAppointments = (pendingTotals + completedTotals) > 0;
+      const allDone = hasAppointments && (isAllCompleted || pendingTotals === 0);
+      const pendingOnly = hasAppointments && !allDone && completedTotals === 0;
+      const showProgress = in_month && hasAppointments;
+      const dayState = is_today ? 'text--today' : is_past_date ? 'text--past' : '';
+      const statusClass = allDone ? 'text--done' : pendingOnly ? 'text--pending' : '';
+      return `<a class="day-card ${in_month ? '' : 'day-card--disabled'} ${showProgress ? 'day-card--progress' : ''}"
+        ${showProgress ? progressStyle(pendingTotals, completedTotals, isAllCompleted) : ''}
+        href="${calendar_appointments_url}">
         <div class="day-card-header">
-          <p class="text ${is_today ? 'text--today' : is_past_date ? 'text--past' : ''}">${day}</p>
+          <p class="text ${dayState} ${statusClass}">${day}</p>
         </div>
         <div class="day-card-body">
-          ${totalsDisplay(pendingTotals, completedTotals)}
+          ${totalsDisplay(pendingTotals, completedTotals, isAllCompleted)}
         </div>
       </a>`;
     }

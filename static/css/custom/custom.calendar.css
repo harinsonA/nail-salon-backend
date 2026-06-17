@@ -1,6 +1,6 @@
 tbody .day-card-container {
     height: 120px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--warm-gray-300);
     padding: 0px !important;
 }
 
@@ -13,19 +13,81 @@ tbody .day-card-container .day-card {
     height: 100%;
     padding: 8px 10px;
     text-decoration: none;
-    color: #000;
+    color: var(--text-strong);
 
 }
 
 tbody .day-card-container .day-card.day-card--disabled,
 tbody .day-card-container .day-card.day-card--disabled:hover {
-    background-color: #E4E4E4;
-    color: #aaa;
+    background-color: var(--warm-gray-200);
+    color: var(--warm-gray-400);
     pointer-events: none;
 }
 
 tbody .day-card-container .day-card:hover {
-    background-color: #f0f0f0;
+    background-color: var(--cream-200);
+}
+
+/* --------------------------------------------------------------------------
+   PROGRESO DEL DÍA — gradiente diagonal warning → success con oleaje
+   --------------------------------------------------------------------------
+   Colores de transición propios del calendario: versiones intensificadas de
+   --color-warning / --color-success de la paleta, más unos tonos intermedios
+   (ámbar y mostaza/oliva) para que la transferencia se vea fluida.
+   El JS inyecta --progress = % de citas completadas.
+   Dirección 135deg: 0% = esquina superior izquierda (cálido/pendiente),
+   100% = inferior derecha (verde/completado). El borde de mezcla se centra
+   en (100% - progress), por lo que 0% = todo cálido y 100% = todo verde. */
+tbody .day-card-container {
+    --cal-grad-amber: rgba(231, 173, 62, 0.55);
+    /* destello amarillo de la esquina */
+    --cal-grad-warning: rgba(208, 129, 45, 0.60);
+    /* naranja tostado intenso */
+    --cal-grad-blend: rgba(181, 155, 66, 0.52);
+    /* mostaza de transición */
+    --cal-grad-olive: rgba(150, 175, 80, 0.55);
+    /* oliva claro */
+    --cal-grad-success: rgba(108, 149, 60, 0.62);
+    /* verde intenso */
+}
+
+tbody .day-card-container .day-card.day-card--progress {
+    background-image: linear-gradient(135deg,
+            var(--cal-grad-amber) 0%,
+            var(--cal-grad-warning) calc((100% - var(--progress, 0%)) * 0.55),
+            var(--cal-grad-blend) calc(100% - var(--progress, 0%)),
+            var(--cal-grad-olive) calc(100% - var(--progress, 0%) * 0.55),
+            var(--cal-grad-success) 100%);
+    /* gradiente ampliado + posición animada = flujo suave tipo oleaje
+       (inspirado en .vscode/propuestas/gradient), sin líneas ni rayas */
+    background-size: 200% 200%;
+    background-repeat: no-repeat;
+    background-position: 30% 30%;
+    animation: dayTide 9s ease infinite;
+}
+
+tbody .day-card-container .day-card.day-card--progress:hover {
+    filter: saturate(1.2) brightness(0.97);
+}
+
+@keyframes dayTide {
+    0% {
+        background-position: 30% 30%;
+    }
+
+    50% {
+        background-position: 70% 70%;
+    }
+
+    100% {
+        background-position: 30% 30%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    tbody .day-card-container .day-card.day-card--progress {
+        animation: none;
+    }
 }
 
 tbody .day-card-container .day-card .text {
@@ -49,13 +111,25 @@ tbody .day-card-container .day-card .day-card-header .text {
 }
 
 tbody .day-card-container .day-card .day-card-header .text.text--today {
-    color: #007bff;
+    color: var(--color-info);
     font-weight: 700;
 }
 
 tbody .day-card-container .day-card .day-card-header .text.text--past {
-    color: #6c757d;
+    color: var(--text-subtle);
     font-weight: 400;
+}
+
+/* Día con todas las citas completadas: número en verde */
+tbody .day-card-container .day-card .day-card-header .text.text--done {
+    color: var(--color-success-text);
+    font-weight: 700;
+}
+
+/* Día con solo citas pendientes: número en naranja */
+tbody .day-card-container .day-card .day-card-header .text.text--pending {
+    color: var(--color-warning-text);
+    font-weight: 700;
 }
 
 tbody .day-card-container .day-card .day-card-body .text {
@@ -64,17 +138,18 @@ tbody .day-card-container .day-card .day-card-body .text {
 
 .totals-container {
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
 }
 
 .totals-container .totals-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     border-left: 4px solid #ccc;
-    padding: 4px;
-    margin-bottom: 4px;
-}
-
-.totals-container .totals-item .totals-item-title {
-    font-size: 12px;
-    margin: 0;
+    padding: 2px 6px;
 }
 
 .totals-container .totals-item .totals-item-amount {
@@ -83,10 +158,69 @@ tbody .day-card-container .day-card .day-card-body .text {
     margin: 0;
 }
 
+/* Íconos recoloreados con la paleta vía mask (no se reescribe el SVG) */
+.totals-container .totals-item .totals-item-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
 .totals-container .totals-item.totals-item-pending {
-    border-color: #ffc107;
+    border-color: var(--color-warning);
+}
+
+.totals-container .totals-item.totals-item-pending .totals-item-icon {
+    -webkit-mask-image: url("../../images/calendar/pending.svg");
+    mask-image: url("../../images/calendar/pending.svg");
+    background-color: var(--color-warning);
 }
 
 .totals-container .totals-item.totals-item-completed {
-    border-color: #28a745;
+    border-color: var(--color-success);
+}
+
+.totals-container .totals-item.totals-item-completed .totals-item-icon {
+    -webkit-mask-image: url("../../images/calendar/complete.svg");
+    mask-image: url("../../images/calendar/complete.svg");
+    background-color: var(--color-success);
+}
+
+/* Estado único (solo pendientes o todo completado): un ícono grande + total,
+   centrados y alineados a la misma altura */
+.totals-container.totals-container--single {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.totals-container.totals-container--single .totals-item {
+    border-left: none;
+    padding: 0;
+    gap: 8px;
+}
+
+.totals-container.totals-container--single .totals-item .totals-item-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.totals-container.totals-container--single .totals-item .totals-item-amount {
+    font-size: 22px;
+}
+
+/* Estado doble (pendientes + completadas a la vez): un poco más grandes */
+.totals-container.totals-container--dual .totals-item .totals-item-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.totals-container.totals-container--dual .totals-item .totals-item-amount {
+    font-size: 16px;
 }
