@@ -132,9 +132,6 @@ tbody .day-card-container .day-card .day-card-header .text.text--pending {
 tbody .day-card-container .day-card .day-card-header .text.text--today.text--today {
     color: var(--color-info-text);
     font-weight: 700;
-    text-decoration: underline;
-    text-decoration-thickness: 3px;
-    text-underline-offset: 4px;
 }
 
 tbody .day-card-container .day-card .day-card-body .text {
