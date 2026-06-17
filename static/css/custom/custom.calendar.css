@@ -110,11 +110,6 @@ tbody .day-card-container .day-card .day-card-header .text {
     text-align: left;
 }
 
-tbody .day-card-container .day-card .day-card-header .text.text--today {
-    color: var(--color-info);
-    font-weight: 700;
-}
-
 tbody .day-card-container .day-card .day-card-header .text.text--past {
     color: var(--text-subtle);
     font-weight: 400;
@@ -130,6 +125,16 @@ tbody .day-card-container .day-card .day-card-header .text.text--done {
 tbody .day-card-container .day-card .day-card-header .text.text--pending {
     color: var(--color-warning-text);
     font-weight: 700;
+}
+
+/* HOY: debe predominar SIEMPRE sobre done/pending. Clase duplicada para
+   ganar en especificidad sin depender del orden, y subrayado para ubicarlo. */
+tbody .day-card-container .day-card .day-card-header .text.text--today.text--today {
+    color: var(--color-info-text);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
 }
 
 tbody .day-card-container .day-card .day-card-body .text {
