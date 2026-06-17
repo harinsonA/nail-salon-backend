@@ -1,15 +1,14 @@
+{% load static %}
 <form method="post" id="common-form-modal" action="{{ modal_url }}">
 	{% csrf_token %}
-	<div class="modal-header bg-warning bg-gradient">
+	<div class="modal-header bg-danger-subtle bg-gradient">
 		<h5 class="modal-title  d-inline-flex align-items-center">
-			<span class="material-symbols-outlined text-color-destructive me-2">
-				warning
-			</span>
+			<img src="{% static 'images/common/warning-text-danger.svg' %}" alt="Advertencia" width="24" height="24" class="me-2">
 			<span class="pb-1 text-color-destructive">
 				{{ name_register }}
 			</span>
 		</h5>
-		<button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
 		<p class="m-0 mb-2 text-color-muted">
@@ -31,9 +30,7 @@
 		</div>
 		<div class="delete-warning-container">
 			<div class="delete-warning-header">
-				<span class="material-symbols-outlined text-color-destructive me-2">
-					warning
-				</span>
+				<img src="{% static 'images/common/warning-text-danger.svg' %}" alt="Advertencia" width="24" height="24" class="me-2">
 			</div>
 			<div>
 				<p class="m-0 text-destructive">
@@ -46,11 +43,11 @@
 			</div>
 		</div>
 	</div>
-	<div class="modal-footer bg-black bg-gradient">
-		<button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+	<div class="modal-footer modal-footer-soft">
+		<button type="button" class="btn btn-sm btn-secondary bg-gradient me-2" data-bs-dismiss="modal">
 			Cancelar
 		</button>
-		<button id="delete_submit_btn" type="button" class="btn btn-sm btn-warning bg-gradient">
+		<button id="delete_submit_btn" type="button" class="btn btn-sm btn-danger bg-gradient">
 			Eliminar
 		</button>
 	</div>

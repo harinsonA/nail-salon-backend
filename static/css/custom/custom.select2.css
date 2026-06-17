@@ -1,3 +1,123 @@
 .select2-container--custom .select2-container {
     display: block;
 }
+
+/* ==========================================================================
+   SELECT2 (tema default) — alineado a la paleta Tierra
+   --------------------------------------------------------------------------
+   Hace que el control imite a un .form-select de la app y cubre los estados
+   (foco/abierto, opciones resaltadas/seleccionadas, búsqueda y múltiple).
+   Variables desde colors.main.css.
+   ========================================================================== */
+
+/* ---- Caja del control (selección simple): imita .form-select ---- */
+.select2-container--default .select2-selection--single {
+    height: calc(1.5em + .75rem + 2px);
+    display: flex;
+    align-items: center;
+    padding: 0 1.75rem 0 .75rem;
+    font-size: .85rem;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: var(--text-subtle);
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+    top: 0;
+    right: 6px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: var(--cocoa-500) transparent transparent transparent;
+}
+
+/* ---- Foco / abierto ---- */
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open .select2-selection--single,
+.select2-container--default.select2-container--focus .select2-selection--multiple,
+.select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: var(--focus-border);
+    box-shadow: 0 0 0 .2rem rgba(215, 178, 138, .25);
+}
+
+/* ---- Dropdown ---- */
+.select2-dropdown {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+    box-shadow: var(--shadow-medium);
+}
+
+.select2-container--default .select2-results__option {
+    color: var(--text-primary);
+    font-size: .85rem;
+    padding: .4rem .75rem;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option--highlighted {
+    background-color: var(--color-primary-soft);
+    color: var(--text-strong);
+}
+
+.select2-container--default .select2-results__option[aria-selected=true],
+.select2-container--default .select2-results__option--selected {
+    background-color: var(--color-primary-soft-hover);
+    color: var(--text-strong);
+}
+
+/* ---- Campo de búsqueda dentro del dropdown ---- */
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    border: 1px solid var(--border-medium);
+    border-radius: 6px;
+    color: var(--text-primary);
+    background-color: var(--bg-surface);
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field:focus {
+    border-color: var(--focus-border);
+    box-shadow: 0 0 0 .2rem rgba(215, 178, 138, .25);
+    outline: 0;
+}
+
+/* ---- Selección múltiple ---- */
+.select2-container--default .select2-selection--multiple {
+    min-height: calc(1.5em + .75rem + 2px);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: var(--color-primary-soft);
+    border: 1px solid var(--color-primary);
+    color: var(--text-strong);
+    border-radius: 6px;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: var(--cocoa-600);
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    background-color: transparent;
+    color: var(--color-danger);
+}
+
+/* ---- Deshabilitado ---- */
+.select2-container--default.select2-container--disabled .select2-selection--single,
+.select2-container--default.select2-container--disabled .select2-selection--multiple {
+    background-color: var(--bg-muted);
+    cursor: not-allowed;
+}

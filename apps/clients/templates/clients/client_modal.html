@@ -1,7 +1,7 @@
 <form id="client-form-modal" action="{{ modal_url }}" method="post">
   {% csrf_token %}
   <div class="modal-header bg-primary bg-gradient">
-    <h5 class="modal-title text-white d-inline-flex align-items-center">
+    <h5 class="modal-title d-inline-flex align-items-center">
       <span class="material-symbols-outlined me-2">
         person
       </span>
@@ -13,7 +13,7 @@
         {% endif %}
       </span>
     </h5>
-    <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
   <div class="modal-body">
     <div class="mb-2">
@@ -73,7 +73,7 @@
       {{ form.status }}
     </div>
   </div>
-  <div class="modal-footer bg-black bg-gradient">
+  <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
       Cancelar
     </button>
