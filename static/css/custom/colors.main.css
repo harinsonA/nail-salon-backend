@@ -108,20 +108,71 @@
 	--border-strong: var(--sand-500);
 	--border-card: rgba(255, 255, 255, 0.5);
 
-	/* Estados (versiones cálidas, armonizadas con la paleta) */
-	--color-success: #7d9b76;
-	--color-success-bg: rgba(125, 155, 118, 0.12);
-	--color-warning: #d9a441;
-	--color-warning-bg: rgba(217, 164, 65, 0.12);
-	--color-danger: #d97757;
-	/* el del alert del login */
+	/* Estados — paleta "Tierra" (oliva, tostado, burdeo, azul invierno)
+	   Usar el hex base para iconos/bordes/badges/fondos *-bg, y la
+	   variante *-text para texto sobre fondos crema (mejor contraste). */
+
+	/* success — verde oliva / aceituna */
+	--color-success: #7d8b4e;
+	--color-success-text: #5c6838;
+	--color-success-bg: rgba(125, 139, 78, 0.12);
+	--color-success-border: rgba(125, 139, 78, 0.3);
+
+	/* warning — naranja tostado */
+	--color-warning: #c8843c;
+	--color-warning-text: #9a6325;
+	--color-warning-bg: rgba(200, 132, 60, 0.12);
+	--color-warning-border: rgba(200, 132, 60, 0.3);
+
+	/* danger — rojo burdeo (badges/tablas) */
+	--color-danger: #9b4a4a;
+	--color-danger-text: #7d3a3a;
+	--color-danger-strong-bg: rgba(155, 74, 74, 0.1);
+	--color-danger-strong-border: rgba(155, 74, 74, 0.28);
+
+	/* terracota cálido — conservado para el alert del login */
+	--color-danger-soft: #d97757;
 	--color-danger-bg: rgba(217, 119, 87, 0.08);
 	--color-danger-border: rgba(217, 119, 87, 0.25);
-	--color-info: #8a9bb0;
-	--color-info-bg: rgba(138, 155, 176, 0.12);
+
+	/* info — azul invierno */
+	--color-info: #5f7d99;
+	--color-info-text: #4a6377;
+	--color-info-bg: rgba(95, 125, 153, 0.12);
+	--color-info-border: rgba(95, 125, 153, 0.3);
 
 	/* Compatibilidad con variables existentes (custom.main.css) */
-	--alert-color-destructive: var(--color-danger);
+	--alert-color-destructive: var(--color-danger-soft);
+
+	/* ----------------------------------------------------------------------
+	   PUENTE BOOTSTRAP — sobrescribe las variables de estado de Bootstrap
+	   para que .text-*, .bg-*, .border-*, .alert-*, .table-* y .link-*
+	   adopten la paleta "Tierra". (Los .btn-* se ajustan más abajo, fuera
+	   de :root, porque Bootstrap compila su color fijo.)
+	   ---------------------------------------------------------------------- */
+	--bs-success: var(--color-success);
+	--bs-success-rgb: 125, 139, 78;
+	--bs-success-text-emphasis: var(--color-success-text);
+	--bs-success-bg-subtle: var(--color-success-bg);
+	--bs-success-border-subtle: var(--color-success-border);
+
+	--bs-warning: var(--color-warning);
+	--bs-warning-rgb: 200, 132, 60;
+	--bs-warning-text-emphasis: var(--color-warning-text);
+	--bs-warning-bg-subtle: var(--color-warning-bg);
+	--bs-warning-border-subtle: var(--color-warning-border);
+
+	--bs-danger: var(--color-danger);
+	--bs-danger-rgb: 155, 74, 74;
+	--bs-danger-text-emphasis: var(--color-danger-text);
+	--bs-danger-bg-subtle: var(--color-danger-strong-bg);
+	--bs-danger-border-subtle: var(--color-danger-strong-border);
+
+	--bs-info: var(--color-info);
+	--bs-info-rgb: 95, 125, 153;
+	--bs-info-text-emphasis: var(--color-info-text);
+	--bs-info-bg-subtle: var(--color-info-bg);
+	--bs-info-border-subtle: var(--color-info-border);
 
 	/* ----------------------------------------------------------------------
 	   3. SOMBRAS Y ELEVACIÓN
@@ -149,6 +200,76 @@
 	--gradient-body: linear-gradient(135deg, var(--cream-100) 0%, var(--cream-200) 50%, var(--cream-300) 100%);
 	--gradient-primary: linear-gradient(90deg, var(--peach-300), var(--peach-400));
 	--gradient-glow-line: linear-gradient(90deg, transparent, rgba(215, 178, 138, 0.45), transparent);
+}
+
+/* ==========================================================================
+   PUENTE BOOTSTRAP — BOTONES Y TEXTO DE ESTADO
+   --------------------------------------------------------------------------
+   Bootstrap compila el color fijo dentro de cada .btn-*, así que sobrescribir
+   --bs-success/etc. no basta: aquí redefinimos sus variables locales.
+   El texto (.text-*) se lleva a la variante *-text para mejor contraste
+   sobre los fondos crema de la app.
+   ========================================================================== */
+
+.btn-success {
+	--bs-btn-bg: var(--color-success);
+	--bs-btn-border-color: var(--color-success);
+	--bs-btn-hover-bg: #6e7a44;
+	--bs-btn-hover-border-color: #6e7a44;
+	--bs-btn-active-bg: var(--color-success-text);
+	--bs-btn-active-border-color: var(--color-success-text);
+	--bs-btn-disabled-bg: var(--color-success);
+	--bs-btn-disabled-border-color: var(--color-success);
+}
+
+.btn-warning {
+	--bs-btn-bg: var(--color-warning);
+	--bs-btn-border-color: var(--color-warning);
+	--bs-btn-hover-bg: #b37432;
+	--bs-btn-hover-border-color: #b37432;
+	--bs-btn-active-bg: var(--color-warning-text);
+	--bs-btn-active-border-color: var(--color-warning-text);
+	--bs-btn-disabled-bg: var(--color-warning);
+	--bs-btn-disabled-border-color: var(--color-warning);
+}
+
+.btn-danger {
+	--bs-btn-bg: var(--color-danger);
+	--bs-btn-border-color: var(--color-danger);
+	--bs-btn-hover-bg: #8a4141;
+	--bs-btn-hover-border-color: #8a4141;
+	--bs-btn-active-bg: var(--color-danger-text);
+	--bs-btn-active-border-color: var(--color-danger-text);
+	--bs-btn-disabled-bg: var(--color-danger);
+	--bs-btn-disabled-border-color: var(--color-danger);
+}
+
+.btn-info {
+	--bs-btn-bg: var(--color-info);
+	--bs-btn-border-color: var(--color-info);
+	--bs-btn-hover-bg: #547089;
+	--bs-btn-hover-border-color: #547089;
+	--bs-btn-active-bg: var(--color-info-text);
+	--bs-btn-active-border-color: var(--color-info-text);
+	--bs-btn-disabled-bg: var(--color-info);
+	--bs-btn-disabled-border-color: var(--color-info);
+}
+
+/* Texto de estado — variantes oscuras para legibilidad sobre crema */
+.text-success {
+	color: var(--color-success-text) !important;
+}
+
+.text-warning {
+	color: var(--color-warning-text) !important;
+}
+
+.text-danger {
+	color: var(--color-danger-text) !important;
+}
+
+.text-info {
+	color: var(--color-info-text) !important;
 }
 
 /* ==========================================================================
