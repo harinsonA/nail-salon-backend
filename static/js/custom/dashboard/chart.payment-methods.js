@@ -1,4 +1,2 @@
 /* Gráfico "Métodos de pago" — pie: monto cobrado por método. */
-$(function () {
-  DashboardCore.loadChart("chart-payment-methods", "pie");
-});
+DashboardCore.register("chart-payment-methods", "pie");

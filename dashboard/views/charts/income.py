@@ -10,5 +10,5 @@ class IncomeChartAjax(ProtectedAjaxView, View):
     """Endpoint del gráfico "Ingresos": facturado vs. cobrado por mes."""
 
     def get(self, request, *args, **kwargs):
-        months = DashboardFilterForm(request.GET).get_months()
-        return JsonResponse(metrics.income_billed_vs_collected(months))
+        period = DashboardFilterForm(request.GET).get_period()
+        return JsonResponse(metrics.income_billed_vs_collected(period))
