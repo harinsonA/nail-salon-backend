@@ -10,12 +10,28 @@ Dashboard
 {% endblock %}
 
 {% block content %}
+<div class="dashboard-filters" data-dashboard-filters>
+  <div class="btn-group dashboard-filters__presets" role="group" aria-label="Período">
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-months="3">3 meses</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-months="6">6 meses</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-months="12">12 meses</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-preset="year">Este año</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-preset="custom">Personalizado</button>
+  </div>
+  <div class="dashboard-filters__range d-none" data-filter-range>
+    <input type="text" class="form-control form-control-sm datepicker" data-from placeholder="Desde" autocomplete="off">
+    <span class="dashboard-filters__sep">→</span>
+    <input type="text" class="form-control form-control-sm datepicker" data-to placeholder="Hasta" autocomplete="off">
+    <button type="button" class="btn btn-primary btn-sm" data-apply-range>Aplicar</button>
+  </div>
+</div>
+
 <div class="dashboard-grid">
 
   <section class="dashboard-card">
     <header class="dashboard-card__header">
       <h4 class="dashboard-card__title">Clientes atendidos</h4>
-      <small class="dashboard-card__subtitle">Últimos 6 meses</small>
+      <small class="dashboard-card__subtitle"><span data-period-label>Últimos 6 meses</span></small>
     </header>
     <div class="dashboard-chart">
       <canvas id="chart-attended-clients" data-url="{% url 'dashboard_attended_clients_ajax' %}"></canvas>
@@ -30,7 +46,7 @@ Dashboard
   <section class="dashboard-card">
     <header class="dashboard-card__header">
       <h4 class="dashboard-card__title">Ingresos</h4>
-      <small class="dashboard-card__subtitle">Facturado vs. cobrado · últimos 6 meses</small>
+      <small class="dashboard-card__subtitle">Facturado vs. cobrado · <span data-period-label>Últimos 6 meses</span></small>
     </header>
     <div class="dashboard-chart">
       <canvas id="chart-income" data-url="{% url 'dashboard_income_ajax' %}"></canvas>
@@ -45,7 +61,7 @@ Dashboard
   <section class="dashboard-card">
     <header class="dashboard-card__header">
       <h4 class="dashboard-card__title">Estado de citas</h4>
-      <small class="dashboard-card__subtitle">Últimos 6 meses</small>
+      <small class="dashboard-card__subtitle"><span data-period-label>Últimos 6 meses</span></small>
     </header>
     <div class="dashboard-chart">
       <canvas id="chart-appointment-status" data-url="{% url 'dashboard_appointment_status_ajax' %}"></canvas>
@@ -60,7 +76,7 @@ Dashboard
   <section class="dashboard-card">
     <header class="dashboard-card__header">
       <h4 class="dashboard-card__title">Métodos de pago</h4>
-      <small class="dashboard-card__subtitle">Cobrado por método · últimos 6 meses</small>
+      <small class="dashboard-card__subtitle">Cobrado por método · <span data-period-label>Últimos 6 meses</span></small>
     </header>
     <div class="dashboard-chart">
       <canvas id="chart-payment-methods" data-url="{% url 'dashboard_payment_methods_ajax' %}"></canvas>
@@ -75,7 +91,7 @@ Dashboard
   <section class="dashboard-card dashboard-card--wide">
     <header class="dashboard-card__header">
       <h4 class="dashboard-card__title">Servicios más solicitados</h4>
-      <small class="dashboard-card__subtitle">Top servicios · últimos 6 meses</small>
+      <small class="dashboard-card__subtitle">Top servicios · <span data-period-label>Últimos 6 meses</span></small>
     </header>
     <div class="dashboard-chart">
       <canvas id="chart-top-services" data-url="{% url 'dashboard_top_services_ajax' %}"></canvas>
@@ -90,7 +106,7 @@ Dashboard
   <section class="dashboard-card dashboard-card--wide">
     <header class="dashboard-card__header">
       <h4 class="dashboard-card__title">Ingresos por categoría</h4>
-      <small class="dashboard-card__subtitle">Últimos 6 meses</small>
+      <small class="dashboard-card__subtitle"><span data-period-label>Últimos 6 meses</span></small>
     </header>
     <div class="dashboard-chart">
       <canvas id="chart-income-by-category" data-url="{% url 'dashboard_income_by_category_ajax' %}"></canvas>
@@ -117,4 +133,6 @@ Dashboard
 <script src="{% static 'js/custom/dashboard/chart.payment-methods.js' %}"></script>
 <script src="{% static 'js/custom/dashboard/chart.top-services.js' %}"></script>
 <script src="{% static 'js/custom/dashboard/chart.income-by-category.js' %}"></script>
+<!-- 4) Filtro global: dispara la carga inicial y recarga al cambiar el período -->
+<script src="{% static 'js/custom/dashboard/dashboard.filters.js' %}"></script>
 {% endblock %}

@@ -10,5 +10,5 @@ class TopServicesChartAjax(ProtectedAjaxView, View):
     """Endpoint del gráfico "Servicios más solicitados"."""
 
     def get(self, request, *args, **kwargs):
-        months = DashboardFilterForm(request.GET).get_months()
-        return JsonResponse(metrics.top_services(months))
+        period = DashboardFilterForm(request.GET).get_period()
+        return JsonResponse(metrics.top_services(period))

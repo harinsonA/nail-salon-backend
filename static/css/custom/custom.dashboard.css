@@ -2,6 +2,29 @@
    DASHBOARD — grid de cards y contenedores de gráficos
    ========================================================================== */
 
+/* Barra de filtro global (período) */
+.dashboard-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.dashboard-filters__range {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dashboard-filters__range .form-control {
+	max-width: 130px;
+}
+
+.dashboard-filters__sep {
+	color: var(--text-muted);
+}
+
 .dashboard-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);

@@ -15,7 +15,5 @@ class AttendedClientsChartAjax(ProtectedAjaxView, View):
     """
 
     def get(self, request, *args, **kwargs):
-        form = DashboardFilterForm(request.GET)
-        months = form.get_months()
-        payload = metrics.attended_clients(months)
-        return JsonResponse(payload)
+        period = DashboardFilterForm(request.GET).get_period()
+        return JsonResponse(metrics.attended_clients(period))

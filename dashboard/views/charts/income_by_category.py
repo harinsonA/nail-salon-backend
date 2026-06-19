@@ -10,5 +10,5 @@ class IncomeByCategoryChartAjax(ProtectedAjaxView, View):
     """Endpoint del gráfico "Ingresos por categoría"."""
 
     def get(self, request, *args, **kwargs):
-        months = DashboardFilterForm(request.GET).get_months()
-        return JsonResponse(metrics.income_by_category(months))
+        period = DashboardFilterForm(request.GET).get_period()
+        return JsonResponse(metrics.income_by_category(period))

@@ -10,5 +10,5 @@ class AppointmentStatusChartAjax(ProtectedAjaxView, View):
     """Endpoint del gráfico "Estado de citas" (pendiente/completada/cancelada)."""
 
     def get(self, request, *args, **kwargs):
-        months = DashboardFilterForm(request.GET).get_months()
-        return JsonResponse(metrics.appointment_status(months))
+        period = DashboardFilterForm(request.GET).get_period()
+        return JsonResponse(metrics.appointment_status(period))

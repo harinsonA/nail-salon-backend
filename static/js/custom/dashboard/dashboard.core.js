@@ -8,6 +8,12 @@
 (function (window) {
   "use strict";
 
+  // Registro de gráficos e instancias activas de Chart.js.
+  // Cada chart.*.js se registra (id + tipo + opciones); el filtro global
+  // dispara reloadAll(params) para recargarlos todos con el mismo período.
+  var registry = [];
+  var instances = {};
+
   // Colores por key de dataset (alineados con colors.main.css)
   var PALETTE = {
     // Series temporales
@@ -144,6 +150,11 @@
   function renderChart(canvasId, type, payload, optionsExtra) {
     var canvas = document.getElementById(canvasId);
     if (!canvas) return null;
+    // Destruir la instancia previa antes de redibujar (evita fugas al refiltrar)
+    if (instances[canvasId]) {
+      instances[canvasId].destroy();
+      delete instances[canvasId];
+    }
     var noData =
       !payload ||
       !payload.datasets ||
@@ -161,26 +172,45 @@
       defaults.scales = { y: { beginAtZero: true, ticks: { precision: 0 } } };
     }
     var options = Object.assign(defaults, optionsExtra || {});
-    return new window.Chart(canvas, {
+    var chart = new window.Chart(canvas, {
       type: type,
       data: { labels: payload.labels, datasets: buildDatasets(payload, type) },
       options: options,
     });
+    instances[canvasId] = chart;
+    return chart;
   }
 
-  // Atajo: lee data-url del canvas, hace fetch y renderiza, gestionando estados
-  function loadChart(canvasId, type, params, optionsExtra) {
-    var canvas = document.getElementById(canvasId);
+  // Registra un gráfico para que el filtro global pueda recargarlo.
+  // No toca el DOM: solo guarda su configuración.
+  function register(canvasId, type, optionsExtra) {
+    registry.push({
+      canvasId: canvasId,
+      type: type,
+      optionsExtra: optionsExtra || null,
+    });
+  }
+
+  // Carga un gráfico registrado: lee data-url, hace fetch y renderiza.
+  function loadOne(entry, params) {
+    var canvas = document.getElementById(entry.canvasId);
     if (!canvas) return;
     var url = canvas.getAttribute("data-url");
     setState(canvas, "loading");
     fetchJSON(url, params)
       .then(function (payload) {
-        renderChart(canvasId, type, payload, optionsExtra);
+        renderChart(entry.canvasId, entry.type, payload, entry.optionsExtra);
       })
       .catch(function () {
         setState(canvas, "error");
       });
+  }
+
+  // Recarga TODOS los gráficos registrados con los mismos params (filtro global).
+  function reloadAll(params) {
+    registry.forEach(function (entry) {
+      loadOne(entry, params);
+    });
   }
 
   applyDefaults();
@@ -190,7 +220,8 @@
     colorFor: colorFor,
     fetchJSON: fetchJSON,
     renderChart: renderChart,
-    loadChart: loadChart,
+    register: register,
+    reloadAll: reloadAll,
     setState: setState,
   };
 })(window);

@@ -10,5 +10,5 @@ class PaymentMethodsChartAjax(ProtectedAjaxView, View):
     """Endpoint del gráfico "Métodos de pago": cobrado por método."""
 
     def get(self, request, *args, **kwargs):
-        months = DashboardFilterForm(request.GET).get_months()
-        return JsonResponse(metrics.payment_methods(months))
+        period = DashboardFilterForm(request.GET).get_period()
+        return JsonResponse(metrics.payment_methods(period))
