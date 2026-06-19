@@ -1,0 +1,65 @@
+/* ==========================================================================
+   DASHBOARD — grid de cards y contenedores de gráficos
+   ========================================================================== */
+
+.dashboard-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 20px;
+}
+
+@media (max-width: 768px) {
+	.dashboard-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.dashboard-card {
+	background: var(--bg-surface);
+	border: 1px solid var(--border-soft);
+	border-radius: 14px;
+	padding: 18px 20px;
+	box-shadow: var(--shadow-extra-light);
+}
+
+/* Cards a ancho completo (barras horizontales / categorías) */
+.dashboard-card--wide {
+	grid-column: 1 / -1;
+}
+
+.dashboard-card__header {
+	margin-bottom: 12px;
+}
+
+.dashboard-card__title {
+	margin: 0;
+	color: var(--text-strong);
+	font-size: 1.05rem;
+}
+
+.dashboard-card__subtitle {
+	color: var(--text-muted);
+}
+
+/* Altura fija del área del gráfico: evita saltos de layout al renderizar */
+.dashboard-chart {
+	position: relative;
+	height: 280px;
+}
+
+.dashboard-chart canvas {
+	width: 100% !important;
+}
+
+/* Estados loading / vacío / error, centrados sobre el área del gráfico */
+.dashboard-chart__state {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	color: var(--text-muted);
+	font-size: 0.92rem;
+	text-align: center;
+}

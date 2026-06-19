@@ -1,9 +1,120 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block view_title %}
 Dashboard
 {% endblock %}
 
+{% block extra_css %}
+<link href="{% static 'css/custom/custom.dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-<h1>Hola</h1>
+<div class="dashboard-grid">
+
+  <section class="dashboard-card">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Clientes atendidos</h4>
+      <small class="dashboard-card__subtitle">Últimos 6 meses</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-attended-clients" data-url="{% url 'dashboard_attended_clients_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
+  <section class="dashboard-card">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Ingresos</h4>
+      <small class="dashboard-card__subtitle">Facturado vs. cobrado · últimos 6 meses</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-income" data-url="{% url 'dashboard_income_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
+  <section class="dashboard-card">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Estado de citas</h4>
+      <small class="dashboard-card__subtitle">Últimos 6 meses</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-appointment-status" data-url="{% url 'dashboard_appointment_status_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
+  <section class="dashboard-card">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Métodos de pago</h4>
+      <small class="dashboard-card__subtitle">Cobrado por método · últimos 6 meses</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-payment-methods" data-url="{% url 'dashboard_payment_methods_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
+  <section class="dashboard-card dashboard-card--wide">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Servicios más solicitados</h4>
+      <small class="dashboard-card__subtitle">Top servicios · últimos 6 meses</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-top-services" data-url="{% url 'dashboard_top_services_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
+  <section class="dashboard-card dashboard-card--wide">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Ingresos por categoría</h4>
+      <small class="dashboard-card__subtitle">Últimos 6 meses</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-income-by-category" data-url="{% url 'dashboard_income_by_category_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- 1) Librería -->
+<script src="{% static 'js/libs/chartjs_v4.5/chart.umd.min.js' %}"></script>
+<!-- 2) Núcleo compartido (paleta, fetch, defaults, renderChart) -->
+<script src="{% static 'js/custom/dashboard/dashboard.core.js' %}"></script>
+<!-- 3) Un script por gráfico -->
+<script src="{% static 'js/custom/dashboard/chart.attended-clients.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/chart.income.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/chart.appointment-status.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/chart.payment-methods.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/chart.top-services.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/chart.income-by-category.js' %}"></script>
 {% endblock %}
