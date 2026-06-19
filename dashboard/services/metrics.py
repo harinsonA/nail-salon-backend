@@ -44,6 +44,7 @@ def attended_clients(period):
         Cita.objects.filter(
             estado=Cita.EstadoChoices.COMPLETADA,
             fecha_agenda__gte=period.start_date,
+            fecha_agenda__lt=period.end_date,
         )
         .annotate(period=TruncMonth("fecha_agenda"))
         .values("period")
@@ -74,7 +75,10 @@ def income_billed_vs_collected(period):
     """Facturado (Pago.monto_total_cita por fecha_cita) vs. cobrado
     (DetallePago.monto_pago por fecha_pago), por mes."""
     billed_rows = (
-        Pago.objects.filter(fecha_cita__gte=period.start_date)
+        Pago.objects.filter(
+            fecha_cita__date__gte=period.start_date,
+            fecha_cita__date__lt=period.end_date,
+        )
         .annotate(period=TruncMonth("fecha_cita", output_field=DateField()))
         .values("period")
         .annotate(total=Sum("monto_total_cita"))
@@ -82,7 +86,8 @@ def income_billed_vs_collected(period):
     collected_rows = (
         DetallePago.objects.filter(
             pago__is_removed=False,
-            fecha_pago__gte=period.start_date,
+            fecha_pago__date__gte=period.start_date,
+            fecha_pago__date__lt=period.end_date,
         )
         .annotate(period=TruncMonth("fecha_pago", output_field=DateField()))
         .values("period")
@@ -105,7 +110,10 @@ def income_billed_vs_collected(period):
 def appointment_status(period):
     """Citas agrupadas por estado (pendiente/completada/cancelada) en el período."""
     rows = (
-        Cita.objects.filter(fecha_agenda__gte=period.start_date)
+        Cita.objects.filter(
+            fecha_agenda__gte=period.start_date,
+            fecha_agenda__lt=period.end_date,
+        )
         .values("estado")
         .annotate(total=Count("id"))
     )
@@ -129,7 +137,8 @@ def payment_methods(period):
     rows = (
         DetallePago.objects.filter(
             pago__is_removed=False,
-            fecha_pago__gte=period.start_date,
+            fecha_pago__date__gte=period.start_date,
+            fecha_pago__date__lt=period.end_date,
         )
         .values("metodo_pago")
         .annotate(total=Sum("monto_pago"))
@@ -155,6 +164,7 @@ def top_services(period, limit=8):
         DetalleCita.objects.filter(
             cita__is_removed=False,
             cita__fecha_agenda__gte=period.start_date,
+            cita__fecha_agenda__lt=period.end_date,
         )
         .values("nombre_servicio")
         .annotate(total=Sum("cantidad_servicios"))
@@ -177,6 +187,7 @@ def income_by_category(period):
         DetalleCita.objects.filter(
             cita__is_removed=False,
             cita__fecha_agenda__gte=period.start_date,
+            cita__fecha_agenda__lt=period.end_date,
         )
         .values("servicio__categoria__nombre")
         .annotate(total=Sum("precio_acordado"))

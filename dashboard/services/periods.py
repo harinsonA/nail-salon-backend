@@ -1,12 +1,16 @@
 from collections import namedtuple
 from datetime import date
 
-# Periodo resuelto que consumen las funciones de metrics:
-#   - start_date: primer día del mes más antiguo (para filtrar el queryset).
+# Periodo resuelto que consumen las funciones de metrics. Acota un intervalo
+# semiabierto [start_date, end_date) que comparten los 6 gráficos:
+#   - start_date: primer día del mes más antiguo del rango (límite inferior).
+#   - end_date: primer día del mes SIGUIENTE al último del rango (límite
+#     superior exclusivo). Usar `< end_date` incluye el último mes completo y
+#     evita problemas de hora/zona horaria con los DateTimeField.
 #   - keys: date(año, mes, 1) en orden cronológico; coincide con la salida de
 #     TruncMonth sobre un DateField, para mapear resultados encima.
 #   - labels: etiquetas "Ene", "Feb", … alineadas 1:1 con keys.
-Period = namedtuple("Period", ["start_date", "keys", "labels"])
+Period = namedtuple("Period", ["start_date", "end_date", "keys", "labels"])
 
 # Tope de meses para un rango personalizado (evita series gigantes).
 MAX_BUCKETS = 36
@@ -22,12 +26,25 @@ def month_label(month):
     return MONTH_LABELS_ES[month - 1]
 
 
+def _first_of_next_month(year, month):
+    """Primer día del mes siguiente a (year, month)."""
+    if month == 12:
+        return date(year + 1, 1, 1)
+    return date(year, month + 1, 1)
+
+
 def _build(pairs):
     """Construye un Period a partir de pares (año, mes) en orden cronológico."""
     pairs = pairs[-MAX_BUCKETS:]
     keys = [date(year, month, 1) for (year, month) in pairs]
     labels = [month_label(month) for (_, month) in pairs]
-    return Period(start_date=keys[0], keys=keys, labels=labels)
+    last_year, last_month = pairs[-1]
+    return Period(
+        start_date=keys[0],
+        end_date=_first_of_next_month(last_year, last_month),
+        keys=keys,
+        labels=labels,
+    )
 
 
 def last_n_months(months, today=None):
