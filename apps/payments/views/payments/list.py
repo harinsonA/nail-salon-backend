@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.common.custom_time_fields import CustomMonthField
+from apps.common.custom_time_fields import CustomMonthField, MONTH_NUMBER_TO_NAME
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
@@ -43,8 +43,8 @@ class PaymentsView(ProtectedView, TemplateView):
 
     @staticmethod
     def get_initial_month() -> str:
-        today = date.today()
-        return f"{today.strftime('%B %Y')}".capitalize()
+        year, month = date.today().strftime("%Y-%m").split("-")
+        return f"{MONTH_NUMBER_TO_NAME[int(month)]} {year}"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
