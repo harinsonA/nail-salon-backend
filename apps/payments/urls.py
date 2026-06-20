@@ -1,5 +1,6 @@
 from django.urls import path
 from apps.payments.views.payments.list import PaymentsView, PaymentsListView
+from apps.payments.views.charts.weekly_income import WeeklyIncomeChartAjax
 from apps.payments.views.debtors.list import DebtorsView, DebtorsListView
 from apps.payments.views.debtors.add_payment import AddPaymentModalView
 from apps.payments.views.debtors.debt_detail import (
@@ -18,6 +19,11 @@ urlpatterns = [
         "pagos/lista/ajax",
         PaymentsListView.as_view(),
         name="payments_list",
+    ),
+    path(
+        "pagos/ingresos-semana/ajax",
+        WeeklyIncomeChartAjax.as_view(),
+        name="payments_weekly_income_ajax",
     ),
     path(
         "deudores/",

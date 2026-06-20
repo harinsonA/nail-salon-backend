@@ -1,7 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block view_title %}
 Lista de pagos
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/custom/custom.dashboard.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -54,6 +59,33 @@ Lista de pagos
       </div>
     </div>
   </section>
+
+  <section class="d-flex justify-content-end my-4">
+    <div class="input-group" style="max-width: 260px;">
+      <span class="input-group-text">
+        <span class="material-symbols-outlined text-primary">
+          calendar_month
+        </span>
+      </span>
+      {{ filter_form.months }}
+    </div>
+  </section>
+
+  <section class="dashboard-card mb-4">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Ingresos por semana</h4>
+      <small class="dashboard-card__subtitle">Facturado por semana del mes seleccionado</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-weekly-income" data-url="{% url 'payments_weekly_income_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
   <section class="table-container--custom">
     <table id="payments_table" class="table table-hover ">
       <thead>
@@ -73,11 +105,19 @@ Lista de pagos
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/libs/chartjs_v4.5/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/dashboard.core.js' %}"></script>
 <script>
   $(() => {
+    const monthInput = $('#{{ filter_form.months.id_for_label }}');
+
     const filterData = {
-      months: $('#{{ filter_form.months.id_for_label }}').val(),
+      months: monthInput.val(),
     };
+
+    initializeMonthPickers();
+
+    DashboardCore.register('chart-weekly-income', 'bar');
 
     const dataTableConfig = {
       tableID: '#payments_table',
@@ -92,19 +132,6 @@ Lista de pagos
             return json.data;
           },
         },
-        customStartTop: () => `
-          <div class="input-group">
-            <span class="input-group-text">
-              <span class="material-symbols-outlined text-primary">
-                calendar_month
-              </span>
-            </span>
-            {{ filter_form.months }}
-          </div>
-        `,
-        drawCallback: () => {
-          initializeMonthPickers();
-        },
       },
       columns: [
         { data: 'fecha_cita_display', className: 'fs-7 w-auto text-center' },
@@ -117,9 +144,12 @@ Lista de pagos
 
     const paymentsTable = renderDataTable(dataTableConfig);
 
-    $('#{{ filter_form.months.id_for_label }}').on('change', ({ target }) => {
-      filterData[target.name] = target.value;
+    DashboardCore.reloadAll({ months: filterData.months });
+
+    monthInput.on('change', ({ target }) => {
+      filterData.months = target.value;
       paymentsTable.draw();
+      DashboardCore.reloadAll({ months: target.value });
     });
   });
 </script>
