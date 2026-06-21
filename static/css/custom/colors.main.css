@@ -249,6 +249,22 @@
 	--bs-btn-disabled-border-color: var(--border-soft);
 }
 
+/* outline-primary — acción secundaria (ej. botón "Exportar" de las tablas):
+   contorno arena de marca; se rellena de arena con texto blanco al interactuar. */
+.btn-outline-primary {
+	--bs-btn-color: var(--color-secondary);
+	--bs-btn-border-color: var(--color-primary);
+	--bs-btn-hover-bg: var(--color-primary);
+	--bs-btn-hover-color: var(--text-on-primary);
+	--bs-btn-hover-border-color: var(--color-primary);
+	--bs-btn-active-bg: var(--color-primary-active);
+	--bs-btn-active-color: var(--text-on-primary);
+	--bs-btn-active-border-color: var(--color-primary-active);
+	--bs-btn-focus-shadow-rgb: 215, 178, 138;
+	--bs-btn-disabled-color: var(--text-muted);
+	--bs-btn-disabled-border-color: var(--border-soft);
+}
+
 .btn-success {
 	--bs-btn-bg: var(--color-success);
 	--bs-btn-border-color: var(--color-success);

@@ -165,10 +165,10 @@ const combineTopStart = (existing, node) => {
 const buildExportButtonNode = ({
   id = DEFAULT_EXPORT_BTN_ID,
   url = "",
-  label = "Exportar Excel",
+  label = "Exportar",
 }) =>
   $(`<a id="${id}" role="button" data-url="${url}"
-        class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2">
+        class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">
         ${label}
         <img src="/static/images/common/download.svg" alt="Descargar" width="16" height="16">
       </a>`)[0];
