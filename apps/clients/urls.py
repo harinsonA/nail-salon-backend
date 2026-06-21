@@ -2,6 +2,7 @@ from django.urls import path
 from apps.clients.views.cliente import (
     ClientsView,
     ClientListView,
+    ClientExportView,
     ClientCreateModalView,
     ClientDetailModalView,
     ClientDeleteModalView,
@@ -17,6 +18,11 @@ urlpatterns = [
         "clientes/lista/ajax",
         ClientListView.as_view(),
         name="client_list",
+    ),
+    path(
+        "clientes/exportar/",
+        ClientExportView.as_view(),
+        name="client_export",
     ),
     path(
         "clientes/crear/",
