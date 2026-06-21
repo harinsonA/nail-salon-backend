@@ -204,6 +204,16 @@ Citas: {{ full_date }}
 			</a>`;
 		}
 
+		const customStartTop = () => `
+			<div class="input-group">
+				<span class="input-group-text">
+					<span class="material-symbols-outlined text-primary">
+						calendar_month
+					</span>
+				</span>
+				{{ filter_form.date_selected }}
+			</div>`;
+
 		const dataTableConfig = {
 			tableID: '#agenda_table',
 			url: '{{ url_agenda_list }}',
@@ -224,16 +234,7 @@ Citas: {{ full_date }}
 						return json.data;
 					},
 				},
-				customStartTop: () => `
-					<div class="input-group">
-						<span class="input-group-text">
-							<span class="material-symbols-outlined text-primary">
-								calendar_month
-							</span>
-						</span>
-						{{ filter_form.date_selected }}
-					</div>
-				`,
+				layout: { topStart: customStartTop },
 				initComplete: () => {
 					initializeDatePickers();
 				},

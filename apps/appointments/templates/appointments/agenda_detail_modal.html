@@ -235,8 +235,7 @@
       </section>`;
     }
 
-    const customStartTop = () => `
-      <button type ="button" class="btn btn-primary btn-sm" id="add-agenda-btn">
+    const customStartTop = () => `<button type ="button" class="btn btn-primary btn-sm" id="add-agenda-btn">
         <span class="material-symbols-outlined fs-6">
           edit
         </span>
@@ -250,7 +249,7 @@
       ],
       extraConfig: {
         data: currentServiceData,
-        customStartTop,
+        layout: { topStart: customStartTop },
         searching: false,
         info: false,
         paging: false,
