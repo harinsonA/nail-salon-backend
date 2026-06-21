@@ -6,6 +6,8 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.exports.columns import ExcelColumn
+from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
@@ -24,6 +26,7 @@ class DebtorsView(ProtectedView, TemplateView):
         context.update(
             {
                 "url_debtors_list": reverse_lazy("debtors_list"),
+                "url_debtors_export": reverse_lazy("debtors_export"),
             }
         )
         return context
@@ -110,6 +113,20 @@ class DebtorsListView(BaseListViewAjax):
             "monto_total_cita": format_currency(total),
             "total_abonado": format_currency(total_abonado),
         }
+
+
+class DebtorsExportView(ExcelExportMixin, DebtorsListView):
+    force_export = True
+    excel_filename = "deudores"
+    excel_sheet_title = "Deudores"
+
+    excel_columns = [
+        ExcelColumn("Fecha cita", "fecha_cita_display", width=20, align="center"),
+        ExcelColumn("Cliente", "cliente_nombre", width=30),
+        ExcelColumn("Total servicio", "monto_total_cita_formatted", width=16, align="right"),
+        ExcelColumn("Total abonado", "total_abonado_formatted", width=16, align="right"),
+        ExcelColumn("Total pendiente", "saldo_pendiente_formatted", width=16, align="right"),
+    ]
 
 
 # endregion

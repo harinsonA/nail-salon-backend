@@ -8,6 +8,8 @@ from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
 from result import Result, Ok, Err
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.exports.columns import ExcelColumn
+from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.custom_time_fields import DurationInMinutesField
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.currency import format_currency
@@ -201,6 +203,7 @@ class ServicesView(ProtectedView, TemplateView):
             {
                 "filter_form": ServicesFilterForm(),
                 "url_service_list": reverse_lazy("service_list"),
+                "url_service_export": reverse_lazy("service_export"),
                 "url_category_list": reverse_lazy("categories"),
             }
         )
@@ -291,6 +294,29 @@ class ServiceListView(BaseListViewAjax):
             ),
         )
         return _additional_data
+
+
+class ServiceExportView(ExcelExportMixin, ServiceListView):
+    force_export = True
+    include_options_column = False
+    excel_filename = "servicios"
+    excel_sheet_title = "Servicios"
+
+    excel_columns = [
+        ExcelColumn("Nombre", "nombre", width=30),
+        ExcelColumn("Categoria", "category_name", width=24),
+        ExcelColumn(
+            "Estado",
+            "estado",
+            width=14,
+            align="center",
+            formatter=lambda value: (
+                "Activo" if value == Servicio.EstadoChoices.ACTIVO else "Inactivo"
+            ),
+        ),
+        ExcelColumn("Precio", "price_formatted", width=16, align="right"),
+        ExcelColumn("Duración", "estimated_duration_display", width=14, align="center"),
+    ]
 
 
 class BaseServiceModalView(ProtectedView, BSModalFormView):

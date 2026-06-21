@@ -106,6 +106,7 @@ Categorias
                 { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
             ],
             extraConfig: {
+                exportConfig: { url: '{{ url_category_export }}' },
                 ajax: {
                     dataSrc: (json) => {
                         $('#active_categories_id').text(json.active_categories_total);
@@ -115,6 +116,13 @@ Categorias
                 },
                 drawCallback: () => {
                     initializeAllBSModals();
+                },
+                initComplete: function () {
+                    const api = this.api();
+                    bindExportButton({
+                        fields: ['#{{ filter_form.status.id_for_label }}'],
+                        getSearchValue: () => api.search(),
+                    });
                 },
             },
         };

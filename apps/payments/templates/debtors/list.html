@@ -87,6 +87,7 @@ Lista de deudores
       url: '{{ url_debtors_list }}',
       requestData: {},
       extraConfig: {
+        exportConfig: { url: '{{ url_debtors_export }}' },
         ajax: {
           dataSrc: (json) => {
             $('#debtors_totals_id').text(json.monto_total_cita);
@@ -98,6 +99,12 @@ Lista de deudores
           initializeAllCanvasBSModals();
           initializeAllBSModals();
           initializeAllBSXLModals();
+        },
+        initComplete: function () {
+          const api = this.api();
+          bindExportButton({
+            getSearchValue: () => api.search(),
+          });
         },
       },
       columns: [

@@ -6,6 +6,8 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.exports.columns import ExcelColumn
+from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.custom_time_fields import CustomMonthField, MONTH_NUMBER_TO_NAME
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
@@ -51,6 +53,7 @@ class PaymentsView(ProtectedView, TemplateView):
         context.update(
             {
                 "url_payments_list": reverse_lazy("payments_list"),
+                "url_payments_export": reverse_lazy("payments_export"),
                 "filter_form": PaymentsFilterForm(
                     initial={"months": self.get_initial_month()}
                 ),
@@ -124,6 +127,25 @@ class PaymentsListView(BaseListViewAjax):
             "descuento_total": format_currency(discount),
             "monto_recibido_mes": format_currency(received.get("total", 0)),
         }
+
+
+class PaymentsExportView(ExcelExportMixin, PaymentsListView):
+    force_export = True
+    excel_filename = "pagos"
+    excel_sheet_title = "Pagos"
+
+    excel_columns = [
+        ExcelColumn("Fecha cita", "fecha_cita_display", width=20, align="center"),
+        ExcelColumn("Cliente", "cliente_nombre", width=30),
+        ExcelColumn("Descuento", "descuento_total_formatted", width=16, align="right"),
+        ExcelColumn("Monto pagado", "monto_total_cita_formatted", width=16, align="right"),
+        ExcelColumn(
+            "Fecha pago completado",
+            "fecha_pago_completado_display",
+            width=22,
+            align="center",
+        ),
+    ]
 
 
 # endregion
