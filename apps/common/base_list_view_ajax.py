@@ -55,15 +55,30 @@ class BaseListViewAjax(ProtectedAjaxView, ListView):
         queryset = super().get_queryset()
         return queryset.filter(**self.get_filters())
 
-    def get_values(self, queryset):
-        return self.get_data(values=[*queryset.values(*self.field_list)])
+    def get_processed_queryset(self):
+        """Queryset con filtros y orden aplicados, sin paginar."""
+        queryset = self.get_queryset()
+        ordering = self.get_order_by()
+        if ordering:
+            queryset = queryset.order_by(*ordering)
+        return queryset
 
-    def get_data_length(self, values):
+    def should_paginate(self) -> bool:
+        """Punto de extensión: el ExcelExportMixin lo apaga al exportar."""
+        return True
+
+    def apply_pagination(self, queryset):
+        if not self.should_paginate():
+            return queryset
         page_start, page_end = self.get_pagination_length()
-        return values[page_start:page_end]
+        return queryset[page_start:page_end]
 
-    def get_data(self, values):
-        return self.get_data_length(values)
+    def is_export(self) -> bool:
+        """Default; el ExcelExportMixin lo sobreescribe."""
+        return False
+
+    def get_values(self, queryset):
+        return [*queryset.values(*self.field_list)]
 
     @staticmethod
     def add_options_column(data: list) -> list:
@@ -74,18 +89,15 @@ class BaseListViewAjax(ProtectedAjaxView, ListView):
         return {}
 
     def get_context_data(self, **kwargs):
-        queryset = self.get_queryset()
-
-        ordering = self.get_order_by()
-        if ordering:
-            queryset = queryset.order_by(*ordering)
+        queryset = self.get_processed_queryset()
 
         total_records = queryset.count()
 
         queryset = queryset.filter(self.get_filter_by_search())
         filtered_records = queryset.count()
 
-        data = self.get_values(queryset)
+        page = self.apply_pagination(queryset)
+        data = self.get_values(page)
         if self.include_options_column:
             data = self.add_options_column(data)
         return {
