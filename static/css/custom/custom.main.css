@@ -34,6 +34,18 @@
 	color: #fff !important;
 }
 
+/* Tabs de contenido (servicios / categorías) — alineadas a la paleta "Tierra".
+   Se reescriben las variables nativas de Bootstrap, sin tocar la forma. */
+.nav-tabs {
+	--bs-nav-tabs-border-color: var(--border-medium);
+	--bs-nav-link-color: var(--text-muted);
+	--bs-nav-link-hover-color: var(--text-primary);
+	--bs-nav-tabs-link-hover-border-color: var(--border-soft) var(--border-soft) var(--border-medium);
+	--bs-nav-tabs-link-active-color: var(--text-strong);
+	--bs-nav-tabs-link-active-bg: var(--bg-surface);
+	--bs-nav-tabs-link-active-border-color: var(--border-medium) var(--border-medium) var(--bg-surface);
+}
+
 
 .container-main {
 	min-height: 500px;
