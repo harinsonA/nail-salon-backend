@@ -84,8 +84,8 @@ const renderDataTable = ({
   extraConfig = {},
 }) => {
   const {
-    customStartTop = null,
     columnsDefs = [],
+    exportConfig = null,
     layout: customLayout = {},
     ajax: customAjax = {},
     language: customLanguage = {},
@@ -119,7 +119,7 @@ const renderDataTable = ({
       ...customLanguage,
     },
     layout: {
-      topStart: customStartTop,
+      topStart: null,
       topEnd: "search",
       bottomStart: "info",
       bottomEnd: "paging",
