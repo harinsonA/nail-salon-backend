@@ -33,8 +33,10 @@ class ExcelExportMixin:
     export_param = "export"  # trigger por querystring: ?export=excel
     export_value = "excel"
 
+    # Colores de marca (ver static/css/custom/colors.main.css):
+    #   --color-primary (sand-500) = #D7B28A · --text-on-primary (warm-white) = #FFFFFF
     header_font = Font(bold=True, color="FFFFFF", size=11)
-    header_fill = PatternFill("solid", fgColor="4F46E5")
+    header_fill = PatternFill("solid", fgColor="D7B28A")
     header_height = 22
     freeze_header = True
 
