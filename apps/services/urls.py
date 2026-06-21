@@ -2,6 +2,7 @@ from django.urls import path
 from apps.services.views.servicio import (
     ServicesView,
     ServiceListView,
+    ServiceExportView,
     ServiceCreateModalView,
     ServiceDetailModalView,
     ServiceDeleteModalView,
@@ -9,6 +10,7 @@ from apps.services.views.servicio import (
 from apps.services.views.categories.categoria import (
     CategoriesView,
     CategoryListView,
+    CategoryExportView,
     CategoryCreateModalView,
     CategoryDetailModalView,
     CategoryDeleteModalView,
@@ -24,6 +26,11 @@ urlpatterns = [
         "servicios/lista/ajax",
         ServiceListView.as_view(),
         name="service_list",
+    ),
+    path(
+        "servicios/exportar/",
+        ServiceExportView.as_view(),
+        name="service_export",
     ),
     path(
         "servicios/crear/",
@@ -49,6 +56,11 @@ urlpatterns = [
         "categorias/lista/ajax",
         CategoryListView.as_view(),
         name="category_list",
+    ),
+    path(
+        "categorias/exportar/",
+        CategoryExportView.as_view(),
+        name="category_export",
     ),
     path(
         "categorias/crear/",

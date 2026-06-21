@@ -111,6 +111,7 @@ Lista de servicios
 				{ data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
 			],
 			extraConfig: {
+				exportConfig: { url: '{{ url_service_export }}' },
 				ajax: {
 					dataSrc: (json) => {
 						$('#active_services_id').text(json.active_services_total);
@@ -120,6 +121,13 @@ Lista de servicios
 				},
 				drawCallback: () => {
 					initializeAllBSModals();
+				},
+				initComplete: function () {
+					const api = this.api();
+					bindExportButton({
+						fields: ['#{{ filter_form.status.id_for_label }}'],
+						getSearchValue: () => api.search(),
+					});
 				},
 			},
 		};

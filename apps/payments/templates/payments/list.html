@@ -124,6 +124,7 @@ Lista de pagos
       url: '{{ url_payments_list }}',
       requestData: filterData,
       extraConfig: {
+        exportConfig: { url: '{{ url_payments_export }}' },
         ajax: {
           dataSrc: (json) => {
             $('#payments_totals_id').text(json.monto_total_cita);
@@ -131,6 +132,13 @@ Lista de pagos
             $('#payments_received_id').text(json.monto_recibido_mes);
             return json.data;
           },
+        },
+        initComplete: function () {
+          const api = this.api();
+          bindExportButton({
+            fields: ['#{{ filter_form.months.id_for_label }}'],
+            getSearchValue: () => api.search(),
+          });
         },
       },
       columns: [

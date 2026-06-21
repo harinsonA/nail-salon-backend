@@ -9,6 +9,8 @@ from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.exports.columns import ExcelColumn
+from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
@@ -139,6 +141,7 @@ class CategoriesView(ProtectedView, TemplateView):
             {
                 "filter_form": CategoriesFilterForm(),
                 "url_category_list": reverse_lazy("category_list"),
+                "url_category_export": reverse_lazy("category_export"),
                 "url_service_list": reverse_lazy("services"),
             }
         )
@@ -207,6 +210,27 @@ class CategoryListView(BaseListViewAjax):
                 "pk", filter=Q(estado=Categoria.EstadoChoices.INACTIVO)
             ),
         )
+
+
+class CategoryExportView(ExcelExportMixin, CategoryListView):
+    force_export = True
+    include_options_column = False
+    excel_filename = "categorias"
+    excel_sheet_title = "Categorias"
+
+    excel_columns = [
+        ExcelColumn("Nombre", "nombre", width=30),
+        ExcelColumn(
+            "Estado",
+            "estado",
+            width=14,
+            align="center",
+            formatter=lambda value: (
+                "Activo" if value == Categoria.EstadoChoices.ACTIVO else "Inactivo"
+            ),
+        ),
+        ExcelColumn("Descripcion", "descripcion", width=50),
+    ]
 
 
 class BaseCategoryModalView(ProtectedView, BSModalFormView):
