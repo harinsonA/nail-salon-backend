@@ -92,6 +92,9 @@ const renderDataTable = ({
     ...settings
   } = extraConfig;
 
+  const { topStart: customTopStart = null, ...restLayout } = customLayout;
+  const exportNode = exportConfig ? buildExportButtonNode(exportConfig) : null;
+
   return $(tableID).DataTable({
     ajax: {
       url,
@@ -119,11 +122,11 @@ const renderDataTable = ({
       ...customLanguage,
     },
     layout: {
-      topStart: null,
+      topStart: combineTopStart(customTopStart, exportNode),
       topEnd: "search",
       bottomStart: "info",
       bottomEnd: "paging",
-      ...customLayout,
+      ...restLayout,
     },
     paging: true,
     pagingType: "simple_numbers",
@@ -145,6 +148,66 @@ const renderDataTable = ({
       ...columnsDefs,
     ],
     ...settings,
+  });
+};
+
+// id por defecto compartido entre el constructor del botón y el bindeo
+const DEFAULT_EXPORT_BTN_ID = "export-btn";
+
+// Si ya hay un topStart, ANEXA el botón (DataTables 2 admite un array en la celda); si no, va solo
+const combineTopStart = (existing, node) => {
+  if (!node) return existing;
+  if (!existing) return node;
+  return Array.isArray(existing) ? [...existing, node] : [existing, node];
+};
+
+// La url va en data-url (no usamos href); el icono es un recurso del sistema
+const buildExportButtonNode = ({
+  id = DEFAULT_EXPORT_BTN_ID,
+  url = "",
+  label = "Exportar Excel",
+}) =>
+  $(`<a id="${id}" role="button" data-url="${url}"
+        class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">
+        ${label}
+        <img src="/static/images/common/download.svg" alt="Descargar" width="16" height="16">
+      </a>`)[0];
+
+// Arma los parámetros que necesita la URL de descarga (lee el DOM en el momento del click)
+const buildExportParams = ({ form = null, fields = [], searchValue = "" } = {}) => {
+  const params = new URLSearchParams();
+
+  if (form) {
+    const formEl = typeof form === "string" ? document.querySelector(form) : form;
+    if (formEl) new FormData(formEl).forEach((value, key) => params.set(key, value));
+  }
+
+  fields.forEach((selector) => {
+    const el = document.querySelector(selector);
+    if (el) params.set(el.name || el.id, el.value); // usa el name -> coincide con el filter form del backend
+  });
+
+  if (searchValue) params.set("search[value]", searchValue); // misma clave que get_filter_by_search
+  return params;
+};
+
+// Enlaza el botón (se invoca desde el initComplete de la vista). La url sale del data-url del botón.
+const bindExportButton = ({
+  buttonID = `#${DEFAULT_EXPORT_BTN_ID}`,
+  form = null,
+  fields = [],
+  getSearchValue = null,
+} = {}) => {
+  const button = document.querySelector(buttonID);
+  if (!button) return;
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    const params = buildExportParams({
+      form,
+      fields,
+      searchValue: getSearchValue?.() ?? "",
+    });
+    window.location = `${button.dataset.url}?${params.toString()}`; // data-url, no href
   });
 };
 

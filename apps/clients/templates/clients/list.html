@@ -93,6 +93,7 @@ Lista de clientes
         { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
       ],
       extraConfig: {
+        exportConfig: { url: '{{ url_client_export }}' },
         ajax: {
           dataSrc: (json) => {
             $('#active_clients_id').text(json.active_clients_total);
@@ -102,6 +103,13 @@ Lista de clientes
         },
         drawCallback: () => {
           initializeAllBSModals();
+        },
+        initComplete: function () {
+          const api = this.api();
+          bindExportButton({
+            fields: ['#{{ filter_form.status.id_for_label }}'],
+            getSearchValue: () => api.search(),
+          });
         },
       },
     };

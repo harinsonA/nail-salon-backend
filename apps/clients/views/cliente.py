@@ -8,6 +8,8 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.exports.columns import ExcelColumn
+from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.phones import CountryPhonePrefix
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
@@ -201,6 +203,7 @@ class ClientsView(ProtectedView, TemplateView):
             {
                 "filter_form": ClientsFilterForm(),
                 "url_client_list": reverse_lazy("client_list"),
+                "url_client_export": reverse_lazy("client_export"),
             }
         )
         return context
@@ -276,6 +279,28 @@ class ClientListView(BaseListViewAjax):
             ),
         )
         return _additional_data
+
+
+class ClientExportView(ExcelExportMixin, ClientListView):
+    force_export = True
+    include_options_column = False
+    excel_filename = "clientes"
+    excel_sheet_title = "Clientes"
+
+    excel_columns = [
+        ExcelColumn("Nombre completo", "full_name", width=30),
+        ExcelColumn("Teléfono", "telefono", width=18),
+        ExcelColumn("Correo", "email", width=30),
+        ExcelColumn(
+            "Estado",
+            "estado",
+            width=14,
+            align="center",
+            formatter=lambda value: (
+                "Activo" if value == Cliente.EstadoChoices.ACTIVO else "Inactivo"
+            ),
+        ),
+    ]
 
 
 class BaseClientModalView(ProtectedView, BSModalFormView):
