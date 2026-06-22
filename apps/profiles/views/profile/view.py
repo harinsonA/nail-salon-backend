@@ -127,6 +127,7 @@ class ProfileModalView(ProtectedView, BSModalUpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["profile_full_name"] = self.get_full_name(self.request.user)
+        context["profile_initials"] = self.get_initials(self.request.user)
         return context
 
     @staticmethod
@@ -134,6 +135,16 @@ class ProfileModalView(ProtectedView, BSModalUpdateView):
         if user.first_name and user.last_name:
             return f"{user.first_name} {user.last_name}"
         return user.username
+
+    @staticmethod
+    def get_initials(user):
+        first = (user.first_name or "").strip()
+        last = (user.last_name or "").strip()
+        if first and last:
+            return f"{first[0]}{last[0]}".upper()
+        if first:
+            return first[:2].upper()
+        return (user.username or "?")[:2].upper()
 
     def form_valid(self, form):
         user = form.save()
