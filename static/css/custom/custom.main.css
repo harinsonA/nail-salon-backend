@@ -644,6 +644,130 @@ input.monthpicker {
 }
 
 /* ==========================================================================
+   MODAL DE PERFIL — identidad, secciones y campos refinados
+   --------------------------------------------------------------------------
+   Eleva el modal de "Mi perfil": cabecera de identidad con avatar de
+   iniciales, secciones con jerarquía clara y campos con iconos guía.
+   ========================================================================== */
+
+/* Bloque de identidad: avatar + nombre/correo */
+.profile-identity {
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+	padding-bottom: 1rem;
+	margin-bottom: 1.25rem;
+	border-bottom: 1px solid var(--border-soft);
+}
+
+.profile-avatar {
+	flex: 0 0 auto;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.25rem;
+	font-weight: 600;
+	letter-spacing: 0.5px;
+	color: var(--cocoa-700);
+	background-image: var(--gradient-primary);
+	box-shadow: var(--shadow-extra-light), inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.profile-identity-info {
+	min-width: 0;
+}
+
+.profile-identity-name {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--text-strong);
+}
+
+.profile-identity-meta {
+	margin: 0.15rem 0 0;
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.8rem;
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.profile-identity-meta .material-symbols-outlined {
+	font-size: 16px;
+	flex: 0 0 auto;
+}
+
+/* Pestañas (Información personal / Seguridad) */
+.profile-tabs {
+	flex-wrap: nowrap;
+}
+
+.profile-tabs .nav-link {
+	flex: 1 1 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.85rem;
+	font-weight: 600;
+}
+
+.profile-tabs .nav-link .material-symbols-outlined {
+	color: var(--text-muted);
+}
+
+.profile-tabs .nav-link.active .material-symbols-outlined {
+	color: var(--color-primary);
+}
+
+.profile-tab-content {
+	padding-top: 1.25rem;
+}
+
+/* Nota informativa (reemplaza el texto plano) */
+.profile-note {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	padding: 0.6rem 0.75rem;
+	margin-bottom: 1rem;
+	font-size: 0.78rem;
+	line-height: 1.35;
+	color: var(--color-info-text);
+	background-color: var(--color-info-bg);
+	border: 1px solid var(--color-info-border);
+	border-radius: 8px;
+}
+
+.profile-note .material-symbols-outlined {
+	font-size: 18px;
+	flex: 0 0 auto;
+	margin-top: 1px;
+}
+
+/* Iconos guía en los addons de los campos */
+#profile-form-modal .input-group-text .material-symbols-outlined {
+	color: var(--text-muted);
+}
+
+/* Botón mostrar/ocultar contraseña */
+.profile-pw-toggle {
+	cursor: pointer;
+	transition: color 0.15s ease-in-out;
+}
+
+.profile-pw-toggle:hover .material-symbols-outlined {
+	color: var(--color-primary);
+}
+
+/* ==========================================================================
    DATEPICKER (bootstrap-datepicker) — alineado a la paleta
    Se apunta a .datepicker-dropdown para no afectar al <input class="datepicker">.
    ========================================================================== */
