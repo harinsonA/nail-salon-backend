@@ -97,3 +97,37 @@ class ServiceImportValidator(BaseImportValidator):
                 f"{str_allowed_states}."
             )
         return Ok(estado_lower)
+
+
+class CategoryImportValidator(BaseImportValidator):
+    campos = {
+        "nombre": "Nombre",
+        "descripcion": "Descripción",
+        "estado": "Estado",
+    }
+
+    def clean_nombre(self, nombre, **kwargs):
+        if not nombre:
+            return Err("El campo 'nombre' es obligatorio.")
+        # Misma regla que CategoriesForm.clean_name: solo alfabético y espacios.
+        return CommonCleaner.clean_alphabetic_field(
+            "nombre de la categoria", nombre
+        )
+
+    def clean_descripcion(self, descripcion, **kwargs):
+        if not descripcion:
+            return Ok("")
+        return CommonCleaner.clean_250_characters_field("descripción", descripcion)
+
+    def clean_estado(self, estado, **kwargs):
+        allowed_states = [choice.value for choice in Categoria.EstadoChoices]
+        str_allowed_states = ", ".join(allowed_states)
+        if not estado:
+            return Err(f"El campo 'estado' es obligatorio: {str_allowed_states}.")
+        estado_lower = estado.lower()
+        if estado_lower not in allowed_states:
+            return Err(
+                f"El campo 'estado' debe ser uno de los siguientes: "
+                f"{str_allowed_states}."
+            )
+        return Ok(estado_lower)
