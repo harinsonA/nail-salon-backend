@@ -18,6 +18,8 @@ from apps.services.views.categories.categoria import (
 from apps.services.views.imports import (
     ServiceImportView,
     ServiceExampleExportView,
+    CategoryImportView,
+    CategoryExampleExportView,
 )
 
 urlpatterns = [
@@ -75,6 +77,16 @@ urlpatterns = [
         "categorias/exportar/",
         CategoryExportView.as_view(),
         name="category_export",
+    ),
+    path(
+        "categorias/importar/",
+        CategoryImportView.as_view(),
+        name="category_import",
+    ),
+    path(
+        "categorias/importar/plantilla/",
+        CategoryExampleExportView.as_view(),
+        name="category_example_export",
     ),
     path(
         "categorias/crear/",
