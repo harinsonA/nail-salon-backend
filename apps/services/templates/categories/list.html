@@ -68,6 +68,7 @@ Categorias
         <table id="category_table" class="table table-hover ">
             <thead>
                 <tr>
+                    <th scope="col">ID</th>
                     <th scope="col">Nombre</th>
                     <th scope="col">Estado</th>
                     <th scope="col">Descripcion</th>
@@ -100,6 +101,7 @@ Categorias
             url: '{{ url_category_list }}',
             requestData: filterData,
             columns: [
+                { data: 'pk', className: 'fs-7 w-auto text-center' },
                 { data: 'nombre', className: 'fs-7 w-auto text-nowrap' },
                 { data: ({ status }) => statusColumn(status), className: 'fs-7 w-auto text-center' },
                 { data: ({ descripcion }) => descripcion || '-- --', className: 'fs-7 w-auto' },
