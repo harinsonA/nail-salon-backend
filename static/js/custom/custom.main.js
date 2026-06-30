@@ -95,16 +95,11 @@ const renderDataTable = ({
   const { topStart: customTopStart = null, ...restLayout } = customLayout;
   const exportNode = exportConfig ? buildExportButtonNode(exportConfig) : null;
 
-  return $(tableID).DataTable({
-    ajax: {
-      url,
-      type: "GET",
-      data: (data) => ({ ...data, ...requestData }),
-      error: (xhr, status, error) => {
-        notifyAlert(xhr.responseJSON, xhr.status, 4000);
-      },
-      ...customAjax,
-    },
+  // Sin `url` => modo data LOCAL: la tabla lee el DOM (sin ajax ni serverSide).
+  // Con `url` => comportamiento de siempre (serverSide por ajax).
+  const isLocal = !url;
+
+  const config = {
     language: {
       ...DATATABLES_LANGUAGE,
       info: "Total resultado: _TOTAL_",
@@ -135,20 +130,39 @@ const renderDataTable = ({
     lengthChange: false,
     info: true,
     processing: true,
-    serverSide: true,
+    serverSide: !isLocal,
     stateSave: false,
     order: [[0, "asc"]],
     responsive: true,
     scrollX: false,
     fixedColumns: null,
     scrollCollapse: false,
-    columns,
     columnsDefs: [
       { targets: [0, -1], orderable: false, responsivePriority: 1 },
       ...columnsDefs,
     ],
     ...settings,
-  });
+  };
+
+  // En modo servidor: ajax. En modo local: se omite (usa el DOM).
+  if (!isLocal) {
+    config.ajax = {
+      url,
+      type: "GET",
+      data: (data) => ({ ...data, ...requestData }),
+      error: (xhr, status, error) => {
+        notifyAlert(xhr.responseJSON, xhr.status, 4000);
+      },
+      ...customAjax,
+    };
+  }
+
+  // `columns` solo si se proveen; en modo local se infieren del DOM.
+  if (columns.length) {
+    config.columns = columns;
+  }
+
+  return $(tableID).DataTable(config);
 };
 
 // id por defecto compartido entre el constructor del botón y el bindeo

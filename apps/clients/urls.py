@@ -7,6 +7,10 @@ from apps.clients.views.cliente import (
     ClientDetailModalView,
     ClientDeleteModalView,
 )
+from apps.clients.views.imports import (
+    ClientImportView,
+    ClientExampleExportView,
+)
 
 urlpatterns = [
     path(
@@ -23,6 +27,16 @@ urlpatterns = [
         "clientes/exportar/",
         ClientExportView.as_view(),
         name="client_export",
+    ),
+    path(
+        "clientes/importar/",
+        ClientImportView.as_view(),
+        name="client_import",
+    ),
+    path(
+        "clientes/importar/plantilla/",
+        ClientExampleExportView.as_view(),
+        name="client_example_export",
     ),
     path(
         "clientes/crear/",

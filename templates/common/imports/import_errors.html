@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ import_title }} — errores{% endblock %}
+{% block view_title %}
+<a href="{{ view_url }}" class="btn btn-outline-secondary">
+  <img src="{% static 'images/common/arrow_back.svg' %}" alt="" width="18" height="18" class="me-1">
+  Volver
+</a>
+{{ import_title }} — errores
+{% endblock %}
+
+{% block content %}
+<section>
+  <section class="row justify-content-center">
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Filas con errores</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b>{{ filas_error }}</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Filas correctas</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b>{{ filas_ok }}</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="alert alert-warning d-flex align-items-center gap-2 mt-3" role="alert">
+    <img src="{% static 'images/common/info.svg' %}" alt="" width="20" height="20" class="flex-shrink-0">
+    <span style="font-size: 0.9rem;">
+      No se importó ningún registro. El archivo tiene filas que no cumplen el formato
+      requerido. Corrige las filas listadas abajo y vuelve a subir el archivo para
+      procesar el documento completo.
+    </span>
+  </div>
+
+  <div class="table-container--custom">
+    <table id="import_errors_table" class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Fila</th>
+          <th scope="col">Mensaje de error</th>
+          <th scope="col">Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for error in errores %}
+        <tr>
+          <td>{{ error.fila }}</td>
+          <td>{{ error.mensaje_error }}</td>
+          <td>{{ error.valor }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    // Sin url -> renderDataTable usa modo data local (lee el DOM, sin serverSide).
+    renderDataTable({ tableID: "#import_errors_table" });
+  });
+</script>
+{% endblock %}

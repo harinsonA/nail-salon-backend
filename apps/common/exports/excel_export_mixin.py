@@ -4,13 +4,13 @@ from datetime import datetime
 
 from django.http import HttpResponse
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
-from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
 
 from apps.common.exports.columns import ExcelColumn
-
-CONTENT_TYPE_XLSX = (
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+from apps.common.exports.styles import (
+    CONTENT_TYPE_XLSX,
+    FREEZE_HEADER,
+    write_header_row,
 )
 
 
@@ -24,6 +24,9 @@ class ExcelExportMixin:
 
     Debe ir a la IZQUIERDA de la list view en el MRO para que sus hooks ganen:
         class XExportView(ExcelExportMixin, XListView): ...
+
+    Los estilos del encabezado viven en apps.common.exports.styles (compartidos
+    con las plantillas de ejemplo de importación).
     """
 
     excel_columns: list[ExcelColumn] = []
@@ -32,13 +35,7 @@ class ExcelExportMixin:
     force_export = False  # True en vistas dedicadas (URL propia)
     export_param = "export"  # trigger por querystring: ?export=excel
     export_value = "excel"
-
-    # Colores de marca (ver static/css/custom/colors.main.css):
-    #   --color-primary (sand-500) = #D7B28A · --text-on-primary (warm-white) = #FFFFFF
-    header_font = Font(bold=True, color="FFFFFF", size=11)
-    header_fill = PatternFill("solid", fgColor="D7B28A")
-    header_height = 22
-    freeze_header = True
+    freeze_header = FREEZE_HEADER
 
     # --- Decisión (los hooks que BaseListViewAjax respeta) ---
     def is_export(self) -> bool:
@@ -66,13 +63,12 @@ class ExcelExportMixin:
         sheet = workbook.active
         sheet.title = self.excel_sheet_title
 
-        for col_index, column in enumerate(self.excel_columns, start=1):
-            cell = sheet.cell(row=1, column=col_index, value=column.header)
-            cell.font = self.header_font
-            cell.fill = self.header_fill
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            sheet.column_dimensions[get_column_letter(col_index)].width = column.width
-        sheet.row_dimensions[1].height = self.header_height
+        # Encabezado con estilos de marca compartidos
+        write_header_row(
+            sheet,
+            [column.header for column in self.excel_columns],
+            [column.width for column in self.excel_columns],
+        )
 
         for row_index, row in enumerate(rows, start=2):
             for col_index, column in enumerate(self.excel_columns, start=1):

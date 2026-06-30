@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ import_title }}{% endblock %}
+{% block view_title %}
+<a href="{{ back_url }}" class="btn btn-outline-secondary">
+  <img src="{% static 'images/common/arrow_back.svg' %}" alt="" width="18" height="18" class="me-1">
+  Volver
+</a>
+{{ import_title }}
+{% endblock %}
+
+{% block content %}
+{% include 'common/_spinner.html' %}
+<section>
+  <div class="row g-4">
+    <!-- Columna izquierda: bloque informativo -->
+    <div class="col-12 col-lg-5">
+      <div class="card rounded-4 import-info h-100">
+        <div class="card-body">
+          <h5 class="text-primary d-flex align-items-center gap-2 mb-2">
+            <img src="{% static 'images/common/upload.svg' %}" alt="" width="22" height="22">
+            Pasos a seguir para la importación
+          </h5>
+          <p class="text-body-secondary fs-7">
+            Sube un archivo <b>.csv</b> para crear varios registros de una sola vez.
+            Sigue estos pasos para que todo salga bien.
+          </p>
+
+          <div class="import-steps mt-3">
+            <div class="import-step">
+              <img src="{% static 'images/common/counter_1.svg' %}" alt="1" class="import-step__num">
+              <div class="import-step__body">
+                <p class="import-step__title">Descarga la plantilla</p>
+                <p class="import-step__desc">Baja la plantilla (Excel) con las columnas correctas y úsala como base.</p>
+              </div>
+            </div>
+            <div class="import-step">
+              <img src="{% static 'images/common/counter_2.svg' %}" alt="2" class="import-step__num">
+              <div class="import-step__body">
+                <p class="import-step__title">Edita el archivo con tus datos</p>
+                <p class="import-step__desc">Completa una fila por cada registro, respetando el orden de las columnas.</p>
+              </div>
+            </div>
+            <div class="import-step">
+              <img src="{% static 'images/common/counter_3.svg' %}" alt="3" class="import-step__num">
+              <div class="import-step__body">
+                <p class="import-step__title">Guárdalo en formato CSV UTF-8</p>
+                <p class="import-step__desc">En Excel: «Guardar como» → CSV UTF-8, así se conservan tildes y ñ.</p>
+              </div>
+            </div>
+            <div class="import-step">
+              <img src="{% static 'images/common/counter_4.svg' %}" alt="4" class="import-step__num">
+              <div class="import-step__body">
+                <p class="import-step__title">Selecciona o arrastra el archivo en el recuadro</p>
+                <p class="import-step__desc">Suéltalo en la zona de carga o usa «Seleccionar archivo».</p>
+              </div>
+            </div>
+            <div class="import-step">
+              <img src="{% static 'images/common/counter_5.svg' %}" alt="5" class="import-step__num">
+              <div class="import-step__body">
+                <p class="import-step__title">Pulsa importar</p>
+                <p class="import-step__desc">Confirma y espera el resumen: verás los registros creados o los errores por fila.</p>
+              </div>
+            </div>
+          </div>
+
+          {% if import_fields %}
+          <div class="import-fields mt-4">
+            <p class="import-fields__title">Campos que puedes importar</p>
+            <ul class="import-fields__list">
+              {% for campo in import_fields %}
+              <li class="import-fields__badge">{{ campo }}</li>
+              {% endfor %}
+            </ul>
+            <p class="import-fields__req">
+              <span class="material-symbols-outlined">error</span>
+              Requisito obligatorio: el archivo debe ser CSV en formato UTF-8 y no superar los 5 MB.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna derecha: drag & drop centrado -->
+    <div class="col-12 col-lg-7 d-flex flex-column align-items-center">
+      <form action="{{ view_url }}" method="post" enctype="multipart/form-data"
+            class="w-100" style="max-width: 520px;">
+        {% csrf_token %}
+
+        {% if example_export_url %}
+        <a href="{{ example_export_url }}"
+          class="btn btn-sm btn-outline-primary mb-3 d-inline-flex align-items-center gap-2" role="button">
+          <span class="material-symbols-outlined">download</span>
+          Descargar plantilla
+        </a>
+        {% endif %}
+
+        <div class="import-warning" role="alert">
+          <img src="{% static 'images/common/warning.svg' %}" alt="" class="import-warning__icon">
+          <div class="import-warning__body">
+            <p class="import-warning__title">No cierres ni cambies de pantalla durante la importación</p>
+            <p class="import-warning__desc">
+              Una vez que pulses «Importar», espera a que termine el proceso y aparezca el
+              resumen. Si recargas, cierras la pestaña o navegas a otra sección antes de tiempo,
+              la carga puede quedar incompleta y algunos registros podrían no procesarse correctamente.
+            </p>
+          </div>
+        </div>
+
+        <div id="dropzone" class="dz">
+          {{ form.archivo }}
+          <div id="dz-idle">
+            <img src="{% static 'images/common/upload.svg' %}" alt="" class="dz-icon">
+            <p class="m-0"><b>Arrastra tu archivo .csv aquí</b></p>
+            <p class="text-body-secondary fs-7 my-1">o</p>
+            <button type="button" id="dz-btn" class="btn btn-sm btn-primary">Seleccionar archivo</button>
+            <p class="text-body-secondary fs-7 mt-2 mb-0">Solo .csv en UTF-8 &middot; Máx. 5 MB</p>
+          </div>
+          <div id="dz-ready" hidden>
+            <div class="dz-file">
+              <span class="material-symbols-outlined text-success">description</span>
+              <span id="dz-name" class="fw-bold"></span>
+              <button type="button" id="dz-remove" class="btn-close" aria-label="Quitar"></button>
+            </div>
+            <button type="submit" id="import-btn"
+              class="btn btn-sm btn-import mt-3 d-inline-flex align-items-center gap-2">
+              <img src="{% static 'images/common/upload.svg' %}" alt="" width="16" height="16"
+                style="filter: brightness(0) invert(1);">
+              Importar
+            </button>
+          </div>
+          <div id="dz-error" class="dz-err-msg" hidden></div>
+        </div>
+
+        {% if form.archivo.errors %}
+        <div class="text-danger fs-7 mt-2">{{ form.archivo.errors.0 }}</div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    const dz = document.getElementById("dropzone");
+    const input = dz.querySelector("input[type=file]");   // el {{ form.archivo }}
+    const idle = document.getElementById("dz-idle");
+    const ready = document.getElementById("dz-ready");
+    const nameEl = document.getElementById("dz-name");
+    const errEl = document.getElementById("dz-error");
+    const importBtn = document.getElementById("import-btn");
+    const form = importBtn.closest("form");
+    const loader = document.getElementById("container-loader");
+
+    const isCsv = (file) => file && file.name.toLowerCase().endsWith(".csv");
+
+    const showReady = (name) => {
+      idle.hidden = true; errEl.hidden = true; ready.hidden = false;
+      dz.classList.remove("is-error"); dz.classList.add("is-ready");
+      nameEl.textContent = name; importBtn.disabled = false;
+    };
+    const showError = (msg) => {
+      ready.hidden = true; idle.hidden = false; errEl.hidden = false;
+      dz.classList.remove("is-ready"); dz.classList.add("is-error");
+      errEl.textContent = msg; importBtn.disabled = true; input.value = "";
+    };
+    const reset = () => {
+      ready.hidden = true; idle.hidden = false; errEl.hidden = true;
+      dz.classList.remove("is-ready", "is-error"); importBtn.disabled = true;
+      input.value = "";
+    };
+    const setFile = (file) => {
+      if (!isCsv(file)) { return showError("Solo se permiten archivos .csv"); }
+      // asignar el archivo al input real para que viaje en el submit normal
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      showReady(file.name);
+    };
+
+    document.getElementById("dz-btn").addEventListener("click", () => input.click());
+    input.addEventListener("change", () => { if (input.files[0]) setFile(input.files[0]); });
+    document.getElementById("dz-remove").addEventListener("click", reset);
+
+    ["dragenter", "dragover"].forEach((ev) =>
+      dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("is-drag"); }));
+    ["dragleave", "drop"].forEach((ev) =>
+      dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("is-drag"); }));
+    dz.addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+
+    // Al enviar: levantar el loader que bloquea .container-main y evitar el
+    // doble click. La deshabilitación del botón se difiere para no cancelar
+    // el envío ya iniciado por el navegador.
+    let submitting = false;
+    form.addEventListener("submit", (e) => {
+      if (submitting || importBtn.disabled) { e.preventDefault(); return; }
+      submitting = true;
+      if (loader) loader.hidden = false;
+      setTimeout(() => { importBtn.disabled = true; }, 0);
+    });
+  });
+</script>
+{% endblock %}
