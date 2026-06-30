@@ -15,6 +15,10 @@ from apps.services.views.categories.categoria import (
     CategoryDetailModalView,
     CategoryDeleteModalView,
 )
+from apps.services.views.imports import (
+    ServiceImportView,
+    ServiceExampleExportView,
+)
 
 urlpatterns = [
     path(
@@ -31,6 +35,16 @@ urlpatterns = [
         "servicios/exportar/",
         ServiceExportView.as_view(),
         name="service_export",
+    ),
+    path(
+        "servicios/importar/",
+        ServiceImportView.as_view(),
+        name="service_import",
+    ),
+    path(
+        "servicios/importar/plantilla/",
+        ServiceExampleExportView.as_view(),
+        name="service_example_export",
     ),
     path(
         "servicios/crear/",

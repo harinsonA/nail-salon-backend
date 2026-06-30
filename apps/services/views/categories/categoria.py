@@ -160,9 +160,10 @@ class CategoryListView(BaseListViewAjax):
     ]
 
     ordering_fields = {
-        "0": "nombre",
-        "1": "estado",
-        "2": "descripcion",
+        "0": "pk",
+        "1": "nombre",
+        "2": "estado",
+        "3": "descripcion",
     }
 
     @staticmethod
@@ -219,6 +220,7 @@ class CategoryExportView(ExcelExportMixin, CategoryListView):
     excel_sheet_title = "Categorias"
 
     excel_columns = [
+        ExcelColumn("ID", "pk", width=10, align="center"),
         ExcelColumn("Nombre", "nombre", width=30),
         ExcelColumn(
             "Estado",
