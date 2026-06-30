@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block view_title %}
 <a href="{{ cancel_url }}" class="btn btn-outline-secondary">
-	<i class="material-symbols-outlined me-1">arrow_back</i>
+	<img src="{% static 'images/common/arrow_back.svg' %}" alt="" width="18" height="18" class="me-1">
 	Volver
 </a>
 Citas: {{ full_date }}

@@ -48,6 +48,7 @@
 
 
 .container-main {
+	position: relative;
 	min-height: 500px;
 	border-radius: 15px;
 	background-color: #fff;
@@ -839,3 +840,416 @@ input.monthpicker {
 .datepicker-dropdown span.year {
 	border-radius: 6px;
 }
+
+/**** Import Dropzone Component ****/
+/* Zona de drag & drop reutilizable para los importadores (.csv).
+   Estados: base, .is-drag (arrastrando), .is-ready (archivo listo),
+   .is-error (archivo no válido). El input file real va oculto. */
+.dz {
+	border: 2px dashed var(--border-strong);
+	border-radius: 14px;
+	background: var(--bg-muted);
+	padding: 28px;
+	text-align: center;
+	transition: all 0.15s ease;
+	max-width: 520px;
+}
+
+.dz.is-drag {
+	border-color: var(--color-secondary);
+	background: var(--color-primary-soft);
+	transform: scale(1.01);
+}
+
+.dz.is-ready {
+	border-style: solid;
+	border-color: var(--color-success);
+	background: var(--color-success-bg);
+}
+
+.dz.is-error {
+	border-color: var(--color-danger);
+	background: var(--color-danger-strong-bg);
+}
+
+.dz input[type="file"] {
+	display: none;
+}
+
+.dz-icon {
+	width: 44px;
+	height: 44px;
+	opacity: 0.9;
+}
+
+.dz-file {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}
+
+.dz-err-msg {
+	color: var(--color-danger-text);
+	font-weight: 600;
+	margin-top: 10px;
+}
+/**** End Import Dropzone Component ****/
+
+/**** Import Info Panel + Vertical Stepper Component ****/
+/* Panel informativo de la izquierda en la vista de importación. */
+.import-info {
+	background: var(--bg-muted);
+	border: 1px solid var(--border-medium);
+	border-radius: 14px;
+}
+
+/* Stepper vertical: número (ícono counter_*) a la izquierda + texto,
+   con una línea conectora entre pasos. */
+.import-steps {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	margin: 0;
+}
+
+.import-step {
+	display: flex;
+	gap: 12px;
+	position: relative;
+}
+
+.import-step:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	left: 13px;
+	top: 30px;
+	width: 2px;
+	height: calc(100% - 16px);
+	background: var(--border-medium);
+}
+
+.import-step__num {
+	width: 28px;
+	height: 28px;
+	flex: none;
+	z-index: 1;
+}
+
+.import-step__body {
+	padding-top: 2px;
+}
+
+.import-step__title {
+	margin: 0;
+	font-weight: 600;
+	font-size: 0.9rem;
+	color: var(--text-strong);
+}
+
+.import-step__desc {
+	margin: 2px 0 0;
+	font-size: 0.8rem;
+	color: var(--text-muted);
+}
+/**** End Import Info Panel + Vertical Stepper Component ****/
+
+/**** Import Submit Button (verde de la paleta) ****/
+.btn-import {
+	background: var(--color-success);
+	border: 1px solid var(--color-success);
+	color: var(--warm-white);
+	font-weight: 600;
+}
+
+.btn-import:hover,
+.btn-import:focus {
+	background: var(--color-success-text);
+	border-color: var(--color-success-text);
+	color: var(--warm-white);
+}
+/**** End Import Submit Button ****/
+
+/**** Import Fields Component (alerta verde oliva con badges) ****/
+.import-fields {
+	background: var(--color-success-bg);
+	border: 1px solid var(--color-success-border);
+	border-radius: 12px;
+	padding: 14px 16px;
+	color: var(--color-success-text);
+}
+
+.import-fields__title {
+	margin: 0 0 8px;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--color-success-text);
+}
+
+/* Lista horizontal sin viñetas */
+.import-fields__list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* Cada campo como badge con borde y padding */
+.import-fields__badge {
+	display: inline-block;
+	padding: 3px 12px;
+	border: 1px solid var(--color-success-border);
+	border-radius: 999px;
+	background: var(--bg-surface);
+	color: var(--color-success-text);
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+/* Requisito obligatorio (en rojo de la paleta) */
+.import-fields__req {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 12px 0 0;
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--color-danger-text);
+}
+
+.import-fields__req .material-symbols-outlined {
+	font-size: 1rem;
+}
+/**** End Import Fields Component ****/
+
+/**** Import Warning (aviso: no interrumpir el proceso) ****/
+/* Alerta amarilla de la paleta "Tierra" (warning) que advierte al usuario
+   que no debe abandonar la pantalla mientras se procesa la importación. */
+.import-warning {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin-bottom: 16px;
+	padding: 12px 14px;
+	background: var(--color-warning-bg);
+	border: 1px solid var(--color-warning-border);
+	border-left: 4px solid var(--color-warning);
+	border-radius: 12px;
+	color: var(--color-warning-text);
+}
+
+.import-warning__icon {
+	width: 22px;
+	height: 22px;
+	flex: none;
+	margin-top: 1px;
+}
+
+.import-warning__title {
+	margin: 0;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--color-warning-text);
+}
+
+.import-warning__desc {
+	margin: 4px 0 0;
+	font-size: 0.78rem;
+	line-height: 1.35;
+	color: var(--color-warning-text);
+}
+/**** End Import Warning ****/
+
+/**** Loader de bloqueo (overlay "gooey dots") ****/
+/* Overlay que cubre y bloquea a su contenedor padre (p. ej. .container-main)
+   mientras se procesa una acción larga. El marcado vive en
+   templates/common/_spinner.html. Misma dinámica visual que el .dt-loader
+   de las tablas, recoloreada con la paleta de marca.
+   Se muestra/oculta con el atributo [hidden]. */
+.container-loader {
+	position: absolute;
+	inset: 0;
+	z-index: 1050;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--bg-surface-translucent);
+	border-radius: inherit;
+	cursor: progress;
+}
+
+.container-loader[hidden] {
+	display: none;
+}
+
+/* Caja de origen 0x0 centrada por el flex del overlay; los puntos rotan
+   alrededor de este punto y el filtro "goo" los funde entre sí. */
+.container-loader__dots {
+	position: relative;
+	width: 0;
+	height: 0;
+	filter: url(#containerLoaderGoo);
+}
+
+.container-loader__goo {
+	position: absolute;
+	width: 0;
+	height: 0;
+}
+
+.container-loader__dot {
+	width: 0;
+	height: 0;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.container-loader__dot::before {
+	content: "";
+	width: 35px;
+	height: 35px;
+	border-radius: 50px;
+	background: var(--sand-500);
+	position: absolute;
+	left: 50%;
+	transform: translateY(0) rotate(0deg);
+	margin-left: -17.5px;
+	margin-top: -17.5px;
+}
+
+/* Punto central: más grande y con ciclo de color de marca */
+.container-loader__dot:nth-child(5)::before {
+	z-index: 100;
+	width: 45.5px;
+	height: 45.5px;
+	margin-left: -22.75px;
+	margin-top: -22.75px;
+	animation: containerLoaderColors 4s ease infinite;
+}
+
+.container-loader__dot:nth-child(1) {
+	animation: containerLoaderRotate1 4s 0s linear infinite;
+}
+
+.container-loader__dot:nth-child(1)::before {
+	background-color: var(--sand-700);
+	animation: containerLoaderMove 4s 0s ease infinite;
+}
+
+.container-loader__dot:nth-child(2) {
+	animation: containerLoaderRotate2 4s 1s linear infinite;
+}
+
+.container-loader__dot:nth-child(2)::before {
+	background-color: var(--cocoa-500);
+	animation: containerLoaderMove 4s 1s ease infinite;
+}
+
+.container-loader__dot:nth-child(3) {
+	animation: containerLoaderRotate3 4s 2s linear infinite;
+}
+
+.container-loader__dot:nth-child(3)::before {
+	background-color: var(--peach-400);
+	animation: containerLoaderMove 4s 2s ease infinite;
+}
+
+.container-loader__dot:nth-child(4) {
+	animation: containerLoaderRotate4 4s 3s linear infinite;
+}
+
+.container-loader__dot:nth-child(4)::before {
+	background-color: var(--sand-500);
+	animation: containerLoaderMove 4s 3s ease infinite;
+}
+
+@keyframes containerLoaderMove {
+	0% {
+		transform: translateY(0);
+	}
+
+	18%,
+	22% {
+		transform: translateY(-70px);
+	}
+
+	40%,
+	100% {
+		transform: translateY(0);
+	}
+}
+
+@keyframes containerLoaderColors {
+	0% {
+		background-color: var(--sand-500);
+	}
+
+	25% {
+		background-color: var(--cocoa-500);
+	}
+
+	50% {
+		background-color: var(--peach-400);
+	}
+
+	75% {
+		background-color: var(--sand-700);
+	}
+
+	100% {
+		background-color: var(--sand-500);
+	}
+}
+
+@keyframes containerLoaderRotate1 {
+	0% {
+		transform: rotate(-105deg);
+	}
+
+	100% {
+		transform: rotate(270deg);
+	}
+}
+
+@keyframes containerLoaderRotate2 {
+	0% {
+		transform: rotate(165deg);
+	}
+
+	100% {
+		transform: rotate(540deg);
+	}
+}
+
+@keyframes containerLoaderRotate3 {
+	0% {
+		transform: rotate(435deg);
+	}
+
+	100% {
+		transform: rotate(810deg);
+	}
+}
+
+@keyframes containerLoaderRotate4 {
+	0% {
+		transform: rotate(705deg);
+	}
+
+	100% {
+		transform: rotate(1080deg);
+	}
+}
+
+/* Accesibilidad: respetar la preferencia de menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+
+	.container-loader__dot,
+	.container-loader__dot::before {
+		animation: none !important;
+	}
+}
+/**** End Loader de bloqueo ****/

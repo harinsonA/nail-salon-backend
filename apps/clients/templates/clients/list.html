@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block view_title %}
 Lista de clientes
@@ -7,13 +8,18 @@ Lista de clientes
 {% block content %}
 {% include 'common/bs_modal.html' %}
 <section>
-  <section>
+  <section class="d-inline-flex align-items-center gap-2">
     <a id="client-create-btn" data-form-url="{%  url 'client_create_modal' %}"
       class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
       Cliente
       <span class="material-symbols-outlined">
         add
       </span>
+    </a>
+    <a href="{% url 'client_import' %}"
+      class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+      Importar
+      <img src="{% static 'images/common/upload.svg' %}" alt="" width="16" height="16">
     </a>
   </section>
   <section class="row justify-content-center">

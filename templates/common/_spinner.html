@@ -1,11 +1,35 @@
-<!-- Dentro de la sección Datos del Servicio -->
-<section class="... position-relative">
-  <div id="service-loader" class="d-none position-absolute top-0 start-0 w-100 h-100 
-       d-flex align-items-center justify-content-center"
-    style="background: rgba(255,255,255,0.75); z-index: 10; border-radius: inherit;">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Cargando...</span>
-    </div>
+<!-- ==========================================================================
+     LOADER DE BLOQUEO (overlay "gooey dots")
+     --------------------------------------------------------------------------
+     Wrapper que cubre y bloquea a su contenedor padre (p. ej. .container-main)
+     mientras se procesa una acción larga, evitando clicks o doble envío.
+     El padre debe tener position: relative (.container-main ya lo tiene).
+
+     Se muestra quitando el atributo [hidden]:  loader.hidden = false;
+     El diseño replica la propuesta de los puntos goo, recoloreada con la
+     paleta de marca (arena / café / durazno). Los estilos viven en
+     custom.main.css (sección "Loader de bloqueo").
+     ========================================================================== -->
+<div id="container-loader" class="container-loader" hidden role="status" aria-live="polite">
+  <div class="container-loader__dots">
+    <div class="container-loader__dot"></div>
+    <div class="container-loader__dot"></div>
+    <div class="container-loader__dot"></div>
+    <div class="container-loader__dot"></div>
+    <div class="container-loader__dot"></div>
   </div>
-  <!-- campos existentes -->
-</section>
+
+  <!-- Filtro "goo" que funde los puntos entre sí -->
+  <svg class="container-loader__goo" xmlns="http://www.w3.org/2000/svg" version="1.1" aria-hidden="true">
+    <defs>
+      <filter id="containerLoaderGoo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+          result="goo" />
+        <feBlend in="SourceGraphic" in2="goo" />
+      </filter>
+    </defs>
+  </svg>
+
+  <span class="visually-hidden">Procesando…</span>
+</div>
