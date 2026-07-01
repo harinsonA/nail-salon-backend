@@ -26,9 +26,7 @@ Categorias
         <a id="category-create-btn" data-form-url="{%  url 'category_create_modal' %}"
             class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
             Categoria
-            <span class="material-symbols-outlined">
-                add
-            </span>
+            <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
         </a>
         <a href="{% url 'category_import' %}"
             class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
@@ -91,13 +89,9 @@ Categorias
 {% block extra_js %}
 <script>
     $(() => {
-        const statusColumn = (status) => status ? `
-    <span class="material-symbols-outlined text-success">
-      check_circle
-    </span>` : `
-    <span class="material-symbols-outlined text-danger">
-      cancel
-    </span>`;
+        const statusColumn = (status) => status
+            ? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Activo" width="20" height="20">`
+            : `<img src="{% static 'images/common/cancel.svg' %}" alt="Inactivo" width="20" height="20">`;
 
         const filterData = {
             status: $('#{{ filter_form.status.id_for_label }}').val(),

@@ -1,6 +1,21 @@
 const isBsModal = (link, bsModal) =>
   bsModal ? `data-form-url='${link}'` : `href='${link}'`;
 
+// Iconos migrados a SVG propio (static/images/common/) en vez de Material Symbols
+// (fuente externa de Google Fonts) para depender solo de recursos internos.
+const iconImageMap = {
+  edit_document: "/static/images/common/edit_document.svg",
+  delete: "/static/images/common/delete.svg",
+};
+
+const renderIcon = (icon) => {
+  if (!icon) return "";
+  const src = iconImageMap[icon];
+  return src
+    ? `<img src="${src}" alt="" width="18" height="18">`
+    : `<span class="material-symbols-outlined">${icon}</span>`;
+};
+
 const optionsColumn = (options = []) => {
   if (!options.length) return "";
   return `<div class="btn-group dropstart">
@@ -21,13 +36,9 @@ const optionsColumn = (options = []) => {
               `<li><a class="dropdown-item dropdown-item--custom ${className}" ${isBsModal(
                 link,
                 bsModal,
-              )} ${attrs}>${
-                icon
-                  ? `<span class="material-symbols-outlined">${icon}</span>`
-                  : ""
-              } ${label}</a></li>`,
+              )} ${attrs}>${renderIcon(icon)} ${label}</a></li>`,
           )
-          .join("")}  
+          .join("")}
       </ul>
     </div>`;
 };

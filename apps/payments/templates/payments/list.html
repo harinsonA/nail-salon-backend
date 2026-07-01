@@ -18,9 +18,7 @@ Lista de pagos
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
             <span>Total de pagos</span>
-            <span class="material-symbols-outlined text-primary ms-2">
-              info
-            </span>
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
           </h6>
           <h4 class="card-title text-end text-primary">
             <b id="payments_totals_id">0</b>
@@ -33,9 +31,7 @@ Lista de pagos
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
             <span>Total pagos recibidos del mes</span>
-            <span class="material-symbols-outlined text-primary ms-2">
-              info
-            </span>
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
           </h6>
           <h4 class="card-title text-end text-success">
             <b id="payments_received_id">0</b>
@@ -48,9 +44,7 @@ Lista de pagos
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
             <span>Total de descuentos</span>
-            <span class="material-symbols-outlined text-primary ms-2">
-              info
-            </span>
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
           </h6>
           <h4 class="card-title text-end">
             <b id="payments_discounts_id">0</b>
@@ -63,9 +57,7 @@ Lista de pagos
   <section class="d-flex justify-content-end my-4">
     <div class="input-group" style="max-width: 260px;">
       <span class="input-group-text">
-        <span class="material-symbols-outlined text-primary">
-          calendar_month
-        </span>
+        <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
       </span>
       {{ filter_form.months }}
     </div>

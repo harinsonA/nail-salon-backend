@@ -2,9 +2,7 @@
   {% csrf_token %}
   <div class="modal-header bg-primary bg-gradient">
     <h5 class="modal-title d-inline-flex align-items-center">
-      <span class="material-symbols-outlined me-2">
-        calendar_month
-      </span>
+      <img src="/static/images/common/calendar_month.svg" alt="" width="20" height="20" class="me-2">
       <span>
         {{ client_full_name }} - {{ date_formatted }} {{ time_formatted }}
       </span>
@@ -108,9 +106,7 @@
     <section class="my-3 d-flex align-items-center justify-content-end">
       <div id="service-alert-added" class="me-2 d-none" data-bs-toggle="tooltip" data-bs-placement="left"
         title="El servicio seleccionado ya se encuentra añadido para el cliente seleccionado.">
-        <span class="material-symbols-outlined text-warning">
-          info
-        </span>
+        <img src="/static/images/common/info.svg" alt="" width="20" height="20">
       </div>
       <button id="add-service-btn" type="button" class="btn btn-sm btn-success bg-gradient" disabled>
         <span class="material-symbols-outlined fs-6">
@@ -184,9 +180,8 @@
         <div class="accordion-item">
           <h2 class="accordion-header d-flex">
             <button class="btn btn-danger btn-sm btn-remove-service me-2 p-1" data-detail-id="${detalle_id}" type="button">
-              <span class="material-symbols-outlined fs-6">
-                delete
-              </span>
+              <img src="/static/images/common/delete.svg" alt="" width="16" height="16"
+                style="filter: brightness(0) invert(1);">
             </button>
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_${id}" aria-expanded="false" aria-controls="collapse_${id}">
               <div class="w-100 d-flex justify-content-between">
@@ -236,9 +231,7 @@
     }
 
     const customStartTop = () => `<button type ="button" class="btn btn-primary btn-sm" id="add-agenda-btn">
-        <span class="material-symbols-outlined fs-6">
-          edit
-        </span>
+        <img src="/static/images/common/edit.svg" alt="" width="20" height="20">
         Guardar cambios
       </button>
     `;
