@@ -148,9 +148,7 @@ Crear Cita
   <section class="my-3 d-flex align-items-center justify-content-end">
     <div id="service-alert-added" class="me-2 d-none" data-bs-toggle="tooltip" data-bs-placement="left"
       title="El servicio seleccionado ya se encuentra añadido para el cliente seleccionado.">
-      <span class="material-symbols-outlined text-warning">
-        info
-      </span>
+      <img src="{% static 'images/common/info.svg' %}" alt="" width="20" height="20">
     </div>
     <button id="add-service-btn" type="button" class="btn btn-sm btn-success bg-gradient" disabled>
       <span class="material-symbols-outlined fs-6">
@@ -331,9 +329,8 @@ Crear Cita
         <div class="service-added-item" id="service_added_${id}">
           <div class="service-added-info-wrapper">
             <a role="button" class="btn btn-danger btn-sm service-added-remove-btn" data-client-id="${clientId}" data-service-id="${id}" data-service-date="${fecha}">
-              <span class="material-symbols-outlined service-added-icon service-added-icon--remove">
-                delete
-              </span>
+              <img src="{% static 'images/common/delete.svg' %}" alt="" width="18" height="18"
+                class="service-added-icon service-added-icon--remove" style="filter: brightness(0) invert(1);">
             </a>
             <div class="service-added-info">
               <p class="service-added-name">
@@ -409,9 +406,7 @@ Crear Cita
 
     const topEnd = () => `
       <button type ="button" class="btn btn-primary btn-sm" id="add-agenda-btn" disabled>
-        <span class="material-symbols-outlined">
-          add
-        </span>
+        <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
         Guardar Agenda
       </button>
     `;

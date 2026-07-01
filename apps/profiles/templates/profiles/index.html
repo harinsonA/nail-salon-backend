@@ -97,7 +97,7 @@
 			<div class="tab-pane fade" id="profile-security" role="tabpanel" aria-labelledby="profile-security-tab"
 				tabindex="0">
 				<div class="profile-note">
-					<span class="material-symbols-outlined">info</span>
+					<img src="/static/images/common/info.svg" alt="" width="20" height="20" class="flex-shrink-0">
 					<span>Deja los campos de contraseña vacíos si no deseas cambiarla.</span>
 				</div>
 				<div class="mb-3">
@@ -111,7 +111,7 @@
 						{{ form.current_password }}
 						<button type="button" class="input-group-text profile-pw-toggle"
 							data-target="{{ form.current_password.id_for_label }}" aria-label="Mostrar contraseña">
-							<span class="material-symbols-outlined icon-sm">visibility</span>
+							<img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
 						</button>
 						<span
 							class="invalid-feedback invalid-feedback--custom {{ form.current_password.id_for_label }}">
@@ -130,7 +130,7 @@
 						{{ form.new_password }}
 						<button type="button" class="input-group-text profile-pw-toggle"
 							data-target="{{ form.new_password.id_for_label }}" aria-label="Mostrar contraseña">
-							<span class="material-symbols-outlined icon-sm">visibility</span>
+							<img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
 						</button>
 						<span class="invalid-feedback invalid-feedback--custom {{ form.new_password.id_for_label }}">
 							{{ form.new_password.errors.0 }}
@@ -148,7 +148,7 @@
 						{{ form.confirm_password }}
 						<button type="button" class="input-group-text profile-pw-toggle"
 							data-target="{{ form.confirm_password.id_for_label }}" aria-label="Mostrar contraseña">
-							<span class="material-symbols-outlined icon-sm">visibility</span>
+							<img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
 						</button>
 						<span
 							class="invalid-feedback invalid-feedback--custom {{ form.confirm_password.id_for_label }}">
@@ -180,7 +180,9 @@
 				if (!input) return;
 				const show = input.type === 'password';
 				input.type = show ? 'text' : 'password';
-				btn.querySelector('.material-symbols-outlined').textContent = show ? 'visibility_off' : 'visibility';
+				btn.querySelector('.pw-toggle-icon').src = show
+					? '/static/images/common/visibility_off.svg'
+					: '/static/images/common/visibility.svg';
 			});
 		});
 
