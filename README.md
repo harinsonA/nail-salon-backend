@@ -85,7 +85,7 @@ nail-salon-backend/
 │   ├── clients/               # Gestión de clientes
 │   │   ├── models/            # Cliente (soft delete + historial)
 │   │   ├── views/             # CRUD con modales, listado AJAX
-│   │   ├── management/commands/  # dbstatus, migrate_all, sync_test_db
+│   │   ├── management/commands/  # dbstatus, makemigrations_all
 │   │   └── templates/
 │   ├── services/              # Catálogo de servicios
 │   │   ├── models/            # Servicio (precio, duración, soft delete)
@@ -230,17 +230,11 @@ nail-salon-backend/
 ## 🧪 Comandos de Gestión
 
 ```bash
-# Verificar estado de sincronización entre BD principal y BD de test
+# Verificar conectividad, tablas y migraciones pendientes de la BD
 python manage.py dbstatus
 
-# Crear migraciones y aplicarlas automáticamente en ambas BD
+# Crear migraciones y aplicarlas automáticamente
 python manage.py makemigrations_all
-
-# Aplicar migraciones en ambas BD (default + test_db)
-python manage.py migrate_all
-
-# Sincronizar BD de test con la estructura de la BD principal
-python manage.py sync_test_db [--recreate] [--force]
 ```
 
 ## 🚀 Instalación
