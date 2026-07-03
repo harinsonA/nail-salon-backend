@@ -1,6 +1,6 @@
 """
-Comando personalizado que extiende 'makemigrations' y luego ejecuta 'migrate_all'
-para mantener ambas bases de datos sincronizadas automáticamente.
+Comando personalizado que extiende 'makemigrations' y luego ejecuta 'migrate'
+para crear y aplicar migraciones en un solo paso.
 """
 
 from django.core.management.base import BaseCommand
@@ -8,7 +8,7 @@ from django.core.management import call_command
 
 
 class Command(BaseCommand):
-    help = "Crea migraciones y las aplica automáticamente en ambas bases de datos"
+    help = "Crea migraciones y las aplica automáticamente en la base de datos"
 
     def add_arguments(self, parser):
         """Agregar argumentos del comando makemigrations original."""
@@ -88,8 +88,7 @@ class Command(BaseCommand):
             )
 
             try:
-                # Usar nuestro comando migrate_all personalizado
-                call_command("migrate_all", verbosity=options.get("verbosity", 1))
+                call_command("migrate", verbosity=options.get("verbosity", 1))
 
             except Exception as e:
                 self.stdout.write(
@@ -98,7 +97,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.WARNING(
                         "Las migraciones se crearon pero no se aplicaron. "
-                        'Ejecuta "python manage.py migrate_all" manualmente.'
+                        'Ejecuta "python manage.py migrate" manualmente.'
                     )
                 )
                 return
@@ -114,7 +113,7 @@ class Command(BaseCommand):
         elif options.get("skip_auto_migrate", False):
             self.stdout.write(
                 self.style.WARNING(
-                    '\n⚠ Auto-migración omitida: Ejecuta "python manage.py migrate_all" cuando estés listo'
+                    '\n⚠ Auto-migración omitida: Ejecuta "python manage.py migrate" cuando estés listo'
                 )
             )
 
@@ -126,10 +125,9 @@ class Command(BaseCommand):
         ):
             self.stdout.write(self.style.SUCCESS("\n=== Proceso Completado ==="))
             self.stdout.write("✓ Migraciones creadas")
-            self.stdout.write("✓ Migraciones aplicadas en base principal")
-            self.stdout.write("✓ Migraciones aplicadas en base de test")
+            self.stdout.write("✓ Migraciones aplicadas en la base de datos")
             self.stdout.write(
                 self.style.SUCCESS(
-                    "\nTu proyecto y base de datos de test están completamente sincronizados."
+                    "\nTu proyecto y base de datos están completamente sincronizados."
                 )
             )

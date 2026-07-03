@@ -135,14 +135,6 @@ else:
             "HOST": config("DATABASE_HOST", default="127.0.0.1"),
             "PORT": config("DATABASE_PORT", default="5432"),
         },
-        "test_db": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": config("TEST_DATABASE_NAME", default="test_manicuredb"),
-            "USER": config("DATABASE_USER", default="postgres"),
-            "PASSWORD": config("DATABASE_PASSWORD", default=""),
-            "HOST": config("DATABASE_HOST", default="127.0.0.1"),
-            "PORT": config("DATABASE_PORT", default="5432"),
-        },
     }
 
 
