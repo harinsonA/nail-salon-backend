@@ -8,7 +8,7 @@
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.3-purple.svg)](https://getbootstrap.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Sistema web para la gestión integral de un salón de uñas, desarrollado con Django. Combina vistas server-rendered con modales Bootstrap y AJAX para ofrecer una experiencia fluida sin recargas de página. El flujo principal es: **Calendario → Agenda diaria → Citas → Pagos**.
+Sistema web para la gestión integral de un salón de uñas, desarrollado con Django. Combina vistas server-rendered con modales Bootstrap y AJAX para ofrecer una experiencia fluida sin recargas de página. El flujo principal es: **Calendario → Agenda diaria → Citas → Pagos**, con un **Dashboard** de métricas del negocio.
 
 ## ✨ Características Principales
 
@@ -35,10 +35,10 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 - Validación de teléfonos por país (Argentina, Chile, Colombia, Ecuador, México, Perú, Rep. Dominicana, Uruguay, Venezuela)
 - Soft delete (eliminación lógica) con historial de cambios
 
-### 💄 Catálogo de Servicios
+### 💄 Catálogo de Servicios y Categorías
 
-- CRUD completo mediante modales Bootstrap
-- Precio, descripción y duración estimada configurables
+- CRUD completo de servicios y categorías mediante modales Bootstrap
+- Precio, descripción, duración estimada y categoría configurables por servicio
 - Duración mostrada en formato legible (ej: "1h 30m")
 - Listado AJAX con filtro por estado activo/inactivo
 - Soft delete con historial de cambios
@@ -50,9 +50,28 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 - **Vista de pagos completados**: Listado mensual con totales facturados, descontados y cobrados
 - **Vista de deudores**: Listado de pagos pendientes con saldo calculado (total - abonos)
 - **Detalle de deuda**: Modal con desglose de servicios y historial de pagos parciales
+- **Gráfico de ingresos por semana**: Barras con los ingresos de cada semana del mes seleccionado
 - **Métodos de pago**: Efectivo, Tarjeta, Transferencia, Cheque
 - **Estados de pago**: Pendiente, Completado, Reembolsado, Impago
 - **Registros financieros inmutables**: Los detalles de pago no tienen soft delete
+
+### 📊 Dashboard de Métricas
+
+- Panel en `/dashboard/` con gráficos interactivos (Chart.js), cada uno con su propio endpoint AJAX:
+  - Clientes atendidos
+  - Ingresos
+  - Estado de citas (pendientes / completadas / canceladas)
+  - Métodos de pago
+  - Servicios más solicitados
+  - Ingresos por categoría
+- Filtros por período reutilizables entre gráficos
+
+### 📤 Exportación e Importación
+
+- **Exportación a Excel** (openpyxl) con estilos de marca: clientes, servicios, categorías, pagos y deudores
+- **Importación masiva por CSV**: clientes, servicios y categorías
+- Plantilla de ejemplo descargable por cada tipo de importación
+- Validación de filas con reporte detallado de errores y loader de bloqueo durante el proceso
 
 ### ⚙️ Configuración del Salón _(en desarrollo)_
 
@@ -68,12 +87,14 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 | **Base de Datos** | PostgreSQL 13+ |
 | **Frontend** | Bootstrap 5.3.3, jQuery 3.7.1 |
 | **Tablas** | DataTables 2.3.4 (server-side, responsive, fixed columns) |
+| **Gráficos** | Chart.js 4.5 |
+| **Exportación Excel** | openpyxl 3.1.5 |
 | **Modales** | django-bootstrap-modal-forms |
 | **Historial** | django-simple-history |
 | **Soft Delete** | django-model-utils (SoftDeletableModel) |
 | **Notificaciones** | Toastify 1.12.0 |
 | **Datepickers** | Bootstrap Datepicker 1.10.0 (locale español) |
-| **Iconos** | Google Material Symbols |
+| **Iconos** | Google Material Symbols (auto-hospedados) + SVG internos |
 | **Config** | python-decouple (.env) |
 
 ## 📁 Estructura del Proyecto
@@ -87,12 +108,14 @@ nail-salon-backend/
 │   │   └── templates/         # Calendario mensual, modales de citas
 │   ├── clients/               # Gestión de clientes
 │   │   ├── models/            # Cliente (soft delete + historial)
-│   │   ├── views/             # CRUD con modales, listado AJAX
+│   │   ├── views/             # CRUD con modales, listado AJAX, import CSV
+│   │   ├── imports.py         # Definición de la importación CSV de clientes
 │   │   ├── management/commands/  # dbstatus, makemigrations_all
 │   │   └── templates/
-│   ├── services/              # Catálogo de servicios
-│   │   ├── models/            # Servicio (precio, duración, soft delete)
-│   │   ├── views/             # CRUD con modales, listado AJAX
+│   ├── services/              # Catálogo de servicios y categorías
+│   │   ├── models/            # Servicio (precio, duración, categoría), Categoria
+│   │   ├── views/             # CRUD con modales, listado AJAX, import CSV
+│   │   ├── imports.py         # Importación CSV de servicios y categorías
 │   │   └── templates/
 │   ├── payments/              # Pagos y deudores
 │   │   ├── models/            # Pago, DetallePago (inmutable)
@@ -111,13 +134,18 @@ nail-salon-backend/
 │       ├── base_list_view_ajax.py  # Vista base para DataTables server-side
 │       ├── custom_time_fields.py   # DurationInMinutesField, CustomDateField
 │       ├── widgets.py              # DatePickerWidget, MonthPickerWidget
+│       ├── exports/                # ExcelColumn, ExcelExportMixin, estilos de marca
+│       ├── imports/                # Formulario, validadores y vista base de import CSV
 │       └── utils/                  # CommonCleaner, PhoneCleaner, formateo
-├── dashboard/                 # Redirige a /calendario/
-├── templates/                 # Templates globales (base, menú, modales)
+├── dashboard/                 # Dashboard de métricas (raíz redirige a /calendario/)
+│   ├── services/              # Cálculo de métricas y períodos
+│   └── views/charts/          # Un endpoint AJAX por gráfico
+├── templates/                 # Templates globales (base, menú, modales, imports)
 ├── static/
 │   ├── css/custom/            # Estilos personalizados
-│   ├── js/custom/             # DataTables, modales, datepickers, AJAX
-│   └── js/libs/               # Bootstrap, jQuery, DataTables, Toastify
+│   ├── images/                # Iconos SVG internos
+│   ├── js/custom/             # DataTables, modales, datepickers, AJAX, dashboard
+│   └── js/libs/               # Bootstrap, jQuery, DataTables, Chart.js, Toastify
 └── nail_salon_api/            # Configuración Django (settings, urls, wsgi)
 ```
 
@@ -147,19 +175,33 @@ nail-salon-backend/
 |---|---|
 | `/clientes/` | Vista principal |
 | `/clientes/lista/ajax` | Listado server-side |
+| `/clientes/exportar/` | Exportar clientes a Excel |
+| `/clientes/importar/` | Importación masiva por CSV |
+| `/clientes/importar/plantilla/` | Descargar plantilla de ejemplo |
 | `/clientes/crear/` | Modal de creación |
 | `/clientes/{id}/detalle/` | Modal de edición |
 | `/clientes/{id}/eliminar/` | Modal de eliminación |
 
-### 💄 Servicios
+### 💄 Servicios y Categorías
 
 | Ruta | Descripción |
 |---|---|
 | `/servicios/` | Vista principal |
 | `/servicios/lista/ajax` | Listado server-side |
+| `/servicios/exportar/` | Exportar servicios a Excel |
+| `/servicios/importar/` | Importación masiva por CSV |
+| `/servicios/importar/plantilla/` | Descargar plantilla de ejemplo |
 | `/servicios/crear/` | Modal de creación |
 | `/servicios/{id}/detalle/` | Modal de edición |
 | `/servicios/{id}/eliminar/` | Modal de eliminación |
+| `/categorias/` | Vista principal de categorías |
+| `/categorias/lista/ajax` | Listado server-side |
+| `/categorias/exportar/` | Exportar categorías a Excel |
+| `/categorias/importar/` | Importación masiva por CSV |
+| `/categorias/importar/plantilla/` | Descargar plantilla de ejemplo |
+| `/categorias/crear/` | Modal de creación |
+| `/categorias/{id}/detalle/` | Modal de edición |
+| `/categorias/{id}/eliminar/` | Modal de eliminación |
 
 ### 💰 Pagos y Deudores
 
@@ -167,12 +209,27 @@ nail-salon-backend/
 |---|---|
 | `/pagos/` | Pagos completados (filtro mensual) |
 | `/pagos/lista/ajax` | Listado server-side |
+| `/pagos/exportar/` | Exportar pagos a Excel |
+| `/pagos/ingresos-semana/ajax` | Datos del gráfico de ingresos por semana |
 | `/deudores/` | Listado de deudores |
 | `/deudores/lista/ajax` | Listado server-side |
+| `/deudores/exportar/` | Exportar deudores a Excel |
 | `/deudores/{id}/detalle-deudor/` | Modal detalle de deuda |
 | `/deudores/{id}/detalle-deudor/pagos` | Historial de abonos |
 | `/deudores/{id}/detalle-deudor/agregar-pago/` | Modal para agregar abono |
 | `/deudores/{id}/detalle-deudor/servicios/{cita_id}/` | Detalle de servicios |
+
+### 📊 Dashboard
+
+| Ruta | Descripción |
+|---|---|
+| `/dashboard/` | Panel de métricas del negocio |
+| `/dashboard/clientes-atendidos/ajax/` | Datos del gráfico de clientes atendidos |
+| `/dashboard/ingresos/ajax/` | Datos del gráfico de ingresos |
+| `/dashboard/estado-citas/ajax/` | Datos del gráfico de estado de citas |
+| `/dashboard/metodos-pago/ajax/` | Datos del gráfico de métodos de pago |
+| `/dashboard/servicios-top/ajax/` | Datos del gráfico de servicios más solicitados |
+| `/dashboard/ingresos-categoria/ajax/` | Datos del gráfico de ingresos por categoría |
 
 ### 🔐 Autenticación
 
@@ -190,8 +247,15 @@ nail-salon-backend/
 - Historial de cambios automático
 - Managers: `activos`, `inactivos`
 
+### Categoria
+- `nombre`, `descripcion`
+- `estado` (activo/inactivo) — soft delete
+- Historial de cambios automático
+- Managers: `activos`, `inactivos`
+
 ### Servicio
 - `nombre`, `precio` (Decimal 10,2), `descripcion`, `duracion_estimada` (DurationField)
+- `categoria` (FK nullable a Categoria)
 - `estado` (activo/inactivo) — soft delete
 - Historial de cambios automático
 
@@ -223,6 +287,8 @@ nail-salon-backend/
 ## 🔧 Utilidades Compartidas
 
 - **BaseListViewAjax**: Vista base reutilizable para listados DataTables server-side con paginación, búsqueda, ordenamiento y filtros por formulario
+- **ExcelExportMixin / ExcelColumn**: Base de exportación a Excel con estilos de marca (openpyxl)
+- **Import CSV base**: Formulario, validadores por columna y vista base reutilizados por clientes, servicios y categorías
 - **CommonCleaner**: Validación de campos alfabéticos, longitud máxima y teléfonos
 - **PhoneCleaner**: Validación de teléfonos con prefijos de operador por país (9 países latinoamericanos)
 - **DurationInMinutesField**: Campo personalizado para duraciones en minutos
