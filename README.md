@@ -1,6 +1,8 @@
 # 💅 Nail Salon Backend
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![CI](https://github.com/harinsonA/nail-salon-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/harinsonA/nail-salon-backend/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
+[![Docker](https://img.shields.io/badge/Docker-ready-blue.svg)](https://www.docker.com/)
 [![Django](https://img.shields.io/badge/Django-4.2-green.svg)](https://djangoproject.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue.svg)](https://postgresql.org)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.3-purple.svg)](https://getbootstrap.com)
@@ -61,7 +63,8 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 
 | Categoría | Tecnología |
 |---|---|
-| **Backend** | Python 3.8+, Django 4.2 |
+| **Backend** | Python 3.12, Django 4.2 |
+| **Infraestructura** | Docker (imagen `python:3.12.8-slim`), Render, GitHub Actions (CI) |
 | **Base de Datos** | PostgreSQL 13+ |
 | **Frontend** | Bootstrap 5.3.3, jQuery 3.7.1 |
 | **Tablas** | DataTables 2.3.4 (server-side, responsive, fixed columns) |
@@ -299,11 +302,11 @@ cp .env.example .env
 Editar `.env` con las credenciales de PostgreSQL:
 
 ```env
-DB_NAME=manicuredb
-DB_USER=tu_usuario
-DB_PASSWORD=tu_contraseña
-DB_HOST=127.0.0.1
-DB_PORT=5432
+DATABASE_NAME=manicuredb
+DATABASE_USER=tu_usuario
+DATABASE_PASSWORD=tu_contraseña
+DATABASE_HOST=127.0.0.1
+DATABASE_PORT=5432
 SECRET_KEY=tu-secret-key
 ```
 
@@ -330,18 +333,21 @@ Acceder a `http://localhost:8000/` → redirige a `/calendario/` tras iniciar se
 
 ## 🚀 Deployment
 
-### Variables de entorno para producción
+La aplicación se despliega en [Render](https://render.com) como Web Service con **runtime Docker**: Render construye la imagen desde el `Dockerfile` del repositorio en cada push a `main` y la pone en producción. Las migraciones corren en el Pre-Deploy Command (`python manage.py migrate`), con respaldo en el `entrypoint.sh` de la imagen.
+
+La base de datos es una instancia PostgreSQL administrada de Render (no un contenedor), inyectada vía `DATABASE_URL`.
+
+### Variables de entorno para producción (Dashboard de Render)
 
 ```env
-DEBUG=False
+DATABASE_URL=postgresql://...   # connection string de la BD administrada
 SECRET_KEY=clave-secreta-segura
-ALLOWED_HOSTS=tudominio.com
-DB_NAME=manicuredb
-DB_USER=usuario_produccion
-DB_PASSWORD=contraseña_segura
-DB_HOST=localhost
-DB_PORT=5432
+DEBUG=False                     # opcional: es el default si no se define
 ```
+
+`ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS` se derivan automáticamente de `RENDER_EXTERNAL_HOSTNAME`, que Render inyecta solo.
+
+En cada Pull Request, GitHub Actions compila la imagen y la arranca en modo producción contra un PostgreSQL efímero con un smoke test HTTP (ver `.github/workflows/ci.yml`).
 
 ## 🤝 Contribución
 
