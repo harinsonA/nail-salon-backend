@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  docker-smoke-test:
+    name: Build y arranque de la imagen Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Construir imagen
+        run: docker build -t nail-salon-backend:ci .
+
+      - name: Levantar PostgreSQL efímero
+        run: |
+          docker network create ci
+          docker run -d --name db --network ci \
+            -e POSTGRES_DB=manicuredb \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            postgres:15
+          for i in $(seq 1 30); do
+            docker exec db pg_isready -U postgres && exit 0
+            sleep 1
+          done
+          echo "PostgreSQL no respondió a tiempo" && exit 1
+
+      - name: Arrancar contenedor en modo producción
+        run: |
+          docker run -d --name web --network ci -p 8000:8000 \
+            -e SECRET_KEY=clave-solo-para-ci \
+            -e DEBUG=False \
+            -e ALLOWED_HOSTS=localhost,127.0.0.1 \
+            -e DATABASE_NAME=manicuredb \
+            -e DATABASE_USER=postgres \
+            -e DATABASE_PASSWORD=postgres \
+            -e DATABASE_HOST=db \
+            -e DATABASE_PORT=5432 \
+            nail-salon-backend:ci
+
+      - name: Smoke test HTTP (página de login)
+        run: |
+          code=000
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/inicio_sesion/ || true)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          echo "Respuesta HTTP: $code"
+          [ "$code" = "200" ]
+
+      - name: Logs del contenedor (migraciones + gunicorn)
+        if: always()
+        run: docker logs web
