@@ -1,0 +1,3 @@
+# Los scripts de shell se ejecutan en Linux (contenedores y Render):
+# siempre LF, aunque el checkout sea en Windows
+*.sh text eol=lf

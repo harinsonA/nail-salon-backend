@@ -239,20 +239,41 @@ python manage.py makemigrations_all
 
 ## 🚀 Instalación
 
-### Prerrequisitos
+### Opción A: Con Docker (recomendada)
+
+Requiere [Docker Desktop](https://www.docker.com/products/docker-desktop/). Levanta la aplicación y PostgreSQL en contenedores, sin instalar nada más:
+
+```bash
+git clone https://github.com/harinsonA/nail-salon-backend.git
+cd nail-salon-backend
+
+# Levantar la aplicación + PostgreSQL (primera vez compila la imagen)
+docker compose up --build
+
+# En otra terminal: crear el superusuario
+docker compose exec web python manage.py createsuperuser
+```
+
+La aplicación queda en `http://localhost:8000/`. Las migraciones se aplican automáticamente al arrancar. La configuración vive en `.env.docker` (solo valores de desarrollo).
+
+> Nota: el PostgreSQL del contenedor se expone en el puerto `5433` del host para no chocar con una instalación nativa de PostgreSQL (5432).
+
+### Opción B: Instalación nativa
+
+#### Prerrequisitos
 
 - Python 3.8+
 - PostgreSQL 13+
 - Git
 
-### 1. Clonar el repositorio
+#### 1. Clonar el repositorio
 
 ```bash
 git clone https://github.com/harinsonA/nail-salon-backend.git
 cd nail-salon-backend
 ```
 
-### 2. Crear entorno virtual
+#### 2. Crear entorno virtual
 
 ```bash
 python -m venv venv
@@ -263,13 +284,13 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Instalar dependencias
+#### 3. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configurar variables de entorno
+#### 4. Configurar variables de entorno
 
 ```bash
 cp .env.example .env
@@ -286,20 +307,20 @@ DB_PORT=5432
 SECRET_KEY=tu-secret-key
 ```
 
-### 5. Crear base de datos y ejecutar migraciones
+#### 5. Crear base de datos y ejecutar migraciones
 
 ```bash
 createdb manicuredb
 python manage.py migrate
 ```
 
-### 6. Crear superusuario
+#### 6. Crear superusuario
 
 ```bash
 python manage.py createsuperuser
 ```
 
-### 7. Ejecutar servidor
+#### 7. Ejecutar servidor
 
 ```bash
 python manage.py runserver
