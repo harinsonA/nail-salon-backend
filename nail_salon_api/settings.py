@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "apps.payments",
     "apps.settings",
     "apps.profiles",
+    "apps.tareas",
 ]
 
 MIDDLEWARE = [
