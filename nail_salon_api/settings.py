@@ -205,3 +205,27 @@ MEDIA_ROOT = BASE_DIR / "media"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "calendar"
 LOGOUT_REDIRECT_URL = "login"
+
+# Celery / Redis (tareas en segundo plano)
+# REDIS_URL apunta a localhost en desarrollo nativo, a "redis" dentro de
+# Docker Compose, y al Redis administrado de Render en producción.
+REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+# Los resultados en Redis expiran a la hora; el estado duradero de un
+# proceso debe persistirse en PostgreSQL, no en el result backend.
+CELERY_RESULT_EXPIRES = 3600
+
+# Reencolar la tarea si el worker muere a mitad de ejecución
+CELERY_TASK_ACKS_LATE = True
+
+# En True las tareas corren de forma síncrona (sin worker ni Redis),
+# útil para tests y como interruptor de emergencia en desarrollo.
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)
