@@ -132,3 +132,6 @@ error_logs/
 AUTHENTICATION_SYSTEM_DOCS.md
 *_DOCS.md
 *_SYSTEM_*.md
+
+# Configuracion local de Claude Code (skills y settings por maquina)
+.claude/
