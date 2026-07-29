@@ -14,6 +14,8 @@ class TareaEnProceso(TimeStampedModel):
     nombre_proceso = models.CharField(max_length=100)
     origen = models.CharField(max_length=50, db_index=True)
 
+    user_id = models.PositiveIntegerField(null=True, blank=True)
+
     estado = models.CharField(
         max_length=20,
         choices=Estado.choices,
