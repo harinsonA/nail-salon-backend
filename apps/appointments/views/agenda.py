@@ -548,9 +548,7 @@ class AgendaSeeModalView(ProtectedView, BSModalReadView):
         total_discount = 0
         total_to_pay = 0
         service_ids = [detail[-1] for detail in appointment_details]
-        print("SERVICE IDS", service_ids)
         categories_name = self.get_categories_name(service_ids=service_ids)
-        print("CATEGORIES NAME", categories_name)
         for detail in appointment_details:
             (
                 detail_id,
