@@ -29,7 +29,6 @@ class ClientImportValidator(BaseImportValidator):
         return CommonCleaner.clean_alphabetic_field("apellido", apellido)
 
     def clean_telefono(self, telefono, **kwargs):
-        print(f"Validando teléfono: {telefono}")
         if not telefono:
             return Ok("")  # teléfono opcional: vacío es válido
         allowed_prefixes = [prefix.value for prefix in CountryPhonePrefix]
