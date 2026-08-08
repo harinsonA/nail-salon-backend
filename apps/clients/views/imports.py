@@ -1,38 +1,25 @@
-from django.db import transaction
 from django.urls import reverse_lazy
-from simple_history.utils import bulk_create_with_history
 
-from apps.common.imports.views import BaseImportView, BaseExampleExportView
-from apps.clients.imports import ClientImportValidator
-from apps.clients.models.cliente import Cliente
+from apps.clients.imports import ClientAsyncImportValidator
+from apps.clients.tasks import import_clients
+from apps.common.imports.async_views import BaseAsyncImportView
+from apps.common.imports.views import BaseExampleExportView
 
 
-class ClientImportView(BaseImportView):
+class ClientImportView(BaseAsyncImportView):
     title = "Importación de clientes"
-    validator_class = ClientImportValidator
-    model = Cliente
+    validator_class = ClientAsyncImportValidator
     view_url = reverse_lazy("client_import")
     example_export_url = reverse_lazy("client_example_export")
-    success_url = reverse_lazy("clients")
+    back_url = reverse_lazy("clients")
 
-    @transaction.atomic
-    def save(self, data: list) -> int:
-        """Override: Cliente es auditado (simple_history) y ``bulk_create`` normal
-        NO crea los registros históricos. Usamos ``bulk_create_with_history``,
-        registrando además al usuario que realizó la importación.
-        """
-        objetos = [self.model(**item) for item in data]
-        creados = bulk_create_with_history(
-            objetos,
-            self.model,
-            batch_size=self.batch_size,
-            default_user=self.request.user,
-        )
-        return len(creados)
+    import_task = import_clients
+    origin = "importacion_clientes"
+    process_name = "Importación de clientes"
 
 
 class ClientExampleExportView(BaseExampleExportView):
-    validator_class = ClientImportValidator
+    validator_class = ClientAsyncImportValidator
     filename = "plantilla_clientes"
     example_rows = [
         [
