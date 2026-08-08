@@ -4,12 +4,13 @@ from django.http import HttpResponse
 from django.views.generic import FormView, View
 from openpyxl import Workbook
 
-from apps.common.views.base_views import ProtectedView
 from apps.common.exports.styles import (
     CONTENT_TYPE_XLSX,
     FREEZE_HEADER,
     write_header_row,
 )
+from apps.common.views.base_views import ProtectedView
+
 from .forms import BaseImportForm
 
 
@@ -25,40 +26,33 @@ class BaseImportView(ProtectedView, FormView):
     error_template_name = "common/imports/import_errors.html"
     form_class = BaseImportForm
 
-    # ---- Lo que cada sección sobreescribe ----
     title = "Importación"
-    validator_class = None  # clase Validator de la sección (obligatoria)
-    model = None  # modelo destino del bulk_create (obligatorio)
-    view_url = None  # url de ESTA misma vista (botón "Volver a intentar")
-    example_export_url = None  # url de la vista de plantilla .csv (botón descargar)
-    back_url = None  # url de la sección de origen (botón "Volver"); cae a success_url
-    success_url = None  # a dónde volver tras importar OK (p. ej. el listado)
-    batch_size = 50  # tamaño de cada lote del bulk_create
+    validator_class = None
+    model = None
+    view_url = None
+    example_export_url = None
+    back_url = None
+    success_url = None
+    batch_size = 50
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["import_title"] = self.title
-        context["view_url"] = self.view_url  # form y errores
-        context["example_export_url"] = self.example_export_url  # botón descarga
-        context["back_url"] = self.back_url or self.success_url  # botón "Volver"
-        # Campos importables (encabezados) para el bloque informativo del form
+        context["view_url"] = self.view_url
+        context["example_export_url"] = self.example_export_url
+        context["back_url"] = self.back_url or self.success_url
         if self.validator_class:
             context["import_fields"] = self.validator_class.get_headers()
         return context
 
     def form_valid(self, form):
-        # 1) El cleaned_data se entrega al Validator (solo valida y sanea)
         validator = self.validator_class(form.cleaned_data)
         resultado = validator.validate()
-
-        # 2a) Err -> responder con la tabla de errores (no se guarda nada)
         if resultado.is_err():
             return self.render_errors(form, resultado.value, validator)
-
-        # 2b) Ok -> la vista persiste TODA la data limpia, por lotes
         creados = self.save(resultado.value)
         messages.success(self.request, f"{creados} registros importados correctamente.")
-        return super().form_valid(form)  # redirige a success_url
+        return super().form_valid(form)
 
     @transaction.atomic
     def save(self, data: list) -> int:
@@ -77,12 +71,11 @@ class BaseImportView(ProtectedView, FormView):
         context = self.get_context_data(form=form)
         context["errores"] = errores
         context["total_errores"] = len(errores)
-        context["filas_error"] = validator.filas_error  # filas con error
-        context["filas_ok"] = validator.filas_ok  # filas correctas
+        context["filas_error"] = validator.filas_error
+        context["filas_ok"] = validator.filas_ok
         return self.render_to_response(context)
 
     def render_to_response(self, context, **kwargs):
-        # Si el contexto trae errores, usar el template de errores
         if context.get("errores"):
             self.template_name = self.error_template_name
         return super().render_to_response(context, **kwargs)
@@ -100,9 +93,9 @@ class BaseExampleExportView(ProtectedView, View):
     una plantilla vacía para *guiar la importación*.
     """
 
-    validator_class = None  # de aquí salen los encabezados (get_headers)
-    example_rows: list = []  # [[...], ...] filas de ejemplo (mismo orden que campos)
-    filename = "plantilla"  # sin extensión
+    validator_class = None
+    example_rows: list = []
+    filename = "plantilla"
     sheet_title = "Plantilla"
     column_width = 24
 
