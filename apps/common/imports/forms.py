@@ -5,17 +5,13 @@ from apps.common.form_classes import FORM_CONTROL_CLASS
 
 
 class BaseImportForm(forms.Form):
-    """Formulario común de importación. Valida SOLO el archivo (formato y peso).
+    """Formulario común de importación. Valida SOLO el archivo.
 
-    La validación del contenido de cada fila vive en el Validator de cada
-    sección; este formulario es agnóstico al dominio.
-
-    Args:
-        is_async (bool): Si es True valida además que el archivo sea UTF-8 y
-            deja el texto decodificado en cleaned_data["contenido"], listo
-            para guardarse en la TareaEnProceso. Las vistas síncronas no lo
-            activan: siguen recibiendo solo el archivo y ni siquiera pagan el
-            costo de decodificar.
+    Comprueba extensión, que no esté vacío, el peso máximo y que sea UTF-8, y
+    deja el texto decodificado en cleaned_data["contenido"] listo para
+    guardarse en la TareaEnProceso. La validación del contenido de cada fila
+    vive en el Validator de cada sección; este formulario es agnóstico al
+    dominio.
     """
 
     ALLOWED_EXTENSIONS = (".csv",)
@@ -29,15 +25,8 @@ class BaseImportForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, is_async=False, **kwargs):
-        self.is_async = is_async
-        super().__init__(*args, **kwargs)
-
     def clean(self):
         cleaned_data = super().clean()
-        if not self.is_async:
-            return cleaned_data
-
         archivo = cleaned_data.get("archivo")
         if not archivo:
             return cleaned_data

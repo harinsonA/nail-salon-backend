@@ -1,45 +1,62 @@
 from django.contrib import messages
 from django.shortcuts import redirect
+from django.views.generic import FormView
 
+from apps.common.views.base_views import ProtectedView
 from apps.tareas.models import TareaEnProceso
 
-from .views import BaseImportView
+from .forms import BaseImportForm
 
 
-class BaseAsyncImportView(BaseImportView):
-    """Vista base de importación ASÍNCRONA (Celery).
+class BaseAsyncImportView(ProtectedView, FormView):
+    """Vista base de importación asíncrona (Celery). Página normal, no modal.
 
-    Hereda de BaseImportView el formulario, el template y el contexto (título,
-    encabezados esperados, plantilla descargable). La validación superficial
-    (extensión .csv, no vacío, peso máximo y codificación UTF-8) la hace
-    BaseImportForm con is_async=True, que además deja el texto en
+    La validación superficial (extensión .csv, no vacío, peso máximo y
+    codificación UTF-8) la hace BaseImportForm, que además deja el texto en
     cleaned_data["contenido"]. Aquí NO se valida el contenido de las filas ni
     se persiste nada: eso ocurre dentro del worker. Esta vista solo registra
     la TareaEnProceso y encola.
 
-    Los atributos model, batch_size y error_template_name dejan de usarse
-    (persistencia y errores son del worker), pero no estorban.
-
     Attributes:
+        title (str): Título de la página.
+        validator_class: Validator de la entidad. Solo se usa para pintar los
+            encabezados esperados en el formulario; quien lo ejecuta es el
+            importador, dentro del worker.
+        view_url: URL de esta misma vista (destino del form).
+        example_export_url: URL de la plantilla descargable.
+        back_url: URL del listado de la sección (botón "Volver").
         import_task: Tarea @background_task de la entidad. Obligatoria.
         origin (str): Slug del proceso, p. ej. "importacion_clientes".
         process_name (str): Nombre visible en la vista /procesos/.
     """
 
+    template_name = "common/imports/import_form.html"
+    form_class = BaseImportForm
+
+    title = "Importación"
+    validator_class = None
+    view_url = None
+    example_export_url = None
+    back_url = None
+
     import_task = None
     origin = ""
     process_name = ""
 
-    def get_form_kwargs(self):
-        """Activa el modo asíncrono del formulario.
+    def get_context_data(self, **kwargs):
+        """Agrega al contexto lo que necesita import_form.html.
 
         Returns:
-            dict: Los kwargs de BaseImportView más is_async=True, que hace que
-                BaseImportForm valide UTF-8 y exponga cleaned_data["contenido"].
+            dict: El contexto con título, urls y los encabezados esperados.
         """
-        kwargs = super().get_form_kwargs()
-        kwargs["is_async"] = True
-        return kwargs
+        context = super().get_context_data(**kwargs)
+        context["import_title"] = self.title
+        context["view_url"] = self.view_url
+        context["example_export_url"] = self.example_export_url
+        context["back_url"] = self.back_url
+        if self.validator_class:
+            context["import_fields"] = self.validator_class.get_headers()
+        return context
 
     def form_valid(self, form):
         """Registra la tarea, la encola y redirige al monitor de procesos.
