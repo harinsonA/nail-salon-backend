@@ -10,10 +10,11 @@ const initializeMonthPickers = (settings = {}) => {
 };
 
 const initializeDatePickers = (settings = {}) => {
-  const { selector = ".datepicker" } = settings;
+  const { selector = ".datepicker", ...options } = settings;
   $(selector).datepicker({
     language: "es",
     format: "dd/mm/yyyy",
     autoclose: true,
+    ...options,
   });
 };
