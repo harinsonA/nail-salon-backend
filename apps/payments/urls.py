@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.payments.views.charts.income_by_method import IncomeByMethodChartAjax
 from apps.payments.views.charts.weekly_income import WeeklyIncomeChartAjax
 from apps.payments.views.debtors.add_payment import AddPaymentModalView
 from apps.payments.views.debtors.debt_detail import (
@@ -58,6 +59,11 @@ urlpatterns = [
         "ingresos/exportar/",
         IncomesExportView.as_view(),
         name="incomes_export",
+    ),
+    path(
+        "ingresos/por-metodo/ajax",
+        IncomeByMethodChartAjax.as_view(),
+        name="incomes_by_method_ajax",
     ),
     path(
         "deudores/",

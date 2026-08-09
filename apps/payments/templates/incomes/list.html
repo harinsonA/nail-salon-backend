@@ -5,6 +5,10 @@
 Ingresos
 {% endblock %}
 
+{% block extra_css %}
+<link href="{% static 'css/custom/custom.dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 {% include 'common/bs_modal.html' %}
 <section>
@@ -75,6 +79,21 @@ Ingresos
     </div>
   </section>
 
+  <section class="dashboard-card mb-4">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Ingresos por método de pago</h4>
+      <small class="dashboard-card__subtitle">Recibido por método en el rango seleccionado</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-income-by-method" data-url="{% url 'incomes_by_method_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
+    </div>
+  </section>
+
   <section class="table-container--custom">
     <table id="incomes_table" class="table table-hover ">
       <thead>
@@ -95,6 +114,8 @@ Ingresos
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/libs/chartjs_v4.5/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/dashboard.core.js' %}"></script>
 <script>
   $(() => {
     const dateFromInput = $('#{{ filter_form.date_from.id_for_label }}');
@@ -108,6 +129,10 @@ Ingresos
     };
 
     initializeDatePickers({ orientation: 'bottom auto' });
+
+    DashboardCore.register('chart-income-by-method', 'bar', {
+      plugins: { legend: { display: false } },
+    });
 
     const dataTableConfig = {
       tableID: '#incomes_table',
@@ -148,11 +173,14 @@ Ingresos
 
     const incomesTable = renderDataTable(dataTableConfig);
 
+    DashboardCore.reloadAll(filterData);
+
     dateFromInput.add(dateToInput).add(paymentMethodSelect).on('change', () => {
       filterData.date_from = dateFromInput.val();
       filterData.date_to = dateToInput.val();
       filterData.payment_method = paymentMethodSelect.val();
       incomesTable.draw();
+      DashboardCore.reloadAll(filterData);
     });
   });
 </script>
