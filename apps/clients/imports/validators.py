@@ -1,15 +1,15 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from result import Ok, Err
+from result import Err, Ok
 
 from apps.clients.models.cliente import Cliente
-from apps.common.imports.validators import BaseImportValidator
-from apps.common.utils.utils import CommonCleaner
+from apps.common.imports.validators import BaseAsyncImportValidator
 from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.utils.utils import CommonCleaner
 
 
-class ClientImportValidator(BaseImportValidator):
-    campos = {
+class ClientAsyncImportValidator(BaseAsyncImportValidator):
+    fields = {
         "nombre": "Nombre",
         "apellido": "Apellido",
         "telefono": "Teléfono",

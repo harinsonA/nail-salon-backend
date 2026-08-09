@@ -8,6 +8,18 @@ from apps.tareas.models import TareaEnProceso
 
 
 def _get_user(user_id):
+    """Busca el usuario que disparó la tarea.
+
+    Tolera el id huérfano: como el modelo guarda el id suelto y no una
+    ForeignKey, nada garantiza que el usuario siga existiendo.
+
+    Args:
+        user_id (int | None): Valor de TareaEnProceso.user_id.
+
+    Returns:
+        Result: Ok(User) si existe, o Err(str) con el motivo si la tarea no
+            tiene usuario o si ese usuario ya no está.
+    """
     if not user_id:
         return Err("La tarea no tiene un usuario asociado.")
     user = get_user_model().objects.filter(pk=user_id).first()
@@ -17,23 +29,28 @@ def _get_user(user_id):
 
 
 def tracked_task(func, requires_user=True):
-    """Pieza interna: agrega el seguimiento en TareaEnProceso a una función.
+    """Agrega el seguimiento en TareaEnProceso a una función. Pieza interna.
 
     La función se escribe recibiendo la instancia TareaEnProceso, pero se
-    invoca pasando solo el id (por Redis únicamente viaja el id).
+    invoca pasando solo el id (por Redis únicamente viaja el id). El usuario
+    se busca a partir del user_id de la tarea y se entrega en kwargs["user"].
 
-    Busca además el usuario a partir del user_id de la tarea y lo entrega en
-    kwargs["user"]. Con requires_user=True (default) una tarea sin usuario, o
-    cuyo usuario ya no existe, queda FALLIDO y el proceso no se ejecuta. Con
-    requires_user=False el proceso corre igual y recibe user=None: es el caso
-    de las tareas periódicas, que dispara el reloj y no una persona.
+    Si la función lanza cualquier excepción, la tarea queda FALLIDO con el
+    detalle en resultado_metadata (nunca EN_PROCESO eterno) y la excepción se
+    relanza para que el worker registre el traceback.
 
-    Si la función lanza cualquier excepción, la tarea queda FALLIDO con
-    el detalle en resultado_metadata (nunca EN_PROCESO eterno) y la
-    excepción se relanza para que el worker registre el traceback.
+    Las tareas del proyecto no usan este decorador directamente: usan
+    background_task, que además las registra en Celery.
 
-    Las tareas del proyecto no usan este decorador directamente:
-    usan background_task, que además registra la tarea en Celery.
+    Args:
+        func (callable): Función a decorar. Recibe (tarea, *args, user=...).
+        requires_user (bool): Si es True (default), una tarea sin usuario o
+            cuyo usuario ya no existe queda FALLIDO y el proceso no se
+            ejecuta. Si es False el proceso corre igual y recibe user=None,
+            que es el caso de las tareas periódicas.
+
+    Returns:
+        callable: La función envuelta, que se invoca con (tarea_id, ...).
     """
 
     @wraps(func)
@@ -57,28 +74,40 @@ def background_task(func=None, *, requires_user=True, **opciones):
     """Decorador público para procesos en segundo plano con seguimiento.
 
     Equivale a @shared_task + @tracked_task en el orden correcto, para que
-    nadie pueda invertirlos por accidente:
+    nadie pueda invertirlos por accidente. Es el decorador de los procesos
+    RASTREADOS (los que se ven en /procesos/) y presupone una fila
+    TareaEnProceso ya creada por quien encola.
 
+    La función decorada debe aceptar el kwarg user: tracked_task lo inyecta
+    siempre.
+
+    Example:
         @background_task
         def importar_clientes(tarea, user): ...
 
-        @background_task(max_retries=3)   # acepta opciones de shared_task
+        @background_task(max_retries=3)
         def enviar_correos(tarea, user): ...
 
-        @background_task(requires_user=False)   # la dispara el reloj
+        @background_task(requires_user=False)
         def enviar_recordatorios(tarea, user): ...
 
         importar_clientes.delay(tarea.id)
 
-    La función decorada debe aceptar el kwarg user: tracked_task lo inyecta
-    siempre. Con requires_user=True (default) se garantiza que es un usuario
-    existente, y si no lo hay la tarea queda FALLIDO sin ejecutar el proceso.
-    requires_user=False es para los procesos periódicos, que no nacen de una
-    persona: ahí user llega como None y la tarea corre igual.
+    Args:
+        func (callable, optional): La función, cuando se usa sin paréntesis.
+        requires_user (bool): Si es True (default) se garantiza que user es un
+            usuario existente; si no lo hay la tarea queda FALLIDO sin
+            ejecutar el proceso. False es para los procesos periódicos, que no
+            nacen de una persona: ahí user llega como None.
+        **opciones: Opciones de shared_task (max_retries, rate_limit...).
 
-    Alcance: es el decorador de los procesos RASTREADOS (los que se ven en
-    la vista de procesos). Presupone una fila TareaEnProceso ya creada por
-    quien encola. No soporta bind=True (chocaría con el tarea_id posicional).
+    Returns:
+        callable: La tarea Celery registrada, o el decorador si se usó con
+            paréntesis.
+
+    Raises:
+        TypeError: Si se pasa bind=True, que chocaría con el tarea_id
+            posicional.
     """
     if opciones.get("bind"):
         raise TypeError(
