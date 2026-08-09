@@ -10,6 +10,7 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import CustomDateField
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
+from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import DetallePago
@@ -18,6 +19,9 @@ from ...choices import MetodoPago
 
 DEFAULT_RANGE_IN_DAYS = 15
 DATE_FORMAT = "%d/%m/%Y"
+ALL_PAYMENT_METHODS = ""
+PAYMENT_METHOD_CHOICES = [(ALL_PAYMENT_METHODS, "Todos"), *MetodoPago.CHOICES]
+VALID_PAYMENT_METHODS = {value for value, _ in MetodoPago.CHOICES}
 
 """========================================================================="""
 # region ........ Helpers
@@ -44,6 +48,15 @@ class IncomesFilterForm(forms.Form):
         label="Hasta",
         required=False,
     )
+    payment_method = forms.CharField(
+        label="Método de pago",
+        initial=ALL_PAYMENT_METHODS,
+        required=False,
+        widget=forms.Select(
+            choices=PAYMENT_METHOD_CHOICES,
+            attrs={"class": FORM_SELECT_CLASS},
+        ),
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -52,10 +65,15 @@ class IncomesFilterForm(forms.Form):
         date_to = cleaned_data.get("date_to") or default_to
         if date_from > date_to:
             date_from, date_to = date_to, date_from
-        return {
+
+        filters = {
             "fecha_pago__date__gte": date_from,
             "fecha_pago__date__lte": date_to,
         }
+        payment_method = cleaned_data.get("payment_method")
+        if payment_method in VALID_PAYMENT_METHODS:
+            filters["metodo_pago"] = payment_method
+        return filters
 
 
 # endregion

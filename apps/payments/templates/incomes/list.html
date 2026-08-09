@@ -5,6 +5,10 @@
 Ingresos
 {% endblock %}
 
+{% block extra_css %}
+<link href="{% static 'css/custom/custom.dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 {% include 'common/bs_modal.html' %}
 <section>
@@ -50,20 +54,43 @@ Ingresos
     </div>
   </section>
 
-  <section class="d-flex justify-content-end align-items-end flex-wrap gap-2 my-4">
-    <div class="input-group" style="max-width: 240px;">
-      <span class="input-group-text">
-        <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
-      </span>
-      <span class="input-group-text">Desde</span>
-      {{ filter_form.date_from }}
+  <section class="d-flex justify-content-between align-items-end flex-wrap gap-2 my-4">
+    <div>
+      <label class="form-check-label form-label--custom" for="{{ filter_form.payment_method.id_for_label }}">
+        {{ filter_form.payment_method.label }}
+      </label>
+      {{ filter_form.payment_method }}
     </div>
-    <div class="input-group" style="max-width: 240px;">
-      <span class="input-group-text">
-        <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
-      </span>
-      <span class="input-group-text">Hasta</span>
-      {{ filter_form.date_to }}
+    <div class="d-flex align-items-end flex-wrap gap-2">
+      <div class="input-group" style="max-width: 240px;">
+        <span class="input-group-text">
+          <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
+        </span>
+        <span class="input-group-text">Desde</span>
+        {{ filter_form.date_from }}
+      </div>
+      <div class="input-group" style="max-width: 240px;">
+        <span class="input-group-text">
+          <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
+        </span>
+        <span class="input-group-text">Hasta</span>
+        {{ filter_form.date_to }}
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-card mb-4">
+    <header class="dashboard-card__header">
+      <h4 class="dashboard-card__title">Ingresos por método de pago</h4>
+      <small class="dashboard-card__subtitle">Recibido por método en el rango seleccionado</small>
+    </header>
+    <div class="dashboard-chart">
+      <canvas id="chart-income-by-method" data-url="{% url 'incomes_by_method_ajax' %}"></canvas>
+      <div class="dashboard-chart__state" data-state="loading">
+        <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…
+      </div>
+      <div class="dashboard-chart__state d-none" data-state="empty">No hay datos para mostrar.</div>
+      <div class="dashboard-chart__state d-none" data-state="error">No se pudo cargar el gráfico.</div>
     </div>
   </section>
 
@@ -87,17 +114,25 @@ Ingresos
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/libs/chartjs_v4.5/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/custom/dashboard/dashboard.core.js' %}"></script>
 <script>
   $(() => {
     const dateFromInput = $('#{{ filter_form.date_from.id_for_label }}');
     const dateToInput = $('#{{ filter_form.date_to.id_for_label }}');
+    const paymentMethodSelect = $('#{{ filter_form.payment_method.id_for_label }}');
 
     const filterData = {
       date_from: dateFromInput.val(),
       date_to: dateToInput.val(),
+      payment_method: paymentMethodSelect.val(),
     };
 
     initializeDatePickers({ orientation: 'bottom auto' });
+
+    DashboardCore.register('chart-income-by-method', 'bar', {
+      plugins: { legend: { display: false } },
+    });
 
     const dataTableConfig = {
       tableID: '#incomes_table',
@@ -120,6 +155,7 @@ Ingresos
             fields: [
               '#{{ filter_form.date_from.id_for_label }}',
               '#{{ filter_form.date_to.id_for_label }}',
+              '#{{ filter_form.payment_method.id_for_label }}',
             ],
             getSearchValue: () => api.search(),
           });
@@ -137,10 +173,14 @@ Ingresos
 
     const incomesTable = renderDataTable(dataTableConfig);
 
-    dateFromInput.add(dateToInput).on('change', () => {
+    DashboardCore.reloadAll(filterData);
+
+    dateFromInput.add(dateToInput).add(paymentMethodSelect).on('change', () => {
       filterData.date_from = dateFromInput.val();
       filterData.date_to = dateToInput.val();
+      filterData.payment_method = paymentMethodSelect.val();
       incomesTable.draw();
+      DashboardCore.reloadAll(filterData);
     });
   });
 </script>
