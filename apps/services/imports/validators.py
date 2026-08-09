@@ -1,16 +1,16 @@
 import datetime
 from decimal import Decimal, InvalidOperation
 
-from result import Ok, Err
+from result import Err, Ok
 
-from apps.common.imports.validators import BaseImportValidator
+from apps.common.imports.validators import BaseAsyncImportValidator
 from apps.common.utils.utils import CommonCleaner
-from apps.services.models.servicio import Servicio
 from apps.services.models.categoria import Categoria
+from apps.services.models.servicio import Servicio
 
 
-class ServiceImportValidator(BaseImportValidator):
-    campos = {
+class ServiceAsyncImportValidator(BaseAsyncImportValidator):
+    fields = {
         "nombre": "Nombre",
         "categoria": "ID Categoría",
         "descripcion": "Descripción",
@@ -36,9 +36,7 @@ class ServiceImportValidator(BaseImportValidator):
         try:
             categoria_id = int(categoria)
         except (TypeError, ValueError):
-            return Err(
-                f"El 'ID Categoría' debe ser un número entero: {categoria}."
-            )
+            return Err(f"El 'ID Categoría' debe ser un número entero: {categoria}.")
 
         instancia = Categoria.objects.filter(pk=categoria_id).first()
         if not instancia:
@@ -99,8 +97,8 @@ class ServiceImportValidator(BaseImportValidator):
         return Ok(estado_lower)
 
 
-class CategoryImportValidator(BaseImportValidator):
-    campos = {
+class CategoryAsyncImportValidator(BaseAsyncImportValidator):
+    fields = {
         "nombre": "Nombre",
         "descripcion": "Descripción",
         "estado": "Estado",
@@ -110,9 +108,7 @@ class CategoryImportValidator(BaseImportValidator):
         if not nombre:
             return Err("El campo 'nombre' es obligatorio.")
         # Misma regla que CategoriesForm.clean_name: solo alfabético y espacios.
-        return CommonCleaner.clean_alphabetic_field(
-            "nombre de la categoria", nombre
-        )
+        return CommonCleaner.clean_alphabetic_field("nombre de la categoria", nombre)
 
     def clean_descripcion(self, descripcion, **kwargs):
         if not descripcion:

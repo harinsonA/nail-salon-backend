@@ -1,40 +1,28 @@
-from django.db import transaction
 from django.urls import reverse_lazy
-from simple_history.utils import bulk_create_with_history
 
-from apps.common.imports.views import BaseImportView, BaseExampleExportView
-from apps.services.imports import ServiceImportValidator, CategoryImportValidator
-from apps.services.models.servicio import Servicio
-from apps.services.models.categoria import Categoria
+from apps.common.imports.async_views import BaseAsyncImportView
+from apps.common.imports.views import BaseExampleExportView
+from apps.services.imports import (
+    CategoryAsyncImportValidator,
+    ServiceAsyncImportValidator,
+)
+from apps.services.tasks import import_categories, import_services
 
 
-class ServiceImportView(BaseImportView):
+class ServiceImportView(BaseAsyncImportView):
     title = "Importación de servicios"
-    validator_class = ServiceImportValidator
-    model = Servicio
+    validator_class = ServiceAsyncImportValidator
     view_url = reverse_lazy("service_import")
     example_export_url = reverse_lazy("service_example_export")
-    success_url = reverse_lazy("services")
+    back_url = reverse_lazy("services")
 
-    @transaction.atomic
-    def save(self, data: list) -> int:
-        """Override: Servicio es auditado (simple_history) y ``bulk_create`` normal
-        NO crea los registros históricos. Usamos ``bulk_create_with_history``,
-        registrando además al usuario que realizó la importación (crítico para la
-        auditoría de precios).
-        """
-        objetos = [self.model(**item) for item in data]
-        creados = bulk_create_with_history(
-            objetos,
-            self.model,
-            batch_size=self.batch_size,
-            default_user=self.request.user,
-        )
-        return len(creados)
+    import_task = import_services
+    origin = "importacion_servicios"
+    process_name = "Importación de servicios"
 
 
 class ServiceExampleExportView(BaseExampleExportView):
-    validator_class = ServiceImportValidator
+    validator_class = ServiceAsyncImportValidator
     filename = "plantilla_servicios"
     example_rows = [
         [
@@ -48,32 +36,20 @@ class ServiceExampleExportView(BaseExampleExportView):
     ]
 
 
-class CategoryImportView(BaseImportView):
+class CategoryImportView(BaseAsyncImportView):
     title = "Importación de categorías"
-    validator_class = CategoryImportValidator
-    model = Categoria
+    validator_class = CategoryAsyncImportValidator
     view_url = reverse_lazy("category_import")
     example_export_url = reverse_lazy("category_example_export")
-    success_url = reverse_lazy("categories")
+    back_url = reverse_lazy("categories")
 
-    @transaction.atomic
-    def save(self, data: list) -> int:
-        """Override: Categoria es auditada (simple_history) y ``bulk_create`` normal
-        NO crea los registros históricos. Usamos ``bulk_create_with_history``,
-        registrando además al usuario que realizó la importación.
-        """
-        objetos = [self.model(**item) for item in data]
-        creados = bulk_create_with_history(
-            objetos,
-            self.model,
-            batch_size=self.batch_size,
-            default_user=self.request.user,
-        )
-        return len(creados)
+    import_task = import_categories
+    origin = "importacion_categorias"
+    process_name = "Importación de categorías"
 
 
 class CategoryExampleExportView(BaseExampleExportView):
-    validator_class = CategoryImportValidator
+    validator_class = CategoryAsyncImportValidator
     filename = "plantilla_categorias"
     example_rows = [
         [
