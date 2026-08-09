@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block view_title %}
+Ingresos
+{% endblock %}
+
+{% block content %}
+{% include 'common/bs_modal.html' %}
+<section>
+  <section class="row justify-content-center">
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Total de ingresos</span>
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
+          </h6>
+          <h4 class="card-title text-end text-success">
+            <b id="incomes_totals_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Cantidad de pagos recibidos</span>
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
+          </h6>
+          <h4 class="card-title text-end text-primary">
+            <b id="incomes_count_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
+            <span>Promedio por pago</span>
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
+          </h6>
+          <h4 class="card-title text-end">
+            <b id="incomes_average_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="d-flex justify-content-end align-items-end flex-wrap gap-2 my-4">
+    <div class="input-group" style="max-width: 240px;">
+      <span class="input-group-text">
+        <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
+      </span>
+      <span class="input-group-text">Desde</span>
+      {{ filter_form.date_from }}
+    </div>
+    <div class="input-group" style="max-width: 240px;">
+      <span class="input-group-text">
+        <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
+      </span>
+      <span class="input-group-text">Hasta</span>
+      {{ filter_form.date_to }}
+    </div>
+  </section>
+
+  <section class="table-container--custom">
+    <table id="incomes_table" class="table table-hover ">
+      <thead>
+        <tr>
+          <th scope="col" class="text-center">Fecha pago</th>
+          <th scope="col" class="text-start">Cliente</th>
+          <th scope="col" class="text-center">Fecha cita</th>
+          <th scope="col" class="text-center">Método de pago</th>
+          <th scope="col" class="text-start">Referencia</th>
+          <th scope="col" class="text-center">Monto recibido</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    const dateFromInput = $('#{{ filter_form.date_from.id_for_label }}');
+    const dateToInput = $('#{{ filter_form.date_to.id_for_label }}');
+
+    const filterData = {
+      date_from: dateFromInput.val(),
+      date_to: dateToInput.val(),
+    };
+
+    initializeDatePickers({ orientation: 'bottom auto' });
+
+    const dataTableConfig = {
+      tableID: '#incomes_table',
+      url: '{{ url_incomes_list }}',
+      requestData: filterData,
+      extraConfig: {
+        order: [[0, 'desc']],
+        exportConfig: { url: '{{ url_incomes_export }}' },
+        ajax: {
+          dataSrc: (json) => {
+            $('#incomes_totals_id').text(json.monto_total);
+            $('#incomes_count_id').text(json.cantidad_ingresos);
+            $('#incomes_average_id').text(json.monto_promedio);
+            return json.data;
+          },
+        },
+        initComplete: function () {
+          const api = this.api();
+          bindExportButton({
+            fields: [
+              '#{{ filter_form.date_from.id_for_label }}',
+              '#{{ filter_form.date_to.id_for_label }}',
+            ],
+            getSearchValue: () => api.search(),
+          });
+        },
+      },
+      columns: [
+        { data: 'fecha_pago_display', className: 'fs-7 w-auto text-center' },
+        { data: 'cliente_nombre', className: 'fs-7 w-auto text-start text-nowrap' },
+        { data: 'fecha_cita_display', className: 'fs-7 w-auto text-center' },
+        { data: 'metodo_pago_display', className: 'fs-7 w-auto text-center' },
+        { data: 'referencia_pago_display', className: 'fs-7 w-auto text-start' },
+        { data: 'monto_pago_formatted', className: 'fs-7 w-auto text-center text-success' },
+      ],
+    };
+
+    const incomesTable = renderDataTable(dataTableConfig);
+
+    dateFromInput.add(dateToInput).on('change', () => {
+      filterData.date_from = dateFromInput.val();
+      filterData.date_to = dateToInput.val();
+      incomesTable.draw();
+    });
+  });
+</script>
+{% endblock %}
