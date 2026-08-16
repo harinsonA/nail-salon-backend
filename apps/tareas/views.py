@@ -1,9 +1,12 @@
+from typing import Optional
+
+from bootstrap_modal_forms.forms import BSModalForm
+from bootstrap_modal_forms.generic import BSModalReadView
 from django import forms
 from django.db.models import Count, Q, TextChoices
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
-from bootstrap_modal_forms.forms import BSModalForm
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.form_classes import FORM_SELECT_CLASS
@@ -75,43 +78,51 @@ class TaskListView(BaseListViewAjax):
         "created",
         "nombre_proceso",
         "estado",
-        "modified",
         "progreso_actual",
         "total_registros",
         "finalizado_en",
     ]
 
     ordering_fields = {
-        "0": "created",
-        "1": "nombre_proceso",
-        "2": "estado",
-        "3": "modified",
-        "4": "progreso_actual",
-        "5": "progreso_actual",
-        "6": "finalizado_en",
+        "0": "nombre_proceso",
+        "1": "estado",
+        "2": "progreso_actual",
+        "3": "progreso_actual",
+        "4": "created",
+        "5": "finalizado_en",
     }
 
     @staticmethod
     def _format_datetime(value) -> str:
         if not value:
             return "-- --"
-        # created/modified se guardan en UTC (USE_TZ); se muestran en hora local
+        # created/finalizado_en se guardan en UTC (USE_TZ); se muestran en hora local
         return timezone.localtime(value).strftime("%d-%m-%Y %H:%M:%S")
+
+    def _get_task_detail_url(self, task_id: int, status: str) -> Optional[str]:
+        if status not in {self.model.Estado.FALLIDO}:
+            return None
+        return reverse_lazy("task_detail_modal", kwargs={"pk": task_id})
 
     def get_values(self, queryset):
         values = super().get_values(queryset)
         for item in values:
+            task_id: int = item["pk"]
             total = item.get("total_registros") or 0
             progreso = item.get("progreso_actual") or 0
+            _status: str = item["estado"]
             item.update(
                 {
                     "created_display": self._format_datetime(item.get("created")),
-                    "modified_display": self._format_datetime(item.get("modified")),
                     "finalizado_display": self._format_datetime(
                         item.get("finalizado_en")
                     ),
-                    "estado_display": TareaEnProceso.Estado(item["estado"]).label,
+                    "estado_display": TareaEnProceso.Estado(_status).label,
                     "porcentaje": round(progreso * 100 / total) if total else 0,
+                    "task_detail_url": self._get_task_detail_url(
+                        task_id=task_id,
+                        status=_status,
+                    ),
                 }
             )
         return values
@@ -130,6 +141,44 @@ class TaskListView(BaseListViewAjax):
             ),
             failed_totals=Count("pk", filter=Q(estado=TareaEnProceso.Estado.FALLIDO)),
         )
+
+
+class TaskDetailModalView(ProtectedView, BSModalReadView):
+    template_name = "tareas/_task_detail_modal.html"
+    model = TareaEnProceso
+    context_object_name = "task"
+
+    @staticmethod
+    def _get_totals(result: dict) -> dict:
+        return {
+            "total_errors": result.get("total_errors", 0),
+            "rows_error": result.get("rows_error", 0),
+            "rows_ok": result.get("rows_ok", 0),
+        }
+
+    @staticmethod
+    def _get_errors(result: dict) -> list:
+        return result.get("errors", [])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        task: TareaEnProceso = self.object
+        metadata: dict = task.resultado_metadata or {}
+        if not metadata:
+            return context
+
+        context.update(
+            {
+                "modal_url": reverse_lazy("task_detail_modal", kwargs={"pk": task.pk}),
+                "estado_display": task.get_estado_display(),
+                "created_display": TaskListView._format_datetime(task.created),
+                "finalizado_display": TaskListView._format_datetime(task.finalizado_en),
+                "porcentaje": task.porcentaje,
+                "errors": self._get_errors(result=metadata),
+                **self._get_totals(result=metadata),
+            }
+        )
+        return context
 
 
 # endregion
