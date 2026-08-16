@@ -1,0 +1,101 @@
+{% load static %}
+<form id="task-detail-modal" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <img src="{% static 'images/common/error.svg' %}" alt="" width="24" height="24" class="me-2">
+      <span>
+        Proceso {{ estado_display|lower }}
+      </span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <section class="row justify-content-center">
+      <div class="col-3">
+        <div class="card rounded-4 agenda-card">
+          <div class="card-body">
+            <h6 class="card-subtitle d-flex text-body-secondary m-0">
+              <span>Total errores</span>
+            </h6>
+            <h4 class="card-title text-end text-primary m-0">
+              <b>{{ total_errors }}</b>
+            </h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="card rounded-4 agenda-card">
+          <div class="card-body">
+            <h6 class="card-subtitle d-flex text-body-secondary m-0">
+              <span>Filas con errores</span>
+            </h6>
+            <h4 class="card-title text-end text-primary m-0">
+              <b>{{ rows_error }}</b>
+            </h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="card rounded-4 agenda-card">
+          <div class="card-body">
+            <h6 class="card-subtitle d-flex text-body-secondary m-0">
+              <span>Filas sin errores</span>
+            </h6>
+            <h4 class="card-title text-end text-primary m-0">
+              <b>{{ rows_ok }}</b>
+            </h4>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="row justify-content-center mt-3">
+      <div class="col-3 mb-2">
+        <strong>Lugar:</strong>
+        <p>{{ task.nombre_proceso }}</p>
+      </div>
+      <div class="col-3 mb-2">
+        <strong>Creado:</strong>
+        <p>{{ created_display }}</p>
+      </div>
+      <div class="col-3 mb-2">
+        <strong>Finalizado:</strong>
+        <p>{{ finalizado_display }}</p>
+      </div>
+    </section>
+
+    <div class="table-container--custom w-100">
+      <table id="errors_table" class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Fila</th>
+            <th scope="col">Mensaje de error</th>
+            <th scope="col">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</form>
+{{ errors|json_script:"errors_data" }}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    // Con `data` -> renderDataTable usa modo local: sin ajax ni serverSide.
+    const errorsData = JSON.parse(document.getElementById('errors_data').textContent) || [];
+
+    renderDataTable({
+      tableID: '#errors_table',
+      data: errorsData,
+      columns: [
+        { data: 'row', className: 'fs-7 w-auto text-center' },
+        { data: 'message', className: 'fs-7 w-auto' },
+        { data: 'value', className: 'fs-7 w-auto' },
+      ],
+    });
+  });
+</script>
+{% endblock %}
