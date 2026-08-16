@@ -90,6 +90,7 @@ const processingLoaderTemplate = (message = "Procesando…") => `
 const renderDataTable = ({
   tableID = "#id_table",
   url = "",
+  data = null,
   columns = [],
   requestData = {},
   extraConfig = {},
@@ -106,9 +107,11 @@ const renderDataTable = ({
   const { topStart: customTopStart = null, ...restLayout } = customLayout;
   const exportNode = exportConfig ? buildExportButtonNode(exportConfig) : null;
 
-  // Sin `url` => modo data LOCAL: la tabla lee el DOM (sin ajax ni serverSide).
-  // Con `url` => comportamiento de siempre (serverSide por ajax).
-  const isLocal = !url;
+  // Sin `url` => modo data LOCAL: la tabla lee el DOM o el array `data`
+  // (sin ajax ni serverSide). Con `url` => comportamiento de siempre
+  // (serverSide por ajax). `data` manda: si viene el array, no hay ajax.
+  const hasLocalData = Array.isArray(data);
+  const isLocal = !url || hasLocalData;
 
   const config = {
     language: {
@@ -166,6 +169,11 @@ const renderDataTable = ({
       },
       ...customAjax,
     };
+  }
+
+  // El array reemplaza lo que hubiera en el DOM al inicializar.
+  if (hasLocalData) {
+    config.data = data;
   }
 
   // `columns` solo si se proveen; en modo local se infieren del DOM.
