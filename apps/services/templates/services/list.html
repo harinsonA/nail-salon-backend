@@ -85,11 +85,17 @@ Lista de servicios
 		</table>
 	</section>
 </section>
+
+{% include 'services/_categories_hint_modal.html' %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
+	const hasCategories = '{{ has_categories }}' === 'True';
 	$(() => {
+		if (!hasCategories) {
+			$('#categoriesHintModal').modal('show');
+		}
 		// $("#id_status").select2();
 		const statusColumn = (status) => status
 			? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Activo" width="20" height="20">`
