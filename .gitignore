@@ -135,3 +135,6 @@ AUTHENTICATION_SYSTEM_DOCS.md
 
 # Configuracion local de Claude Code (skills y settings por maquina)
 .claude/
+
+# Guia local personal (comandos de Docker y base de datos)
+README.local.md

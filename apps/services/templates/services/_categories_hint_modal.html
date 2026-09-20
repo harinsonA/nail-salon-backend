@@ -1,0 +1,35 @@
+<div class="modal fade" id="categoriesHintModal" tabindex="-1" aria-labelledby="categoriesHintModalLabel"
+  aria-hidden="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="categoriesHintModalLabel">Organiza tus servicios por categoría</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p><b>Todavía no tienes categorías creadas.</b> Antes de cargar tus servicios, te recomendamos crear las
+          categorías con las que vas a agruparlos.</p>
+        <p class="mb-2">Por ejemplo:</p>
+        <ul class="mb-3">
+          <li>Una categoría <b>Manos</b>, para reunir ahí manicure, esmaltado y uñas acrílicas.</li>
+          <li>Una categoría <b>Pies</b>, para pedicure y esmaltado de pies.</li>
+        </ul>
+        <p class="m-0">Cada servicio se asigna a una categoría, así te resulta más fácil encontrarlos y revisar tus
+          reportes ordenados.</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
+          <b>Ahora no</b>
+        </button>
+        <a href="{% url 'categories' %}" class="btn btn-primary">
+          <b>
+            <span class="material-symbols-outlined">
+              category
+            </span>
+            Ir a Categorias
+          </b>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
