@@ -205,7 +205,9 @@ class ServicesView(ProtectedView, TemplateView):
                 "url_service_list": reverse_lazy("service_list"),
                 "url_service_export": reverse_lazy("service_export"),
                 "url_category_list": reverse_lazy("categories"),
-                "has_categories": Categoria.objects.exists(),
+                "show_categories_hint": (
+                    not Categoria.objects.exists() and not Servicio.objects.exists()
+                ),
             }
         )
         return context

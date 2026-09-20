@@ -91,9 +91,9 @@ Lista de servicios
 
 {% block extra_js %}
 <script>
-	const hasCategories = '{{ has_categories }}' === 'True';
+	const showCategoriesHint = '{{ show_categories_hint }}' === 'True';
 	$(() => {
-		if (!hasCategories) {
+		if (showCategoriesHint) {
 			$('#categoriesHintModal').modal('show');
 		}
 		// $("#id_status").select2();
