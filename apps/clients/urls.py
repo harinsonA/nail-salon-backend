@@ -7,6 +7,7 @@ from apps.clients.views.cliente import (
     ClientExportView,
     ClientListView,
     ClientsView,
+    ClientWhatsappModalView,
 )
 from apps.clients.views.imports import (
     ClientExampleExportView,
@@ -48,6 +49,11 @@ urlpatterns = [
         "clientes/<int:pk>/detalle/",
         ClientDetailModalView.as_view(),
         name="client_detail_modal",
+    ),
+    path(
+        "clientes/<int:pk>/whatsapp/",
+        ClientWhatsappModalView.as_view(),
+        name="client_whatsapp_modal",
     ),
     path(
         "clientes/<int:pk>/eliminar/",

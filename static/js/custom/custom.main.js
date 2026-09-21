@@ -43,6 +43,13 @@ const optionsColumn = (options = []) => {
     </div>`;
 };
 
+const whatsappColumn = (modalUrl, phone = "") =>
+  modalUrl
+    ? `<a role="button" class="bs-modal" data-form-url="${modalUrl}" title="WhatsApp: ${phone}" aria-label="Enviar WhatsApp a ${phone}">
+        <img src="/static/images/common/whatsapp.svg" alt="" width="22" height="22">
+      </a>`
+    : "—";
+
 const emptyStateTemplate = (
   image = "/static/images/icons/icono-1.png",
   message = "Sin registros para esta sección",
