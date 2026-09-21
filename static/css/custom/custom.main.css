@@ -296,6 +296,20 @@
 
 /**** End Pricing Receipt Component ****/
 
+/**** Agenda Create Layout ****/
+
+@media (min-width: 992px) {
+	.agenda-create-hours-col {
+		width: calc(25% + 5px);
+	}
+
+	.agenda-create-service-col {
+		width: calc(50% - 5px);
+	}
+}
+
+/**** End Agenda Create Layout ****/
+
 /**** Accordion Component ****/
 
 .accordion-custom .accordion-header-element {

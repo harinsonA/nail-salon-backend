@@ -32,18 +32,18 @@ Crear Cita
         <label for="{{ form.date_agenda.id_for_label }}" class="form-label form-label--custom">
           {{ form.date_agenda.label }} <span class="text-danger">*</span>
         </label>
-        <div class="input-group">
-          {{ form.date_agenda }}
-          <div class="input-group-text">
-            <i class="material-symbols-outlined">schedule</i>
-          </div>
-          {{ form.time_agenda }}
-        </div>
+        {{ form.date_agenda }}
         {% if form.date_agenda.errors %}
         <div class="invalid-feedback d-block">
           {{ form.date_agenda.errors.0 }}
         </div>
         {% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="{{ form.time_agenda.id_for_label }}" class="form-label form-label--custom">
+          {{ form.time_agenda.label }} <span class="text-danger">*</span>
+        </label>
+        {{ form.time_agenda }}
         {% if form.time_agenda.errors %}
         <div class="invalid-feedback d-block">
           {{ form.time_agenda.errors.0 }}
@@ -62,7 +62,7 @@ Crear Cita
         {% endif %}
       </div>
     </div>
-    <div class="col-12 col-lg-3">
+    <div class="col-12 col-lg-3 agenda-create-hours-col">
       <div class="p-2">
         <table id="available_hours_table" class="table">
           <thead>
@@ -74,7 +74,7 @@ Crear Cita
         </table>
       </div>
     </div>
-    <div class="col-12 col-lg-6">
+    <div class="col-12 col-lg-6 agenda-create-service-col">
       <section>
         <h5 class="mb-3 text-primary">
           <i class="material-symbols-outlined me-2">design_services</i>
@@ -172,7 +172,7 @@ Crear Cita
 {% block extra_js %}
 <script>
   $(() => {
-    initializeDatePickers();
+    initializeDatePickers({ orientation: 'bottom auto' });
     initTooltips();
     const categorySelect = $('#{{ form.category.id_for_label }}');
     const serviceSelect = $('#{{ form.service.id_for_label }}');
