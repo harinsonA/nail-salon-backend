@@ -1,15 +1,17 @@
 from django.urls import path
+
 from apps.clients.views.cliente import (
-    ClientsView,
-    ClientListView,
-    ClientExportView,
     ClientCreateModalView,
-    ClientDetailModalView,
     ClientDeleteModalView,
+    ClientDetailModalView,
+    ClientExportView,
+    ClientListView,
+    ClientsView,
+    ClientWhatsappModalView,
 )
 from apps.clients.views.imports import (
-    ClientImportView,
     ClientExampleExportView,
+    ClientImportView,
 )
 
 urlpatterns = [
@@ -47,6 +49,11 @@ urlpatterns = [
         "clientes/<int:pk>/detalle/",
         ClientDetailModalView.as_view(),
         name="client_detail_modal",
+    ),
+    path(
+        "clientes/<int:pk>/whatsapp/",
+        ClientWhatsappModalView.as_view(),
+        name="client_whatsapp_modal",
     ),
     path(
         "clientes/<int:pk>/eliminar/",

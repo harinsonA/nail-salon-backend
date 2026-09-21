@@ -1,11 +1,16 @@
+from urllib.parse import quote, urlencode
+
 from django.db.models import TextChoices
-from result import Result, Ok, Err
+from result import Err, Ok, Result
 
 """========================================================================="""
 # region ........ Constants
 
 PREFIX_INVALID_MESSAGE = "El prefijo del teléfono es inválido. (%(prefixes)s)."
 PHONE_LENGTH_INVALID_MESSAGE = "El número de teléfono debe tener %(length)s dígitos."
+
+WHATSAPP_APP_URL = "https://wa.me"
+WHATSAPP_WEB_URL = "https://web.whatsapp.com/send"
 
 ARGENTINA = "+54"
 CHILE = "+56"
@@ -144,6 +149,25 @@ class PhoneCleaner:
         if result.is_err():
             return result
         return Ok(f"{self.prefix_value}{cleaned_number}")
+
+
+# endregion
+"""========================================================================="""
+"""========================================================================="""
+# region ........ Functions
+
+
+def get_whatsapp_url(phone_number: str, message: str = "", app: bool = False) -> str:
+    digits = "".join(character for character in phone_number if character.isdigit())
+    params = {"text": message} if message else {}
+    if app:
+        url = f"{WHATSAPP_APP_URL}/{digits}"
+    else:
+        url = WHATSAPP_WEB_URL
+        params = {"phone": digits, **params}
+    if not params:
+        return url
+    return f"{url}?{urlencode(params, quote_via=quote)}"
 
 
 # endregion

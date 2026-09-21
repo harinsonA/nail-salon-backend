@@ -1,19 +1,29 @@
+from bootstrap_modal_forms.forms import BSModalForm
+from bootstrap_modal_forms.generic import (
+    BSModalDeleteView,
+    BSModalFormView,
+    BSModalReadView,
+)
 from django import forms
+from django.db.models import Count, Q, TextChoices, Value
+from django.db.models.functions import Concat
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
-from django.db.models import Count, Value, TextChoices, Q
-from django.db.models.functions import Concat
 from rest_framework.status import HTTP_400_BAD_REQUEST
-from bootstrap_modal_forms.forms import BSModalForm
-from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
+
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.form_classes import (
+    FORM_CONTROL_CLASS,
+    FORM_CONTROL_TEXTAREA_CLASS,
+    FORM_SELECT_CLASS,
+)
+from apps.common.utils.phones import CountryPhonePrefix, get_whatsapp_url
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
+
 from ..models.cliente import Cliente
 
 """========================================================================="""
@@ -187,6 +197,19 @@ class ClientsForm(BSModalForm):
         return normalized_data
 
 
+class ClientWhatsappForm(forms.Form):
+    message = forms.CharField(
+        label="Mensaje",
+        required=True,
+        widget=forms.Textarea(
+            attrs={
+                "class": FORM_CONTROL_TEXTAREA_CLASS,
+                "rows": 4,
+            }
+        ),
+    )
+
+
 # endregion
 """========================================================================="""
 
@@ -241,6 +264,11 @@ class ClientListView(BaseListViewAjax):
         values = super().get_values(queryset)
         for value in values:
             value["status"] = value["estado"] == Cliente.EstadoChoices.ACTIVO
+            value["whatsapp_modal_url"] = (
+                reverse_lazy("client_whatsapp_modal", kwargs={"pk": value["pk"]})
+                if value["telefono"]
+                else ""
+            )
         return values
 
     @staticmethod
@@ -394,6 +422,28 @@ class ClientDetailModalView(BaseClientModalView):
         return JsonResponse(
             {"message": self.success_message % {"client_full_name": full_name}}
         )
+
+
+class ClientWhatsappModalView(ProtectedView, BSModalReadView):
+    template_name = "clients/client_whatsapp_modal.html"
+    queryset = Cliente.all_objects.exclude(telefono="")
+    default_message = "Hola %(client_name)s, ¿cómo estás?"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        client = self.object
+        message = self.default_message % {"client_name": client.nombre.strip()}
+        context.update(
+            {
+                "client_full_name": client.nombre_completo,
+                "client_phone": client.telefono,
+                "form": ClientWhatsappForm(initial={"message": message}),
+                "whatsapp_url": get_whatsapp_url(client.telefono, message),
+                "whatsapp_web_url": get_whatsapp_url(client.telefono),
+                "whatsapp_app_url": get_whatsapp_url(client.telefono, app=True),
+            }
+        )
+        return context
 
 
 class ClientDeleteModalView(ProtectedView, BSModalDeleteView):

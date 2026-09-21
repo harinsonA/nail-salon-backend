@@ -69,6 +69,7 @@ Citas: {{ full_date }}
 				<tr>
 					<th scope="col">Hora</th>
 					<th scope="col">Cliente</th>
+					<th scope="col">Teléfono</th>
 					<th scope="col">Estado</th>
 					<th scope="col">Servicios</th>
 					<th scope="col"></th>
@@ -205,6 +206,7 @@ Citas: {{ full_date }}
 			columns: [
 				{ data: 'formatted_time', className: 'fs-7 text-center' },
 				{ data: 'cliente_full_name', className: 'fs-7 text-nowrap' },
+				{ data: ({ whatsapp_modal_url, cliente__telefono }) => whatsappColumn(whatsapp_modal_url, cliente__telefono), className: 'fs-7 text-center', orderable: false, searchable: false },
 				{ data: ({ estado }) => statusColumn(estado), className: 'fs-7 text-center', orderable: false },
 				{ data: ({ cantidad_servicios, agenda_see_modal_url }) => servicesColumn(cantidad_servicios, agenda_see_modal_url), className: 'fs-7 text-center', searchable: false },
 				{ data: ({ estado, options }) => optionsColumn(estado, options), className: 'all fs-7 text-center', orderable: false, searchable: false, width: '1%' },

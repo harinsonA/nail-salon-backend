@@ -88,7 +88,7 @@ Lista de clientes
       columns: [
         { data: 'full_name', className: 'fs-7 w-auto text-nowrap' },
         { data: ({ status }) => statusColumn(status), className: 'fs-7 w-auto text-center' },
-        { data: 'telefono', className: 'fs-7 w-auto text-center' },
+        { data: ({ whatsapp_modal_url, telefono }) => whatsappColumn(whatsapp_modal_url, telefono), className: 'fs-7 w-auto text-center' },
         { data: 'email', className: 'fs-7 w-auto' },
         { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
       ],
