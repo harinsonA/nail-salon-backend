@@ -1,5 +1,5 @@
 from django.db.models import TextChoices
-from result import Result, Ok, Err
+from result import Err, Ok, Result
 
 """========================================================================="""
 # region ........ Constants

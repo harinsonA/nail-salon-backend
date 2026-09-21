@@ -1,12 +1,13 @@
+from bootstrap_modal_forms.forms import BSModalForm
+from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 from django import forms
+from django.db.models import Count, Q, TextChoices, Value
+from django.db.models.functions import Concat
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
-from django.db.models import Count, Value, TextChoices, Q
-from django.db.models.functions import Concat
 from rest_framework.status import HTTP_400_BAD_REQUEST
-from bootstrap_modal_forms.forms import BSModalForm
-from bootstrap_modal_forms.generic import BSModalFormView, BSModalDeleteView
+
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
@@ -14,6 +15,7 @@ from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.phones import CountryPhonePrefix
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
+
 from ..models.cliente import Cliente
 
 """========================================================================="""

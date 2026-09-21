@@ -1,6 +1,8 @@
 import json
-
 from datetime import date, datetime
+
+from bootstrap_modal_forms.forms import BSModalModelForm
+from bootstrap_modal_forms.generic import BSModalReadView, BSModalUpdateView
 from django import forms
 from django.contrib import messages
 from django.db.models import Count, Q, Value
@@ -9,31 +11,28 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
-
 from rest_framework.status import HTTP_400_BAD_REQUEST
-from bootstrap_modal_forms.forms import BSModalModelForm
-from bootstrap_modal_forms.generic import BSModalUpdateView, BSModalReadView
 
-from apps.appointments.models import DetalleCita, Cita
+from apps.appointments.models import Cita, DetalleCita
 from apps.appointments.views.handler import HandlerAgendaList
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import (
-    CustomDateField,
     MONTH_NUMBER_TO_NAME,
+    CustomDateField,
 )
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
     FORM_CONTROL_TEXTAREA_CLASS,
-    FORM_SELECT_CLASS,
     FORM_SELECT2_CLASS,
+    FORM_SELECT_CLASS,
 )
-from apps.common.utils.dates import format_full_date
 from apps.common.utils.currency import format_currency
+from apps.common.utils.dates import format_full_date
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from apps.payments.choices import MetodoPago, EstadoPago
-from apps.payments.models import Pago, DetallePago
-from apps.services.models import Servicio, Categoria
+from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.models import DetallePago, Pago
+from apps.services.models import Categoria, Servicio
 
 """========================================================================="""
 # region ........ Form

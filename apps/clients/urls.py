@@ -1,15 +1,16 @@
 from django.urls import path
+
 from apps.clients.views.cliente import (
-    ClientsView,
-    ClientListView,
-    ClientExportView,
     ClientCreateModalView,
-    ClientDetailModalView,
     ClientDeleteModalView,
+    ClientDetailModalView,
+    ClientExportView,
+    ClientListView,
+    ClientsView,
 )
 from apps.clients.views.imports import (
-    ClientImportView,
     ClientExampleExportView,
+    ClientImportView,
 )
 
 urlpatterns = [
