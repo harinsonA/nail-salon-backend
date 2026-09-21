@@ -426,7 +426,7 @@ class ClientDetailModalView(BaseClientModalView):
 
 class ClientWhatsappModalView(ProtectedView, BSModalReadView):
     template_name = "clients/client_whatsapp_modal.html"
-    queryset = Cliente.objects.exclude(telefono="")
+    queryset = Cliente.all_objects.exclude(telefono="")
     default_message = "Hola %(client_name)s, ¿cómo estás?"
 
     def get_context_data(self, **kwargs):

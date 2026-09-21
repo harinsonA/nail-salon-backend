@@ -300,7 +300,9 @@ class AgendaListView(BaseListViewAjax):
 
     field_list = [
         "pk",
+        "cliente__pk",
         "cliente_full_name",
+        "cliente__telefono",
         "hora_agenda",
         "estado",
         "cantidad_servicios",
@@ -309,8 +311,8 @@ class AgendaListView(BaseListViewAjax):
     ordering_fields = {
         "0": "hora_agenda",
         "1": "cliente_full_name",
-        "2": "estado",
-        "3": "cantidad_servicios",
+        "3": "estado",
+        "4": "cantidad_servicios",
     }
 
     def get_queryset(self):
@@ -333,6 +335,13 @@ class AgendaListView(BaseListViewAjax):
             value["formatted_time"] = HandlerAgendaList.get_formatted_time(**value)
             value["agenda_see_modal_url"] = reverse_lazy(
                 "agenda_see_modal", args=[value["pk"]]
+            )
+            value["whatsapp_modal_url"] = (
+                reverse_lazy(
+                    "client_whatsapp_modal", kwargs={"pk": value["cliente__pk"]}
+                )
+                if value["cliente__telefono"]
+                else ""
             )
             value.update(HandlerAgendaList.get_options(value["pk"], value["estado"]))
         return values
