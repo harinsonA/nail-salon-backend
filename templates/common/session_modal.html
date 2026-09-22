@@ -1,0 +1,25 @@
+<div class="modal fade" id="session_expiry_modal" tabindex="-1" aria-labelledby="session_expiry_modal_title"
+	aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+	<div class="modal-dialog modal-dialog-centered modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="session_expiry_modal_title">¿Sigues ahí?</h5>
+			</div>
+			<div class="modal-body">
+				{% csrf_token %}
+				<p class="m-0">
+					Por seguridad vamos a cerrar tu sesión en
+					<span id="session_expiry_countdown">2:00</span>.
+				</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-sm btn-danger bg-gradient me-2" id="session_expiry_logout_btn">
+					Cerrar sesión
+				</button>
+				<button type="button" class="btn btn-sm btn-primary bg-gradient" id="session_expiry_stay_btn">
+					Seguir aquí
+				</button>
+			</div>
+		</div>
+	</div>
+</div>

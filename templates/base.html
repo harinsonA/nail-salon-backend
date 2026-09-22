@@ -49,7 +49,8 @@
 	{% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-light bg-gradient">
+<body class="bg-light bg-gradient" data-session-idle-seconds="{{ session_idle_seconds|default:0 }}"
+	data-session-ping-url="{% url 'session_ping' %}" data-session-logout-url="{% url 'logout' %}">
 	<div class="sand-background">
 		<div class="sand-wave wave-3"></div>
 		<div class="sand-wave wave-2"></div>
@@ -58,6 +59,7 @@
 
 	<!-- Navbar que se expande en lg+ y usa offcanvas en pantallas menores -->
 	{% include 'menu.html' %}
+	{% include 'common/session_modal.html' %}
 	<!-- Contenido principal con padding-top para el fixed navbar -->
 	<section class="container" style="padding-top: 60px; margin-bottom: 100px;">
 		<section class="mt-3 mb-3">
