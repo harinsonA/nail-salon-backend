@@ -1,3 +1,5 @@
+from apps.settings.preferences.models import Preference  # noqa: F401
+
 from django.db import models
 
 
