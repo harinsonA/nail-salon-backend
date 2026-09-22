@@ -7,10 +7,10 @@ from apps.common.exports.styles import (
     FREEZE_HEADER,
     write_header_row,
 )
-from apps.common.views.base_views import ProtectedView
+from apps.common.views.base_views import ProtectedExportView
 
 
-class BaseExampleExportView(ProtectedView, View):
+class BaseExampleExportView(ProtectedExportView, View):
     """Exporta una plantilla de ejemplo en .xlsx: encabezados + filas de ejemplo.
 
     Se entrega como Excel (no CSV) para que el usuario edite cómodamente, fila a

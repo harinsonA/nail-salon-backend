@@ -172,6 +172,7 @@ const renderDataTable = ({
       type: "GET",
       data: (data) => ({ ...data, ...requestData }),
       error: (xhr, status, error) => {
+        if (xhr.status === 401) return;
         notifyAlert(xhr.responseJSON, xhr.status, 4000);
       },
       ...customAjax,
@@ -268,6 +269,24 @@ function getCookie(name) {
   }
   return cookieValue;
 }
+
+const LOGIN_URL = "/inicio_sesion/";
+
+let isRedirectingToLogin = false;
+
+const redirectToLogin = (loginUrl = LOGIN_URL) => {
+  if (isRedirectingToLogin) return;
+  isRedirectingToLogin = true;
+  const next = encodeURIComponent(
+    window.location.pathname + window.location.search,
+  );
+  window.location.assign(`${loginUrl || LOGIN_URL}?next=${next}`);
+};
+
+$(document).ajaxError((event, xhr) => {
+  if (xhr.status !== 401) return;
+  redirectToLogin(xhr.responseJSON?.redirect);
+});
 
 const ajaxSubmitForm = async (url, data = {}, method = "POST") => {
   return new Promise((resolve, reject) => {
