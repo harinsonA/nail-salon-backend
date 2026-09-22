@@ -88,6 +88,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.common.middleware.SessionExpiryMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -109,6 +110,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.static",
+                "apps.common.context_processors.session_expiry",
             ],
         },
     },
@@ -206,6 +208,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "calendar"
 LOGOUT_REDIRECT_URL = "login"
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 60 * 60 * 24
+SESSION_DAILY_CUTOFF_HOUR = config("SESSION_DAILY_CUTOFF_HOUR", default=4, cast=int)
 
 # Celery / Redis (tareas en segundo plano)
 # REDIS_URL apunta a localhost en desarrollo nativo, a "redis" dentro de
