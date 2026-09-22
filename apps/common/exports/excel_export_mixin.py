@@ -12,6 +12,7 @@ from apps.common.exports.styles import (
     FREEZE_HEADER,
     write_header_row,
 )
+from apps.common.views.base_views import UNAUTHORIZED_RESPONSE_REDIRECT
 
 
 class ExcelExportMixin:
@@ -47,6 +48,11 @@ class ExcelExportMixin:
 
     def should_paginate(self) -> bool:
         return False if self.is_export() else super().should_paginate()
+
+    def get_unauthorized_response_kind(self) -> str:
+        if self.is_export():
+            return UNAUTHORIZED_RESPONSE_REDIRECT
+        return super().get_unauthorized_response_kind()
 
     def render_to_response(self, context, **response_kwargs):
         if self.is_export():

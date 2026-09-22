@@ -82,6 +82,9 @@
             return {};
           })
           .then(function (body) {
+            if (res.status === 401 && typeof redirectToLogin === "function") {
+              redirectToLogin(body.redirect);
+            }
             var err = new Error(body.message || "Error " + res.status);
             err.status = res.status;
             throw err;
