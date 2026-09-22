@@ -4,8 +4,11 @@ from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from bootstrap_modal_forms.forms import BSModalModelForm
 from bootstrap_modal_forms.generic import BSModalUpdateView
+from apps.common.middleware import start_session_window
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
+from apps.settings.preferences import SESSION_IDLE_MINUTES, Category
+from apps.settings.preferences.forms import PreferenceFieldsMixin
 
 User = get_user_model()
 
@@ -13,7 +16,9 @@ User = get_user_model()
 # region ........ Forms
 
 
-class ProfileForm(BSModalModelForm):
+class ProfileForm(PreferenceFieldsMixin, BSModalModelForm):
+    preference_category = Category.SEGURIDAD
+
     current_password = forms.CharField(
         label="Contraseña actual",
         required=False,
@@ -47,6 +52,9 @@ class ProfileForm(BSModalModelForm):
             }
         ),
     )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_preference_fields(self.instance)
 
     class Meta:
         model = User
@@ -148,8 +156,10 @@ class ProfileModalView(ProtectedView, BSModalUpdateView):
 
     def form_valid(self, form):
         user = form.save()
+        form.save_preferences(user)
         if form.cleaned_data.get("new_password"):
             update_session_auth_hash(self.request, user)
+        start_session_window(self.request.session, SESSION_IDLE_MINUTES.get(user) * 60)
         return JsonResponse({"message": self.success_message})
 
     def form_invalid(self, form):

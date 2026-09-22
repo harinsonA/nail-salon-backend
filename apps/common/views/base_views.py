@@ -35,10 +35,19 @@ class ProtectedView(LoginRequiredMixin):
             status=401,
         )
 
+    def unauthorized_redirect_response(self):
+        response = super().handle_no_permission()
+        if not getattr(self.request, "session_expired", False):
+            return response
+        location = response.get("Location", "")
+        separator = "&" if "?" in location else "?"
+        response["Location"] = f"{location}{separator}expired=1"
+        return response
+
     def handle_no_permission(self):
         if self.get_unauthorized_response_kind() == UNAUTHORIZED_RESPONSE_JSON:
             return self.unauthorized_json_response()
-        return super().handle_no_permission()
+        return self.unauthorized_redirect_response()
 
 
 class ProtectedAjaxView(ProtectedView):

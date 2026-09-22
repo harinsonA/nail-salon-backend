@@ -465,6 +465,10 @@
 			<div class="gentle-alert" role="alert">
 				Usuario o contraseña incorrectos.
 			</div>
+			{% elif request.GET.expired %}
+			<div class="gentle-alert" role="alert">
+				Tu sesión expiró, vuelve a iniciar sesión.
+			</div>
 			{% endif %}
 
 			<form method="post">

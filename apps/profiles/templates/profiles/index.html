@@ -96,6 +96,21 @@
 			<!-- Seguridad -->
 			<div class="tab-pane fade" id="profile-security" role="tabpanel" aria-labelledby="profile-security-tab"
 				tabindex="0">
+				{% for preference_field in form.preference_fields %}
+				<div class="mb-3">
+					<label for="{{ preference_field.id_for_label }}" class="form-label form-label--custom">
+						{{ preference_field.label }}
+					</label>
+					{{ preference_field }}
+					{% if preference_field.help_text %}
+					<div class="form-text">{{ preference_field.help_text }}</div>
+					{% endif %}
+					<span class="invalid-feedback invalid-feedback--custom {{ preference_field.id_for_label }}">
+						{{ preference_field.errors.0 }}
+					</span>
+				</div>
+				{% endfor %}
+
 				<div class="profile-note">
 					<img src="/static/images/common/info.svg" alt="" width="20" height="20" class="flex-shrink-0">
 					<span>Deja los campos de contraseña vacíos si no deseas cambiarla.</span>
