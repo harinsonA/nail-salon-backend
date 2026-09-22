@@ -280,85 +280,13 @@ const redirectToLogin = (loginUrl = LOGIN_URL) => {
   const next = encodeURIComponent(
     window.location.pathname + window.location.search,
   );
-  window.location.assign(`${loginUrl || LOGIN_URL}?next=${next}&expired=1`);
+  window.location.assign(`${loginUrl || LOGIN_URL}?next=${next}`);
 };
 
 $(document).ajaxError((event, xhr) => {
   if (xhr.status !== 401) return;
   redirectToLogin(xhr.responseJSON?.redirect);
 });
-
-const SESSION_WARNING_SECONDS = 120;
-
-const formatCountdown = (seconds) => {
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
-};
-
-const initSessionExpiry = () => {
-  const { sessionIdleSeconds, sessionPingUrl, sessionLogoutUrl } =
-    document.body.dataset;
-  const idleSeconds = Number(sessionIdleSeconds || 0);
-  const modalElement = document.getElementById("session_expiry_modal");
-  if (!idleSeconds || !modalElement || !window.bootstrap) return;
-
-  const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-  const countdownElement = document.getElementById("session_expiry_countdown");
-  const warningSeconds = Math.min(
-    SESSION_WARNING_SECONDS,
-    Math.floor(idleSeconds / 2),
-  );
-  let warningTimer = null;
-  let expiryTimer = null;
-  let countdownTimer = null;
-
-  const startCountdown = () => {
-    let remaining = warningSeconds;
-    countdownElement.textContent = formatCountdown(remaining);
-    countdownTimer = window.setInterval(() => {
-      remaining -= 1;
-      countdownElement.textContent = formatCountdown(Math.max(remaining, 0));
-    }, 1000);
-  };
-
-  const scheduleTimers = () => {
-    window.clearTimeout(warningTimer);
-    window.clearTimeout(expiryTimer);
-    window.clearInterval(countdownTimer);
-    warningTimer = window.setTimeout(
-      () => {
-        startCountdown();
-        modal.show();
-      },
-      (idleSeconds - warningSeconds) * 1000,
-    );
-    expiryTimer = window.setTimeout(() => redirectToLogin(), idleSeconds * 1000);
-  };
-
-  document
-    .getElementById("session_expiry_stay_btn")
-    ?.addEventListener("click", () => {
-      modal.hide();
-      $.ajax({
-        url: sessionPingUrl,
-        method: "POST",
-        headers: { "X-CSRFToken": getCSRFToken() },
-      });
-    });
-
-  document
-    .getElementById("session_expiry_logout_btn")
-    ?.addEventListener("click", () => window.location.assign(sessionLogoutUrl));
-
-  $(document).ajaxComplete(() => {
-    modal.hide();
-    scheduleTimers();
-  });
-
-  scheduleTimers();
-};
-
-$(initSessionExpiry);
 
 const ajaxSubmitForm = async (url, data = {}, method = "POST") => {
   return new Promise((resolve, reject) => {
