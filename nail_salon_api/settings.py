@@ -11,8 +11,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config, Csv
+
 import dj_database_url
+from decouple import Csv, config
 
 try:
     import locale
