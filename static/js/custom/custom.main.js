@@ -296,8 +296,7 @@ const formatCountdown = (seconds) => {
 };
 
 const initSessionExpiry = () => {
-  const { sessionIdleSeconds, sessionPingUrl, sessionLogoutUrl } =
-    document.body.dataset;
+  const { sessionIdleSeconds, sessionPingUrl } = document.body.dataset;
   const idleSeconds = Number(sessionIdleSeconds || 0);
   const modalElement = document.getElementById("session_expiry_modal");
   if (!idleSeconds || !modalElement || !window.bootstrap) return;
@@ -348,7 +347,9 @@ const initSessionExpiry = () => {
 
   document
     .getElementById("session_expiry_logout_btn")
-    ?.addEventListener("click", () => window.location.assign(sessionLogoutUrl));
+    ?.addEventListener("click", () =>
+      document.getElementById("logout_form")?.submit(),
+    );
 
   $(document).ajaxComplete(() => {
     modal.hide();

@@ -50,7 +50,8 @@
 </head>
 
 <body class="bg-light bg-gradient" data-session-idle-seconds="{{ session_idle_seconds|default:0 }}"
-	data-session-ping-url="{% url 'session_ping' %}" data-session-logout-url="{% url 'logout' %}">
+	data-session-ping-url="{% url 'session_ping' %}">
+	<form id="logout_form" method="post" action="{% url 'logout' %}" hidden>{% csrf_token %}</form>
 	<div class="sand-background">
 		<div class="sand-wave wave-3"></div>
 		<div class="sand-wave wave-2"></div>
