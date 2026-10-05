@@ -17,6 +17,7 @@ RESERVADOS = frozenset(
         "docs",
         "ftp",
         "imap",
+        "legado",
         "mail",
         "media",
         "pop",
