@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name, schema_context
 
 from apps.clients.models import Cliente
-from apps.tenancy.models import Dominio, Negocio
+from apps.tenancy.models import Dominio, Negocio, Persona
 
 User = get_user_model()
 
@@ -27,9 +27,10 @@ class UsuariosPorNegocioTests(TestCase):
         cls.hosts_agregados = [host(n) for n in NEGOCIOS] + [HOST_INEXISTENTE]
         settings.ALLOWED_HOSTS += cls.hosts_agregados
         connection.set_schema_to_public()
+        cls.titular = Persona.objects.create(nombres="Titular de prueba")
         cls.negocios = {}
         for esquema in NEGOCIOS:
-            negocio = Negocio.objects.create(schema_name=esquema, nombre=f"Negocio {esquema}")
+            negocio = Negocio.objects.create(schema_name=esquema, nombre=f"Negocio {esquema}", titular=cls.titular)
             negocio.create_schema(check_if_exists=True, verbosity=0)
             Dominio.objects.create(domain=host(esquema), tenant=negocio, is_primary=True)
             cls.negocios[esquema] = negocio
@@ -42,6 +43,7 @@ class UsuariosPorNegocioTests(TestCase):
         for negocio in cls.negocios.values():
             negocio.domains.all().delete()
             negocio.delete(force_drop=True)
+        cls.titular.delete(soft=False)
         for h in cls.hosts_agregados:
             settings.ALLOWED_HOSTS.remove(h)
 
@@ -90,14 +92,21 @@ class UsuariosPorNegocioTests(TestCase):
         with schema_context("dos"):
             self.assertEqual(Cliente.all_objects.count(), 0)
 
-    def test_las_tablas_de_negocio_no_existen_en_public(self):
+    def esquemas_con_tabla(self, tabla):
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT table_schema FROM information_schema.tables WHERE table_name = %s ORDER BY 1",
-                ["clientes"],
+                [tabla],
             )
-            esquemas = [fila[0] for fila in cursor.fetchall()]
-        self.assertEqual(esquemas, sorted(NEGOCIOS))
+            return [fila[0] for fila in cursor.fetchall()]
+
+    def test_las_tablas_de_negocio_no_existen_en_public(self):
+        self.assertEqual(self.esquemas_con_tabla("clientes"), sorted(NEGOCIOS))
+
+    def test_las_tablas_de_la_plataforma_solo_existen_en_public(self):
+        for tabla in ("negocios", "personas", "personas_correos", "negocios_direcciones", "rubros"):
+            with self.subTest(tabla=tabla):
+                self.assertEqual(self.esquemas_con_tabla(tabla), [get_public_schema_name()])
 
     def test_un_subdominio_inexistente_responde_404(self):
         respuesta = Client(HTTP_HOST=HOST_INEXISTENTE).get(LOGIN_URL)
