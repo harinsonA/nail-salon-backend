@@ -1,5 +1,5 @@
 from django.db import models
-from django_tenants.models import DomainMixin, TenantMixin
+from django_tenants.models import TenantMixin
 from model_utils.models import TimeStampedModel
 
 
@@ -16,10 +16,3 @@ class Negocio(TenantMixin, TimeStampedModel):
 
     def __str__(self):
         return self.nombre
-
-
-class Dominio(DomainMixin):
-    class Meta:
-        db_table = "dominios"
-        verbose_name = "Dominio"
-        verbose_name_plural = "Dominios"
