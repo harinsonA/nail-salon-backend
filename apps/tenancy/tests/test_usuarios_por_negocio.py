@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name, schema_context
 
 from apps.clients.models import Cliente
-from apps.tenancy.models import Dominio, Negocio, Persona
+from apps.tenancy.testing import borrar_negocio_de_prueba, crear_negocio_de_prueba
 
 User = get_user_model()
 
@@ -26,24 +26,14 @@ class UsuariosPorNegocioTests(TestCase):
     def setUpClass(cls):
         cls.hosts_agregados = [host(n) for n in NEGOCIOS] + [HOST_INEXISTENTE]
         settings.ALLOWED_HOSTS += cls.hosts_agregados
-        connection.set_schema_to_public()
-        cls.titular = Persona.objects.create(nombres="Titular de prueba")
-        cls.negocios = {}
-        for esquema in NEGOCIOS:
-            negocio = Negocio.objects.create(schema_name=esquema, nombre=f"Negocio {esquema}", titular=cls.titular)
-            negocio.create_schema(check_if_exists=True, verbosity=0)
-            Dominio.objects.create(domain=host(esquema), tenant=negocio, is_primary=True)
-            cls.negocios[esquema] = negocio
+        cls.negocios = {esquema: crear_negocio_de_prueba(esquema, dominio=host(esquema)) for esquema in NEGOCIOS}
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        connection.set_schema_to_public()
         for negocio in cls.negocios.values():
-            negocio.domains.all().delete()
-            negocio.delete(force_drop=True)
-        cls.titular.delete(soft=False)
+            borrar_negocio_de_prueba(negocio)
         for h in cls.hosts_agregados:
             settings.ALLOWED_HOSTS.remove(h)
 
