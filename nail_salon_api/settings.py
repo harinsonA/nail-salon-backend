@@ -38,7 +38,7 @@ SECRET_KEY = config(
 
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,.localhost", cast=Csv())
 
 RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="")
 if RENDER_EXTERNAL_HOSTNAME:
@@ -61,7 +61,9 @@ if not DEBUG:
 
 # Application definition
 
-INSTALLED_APPS = [
+SHARED_APPS = [
+    "django_tenants",
+    "apps.tenancy",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -69,14 +71,20 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
-    # Third party apps
     "rest_framework",
-    "rest_framework.authtoken",
     "corsheaders",
     "django_filters",
     "bootstrap_modal_forms",
     "simple_history",
-    # Local apps
+]
+
+TENANT_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "rest_framework.authtoken",
+    "simple_history",
     "dashboard",
     "apps.clients",
     "apps.services",
@@ -87,7 +95,14 @@ INSTALLED_APPS = [
     "apps.tareas",
 ]
 
+INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+TENANT_MODEL = "tenancy.Negocio"
+TENANT_DOMAIN_MODEL = "tenancy.Dominio"
+PUBLIC_SCHEMA_URLCONF = "nail_salon_api.urls_public"
+
 MIDDLEWARE = [
+    "django_tenants.middleware.main.TenantMainMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -133,12 +148,14 @@ DATABASE_URL = config("DATABASE_URL", default="")
 
 if DATABASE_URL:
     DATABASES = {
-        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600),
+        "default": dj_database_url.parse(
+            DATABASE_URL, engine="django_tenants.postgresql_backend", conn_max_age=600
+        ),
     }
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "django_tenants.postgresql_backend",
             "NAME": config("DATABASE_NAME", default="manicuredb"),
             "USER": config("DATABASE_USER", default="postgres"),
             "PASSWORD": config("DATABASE_PASSWORD", default=""),
@@ -146,6 +163,8 @@ else:
             "PORT": config("DATABASE_PORT", default="5432"),
         },
     }
+
+DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
 
 # Password validation
