@@ -57,10 +57,11 @@ jobs:
       - name: Crear el negocio public y un negocio de prueba
         run: |
           docker exec -i web python manage.py shell <<'PY'
-          from apps.tenancy.models import Dominio, Negocio
+          from apps.tenancy.models import Dominio, Negocio, Persona
           publico = Negocio.objects.create(schema_name="public", nombre="Hi Agenda")
           Dominio.objects.create(domain="localhost", tenant=publico, is_primary=True)
-          prueba = Negocio.objects.create(schema_name="prueba", nombre="Negocio de prueba")
+          titular = Persona.objects.create(nombres="Titular de prueba")
+          prueba = Negocio.objects.create(schema_name="prueba", nombre="Negocio de prueba", titular=titular)
           prueba.create_schema(check_if_exists=True, verbosity=0)
           Dominio.objects.create(domain="prueba.localhost", tenant=prueba, is_primary=True)
           PY
