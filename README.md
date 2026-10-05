@@ -387,8 +387,25 @@ python manage.py dbstatus
 # Crear migraciones y aplicarlas automáticamente
 python manage.py makemigrations_all
 
-# Borrar las sesiones vencidas de la tabla django_session
-python manage.py clearsessions
+# Aplicar migraciones en public y en el esquema de cada negocio
+python manage.py migrate_schemas
+
+# Borrar las sesiones vencidas de todos los negocios
+python manage.py all_tenants_command clearsessions
+```
+
+Solo en desarrollo (exigen `DEBUG=True`):
+
+```bash
+# Crear el negocio public (localhost, admin.localhost) y el negocio demo (demo.localhost)
+python manage.py preparar_negocios_locales
+
+# Una sola vez, en una base de antes del multi-tenant: mover a un esquema
+# «legado» las tablas de negocio que quedaron en public
+python manage.py apartar_tablas_de_negocio
+
+# Vaciar el negocio demo y copiarle los datos de «legado» (se puede repetir)
+python manage.py copiar_datos_demo
 ```
 
 ## 🚀 Instalación
@@ -404,11 +421,17 @@ cd nail-salon-backend
 # Levantar todos los servicios (primera vez compila la imagen)
 docker compose up --build
 
-# En otra terminal: crear el superusuario
+# En otra terminal: crear los negocios locales
+docker compose exec web python manage.py preparar_negocios_locales
+
+# Tu usuario de la plataforma (entra por admin.localhost)
 docker compose exec web python manage.py createsuperuser
+
+# Un usuario dentro del negocio demo (entra por demo.localhost)
+docker compose exec web python manage.py tenant_command createsuperuser --schema=demo
 ```
 
-La aplicación queda en `http://localhost:8000/`. Las migraciones se aplican automáticamente al arrancar. La configuración vive en `.env.docker` (solo valores de desarrollo).
+Cada negocio tiene su subdominio y su esquema en PostgreSQL. La agenda queda en `http://demo.localhost:8000/` y el admin de la plataforma en `http://admin.localhost:8000/admin/`; los subdominios de `localhost` llegan solos a tu máquina, sin tocar el archivo hosts. Las migraciones se aplican automáticamente al arrancar. La configuración vive en `.env.docker` (solo valores de desarrollo).
 
 Servicios que levanta `docker compose`:
 
