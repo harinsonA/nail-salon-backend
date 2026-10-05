@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import connection
 from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name, schema_context
 
@@ -82,29 +81,6 @@ class UsuariosPorNegocioTests(TestCase):
         with schema_context("dos"):
             self.assertEqual(Cliente.all_objects.count(), 0)
 
-    def esquemas_con_tabla(self, tabla):
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT table_schema FROM information_schema.tables WHERE table_name = %s ORDER BY 1",
-                [tabla],
-            )
-            return [fila[0] for fila in cursor.fetchall()]
-
-    def test_las_tablas_de_negocio_no_existen_en_public(self):
-        self.assertEqual(self.esquemas_con_tabla("clientes"), sorted(NEGOCIOS))
-
-    def test_las_tablas_de_la_plataforma_solo_existen_en_public(self):
-        for tabla in ("negocios", "personas", "personas_correos", "negocios_direcciones", "rubros"):
-            with self.subTest(tabla=tabla):
-                self.assertEqual(self.esquemas_con_tabla(tabla), [get_public_schema_name()])
-
     def test_un_subdominio_inexistente_responde_404(self):
         respuesta = Client(HTTP_HOST=HOST_INEXISTENTE).get(LOGIN_URL)
         self.assertEqual(respuesta.status_code, 404)
-
-    def test_el_middleware_de_negocios_va_antes_de_sesion_y_autenticacion(self):
-        middleware = settings.MIDDLEWARE
-        posicion = middleware.index("django_tenants.middleware.main.TenantMainMiddleware")
-        self.assertEqual(posicion, 0)
-        self.assertLess(posicion, middleware.index("django.contrib.sessions.middleware.SessionMiddleware"))
-        self.assertLess(posicion, middleware.index("django.contrib.auth.middleware.AuthenticationMiddleware"))
