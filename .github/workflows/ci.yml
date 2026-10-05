@@ -66,7 +66,7 @@ jobs:
           Dominio.objects.create(domain="prueba.localhost", tenant=prueba, is_primary=True)
           PY
 
-      - name: Smoke test HTTP (sección base, negocio y subdominio inexistente)
+      - name: Smoke test HTTP (sección base, agenda oculta en la raíz, negocio y subdominio inexistente)
         run: |
           check() {
             code=$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $1" "http://localhost:8000$2")
@@ -74,8 +74,12 @@ jobs:
             [ "$code" = "$3" ]
           }
           check localhost /admin/login/ 200
+          check localhost /clientes/ 404
           check prueba.localhost /inicio_sesion/ 200
           check nadie.localhost /inicio_sesion/ 404
+
+      - name: Migraciones al día con los modelos
+        run: docker exec web python manage.py makemigrations --check --dry-run
 
       - name: Pruebas automáticas
         run: docker exec web python manage.py test --noinput
