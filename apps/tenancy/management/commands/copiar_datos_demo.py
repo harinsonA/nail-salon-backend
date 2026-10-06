@@ -112,11 +112,12 @@ class Command(BaseCommand):
 
     def asignar_perfiles(self):
         usuarios = get_user_model().objects.order_by("id")
-        hay_propietario = Perfil.objects.filter(rol=Perfil.Rol.PROPIETARIO).exists()
-        propietario = None
-        if not hay_propietario:
-            propietario = usuarios.filter(is_superuser=True, is_active=True).first() or usuarios.first()
         for usuario in usuarios.filter(perfil__isnull=True):
-            rol = Perfil.Rol.PROPIETARIO if usuario == propietario else Perfil.Rol.COLABORADOR
-            Perfil.objects.create(user=usuario, rol=rol, debe_cambiar_clave=False)
-            self.stdout.write(f"  perfil de {usuario.username}: {rol}")
+            Perfil.objects.create(user=usuario, rol=Perfil.Rol.COLABORADOR, debe_cambiar_clave=False)
+            self.stdout.write(f"  perfil de {usuario.username}: colaborador")
+        if Perfil.objects.filter(rol=Perfil.Rol.PROPIETARIO).exists():
+            return
+        propietario = usuarios.filter(is_superuser=True, is_active=True).first() or usuarios.first()
+        if propietario:
+            Perfil.objects.filter(user=propietario).update(rol=Perfil.Rol.PROPIETARIO)
+            self.stdout.write(f"  {propietario.username} queda como propietario")
