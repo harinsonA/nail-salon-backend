@@ -3,6 +3,7 @@ from django.shortcuts import redirect
 from django.views.generic import FormView
 
 from apps.common.views.base_views import ProtectedView
+from apps.tareas.cola import encolar
 from apps.tareas.models import TareaEnProceso
 
 from .forms import BaseImportForm
@@ -75,9 +76,7 @@ class BaseAsyncImportView(ProtectedView, FormView):
             datos_entrada={"contenido": form.cleaned_data["contenido"]},
         )
 
-        resultado = self.import_task.delay(tarea.id)
-        tarea.celery_task_id = resultado.id
-        tarea.save(update_fields=["celery_task_id", "modified"])
+        encolar(self.import_task, tarea)
 
         messages.success(self.request, f"{self.process_name} iniciada.")
         return redirect("tasks")
