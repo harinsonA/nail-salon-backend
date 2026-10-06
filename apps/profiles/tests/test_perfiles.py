@@ -10,8 +10,12 @@ User = get_user_model()
 
 class PerfilTests(NegocioTestCase):
     def crear_perfil(self, username, **datos):
-        usuario = User.objects.create_user(username=username, email=f"{username}@correo.cl")
-        return Perfil.objects.create(user=usuario, **datos)
+        perfil = User.objects.create_user(username=username, email=f"{username}@correo.cl").perfil
+        if datos:
+            for campo, valor in datos.items():
+                setattr(perfil, campo, valor)
+            perfil.save()
+        return perfil
 
     def test_valores_por_defecto(self):
         perfil = self.crear_perfil("ana")

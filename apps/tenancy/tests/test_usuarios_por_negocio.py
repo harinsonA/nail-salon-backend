@@ -38,11 +38,14 @@ class UsuariosPorNegocioTests(TestCase):
 
     def crear_usuario(self, esquema):
         with schema_context(esquema):
-            return User.objects.create_user(username="ana", email=CORREO, password=CLAVES[esquema])
+            usuario = User.objects.create_user(username="ana", email=CORREO, password=CLAVES[esquema])
+            usuario.perfil.debe_cambiar_clave = False
+            usuario.perfil.save()
+            return usuario
 
     def iniciar_sesion(self, esquema, clave):
         cliente = Client(HTTP_HOST=host(esquema))
-        respuesta = cliente.post(LOGIN_URL, {"username": "ana", "password": clave})
+        respuesta = cliente.post(LOGIN_URL, {"username": CORREO, "password": clave})
         return cliente, respuesta
 
     def test_el_mismo_correo_existe_por_separado_en_cada_negocio(self):

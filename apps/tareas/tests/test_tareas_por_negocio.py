@@ -86,6 +86,8 @@ class TareasPorNegocioTests(TestCase):
     def test_la_importacion_de_clientes_funciona_dentro_de_un_negocio(self):
         with schema_context("tareas_uno"):
             usuario = User.objects.create_user(username="ana", password="clave-de-prueba")
+            usuario.perfil.debe_cambiar_clave = False
+            usuario.perfil.save()
         navegador = Client(HTTP_HOST=NEGOCIOS["tareas_uno"])
         with schema_context("tareas_uno"):
             navegador.force_login(usuario)

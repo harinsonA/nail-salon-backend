@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import connection
 from django.test import TestCase
 
@@ -24,16 +25,21 @@ def borrar_negocio_de_prueba(negocio):
 
 class NegocioTestCase(TestCase):
     esquema = "prueba"
+    dominio = None
 
     @classmethod
     def setUpClass(cls):
-        cls.negocio = crear_negocio_de_prueba(cls.esquema)
+        if cls.dominio:
+            settings.ALLOWED_HOSTS += [cls.dominio]
+        cls.negocio = crear_negocio_de_prueba(cls.esquema, dominio=cls.dominio)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
         borrar_negocio_de_prueba(cls.negocio)
+        if cls.dominio:
+            settings.ALLOWED_HOSTS.remove(cls.dominio)
 
     def setUp(self):
         super().setUp()
