@@ -427,7 +427,9 @@ docker compose exec web python manage.py preparar_negocios_locales
 # Tu usuario de la plataforma (entra por admin.localhost)
 docker compose exec web python manage.py createsuperuser
 
-# Un usuario dentro del negocio demo (entra por demo.localhost)
+# Un usuario dentro del negocio demo (entra por demo.localhost con su correo).
+# Queda como colaborador y debe cambiar su clave al entrar: dentro de un
+# negocio nadie es superusuario, manda el rol del perfil.
 docker compose exec web python manage.py tenant_command createsuperuser --schema=demo
 ```
 
