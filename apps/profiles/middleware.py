@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import redirect
@@ -5,6 +6,7 @@ from django.urls import reverse
 from django_tenants.utils import get_public_schema_name
 
 from apps.profiles.models import Perfil
+from apps.profiles.permisos import SOLO_ADMINISTRACION, administra_el_negocio
 
 RUTAS_PERMITIDAS = {"cambiar_clave", "logout", "session_ping"}
 
@@ -34,3 +36,20 @@ class CambioDeClaveObligatorioMiddleware:
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse({"message": "Debes cambiar tu clave temporal.", "redirect": destino}, status=403)
         return redirect(destino)
+
+
+class PermisosPorRolMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        if connection.schema_name == get_public_schema_name() or not request.user.is_authenticated:
+            return None
+        if request.resolver_match.url_name not in SOLO_ADMINISTRACION or administra_el_negocio(request.user):
+            return None
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"message": "Esta sección es solo para el propietario y los encargados."}, status=403)
+        raise PermissionDenied

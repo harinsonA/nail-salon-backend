@@ -19,6 +19,13 @@ def guardar_correo_en_minusculas(sender, instance, **kwargs):
     instance.email = (instance.email or "").strip().lower()
 
 
+@receiver(pre_save, sender=settings.AUTH_USER_MODEL)
+def sin_superusuarios_en_los_negocios(sender, instance, **kwargs):
+    if connection.schema_name != get_public_schema_name():
+        instance.is_superuser = False
+        instance.is_staff = False
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def crear_perfil_de_colaborador(sender, instance, created, raw=False, **kwargs):
     if not created or raw or connection.schema_name == get_public_schema_name():
