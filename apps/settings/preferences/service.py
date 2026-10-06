@@ -1,4 +1,6 @@
+from django.db import connection
 from django.db.models import Q
+from django_tenants.utils import get_public_schema_name
 
 from apps.settings.preferences.constants import Scope
 from apps.settings.preferences.models import Preference
@@ -13,8 +15,14 @@ def resolve_scope_id(definition, user) -> str:
     return str(user.pk)
 
 
+def fuera_de_un_negocio() -> bool:
+    return connection.schema_name == get_public_schema_name()
+
+
 def get_preference(key, user=None):
     definition = PREFERENCES.get(key)
+    if fuera_de_un_negocio():
+        return definition.default
     value = (
         Preference.objects.filter(
             scope=definition.scope,
@@ -33,6 +41,8 @@ def get_preferences(keys, user=None) -> dict:
     definitions = [PREFERENCES.get(key) for key in keys]
     if not definitions:
         return {}
+    if fuera_de_un_negocio():
+        return {definition.key: definition.default for definition in definitions}
 
     lookup = Q()
     for definition in definitions:
