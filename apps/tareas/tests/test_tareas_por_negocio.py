@@ -9,6 +9,7 @@ from django.urls import reverse
 from django_tenants.utils import schema_context
 
 from apps.clients.models import Cliente
+from apps.profiles.models import Perfil
 from apps.tareas.cola import encolar
 from apps.tareas.decorators import background_task
 from apps.tareas.models import TareaEnProceso
@@ -87,6 +88,7 @@ class TareasPorNegocioTests(TestCase):
         with schema_context("tareas_uno"):
             usuario = User.objects.create_user(username="ana", password="clave-de-prueba")
             usuario.perfil.debe_cambiar_clave = False
+            usuario.perfil.rol = Perfil.Rol.ENCARGADO
             usuario.perfil.save()
         navegador = Client(HTTP_HOST=NEGOCIOS["tareas_uno"])
         with schema_context("tareas_uno"):

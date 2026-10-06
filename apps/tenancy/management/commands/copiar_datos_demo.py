@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
         copias = self.planificar(desde, hacia)
         with transaction.atomic():
-            self.vaciar(hacia, copias)
+            self.vaciar(hacia)
             for tabla, esquema_origen, tabla_origen in copias:
                 filas = self.copiar(esquema_origen, tabla_origen, hacia, tabla)
                 self.stdout.write(f"  {tabla}: {filas}")
@@ -61,6 +61,7 @@ class Command(BaseCommand):
                 Preference.objects.filter(scope="salon").update(scope=Scope.NEGOCIO)
                 Preference.history.model.objects.filter(scope="salon").update(scope=Scope.NEGOCIO)
                 self.asignar_perfiles()
+                get_user_model().objects.update(is_superuser=False, is_staff=False)
         self.stdout.write(self.style.SUCCESS(f"Datos copiados de «{desde}» a «{hacia}»."))
 
     def planificar(self, desde, hacia):
@@ -78,8 +79,8 @@ class Command(BaseCommand):
                     copias.append((tabla, get_public_schema_name(), tabla))
         return copias
 
-    def vaciar(self, hacia, copias):
-        tablas = ", ".join(nombre_calificado(hacia, tabla) for tabla, _, _ in copias)
+    def vaciar(self, hacia):
+        tablas = ", ".join(nombre_calificado(hacia, tabla) for tabla in sorted(tablas_del_esquema(hacia) - NO_SE_COPIAN))
         with connection.cursor() as cursor:
             cursor.execute("SET CONSTRAINTS ALL IMMEDIATE")
             cursor.execute(f"TRUNCATE {tablas} RESTART IDENTITY CASCADE")
