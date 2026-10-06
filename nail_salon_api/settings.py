@@ -109,6 +109,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.common.middleware.SessionExpiryMiddleware",
+    "apps.profiles.middleware.CambioDeClaveObligatorioMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -167,6 +168,8 @@ DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+
+AUTHENTICATION_BACKENDS = ["apps.profiles.backends.CorreoBackend"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {

@@ -41,6 +41,7 @@ class CopiarDatosDemoTests(TestCase):
         with schema_context("origen"):
             User.objects.create_superuser(username="harinson", email="h@correo.cl", password="x")
             User.objects.create_user(username="ana", email="a@correo.cl", password="x")
+            Perfil.objects.all().delete()
             self.laura = Cliente.objects.create(nombre="Laura")
             Preference.objects.create(scope="salon", key="recordatorios", value=True)
         with schema_context("destino"):
