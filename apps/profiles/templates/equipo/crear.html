@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block view_title %}
+Agregar usuario
+{% endblock %}
+
+{% block content %}
+<section class="col-12 col-md-8 col-lg-6">
+  <p class="text-body-secondary">Al guardar verás una clave temporal para entregarle a la persona. Al entrar por primera vez tendrá que cambiarla.</p>
+  <form method="post" novalidate class="d-flex flex-column gap-3">
+    {% csrf_token %}
+    {% for campo in form %}
+    <div>
+      <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+      {{ campo }}
+      {% if campo.help_text %}<div class="form-text">{{ campo.help_text }}</div>{% endif %}
+      {% for error in campo.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm">Crear usuario</button>
+      <a href="{% url 'equipo' %}" class="btn btn-outline-secondary btn-sm">Volver</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

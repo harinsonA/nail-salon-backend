@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block view_title %}
+Equipo
+{% endblock %}
+
+{% block content %}
+<section class="d-flex flex-column gap-3">
+  {% if puede_crear %}
+  <div>
+    <a href="{% url 'equipo_crear' %}" class="btn btn-primary btn-sm">Agregar usuario</a>
+  </div>
+  {% endif %}
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for miembro, gestionable in miembros %}
+        <tr{% if not miembro.is_active %} class="text-body-secondary"{% endif %}>
+          <td>{{ miembro.get_full_name|default:"—" }}</td>
+          <td>{{ miembro.email|default:"—" }}</td>
+          <td>{{ miembro.perfil.get_rol_display }}</td>
+          <td>{% if miembro.is_active %}Activo{% else %}Desactivado{% endif %}</td>
+          <td class="text-end">
+            {% if gestionable %}
+            <div class="d-inline-flex gap-2">
+              <form method="post" action="{% url 'equipo_restablecer_clave' miembro.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary btn-sm"
+                  onclick="return confirm('Se generará una clave temporal nueva y la actual dejará de servir. ¿Continuar?')">
+                  Restablecer clave
+                </button>
+              </form>
+              <form method="post" action="{% url 'equipo_activar' miembro.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                  {% if miembro.is_active %}Desactivar{% else %}Reactivar{% endif %}
+                </button>
+              </form>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-body-secondary small m-0">
+    Los usuarios no se borran: se desactivan, para que el historial conserve quién hizo cada cambio.
+  </p>
+</section>
+{% endblock %}

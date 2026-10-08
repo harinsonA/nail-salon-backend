@@ -44,6 +44,10 @@ SOLO_ADMINISTRACION = {
     "dashboard_payment_methods_ajax",
     "dashboard_top_services_ajax",
     "dashboard_income_by_category_ajax",
+    "equipo",
+    "equipo_crear",
+    "equipo_activar",
+    "equipo_restablecer_clave",
 }
 
 PARA_TODO_EL_EQUIPO = {
@@ -88,3 +92,26 @@ def administra_el_negocio(usuario):
         return usuario.perfil.rol in ROLES_QUE_ADMINISTRAN
     except Perfil.DoesNotExist:
         return False
+
+
+ROLES_QUE_CREA = {
+    Perfil.Rol.PROPIETARIO: [Perfil.Rol.ENCARGADO, Perfil.Rol.COLABORADOR],
+    Perfil.Rol.ENCARGADO: [Perfil.Rol.COLABORADOR],
+}
+
+
+def rol_de(usuario):
+    try:
+        return usuario.perfil.rol
+    except Perfil.DoesNotExist:
+        return None
+
+
+def roles_que_puede_crear(usuario):
+    return ROLES_QUE_CREA.get(rol_de(usuario), [])
+
+
+def puede_gestionar(actor, objetivo):
+    if actor.pk == objetivo.pk or rol_de(objetivo) == Perfil.Rol.PROPIETARIO:
+        return False
+    return rol_de(objetivo) in roles_que_puede_crear(actor)

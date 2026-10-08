@@ -84,6 +84,13 @@
                   Perfil
                 </a>
               </li>
+              {% if administra_el_negocio %}
+              <li>
+                <a class="menu__dropdown-item dropdown-item" href="{% url 'equipo' %}">
+                  Equipo
+                </a>
+              </li>
+              {% endif %}
               <li>
                 <a class="menu__dropdown-item dropdown-item" href="{% url 'tasks' %}">
                   Procesos

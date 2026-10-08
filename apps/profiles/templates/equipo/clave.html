@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block view_title %}
+{{ titulo }}
+{% endblock %}
+
+{% block content %}
+<section class="col-12 col-md-8 col-lg-6 d-flex flex-column gap-3">
+  <p class="m-0">Entrégale estos datos a {{ miembro.get_full_name|default:miembro.email }}:</p>
+  <dl class="row m-0">
+    <dt class="col-4">Correo</dt>
+    <dd class="col-8">{{ miembro.email }}</dd>
+    <dt class="col-4">Clave temporal</dt>
+    <dd class="col-8"><code class="fs-5">{{ clave }}</code></dd>
+  </dl>
+  <div class="alert alert-warning m-0" role="alert">
+    Cópiala ahora: no se guarda en ninguna parte y no se vuelve a mostrar. Al entrar tendrá que cambiarla.
+  </div>
+  <div>
+    <a href="{% url 'equipo' %}" class="btn btn-primary btn-sm">Volver al equipo</a>
+  </div>
+</section>
+{% endblock %}
