@@ -44,9 +44,6 @@ SOLO_ADMINISTRACION = {
     "dashboard_payment_methods_ajax",
     "dashboard_top_services_ajax",
     "dashboard_income_by_category_ajax",
-    "client_export",
-    "client_import",
-    "client_example_export",
 }
 
 PARA_TODO_EL_EQUIPO = {
@@ -70,6 +67,9 @@ PARA_TODO_EL_EQUIPO = {
     "client_detail_modal",
     "client_whatsapp_modal",
     "client_delete_modal",
+    "client_export",
+    "client_import",
+    "client_example_export",
     "tasks",
     "task_list",
     "task_detail_modal",

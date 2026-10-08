@@ -14,13 +14,11 @@ Lista de clientes
       Cliente
       <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
     </a>
-    {% if administra_el_negocio %}
     <a href="{% url 'client_import' %}"
       class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
       Importar
       <img src="{% static 'images/common/upload.svg' %}" alt="" width="16" height="16">
     </a>
-    {% endif %}
   </section>
   <section class="row justify-content-center">
     <div class="col-3">
@@ -95,7 +93,7 @@ Lista de clientes
         { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
       ],
       extraConfig: {
-        {% if administra_el_negocio %}exportConfig: { url: '{{ url_client_export }}' },{% endif %}
+        exportConfig: { url: '{{ url_client_export }}' },
         ajax: {
           dataSrc: (json) => {
             $('#active_clients_id').text(json.active_clients_total);
