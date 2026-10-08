@@ -4,6 +4,7 @@ from django.core.management import call_command
 from django.db import connection
 from django_tenants.utils import schema_context, schema_exists
 
+from apps.common.historial import sin_autor_de_la_peticion
 from apps.profiles.models import Perfil
 from apps.settings.models import ConfiguracionNegocio
 from apps.tenancy.models import Negocio
@@ -18,7 +19,7 @@ def preparar_negocio(negocio_id, correo, hash_clave=None):
             call_command("migrate_schemas", schema_name=negocio.schema_name, interactive=False, verbosity=0)
         else:
             negocio.create_schema(check_if_exists=True, verbosity=0)
-        with schema_context(negocio.schema_name):
+        with schema_context(negocio.schema_name), sin_autor_de_la_peticion():
             crear_propietario(negocio, correo, hash_clave)
             ConfiguracionNegocio.objects.get_or_create(defaults={"nombre_visible": negocio.nombre})
     except Exception as exc:
@@ -50,5 +51,4 @@ def crear_propietario(negocio, correo, hash_clave):
     if not Perfil.objects.filter(rol=Perfil.Rol.PROPIETARIO).exclude(user=usuario).exists():
         perfil.rol = Perfil.Rol.PROPIETARIO
     perfil.debe_cambiar_clave = True
-    perfil._history_user = None
     perfil.save()
