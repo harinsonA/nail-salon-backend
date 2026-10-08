@@ -393,6 +393,12 @@ python manage.py migrar_esquemas
 
 # Borrar las sesiones vencidas de public y de cada negocio listo
 python manage.py limpiar_sesiones
+
+# Cambiar el estado de un negocio (moroso, pausado, cancelado, activo); el motivo queda en su historial
+python manage.py cambiar_estado_negocio mi-barberia moroso --motivo "dos meses sin pago"
+
+# Retomar un alta que quedó en «preparando» (se puede repetir)
+python manage.py reparar_negocio mi-barberia
 ```
 
 Los negocios se dan de alta desde el panel (`admin.localhost:8000/admin/` → Negocios → Agregar): el panel muestra una sola vez la clave temporal del propietario y el worker de Celery prepara el negocio en segundo plano. `DOMINIO_BASE` (por defecto `localhost`) define la dirección de cada negocio: `subdominio.DOMINIO_BASE`.
