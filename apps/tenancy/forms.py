@@ -89,3 +89,10 @@ class CambiarEstadoForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.negocio = negocio
         self.fields["estado"].choices = [(estado.value, estado.label) for estado in estados_posibles(negocio)]
+
+
+class RestablecerClavePropietarioForm(forms.Form):
+    identidad_confirmada = forms.BooleanField(
+        label="Confirmé la identidad del titular",
+        help_text="Por ejemplo, llamándolo a su teléfono registrado antes de entregarle la clave.",
+    )

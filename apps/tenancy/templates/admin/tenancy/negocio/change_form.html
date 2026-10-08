@@ -3,7 +3,12 @@
 
 {% block object-tools-items %}
   {% if original %}
-  <li><a href="{% url opts|admin_urlname:'estado' original.pk %}">Cambiar estado</a></li>
+    {% if original.estado == "preparando" %}
+    <li><a href="{% url opts|admin_urlname:'reparar' original.pk %}">Reparar alta</a></li>
+    {% else %}
+    <li><a href="{% url opts|admin_urlname:'clave_propietario' original.pk %}">Restablecer clave del propietario</a></li>
+    {% endif %}
+    <li><a href="{% url opts|admin_urlname:'estado' original.pk %}">Cambiar estado</a></li>
   {% endif %}
   {{ block.super }}
 {% endblock %}

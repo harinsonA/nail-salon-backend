@@ -50,4 +50,5 @@ def crear_propietario(negocio, correo, hash_clave):
     if not Perfil.objects.filter(rol=Perfil.Rol.PROPIETARIO).exclude(user=usuario).exists():
         perfil.rol = Perfil.Rol.PROPIETARIO
     perfil.debe_cambiar_clave = True
+    perfil._history_user = None
     perfil.save()
