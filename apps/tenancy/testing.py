@@ -8,7 +8,12 @@ from apps.tenancy.models import Dominio, Negocio, Persona
 def crear_negocio_de_prueba(esquema, dominio=None):
     connection.set_schema_to_public()
     titular = Persona.objects.create(nombres=f"Titular {esquema}")
-    negocio = Negocio.objects.create(schema_name=esquema, nombre=f"Negocio {esquema}", titular=titular)
+    negocio = Negocio.objects.create(
+        schema_name=esquema,
+        nombre=f"Negocio {esquema}",
+        titular=titular,
+        estado=Negocio.Estado.ACTIVO,
+    )
     negocio.create_schema(check_if_exists=True, verbosity=0)
     if dominio:
         Dominio.objects.create(domain=dominio, tenant=negocio, is_primary=True)
