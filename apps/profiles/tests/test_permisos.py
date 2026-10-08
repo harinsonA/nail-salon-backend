@@ -76,18 +76,20 @@ class PermisosPorRolTests(NegocioTestCase):
 
     def test_el_colaborador_trabaja_la_agenda_y_los_clientes(self):
         navegador = self.navegador_de(Perfil.Rol.COLABORADOR)
-        for nombre in ("calendar", "clients", "tasks"):
+        for nombre in ("calendar", "clients", "tasks", "client_import", "client_export", "client_example_export"):
             with self.subTest(ruta=nombre):
                 self.assertEqual(navegador.get(reverse(nombre)).status_code, 200)
 
     def test_el_menu_muestra_solo_lo_permitido(self):
         colaborador = self.navegador_de(Perfil.Rol.COLABORADOR).get(reverse("clients"))
         encargado = self.navegador_de(Perfil.Rol.ENCARGADO).get(reverse("clients"))
-        for ruta in ("dashboard", "services", "incomes", "client_import"):
+        for ruta in ("dashboard", "services", "incomes"):
             with self.subTest(ruta=ruta):
                 self.assertNotContains(colaborador, f'href="{reverse(ruta)}"')
                 self.assertContains(encargado, f'href="{reverse(ruta)}"')
-        self.assertNotContains(colaborador, reverse("client_export"))
+        for respuesta in (colaborador, encargado):
+            self.assertContains(respuesta, f'href="{reverse("client_import")}"')
+            self.assertContains(respuesta, reverse("client_export"))
 
     def test_dentro_de_un_negocio_nadie_es_superusuario(self):
         usuario = User.objects.create_superuser(username="jefe", email="jefe@correo.cl", password="x")
