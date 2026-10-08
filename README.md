@@ -387,12 +387,15 @@ python manage.py dbstatus
 # Crear migraciones y aplicarlas automáticamente
 python manage.py makemigrations_all
 
-# Aplicar migraciones en public y en el esquema de cada negocio
-python manage.py migrate_schemas
+# Aplicar migraciones en public y en cada negocio listo. Omite los que siguen
+# preparándose, para que un alta a medias no bloquee el arranque
+python manage.py migrar_esquemas
 
-# Borrar las sesiones vencidas de todos los negocios
-python manage.py all_tenants_command clearsessions
+# Borrar las sesiones vencidas de public y de cada negocio listo
+python manage.py limpiar_sesiones
 ```
+
+Los negocios se dan de alta desde el panel (`admin.localhost:8000/admin/` → Negocios → Agregar): el panel muestra una sola vez la clave temporal del propietario y el worker de Celery prepara el negocio en segundo plano. `DOMINIO_BASE` (por defecto `localhost`) define la dirección de cada negocio: `subdominio.DOMINIO_BASE`.
 
 Solo en desarrollo (exigen `DEBUG=True`):
 
@@ -433,7 +436,7 @@ docker compose exec web python manage.py createsuperuser
 docker compose exec web python manage.py tenant_command createsuperuser --schema=demo
 ```
 
-Cada negocio tiene su subdominio y su esquema en PostgreSQL. La agenda queda en `http://demo.localhost:8000/` y el admin de la plataforma en `http://admin.localhost:8000/admin/`; los subdominios de `localhost` llegan solos a tu máquina, sin tocar el archivo hosts. Las migraciones se aplican automáticamente al arrancar. La configuración vive en `.env.docker` (solo valores de desarrollo).
+Cada negocio tiene su subdominio y su esquema en PostgreSQL. La agenda queda en `http://demo.localhost:8000/` y el panel de la plataforma solo en `http://admin.localhost:8000/admin/` (en `localhost` responde 404); los subdominios de `localhost` llegan solos a tu máquina, sin tocar el archivo hosts. Las migraciones se aplican automáticamente al arrancar. La configuración vive en `.env.docker` (solo valores de desarrollo).
 
 Servicios que levanta `docker compose`:
 

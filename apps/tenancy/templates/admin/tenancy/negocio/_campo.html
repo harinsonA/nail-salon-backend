@@ -1,0 +1,8 @@
+<div class="form-row{% if campo.errors %} errors{% endif %}">
+  {{ campo.errors }}
+  <div class="flex-container">
+    {{ campo.label_tag }}
+    {{ campo }}
+  </div>
+  {% if campo.help_text %}<div class="help">{{ campo.help_text }}</div>{% endif %}
+</div>

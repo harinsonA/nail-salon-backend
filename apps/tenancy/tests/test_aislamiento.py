@@ -18,6 +18,7 @@ class AislamientoDeEsquemasTests(NegocioTestCase):
         connection.set_schema_to_public()
         publico = Negocio.objects.create(schema_name=get_public_schema_name(), nombre="Hi Agenda")
         Dominio.objects.create(domain="localhost", tenant=publico, is_primary=True)
+        Dominio.objects.create(domain="admin.localhost", tenant=publico, is_primary=False)
 
     def esquemas_por_tabla(self):
         with connection.cursor() as cursor:
@@ -48,12 +49,18 @@ class AislamientoDeEsquemasTests(NegocioTestCase):
         with self.assertRaises(ProgrammingError), transaction.atomic():
             Cliente.objects.count()
 
-    def test_la_raiz_publica_no_expone_la_agenda(self):
-        cliente = Client(HTTP_HOST="localhost")
-        self.assertEqual(cliente.get("/admin/login/").status_code, 200)
-        for ruta in ("/inicio_sesion/", "/calendario/", "/clientes/"):
+    def test_la_raiz_publica_no_expone_la_agenda_ni_el_panel(self):
+        raiz = Client(HTTP_HOST="localhost")
+        for ruta in ("/admin/login/", "/inicio_sesion/", "/calendario/", "/clientes/"):
             with self.subTest(ruta=ruta):
-                self.assertEqual(cliente.get(ruta).status_code, 404)
+                self.assertEqual(raiz.get(ruta).status_code, 404)
+
+    def test_el_panel_responde_solo_en_su_subdominio(self):
+        panel = Client(HTTP_HOST="admin.localhost")
+        self.assertEqual(panel.get("/admin/login/").status_code, 200)
+        for ruta in ("/inicio_sesion/", "/calendario/"):
+            with self.subTest(ruta=ruta):
+                self.assertEqual(panel.get(ruta).status_code, 404)
 
 
 class OrdenDelMiddlewareTests(SimpleTestCase):
