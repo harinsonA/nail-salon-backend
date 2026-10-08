@@ -1,0 +1,29 @@
+{% extends "login/base_acceso.html" %}
+
+{% block encabezado %}
+				<h1 class="comfort-title">Hi Agenda</h1>
+				<p class="gentle-subtitle">Citas, clientes y cobros de tu negocio, en un solo lugar</p>
+{% endblock %}
+
+{% block contenido %}
+			{% if error %}
+			<div class="gentle-alert" role="alert">{{ error }}</div>
+			{% endif %}
+
+			<form method="get">
+				<div class="soft-field">
+					<div class="field-container">
+						<input type="text" name="negocio" id="id_negocio" placeholder=" " required autofocus
+							autocapitalize="none" autocomplete="off" spellcheck="false" value="{{ negocio }}">
+						<label for="id_negocio">Tu negocio (lo que va antes de .{{ dominio_base }})</label>
+						<div class="field-accent"></div>
+					</div>
+				</div>
+
+				<button type="submit" class="comfort-button">
+					<div class="button-background"></div>
+					<span class="button-text">Entrar a mi negocio</span>
+					<div class="button-glow"></div>
+				</button>
+			</form>
+{% endblock %}
