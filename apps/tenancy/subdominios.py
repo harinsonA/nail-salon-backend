@@ -2,6 +2,7 @@ import re
 
 from django.core.exceptions import ValidationError
 
+SUBDOMINIO_PANEL = "admin"
 LARGO_MINIMO = 3
 LARGO_MAXIMO = 40
 PATRON = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")

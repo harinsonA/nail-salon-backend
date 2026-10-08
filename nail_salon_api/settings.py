@@ -98,9 +98,12 @@ INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_
 TENANT_MODEL = "tenancy.Negocio"
 TENANT_DOMAIN_MODEL = "tenancy.Dominio"
 PUBLIC_SCHEMA_URLCONF = "nail_salon_api.urls_public"
+RAIZ_URLCONF = "nail_salon_api.urls_raiz"
+DOMINIO_BASE = config("DOMINIO_BASE", default="localhost")
 
 MIDDLEWARE = [
     "django_tenants.middleware.main.TenantMainMiddleware",
+    "apps.tenancy.middleware.PanelSoloEnSubdominioMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",

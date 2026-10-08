@@ -103,13 +103,13 @@ class PanelDeLaPlataformaTests(TestCase):
     def setUpTestData(cls):
         connection.set_schema_to_public()
         publico = Negocio.objects.create(schema_name=get_public_schema_name(), nombre="Hi Agenda")
-        Dominio.objects.create(domain="localhost", tenant=publico, is_primary=True)
+        Dominio.objects.create(domain="admin.localhost", tenant=publico, is_primary=True)
 
     def test_tu_panel_sigue_con_superusuario_y_sin_perfiles(self):
         connection.set_schema_to_public()
         admin = User.objects.create_superuser(username="admin", email="admin@correo.cl", password="x")
         admin.refresh_from_db()
         self.assertTrue(admin.is_superuser)
-        navegador = Client(HTTP_HOST="localhost")
+        navegador = Client(HTTP_HOST="admin.localhost")
         navegador.force_login(admin)
         self.assertEqual(navegador.get("/admin/").status_code, 200)

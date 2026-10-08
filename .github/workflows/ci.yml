@@ -60,20 +60,22 @@ jobs:
           from apps.tenancy.models import Dominio, Negocio, Persona
           publico = Negocio.objects.create(schema_name="public", nombre="Hi Agenda")
           Dominio.objects.create(domain="localhost", tenant=publico, is_primary=True)
+          Dominio.objects.create(domain="admin.localhost", tenant=publico, is_primary=False)
           titular = Persona.objects.create(nombres="Titular de prueba")
-          prueba = Negocio.objects.create(schema_name="prueba", nombre="Negocio de prueba", titular=titular)
+          prueba = Negocio.objects.create(schema_name="prueba", nombre="Negocio de prueba", titular=titular, estado="activo")
           prueba.create_schema(check_if_exists=True, verbosity=0)
           Dominio.objects.create(domain="prueba.localhost", tenant=prueba, is_primary=True)
           PY
 
-      - name: Smoke test HTTP (sección base, agenda oculta en la raíz, negocio y subdominio inexistente)
+      - name: Smoke test HTTP (panel solo en admin., raíz sin panel ni agenda, negocio y subdominio inexistente)
         run: |
           check() {
             code=$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $1" "http://localhost:8000$2")
             echo "$1$2 -> $code (esperado $3)"
             [ "$code" = "$3" ]
           }
-          check localhost /admin/login/ 200
+          check admin.localhost /admin/login/ 200
+          check localhost /admin/login/ 404
           check localhost /clientes/ 404
           check prueba.localhost /inicio_sesion/ 200
           check nadie.localhost /inicio_sesion/ 404
