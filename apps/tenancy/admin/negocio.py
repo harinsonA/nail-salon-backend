@@ -1,13 +1,14 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path
 from django_tenants.utils import get_public_schema_name
 from simple_history.admin import SimpleHistoryAdmin
 
 from apps.tenancy.alta import dar_de_alta
-from apps.tenancy.forms import AltaNegocioForm
+from apps.tenancy.estados import cambiar_estado
+from apps.tenancy.forms import AltaNegocioForm, CambiarEstadoForm
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion
 
 
@@ -75,8 +76,32 @@ class NegocioAdmin(SimpleHistoryAdmin):
         return False
 
     def get_urls(self):
-        alta = path("alta/", self.admin_site.admin_view(self.alta_view), name="tenancy_negocio_alta")
-        return [alta, *super().get_urls()]
+        propias = [
+            path("alta/", self.admin_site.admin_view(self.alta_view), name="tenancy_negocio_alta"),
+            path("<int:pk>/estado/", self.admin_site.admin_view(self.estado_view), name="tenancy_negocio_estado"),
+        ]
+        return [*propias, *super().get_urls()]
+
+    def estado_view(self, request, pk):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        negocio = get_object_or_404(self.get_queryset(request), pk=pk)
+        form = CambiarEstadoForm(negocio, request.POST or None)
+        if request.method == "POST" and form.is_valid():
+            cambiar_estado(negocio, form.cleaned_data["estado"], form.cleaned_data["motivo"], request.user)
+            messages.success(request, f"«{negocio.nombre}» quedó {negocio.get_estado_display().lower()}.")
+            return redirect("admin:tenancy_negocio_change", negocio.pk)
+        return TemplateResponse(
+            request,
+            "admin/tenancy/negocio/estado.html",
+            {
+                **self.admin_site.each_context(request),
+                "opts": self.model._meta,
+                "title": f"Cambiar el estado de «{negocio.nombre}»",
+                "negocio": negocio,
+                "form": form,
+            },
+        )
 
     def add_view(self, request, form_url="", extra_context=None):
         return redirect("admin:tenancy_negocio_alta")

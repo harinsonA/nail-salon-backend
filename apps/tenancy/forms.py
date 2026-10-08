@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 
 from apps.common.utils.phones import CountryPhonePrefix
 from apps.tenancy.alta import dominio_de
+from apps.tenancy.estados import estados_posibles
 from apps.tenancy.models import Dominio, Negocio, Persona, PersonaTelefono, Rubro
 from apps.tenancy.models.negocio import validar_zona_horaria
 from apps.tenancy.subdominios import LARGO_MAXIMO, esquema_desde_subdominio
@@ -74,3 +75,17 @@ class AltaNegocioForm(forms.Form):
                 for mensaje in error.message_dict.get("numero", []) + error.message_dict.get("codigo_pais", []):
                     self.add_error("telefono", mensaje)
         return datos
+
+
+class CambiarEstadoForm(forms.Form):
+    estado = forms.ChoiceField(label="Nuevo estado")
+    motivo = forms.CharField(
+        label="Motivo",
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text="Queda en el historial del negocio: por ejemplo, «dos meses sin pago».",
+    )
+
+    def __init__(self, negocio, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.negocio = negocio
+        self.fields["estado"].choices = [(estado.value, estado.label) for estado in estados_posibles(negocio)]
