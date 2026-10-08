@@ -1,9 +1,10 @@
 from django.core.management.base import BaseCommand
 from django.db import connection
-from django_tenants.utils import get_public_schema_name
+from django_tenants.utils import schema_exists
 
 from apps.tenancy.entorno_local import ESQUEMA_DEMO, exigir_debug
-from apps.tenancy.models import Dominio, Negocio, Persona, Rubro
+from apps.tenancy.models import Negocio, Persona, Rubro
+from apps.tenancy.plataforma import asegurar_dominio, asegurar_negocio_publico
 
 DOMINIOS_PUBLICOS = ("localhost", "admin.localhost")
 DOMINIO_DEMO = "demo.localhost"
@@ -19,13 +20,10 @@ class Command(BaseCommand):
         exigir_debug()
         connection.set_schema_to_public()
 
-        publico, creado = Negocio.objects.get_or_create(
-            schema_name=get_public_schema_name(),
-            defaults={"nombre": "Hi Agenda", "estado": Negocio.Estado.ACTIVO},
-        )
+        publico, creado = asegurar_negocio_publico()
         self.informar(publico, creado)
         for dominio in DOMINIOS_PUBLICOS:
-            self.asegurar_dominio(dominio, publico, es_principal=dominio == DOMINIOS_PUBLICOS[0])
+            self.informar_dominio(dominio, asegurar_dominio(dominio, publico, es_principal=dominio == DOMINIOS_PUBLICOS[0]))
 
         demo = Negocio.objects.filter(schema_name=ESQUEMA_DEMO).first()
         creado = demo is None
@@ -38,20 +36,14 @@ class Command(BaseCommand):
                 estado=Negocio.Estado.ACTIVO,
             )
         self.informar(demo, creado)
-        if demo.create_schema(check_if_exists=True, verbosity=options["verbosity"]):
+        if not schema_exists(ESQUEMA_DEMO):
+            demo.create_schema(check_if_exists=True, verbosity=options["verbosity"])
             self.stdout.write(f"  esquema «{ESQUEMA_DEMO}» creado y migrado")
-        self.asegurar_dominio(DOMINIO_DEMO, demo, es_principal=True)
+        self.informar_dominio(DOMINIO_DEMO, asegurar_dominio(DOMINIO_DEMO, demo, es_principal=True))
 
     def informar(self, negocio, creado):
         estado = "creado" if creado else "ya existía"
         self.stdout.write(f"Negocio «{negocio.nombre}» ({negocio.schema_name}): {estado}")
 
-    def asegurar_dominio(self, dominio, negocio, es_principal):
-        existente = Dominio.objects.filter(domain=dominio).first()
-        if existente is None:
-            Dominio.objects.create(domain=dominio, tenant=negocio, is_primary=es_principal)
-            self.stdout.write(f"  dominio {dominio}: creado")
-        elif existente.tenant_id != negocio.pk:
-            self.stdout.write(self.style.WARNING(f"  dominio {dominio}: ya apunta a otro negocio, no se cambió"))
-        else:
-            self.stdout.write(f"  dominio {dominio}: ya existía")
+    def informar_dominio(self, dominio, resultado):
+        self.stdout.write(f"  dominio {dominio}: {resultado}")
