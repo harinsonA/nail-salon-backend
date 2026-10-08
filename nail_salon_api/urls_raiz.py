@@ -1,7 +1,7 @@
 from django.urls import path
 
-from apps.tenancy.views import pagina_publica_pendiente
+from apps.tenancy.views import pagina_publica
 
 urlpatterns = [
-    path("", pagina_publica_pendiente),
+    path("", pagina_publica, name="pagina_publica"),
 ]

@@ -75,6 +75,7 @@ jobs:
             [ "$code" = "$3" ]
           }
           check admin.localhost /admin/login/ 200
+          check localhost / 200
           check localhost /admin/login/ 404
           check localhost /clientes/ 404
           check prueba.localhost /inicio_sesion/ 200

@@ -6,7 +6,7 @@ from django.urls import path
 from django_tenants.utils import get_public_schema_name, schema_exists
 from simple_history.admin import SimpleHistoryAdmin
 
-from apps.tenancy.alta import correo_de_acceso, dar_de_alta
+from apps.tenancy.alta import correo_de_acceso, dar_de_alta, url_en_dominio
 from apps.tenancy.estados import cambiar_estado
 from apps.tenancy.forms import AltaNegocioForm, CambiarEstadoForm, RestablecerClavePropietarioForm
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion
@@ -202,7 +202,4 @@ class NegocioAdmin(SimpleHistoryAdmin):
 
     @staticmethod
     def url_del_negocio(request, negocio):
-        dominio = negocio.domains.get(is_primary=True).domain
-        puerto = request.get_port()
-        sufijo = "" if puerto in ("80", "443") else f":{puerto}"
-        return f"{request.scheme}://{dominio}{sufijo}/"
+        return url_en_dominio(request, negocio.domains.get(is_primary=True).domain)
