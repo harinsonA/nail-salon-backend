@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'change' negocio.pk %}">{{ negocio.nombre }}</a>
+  &rsaquo; Reparar alta
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <p>El alta de «{{ negocio.nombre }}» quedó en «preparando».</p>
+  {% if negocio.error_preparacion %}
+  <p>Último error: <code>{{ negocio.error_preparacion }}</code></p>
+  {% endif %}
+  <p>Reparar vuelve a encolar la preparación: crea o completa el esquema, el propietario
+    {% if correo %}con el correo <strong>{{ correo }}</strong>{% endif %} y la configuración. Se puede repetir sin duplicar nada.</p>
+  <p>Si el propietario se crea en esta reparación, queda sin clave: después usa «Restablecer clave del propietario».</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="submit-row">
+      <input type="submit" class="default" value="Reparar alta">
+    </div>
+  </form>
+</div>
+{% endblock %}

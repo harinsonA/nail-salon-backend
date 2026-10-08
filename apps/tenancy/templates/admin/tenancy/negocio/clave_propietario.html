@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'change' negocio.pk %}">{{ negocio.nombre }}</a>
+  &rsaquo; Restablecer clave del propietario
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if clave %}
+  <fieldset class="module aligned">
+    <h2>Nueva clave temporal</h2>
+    <div class="form-row">
+      <div class="flex-container"><label>Correo:</label><span>{{ correo }}</span></div>
+    </div>
+    <div class="form-row">
+      <div class="flex-container"><label>Clave temporal:</label><code style="font-size: 1.3em;">{{ clave }}</code></div>
+      <div class="help">Cópiala ahora: no se guarda en ninguna parte y no se vuelve a mostrar. La clave anterior ya no sirve, y al entrar tendrá que cambiarla.</div>
+    </div>
+  </fieldset>
+  <div class="submit-row">
+    <a href="{% url opts|admin_urlname:'change' negocio.pk %}" class="button">Volver al negocio</a>
+  </div>
+  {% else %}
+  <p>Se genera una clave temporal nueva para el propietario de «{{ negocio.nombre }}». Su clave actual deja de servir.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      {% include "admin/tenancy/negocio/_campo.html" with campo=form.identidad_confirmada %}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" class="default" value="Generar clave temporal">
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

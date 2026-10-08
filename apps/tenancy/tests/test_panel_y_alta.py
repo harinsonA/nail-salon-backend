@@ -11,7 +11,7 @@ from django_tenants.utils import get_public_schema_name, schema_context
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
 from apps.settings.models import ConfiguracionNegocio
-from apps.tenancy.alta import generar_clave_temporal
+from apps.common.claves import generar_clave_temporal
 from apps.tenancy.models import Dominio, Negocio, Persona, PersonaCorreo, Rubro
 from apps.tenancy.tasks import preparar_negocio
 from nail_salon_api.celery import app

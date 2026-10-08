@@ -1,18 +1,10 @@
-import secrets
-
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 
+from apps.common.claves import generar_clave_temporal
 from apps.tenancy.models import Dominio, Negocio, Persona, PersonaCorreo, PersonaTelefono
 from apps.tenancy.subdominios import esquema_desde_subdominio
-
-ALFABETO_CLAVE = "abcdefghjkmnpqrstuvwxyz23456789"
-
-
-def generar_clave_temporal():
-    grupos = ("".join(secrets.choice(ALFABETO_CLAVE) for _ in range(4)) for _ in range(3))
-    return "-".join(grupos)
 
 
 def dominio_de(subdominio):
@@ -64,3 +56,13 @@ def registrar_correo(persona, correo):
         etiqueta="acceso",
         es_principal=not persona.correos.exists(),
     )
+
+
+def correo_de_acceso(persona):
+    correos = persona.correos.all()
+    elegido = (
+        correos.filter(etiqueta="acceso").order_by("-created").first()
+        or correos.filter(es_principal=True).first()
+        or correos.order_by("created").first()
+    )
+    return elegido.correo if elegido else None
