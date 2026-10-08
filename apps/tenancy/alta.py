@@ -66,3 +66,9 @@ def correo_de_acceso(persona):
         or correos.order_by("created").first()
     )
     return elegido.correo if elegido else None
+
+
+def url_en_dominio(request, dominio, ruta="/"):
+    _, separador, puerto = request.get_host().rpartition(":")
+    sufijo = f":{puerto}" if separador and puerto.isdigit() else ""
+    return f"{request.scheme}://{dominio}{sufijo}{ruta}"
