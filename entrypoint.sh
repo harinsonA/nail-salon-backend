@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-python manage.py migrate --no-input
+python manage.py migrar_esquemas
 
-python manage.py clearsessions
+python manage.py limpiar_sesiones
 
 exec "$@"

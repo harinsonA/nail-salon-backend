@@ -11,7 +11,7 @@ def import_clients(tarea, user):
 
     Args:
         tarea (TareaEnProceso): Fila de seguimiento, la inyecta el decorador
-            a partir del id que viaja por Redis.
+            a partir del esquema y el id que viajan por Redis.
         user: Usuario que disparó la importación, lo inyecta el decorador.
     """
     ClientAsyncImporter(user=user, task=tarea).run()

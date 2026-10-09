@@ -19,6 +19,7 @@
             Ir a Clientes
           </b>
         </a>
+        {% if administra_el_negocio %}
         <a href="{% url 'services' %}" class="btn btn-primary">
           <b>
             <span class="material-symbols-outlined">
@@ -27,6 +28,7 @@
             Ir a Servicios
           </b>
         </a>
+        {% endif %}
       </div>
     </div>
   </div>

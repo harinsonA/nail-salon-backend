@@ -32,13 +32,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-SECRET_KEY = config(
-    "SECRET_KEY", default="django-insecure-dev-key-change-in-production"
-)
+SECRET_KEY = config("SECRET_KEY")
 
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1,.localhost", cast=Csv())
 
 RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="")
 if RENDER_EXTERNAL_HOSTNAME:
@@ -61,7 +59,9 @@ if not DEBUG:
 
 # Application definition
 
-INSTALLED_APPS = [
+SHARED_APPS = [
+    "django_tenants",
+    "apps.tenancy",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -69,14 +69,20 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
-    # Third party apps
     "rest_framework",
-    "rest_framework.authtoken",
     "corsheaders",
     "django_filters",
     "bootstrap_modal_forms",
     "simple_history",
-    # Local apps
+]
+
+TENANT_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "rest_framework.authtoken",
+    "simple_history",
     "dashboard",
     "apps.clients",
     "apps.services",
@@ -87,7 +93,17 @@ INSTALLED_APPS = [
     "apps.tareas",
 ]
 
+INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+TENANT_MODEL = "tenancy.Negocio"
+TENANT_DOMAIN_MODEL = "tenancy.Dominio"
+PUBLIC_SCHEMA_URLCONF = "nail_salon_api.urls_public"
+RAIZ_URLCONF = "nail_salon_api.urls_raiz"
+DOMINIO_BASE = config("DOMINIO_BASE", default="localhost")
+
 MIDDLEWARE = [
+    "django_tenants.middleware.main.TenantMainMiddleware",
+    "apps.tenancy.middleware.PanelSoloEnSubdominioMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -96,6 +112,9 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.common.middleware.SessionExpiryMiddleware",
+    "apps.profiles.middleware.CambioDeClaveObligatorioMiddleware",
+    "apps.tenancy.middleware.EstadoDelNegocioMiddleware",
+    "apps.profiles.middleware.PermisosPorRolMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -118,6 +137,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.static",
                 "apps.common.context_processors.session_expiry",
+                "apps.profiles.context_processors.permisos",
+                "apps.tenancy.context_processors.estado_del_negocio",
             ],
         },
     },
@@ -133,12 +154,14 @@ DATABASE_URL = config("DATABASE_URL", default="")
 
 if DATABASE_URL:
     DATABASES = {
-        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600),
+        "default": dj_database_url.parse(
+            DATABASE_URL, engine="django_tenants.postgresql_backend", conn_max_age=600
+        ),
     }
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "django_tenants.postgresql_backend",
             "NAME": config("DATABASE_NAME", default="manicuredb"),
             "USER": config("DATABASE_USER", default="postgres"),
             "PASSWORD": config("DATABASE_PASSWORD", default=""),
@@ -147,9 +170,13 @@ else:
         },
     }
 
+DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+
+AUTHENTICATION_BACKENDS = ["apps.profiles.backends.CorreoBackend"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {

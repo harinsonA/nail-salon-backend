@@ -1,0 +1,35 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; {{ negocio.nombre }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <p>«{{ negocio.nombre }}» quedó registrado y se está preparando en segundo plano. Revisa su estado en la lista de negocios.</p>
+
+  <fieldset class="module aligned">
+    <h2>Acceso del propietario</h2>
+    <div class="form-row">
+      <div class="flex-container"><label>Dirección:</label><a href="{{ url_negocio }}">{{ url_negocio }}</a></div>
+    </div>
+    <div class="form-row">
+      <div class="flex-container"><label>Correo:</label><span>{{ correo }}</span></div>
+    </div>
+    <div class="form-row">
+      <div class="flex-container"><label>Clave temporal:</label><code style="font-size: 1.3em;">{{ clave }}</code></div>
+      <div class="help">Cópiala ahora: no se guarda en ninguna parte y no se vuelve a mostrar. Al entrar, el propietario tendrá que cambiarla.</div>
+    </div>
+  </fieldset>
+
+  <div class="submit-row">
+    <a href="{% url opts|admin_urlname:'change' negocio.pk %}" class="button">Ver el negocio</a>
+    <a href="{% url opts|admin_urlname:'changelist' %}" class="button">Volver a la lista</a>
+  </div>
+</div>
+{% endblock %}

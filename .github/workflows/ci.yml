@@ -35,7 +35,7 @@ jobs:
           docker run -d --name web --network ci -p 8000:8000 \
             -e SECRET_KEY=clave-solo-para-ci \
             -e DEBUG=False \
-            -e ALLOWED_HOSTS=localhost,127.0.0.1 \
+            -e ALLOWED_HOSTS=localhost,127.0.0.1,.localhost \
             -e DATABASE_NAME=manicuredb \
             -e DATABASE_USER=postgres \
             -e DATABASE_PASSWORD=postgres \
@@ -43,16 +43,49 @@ jobs:
             -e DATABASE_PORT=5432 \
             nail-salon-backend:ci
 
-      - name: Smoke test HTTP (página de login)
+      - name: Esperar a que gunicorn responda
         run: |
           code=000
-          for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/inicio_sesion/ || true)
-            [ "$code" = "200" ] && break
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/ || true)
+            [ "$code" != "000" ] && break
             sleep 1
           done
-          echo "Respuesta HTTP: $code"
-          [ "$code" = "200" ]
+          echo "Primera respuesta HTTP: $code"
+          [ "$code" != "000" ]
+
+      - name: Crear el negocio public y un negocio de prueba
+        run: |
+          docker exec -i web python manage.py shell <<'PY'
+          from apps.tenancy.models import Dominio, Negocio, Persona
+          publico = Negocio.objects.create(schema_name="public", nombre="Hi Agenda")
+          Dominio.objects.create(domain="localhost", tenant=publico, is_primary=True)
+          Dominio.objects.create(domain="admin.localhost", tenant=publico, is_primary=False)
+          titular = Persona.objects.create(nombres="Titular de prueba")
+          prueba = Negocio.objects.create(schema_name="prueba", nombre="Negocio de prueba", titular=titular, estado="activo")
+          prueba.create_schema(check_if_exists=True, verbosity=0)
+          Dominio.objects.create(domain="prueba.localhost", tenant=prueba, is_primary=True)
+          PY
+
+      - name: Smoke test HTTP (panel solo en admin., raíz sin panel ni agenda, negocio y subdominio inexistente)
+        run: |
+          check() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $1" "http://localhost:8000$2")
+            echo "$1$2 -> $code (esperado $3)"
+            [ "$code" = "$3" ]
+          }
+          check admin.localhost /admin/login/ 200
+          check localhost / 200
+          check localhost /admin/login/ 404
+          check localhost /clientes/ 404
+          check prueba.localhost /inicio_sesion/ 200
+          check nadie.localhost /inicio_sesion/ 404
+
+      - name: Migraciones al día con los modelos
+        run: docker exec web python manage.py makemigrations --check --dry-run
+
+      - name: Pruebas automáticas
+        run: docker exec web python manage.py test --noinput
 
       - name: Logs del contenedor (migraciones + gunicorn)
         if: always()

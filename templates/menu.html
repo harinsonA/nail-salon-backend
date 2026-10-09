@@ -18,15 +18,18 @@
       </div>
       <div class="offcanvas-body">
         <ul class="menu__nav navbar-nav justify-content-lg-end flex-grow-1">
+          {% if administra_el_negocio %}
           <li class="nav-item">
             <a class="menu__link nav-link" href="{% url 'dashboard' %}">Dashboard</a>
           </li>
+          {% endif %}
           <li class="nav-item">
             <a class="menu__link nav-link" aria-current="page" href="{% url 'calendar' %}">Calendario</a>
           </li>
           <li class="nav-item">
             <a class="menu__link nav-link" href="{% url 'clients' %}">Clientes</a>
           </li>
+          {% if administra_el_negocio %}
           <li class="nav-item dropdown">
             <a class="menu__link nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
               aria-expanded="false">
@@ -68,6 +71,7 @@
               </li>
             </ul>
           </li>
+          {% endif %}
           <li class="nav-item dropdown">
             <a class="menu__link nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
               aria-expanded="false">
@@ -80,6 +84,13 @@
                   Perfil
                 </a>
               </li>
+              {% if administra_el_negocio %}
+              <li>
+                <a class="menu__dropdown-item dropdown-item" href="{% url 'equipo' %}">
+                  Equipo
+                </a>
+              </li>
+              {% endif %}
               <li>
                 <a class="menu__dropdown-item dropdown-item" href="{% url 'tasks' %}">
                   Procesos

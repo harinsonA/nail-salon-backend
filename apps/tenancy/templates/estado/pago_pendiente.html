@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block view_title %}
+Pago pendiente
+{% endblock %}
+
+{% block content %}
+<section class="d-flex flex-column align-items-start gap-3">
+  <p class="m-0">{{ mensaje }}</p>
+  <a href="{% url 'calendar' %}" class="btn btn-primary btn-sm">Ir al calendario</a>
+</section>
+{% endblock %}

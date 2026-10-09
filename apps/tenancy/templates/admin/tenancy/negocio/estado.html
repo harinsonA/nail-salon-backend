@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'change' negocio.pk %}">{{ negocio.nombre }}</a>
+  &rsaquo; Cambiar estado
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <p>Estado actual: <strong>{{ negocio.get_estado_display }}</strong>, desde el {{ negocio.estado_desde|date:"j \d\e F \d\e Y" }}.</p>
+  <ul>
+    <li><strong>Moroso:</strong> el equipo sigue trabajando; propietario y encargado ven el aviso de pago y no entran a la administración.</li>
+    <li><strong>Pausado:</strong> nadie entra; ven «Servicio suspendido».</li>
+    <li><strong>Cancelado:</strong> nadie entra; los datos se conservan y se puede reactivar.</li>
+  </ul>
+  {% if form.fields.estado.choices %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      {% include "admin/tenancy/negocio/_campo.html" with campo=form.estado %}
+      {% include "admin/tenancy/negocio/_campo.html" with campo=form.motivo %}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" class="default" value="Cambiar estado">
+    </div>
+  </form>
+  {% else %}
+  <p>Un negocio en «{{ negocio.get_estado_display }}» no cambia de estado desde aquí.</p>
+  {% endif %}
+</div>
+{% endblock %}

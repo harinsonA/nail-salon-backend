@@ -80,6 +80,14 @@ class ProfileForm(PreferenceFieldsMixin, BSModalModelForm):
             ),
         }
 
+    def clean_email(self):
+        correo = (self.cleaned_data.get("email") or "").strip().lower()
+        if not correo:
+            raise forms.ValidationError("El correo es obligatorio: es con lo que inicias sesión.")
+        if User.objects.filter(email__iexact=correo).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("Ese correo ya lo usa otra persona de este negocio.")
+        return correo
+
     def clean(self):
         cleaned_data = super().clean()
         current_pw = cleaned_data.get("current_password")

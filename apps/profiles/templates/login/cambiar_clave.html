@@ -1,0 +1,48 @@
+{% extends "login/base_acceso.html" %}
+
+{% block titulo %}Cambiar clave · Hi Agenda{% endblock %}
+
+{% block encabezado %}
+				<h1 class="comfort-title">Crea tu clave</h1>
+				<p class="gentle-subtitle">Entraste con una clave temporal. Elige una nueva para seguir.</p>
+{% endblock %}
+
+{% block contenido %}
+			{% if form.errors %}
+			<div class="gentle-alert" role="alert">
+				{% for errores in form.errors.values %}{% for error in errores %}{{ error }}<br>{% endfor %}{% endfor %}
+			</div>
+			{% endif %}
+
+			<form method="post">
+				{% csrf_token %}
+				<div class="soft-field">
+					<div class="field-container">
+						<input type="password" name="new_password1" id="id_new_password1" placeholder=" " required autofocus
+							autocomplete="new-password">
+						<label for="id_new_password1">Nueva clave</label>
+						<div class="field-accent"></div>
+					</div>
+				</div>
+
+				<div class="soft-field">
+					<div class="field-container">
+						<input type="password" name="new_password2" id="id_new_password2" placeholder=" " required
+							autocomplete="new-password">
+						<label for="id_new_password2">Repite la nueva clave</label>
+						<div class="field-accent"></div>
+					</div>
+				</div>
+
+				<button type="submit" class="comfort-button">
+					<div class="button-background"></div>
+					<span class="button-text">Guardar y entrar</span>
+					<div class="button-glow"></div>
+				</button>
+			</form>
+
+			<form method="post" action="{% url 'logout' %}" class="comfort-footer">
+				{% csrf_token %}
+				<button type="submit" class="gentle-link">Cerrar sesión</button>
+			</form>
+{% endblock %}

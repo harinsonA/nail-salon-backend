@@ -19,7 +19,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-RUN python manage.py collectstatic --no-input \
+RUN SECRET_KEY=solo-para-collectstatic python manage.py collectstatic --no-input \
     && chmod +x entrypoint.sh
 
 EXPOSE 8000
