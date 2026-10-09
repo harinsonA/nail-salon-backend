@@ -394,6 +394,10 @@ python manage.py migrar_esquemas
 # Borrar las sesiones vencidas de public y de cada negocio listo
 python manage.py limpiar_sesiones
 
+# Pre-Deploy de Render: migrar_esquemas + configurar_plataforma en un solo comando
+# (Render no pasa el Pre-Deploy de servicios Docker por una shell: no se puede encadenar con &&)
+python manage.py preparar_despliegue
+
 # Cambiar el estado de un negocio (moroso, pausado, cancelado, activo); el motivo queda en su historial
 python manage.py cambiar_estado_negocio mi-barberia moroso --motivo "dos meses sin pago"
 
