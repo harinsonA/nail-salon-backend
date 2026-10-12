@@ -1,219 +1,219 @@
 <form id="profile-form-modal" action="{% url 'profile_modal' %}" method="post">
-	{% csrf_token %}
-	<div class="modal-header bg-primary bg-gradient">
-		<h5 class="modal-title d-inline-flex align-items-center">
-			<span class="material-symbols-outlined me-2">
-				manage_accounts
-			</span>
-			<span class="pb-1">
-				Mi perfil
-			</span>
-		</h5>
-		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-	</div>
-	<div class="modal-body">
-		<!-- Identidad -->
-		<div class="profile-identity">
-			<div class="profile-avatar">{{ profile_initials }}</div>
-			<div class="profile-identity-info">
-				<p class="profile-identity-name">{{ profile_full_name }}</p>
-				<p class="profile-identity-meta">
-					<span class="material-symbols-outlined">alternate_email</span>
-					<span>{{ form.instance.email|default:"Sin correo registrado" }}</span>
-				</p>
-			</div>
-		</div>
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined me-2">
+        manage_accounts
+      </span>
+      <span class="pb-1">
+        Mi perfil
+      </span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <!-- Identidad -->
+    <div class="profile-identity">
+      <div class="profile-avatar">{{ profile_initials }}</div>
+      <div class="profile-identity-info">
+        <p class="profile-identity-name">{{ profile_full_name }}</p>
+        <p class="profile-identity-meta">
+          <span class="material-symbols-outlined">alternate_email</span>
+          <span>{{ form.instance.email|default:"Sin correo registrado" }}</span>
+        </p>
+      </div>
+    </div>
 
-		<!-- Pestañas -->
-		<nav>
-			<div class="nav nav-tabs profile-tabs" id="profile-nav-tab" role="tablist">
-				<button class="nav-link active" id="profile-personal-tab" data-bs-toggle="tab"
-					data-bs-target="#profile-personal" type="button" role="tab" aria-controls="profile-personal"
-					aria-selected="true">
-					Información personal
-				</button>
-				<button class="nav-link" id="profile-security-tab" data-bs-toggle="tab"
-					data-bs-target="#profile-security" type="button" role="tab" aria-controls="profile-security"
-					aria-selected="false">
-					Seguridad
-				</button>
-			</div>
-		</nav>
-		<div class="tab-content profile-tab-content" id="profile-nav-tabContent">
-			<!-- Información personal -->
-			<div class="tab-pane fade show active" id="profile-personal" role="tabpanel"
-				aria-labelledby="profile-personal-tab" tabindex="0">
-				<div class="mb-3">
-					<label for="{{ form.username.id_for_label }}" class="form-label form-label--custom">
-						{{ form.username.label }}
-					</label>
-					<div class="input-group">
-						<span class="input-group-text">
-							<span class="material-symbols-outlined icon-sm">account_circle</span>
-						</span>
-						{{ form.username }}
-						<span class="invalid-feedback invalid-feedback--custom {{ form.username.id_for_label }}">
-							{{ form.username.errors.0 }}
-						</span>
-					</div>
-				</div>
-				<div class="row g-2 mb-3">
-					<div class="col-sm-6">
-						<label for="{{ form.first_name.id_for_label }}" class="form-label form-label--custom">
-							{{ form.first_name.label }}
-						</label>
-						{{ form.first_name }}
-						<span class="invalid-feedback invalid-feedback--custom {{ form.first_name.id_for_label }}">
-							{{ form.first_name.errors.0 }}
-						</span>
-					</div>
-					<div class="col-sm-6">
-						<label for="{{ form.last_name.id_for_label }}" class="form-label form-label--custom">
-							{{ form.last_name.label }}
-						</label>
-						{{ form.last_name }}
-						<span class="invalid-feedback invalid-feedback--custom {{ form.last_name.id_for_label }}">
-							{{ form.last_name.errors.0 }}
-						</span>
-					</div>
-				</div>
-				<div class="mb-1">
-					<label for="{{ form.email.id_for_label }}" class="form-label form-label--custom">
-						{{ form.email.label }}
-					</label>
-					<div class="input-group">
-						<span class="input-group-text">
-							<span class="material-symbols-outlined icon-sm">mail</span>
-						</span>
-						{{ form.email }}
-						<span class="invalid-feedback invalid-feedback--custom {{ form.email.id_for_label }}">
-							{{ form.email.errors.0 }}
-						</span>
-					</div>
-				</div>
-			</div>
+    <!-- Pestañas -->
+    <nav>
+      <div class="nav nav-tabs profile-tabs" id="profile-nav-tab" role="tablist">
+        <button class="nav-link active" id="profile-personal-tab" data-bs-toggle="tab"
+          data-bs-target="#profile-personal" type="button" role="tab" aria-controls="profile-personal"
+          aria-selected="true">
+          Información personal
+        </button>
+        <button class="nav-link" id="profile-security-tab" data-bs-toggle="tab"
+          data-bs-target="#profile-security" type="button" role="tab" aria-controls="profile-security"
+          aria-selected="false">
+          Seguridad
+        </button>
+      </div>
+    </nav>
+    <div class="tab-content profile-tab-content" id="profile-nav-tabContent">
+      <!-- Información personal -->
+      <div class="tab-pane fade show active" id="profile-personal" role="tabpanel"
+        aria-labelledby="profile-personal-tab" tabindex="0">
+        <div class="mb-3">
+          <label for="{{ form.username.id_for_label }}" class="form-label form-label--custom">
+            {{ form.username.label }}
+          </label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <span class="material-symbols-outlined icon-sm">account_circle</span>
+            </span>
+            {{ form.username }}
+            <span class="invalid-feedback invalid-feedback--custom {{ form.username.id_for_label }}">
+              {{ form.username.errors.0 }}
+            </span>
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-sm-6">
+            <label for="{{ form.first_name.id_for_label }}" class="form-label form-label--custom">
+              {{ form.first_name.label }}
+            </label>
+            {{ form.first_name }}
+            <span class="invalid-feedback invalid-feedback--custom {{ form.first_name.id_for_label }}">
+              {{ form.first_name.errors.0 }}
+            </span>
+          </div>
+          <div class="col-sm-6">
+            <label for="{{ form.last_name.id_for_label }}" class="form-label form-label--custom">
+              {{ form.last_name.label }}
+            </label>
+            {{ form.last_name }}
+            <span class="invalid-feedback invalid-feedback--custom {{ form.last_name.id_for_label }}">
+              {{ form.last_name.errors.0 }}
+            </span>
+          </div>
+        </div>
+        <div class="mb-1">
+          <label for="{{ form.email.id_for_label }}" class="form-label form-label--custom">
+            {{ form.email.label }}
+          </label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <span class="material-symbols-outlined icon-sm">mail</span>
+            </span>
+            {{ form.email }}
+            <span class="invalid-feedback invalid-feedback--custom {{ form.email.id_for_label }}">
+              {{ form.email.errors.0 }}
+            </span>
+          </div>
+        </div>
+      </div>
 
-			<!-- Seguridad -->
-			<div class="tab-pane fade" id="profile-security" role="tabpanel" aria-labelledby="profile-security-tab"
-				tabindex="0">
-				{% for preference_field in form.preference_fields %}
-				<div class="mb-3">
-					<label for="{{ preference_field.id_for_label }}" class="form-label form-label--custom">
-						{{ preference_field.label }}
-					</label>
-					{{ preference_field }}
-					{% if preference_field.help_text %}
-					<div class="form-text">{{ preference_field.help_text }}</div>
-					{% endif %}
-					<span class="invalid-feedback invalid-feedback--custom {{ preference_field.id_for_label }}">
-						{{ preference_field.errors.0 }}
-					</span>
-				</div>
-				{% endfor %}
+      <!-- Seguridad -->
+      <div class="tab-pane fade" id="profile-security" role="tabpanel" aria-labelledby="profile-security-tab"
+        tabindex="0">
+        {% for preference_field in form.preference_fields %}
+        <div class="mb-3">
+          <label for="{{ preference_field.id_for_label }}" class="form-label form-label--custom">
+            {{ preference_field.label }}
+          </label>
+          {{ preference_field }}
+          {% if preference_field.help_text %}
+          <div class="form-text">{{ preference_field.help_text }}</div>
+          {% endif %}
+          <span class="invalid-feedback invalid-feedback--custom {{ preference_field.id_for_label }}">
+            {{ preference_field.errors.0 }}
+          </span>
+        </div>
+        {% endfor %}
 
-				<div class="profile-note">
-					<img src="/static/images/common/info.svg" alt="" width="20" height="20" class="flex-shrink-0">
-					<span>Deja los campos de contraseña vacíos si no deseas cambiarla.</span>
-				</div>
-				<div class="mb-3">
-					<label for="{{ form.current_password.id_for_label }}" class="form-label form-label--custom">
-						{{ form.current_password.label }}
-					</label>
-					<div class="input-group">
-						<span class="input-group-text">
-							<span class="material-symbols-outlined icon-sm">password</span>
-						</span>
-						{{ form.current_password }}
-						<button type="button" class="input-group-text profile-pw-toggle"
-							data-target="{{ form.current_password.id_for_label }}" aria-label="Mostrar contraseña">
-							<img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
-						</button>
-						<span
-							class="invalid-feedback invalid-feedback--custom {{ form.current_password.id_for_label }}">
-							{{ form.current_password.errors.0 }}
-						</span>
-					</div>
-				</div>
-				<div class="mb-3">
-					<label for="{{ form.new_password.id_for_label }}" class="form-label form-label--custom">
-						{{ form.new_password.label }}
-					</label>
-					<div class="input-group">
-						<span class="input-group-text">
-							<span class="material-symbols-outlined icon-sm">vpn_key</span>
-						</span>
-						{{ form.new_password }}
-						<button type="button" class="input-group-text profile-pw-toggle"
-							data-target="{{ form.new_password.id_for_label }}" aria-label="Mostrar contraseña">
-							<img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
-						</button>
-						<span class="invalid-feedback invalid-feedback--custom {{ form.new_password.id_for_label }}">
-							{{ form.new_password.errors.0 }}
-						</span>
-					</div>
-				</div>
-				<div class="mb-1">
-					<label for="{{ form.confirm_password.id_for_label }}" class="form-label form-label--custom">
-						{{ form.confirm_password.label }}
-					</label>
-					<div class="input-group">
-						<span class="input-group-text">
-							<span class="material-symbols-outlined icon-sm">vpn_key</span>
-						</span>
-						{{ form.confirm_password }}
-						<button type="button" class="input-group-text profile-pw-toggle"
-							data-target="{{ form.confirm_password.id_for_label }}" aria-label="Mostrar contraseña">
-							<img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
-						</button>
-						<span
-							class="invalid-feedback invalid-feedback--custom {{ form.confirm_password.id_for_label }}">
-							{{ form.confirm_password.errors.0 }}
-						</span>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="modal-footer modal-footer-soft">
-		<button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
-			Cancelar
-		</button>
-		<button id="profile_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
-			Guardar
-		</button>
-	</div>
+        <div class="profile-note">
+          <img src="/static/images/common/info.svg" alt="" width="20" height="20" class="flex-shrink-0">
+          <span>Deja los campos de contraseña vacíos si no deseas cambiarla.</span>
+        </div>
+        <div class="mb-3">
+          <label for="{{ form.current_password.id_for_label }}" class="form-label form-label--custom">
+            {{ form.current_password.label }}
+          </label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <span class="material-symbols-outlined icon-sm">password</span>
+            </span>
+            {{ form.current_password }}
+            <button type="button" class="input-group-text profile-pw-toggle"
+              data-target="{{ form.current_password.id_for_label }}" aria-label="Mostrar contraseña">
+              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
+            </button>
+            <span
+              class="invalid-feedback invalid-feedback--custom {{ form.current_password.id_for_label }}">
+              {{ form.current_password.errors.0 }}
+            </span>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="{{ form.new_password.id_for_label }}" class="form-label form-label--custom">
+            {{ form.new_password.label }}
+          </label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <span class="material-symbols-outlined icon-sm">vpn_key</span>
+            </span>
+            {{ form.new_password }}
+            <button type="button" class="input-group-text profile-pw-toggle"
+              data-target="{{ form.new_password.id_for_label }}" aria-label="Mostrar contraseña">
+              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
+            </button>
+            <span class="invalid-feedback invalid-feedback--custom {{ form.new_password.id_for_label }}">
+              {{ form.new_password.errors.0 }}
+            </span>
+          </div>
+        </div>
+        <div class="mb-1">
+          <label for="{{ form.confirm_password.id_for_label }}" class="form-label form-label--custom">
+            {{ form.confirm_password.label }}
+          </label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <span class="material-symbols-outlined icon-sm">vpn_key</span>
+            </span>
+            {{ form.confirm_password }}
+            <button type="button" class="input-group-text profile-pw-toggle"
+              data-target="{{ form.confirm_password.id_for_label }}" aria-label="Mostrar contraseña">
+              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
+            </button>
+            <span
+              class="invalid-feedback invalid-feedback--custom {{ form.confirm_password.id_for_label }}">
+              {{ form.confirm_password.errors.0 }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="profile_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+      Guardar
+    </button>
+  </div>
 </form>
 <script>
-	(function () {
-		const form = document.getElementById('profile-form-modal');
-		if (!form) return;
+  (function () {
+    const form = document.getElementById('profile-form-modal');
+    if (!form) return;
 
-		// Mostrar/ocultar contraseña
-		form.querySelectorAll('.profile-pw-toggle').forEach((btn) => {
-			btn.addEventListener('click', () => {
-				const input = document.getElementById(btn.dataset.target);
-				if (!input) return;
-				const show = input.type === 'password';
-				input.type = show ? 'text' : 'password';
-				btn.querySelector('.pw-toggle-icon').src = show
-					? '/static/images/common/visibility_off.svg'
-					: '/static/images/common/visibility.svg';
-			});
-		});
+    // Mostrar/ocultar contraseña
+    form.querySelectorAll('.profile-pw-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.target);
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.querySelector('.pw-toggle-icon').src = show
+          ? '/static/images/common/visibility_off.svg'
+          : '/static/images/common/visibility.svg';
+      });
+    });
 
-		// Si una validación marca un campo en una pestaña oculta, la revela
-		const revealErroredTab = () => {
-			const invalid = form.querySelector('.tab-pane .is-invalid');
-			if (!invalid) return;
-			const pane = invalid.closest('.tab-pane');
-			if (!pane || pane.classList.contains('active')) return;
-			const trigger = form.querySelector('[data-bs-target="#' + pane.id + '"]');
-			if (trigger && window.bootstrap) bootstrap.Tab.getOrCreateInstance(trigger).show();
-		};
-		new MutationObserver(revealErroredTab).observe(form, {
-			attributes: true,
-			attributeFilter: ['class'],
-			subtree: true,
-		});
-	})();
+    // Si una validación marca un campo en una pestaña oculta, la revela
+    const revealErroredTab = () => {
+      const invalid = form.querySelector('.tab-pane .is-invalid');
+      if (!invalid) return;
+      const pane = invalid.closest('.tab-pane');
+      if (!pane || pane.classList.contains('active')) return;
+      const trigger = form.querySelector('[data-bs-target="#' + pane.id + '"]');
+      if (trigger && window.bootstrap) bootstrap.Tab.getOrCreateInstance(trigger).show();
+    };
+    new MutationObserver(revealErroredTab).observe(form, {
+      attributes: true,
+      attributeFilter: ['class'],
+      subtree: true,
+    });
+  })();
 </script>

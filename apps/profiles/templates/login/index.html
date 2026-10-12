@@ -2,64 +2,64 @@
 {% load static %}
 
 {% block encabezado %}
-				<h1 class="comfort-title">¡Bienvenida!</h1>
-				<p class="gentle-subtitle">Tus citas y clientes, todo en un solo lugar</p>
+        <h1 class="comfort-title">¡Bienvenida!</h1>
+        <p class="gentle-subtitle">Tus citas y clientes, todo en un solo lugar</p>
 {% endblock %}
 
 {% block contenido %}
-			{% if form.errors %}
-			<div class="gentle-alert" role="alert">
-				Correo o contraseña incorrectos.
-			</div>
-			{% elif request.GET.expired %}
-			<div class="gentle-alert" role="alert">
-				Tu sesión expiró, vuelve a iniciar sesión.
-			</div>
-			{% endif %}
+      {% if form.errors %}
+      <div class="gentle-alert" role="alert">
+        Correo o contraseña incorrectos.
+      </div>
+      {% elif request.GET.expired %}
+      <div class="gentle-alert" role="alert">
+        Tu sesión expiró, vuelve a iniciar sesión.
+      </div>
+      {% endif %}
 
-			<form method="post">
-				{% csrf_token %}
-				<div class="soft-field">
-					<div class="field-container">
-						<input type="email" name="username" id="id_username" placeholder=" " required autofocus
-							autocomplete="email" value="{{ form.username.value|default:'' }}">
-						<label for="id_username">Correo</label>
-						<div class="field-accent"></div>
-					</div>
-				</div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="soft-field">
+          <div class="field-container">
+            <input type="email" name="username" id="id_username" placeholder=" " required autofocus
+              autocomplete="email" value="{{ form.username.value|default:'' }}">
+            <label for="id_username">Correo</label>
+            <div class="field-accent"></div>
+          </div>
+        </div>
 
-				<div class="soft-field">
-					<div class="field-container">
-						<input type="password" name="password" id="id_password" placeholder=" " required>
-						<label for="id_password">Contraseña</label>
-						<button type="button" class="gentle-toggle" id="passwordToggle"
-							aria-label="Mostrar u ocultar contraseña">
-							<img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="eye-open">
-							<img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="20" height="20" class="eye-closed">
-						</button>
-						<div class="field-accent"></div>
-					</div>
-				</div>
+        <div class="soft-field">
+          <div class="field-container">
+            <input type="password" name="password" id="id_password" placeholder=" " required>
+            <label for="id_password">Contraseña</label>
+            <button type="button" class="gentle-toggle" id="passwordToggle"
+              aria-label="Mostrar u ocultar contraseña">
+              <img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="eye-open">
+              <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="20" height="20" class="eye-closed">
+            </button>
+            <div class="field-accent"></div>
+          </div>
+        </div>
 
-				<button type="submit" class="comfort-button">
-					<div class="button-background"></div>
-					<span class="button-text">Iniciar sesión</span>
-					<div class="button-glow"></div>
-				</button>
-			</form>
+        <button type="submit" class="comfort-button">
+          <div class="button-background"></div>
+          <span class="button-text">Iniciar sesión</span>
+          <div class="button-glow"></div>
+        </button>
+      </form>
 {% endblock %}
 
 {% block scripts %}
-	<script>
-		document.addEventListener('DOMContentLoaded', function () {
-			const toggle = document.getElementById('passwordToggle');
-			const passwordInput = document.getElementById('id_password');
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const toggle = document.getElementById('passwordToggle');
+      const passwordInput = document.getElementById('id_password');
 
-			toggle.addEventListener('click', function () {
-				const type = passwordInput.type === 'password' ? 'text' : 'password';
-				passwordInput.type = type;
-				toggle.classList.toggle('toggle-active', type === 'text');
-			});
-		});
-	</script>
+      toggle.addEventListener('click', function () {
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        toggle.classList.toggle('toggle-active', type === 'text');
+      });
+    });
+  </script>
 {% endblock %}
