@@ -119,20 +119,20 @@ Calendario
         searching: false,
         layout: {
           topStart: () => `
-						<div class="input-group">
-							<span class="input-group-text">
-								<img src="/static/images/common/calendar_month.svg" alt="" width="20" height="20">
-							</span>
-							{{ filter_form.months }}
-						</div>
-					`,
+            <div class="input-group">
+              <span class="input-group-text">
+                <img src="/static/images/common/calendar_month.svg" alt="" width="20" height="20">
+              </span>
+              {{ filter_form.months }}
+            </div>
+          `,
           topEnd: () => `
-						<div class="dt-search">
-							<input type="search" id="id_calendar_search" name="search"
-								placeholder="Buscar cliente" aria-label="Buscar cliente"
-								autocomplete="off" />
-						</div>
-					`,
+            <div class="dt-search">
+              <input type="search" id="id_calendar_search" name="search"
+                placeholder="Buscar cliente" aria-label="Buscar cliente"
+                autocomplete="off" />
+            </div>
+          `,
         },
         drawCallback: () => {
           initializeMonthPickers();
