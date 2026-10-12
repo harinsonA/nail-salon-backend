@@ -1,0 +1,71 @@
+{% extends "login/base_acceso.html" %}
+{% load static %}
+
+{% block titulo %}Panel · Hi Agenda{% endblock %}
+
+{% block encabezado %}
+<h1 class="comfort-title">Panel de administración</h1>
+<p class="gentle-subtitle">Negocios, titulares y dominios de Hi Agenda</p>
+{% endblock %}
+
+{% block contenido %}
+{% if user.is_authenticated %}
+<div class="gentle-alert" role="alert">
+  Entraste como {{ username }}, pero esa cuenta no tiene acceso al panel. Inicia sesión con otra.
+</div>
+{% elif form.errors %}
+<div class="gentle-alert" role="alert">
+  Usuario o contraseña incorrectos.
+</div>
+{% endif %}
+
+<form action="{{ app_path }}" method="post">
+  {% csrf_token %}
+  <div class="soft-field">
+    <div class="field-container">
+      <input type="text" name="username" id="id_username" placeholder=" " required autofocus
+        autocapitalize="none" autocomplete="username" spellcheck="false"
+        value="{{ form.username.value|default:'' }}">
+      <label for="id_username">Usuario</label>
+      <div class="field-accent"></div>
+    </div>
+  </div>
+
+  <div class="soft-field">
+    <div class="field-container">
+      <input type="password" name="password" id="id_password" placeholder=" " required
+        autocomplete="current-password">
+      <label for="id_password">Contraseña</label>
+      <button type="button" class="gentle-toggle" id="passwordToggle"
+        aria-label="Mostrar u ocultar contraseña">
+        <img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="eye-open">
+        <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="20" height="20" class="eye-closed">
+      </button>
+      <div class="field-accent"></div>
+    </div>
+  </div>
+
+  <input type="hidden" name="next" value="{{ next }}">
+
+  <button type="submit" class="comfort-button">
+    <div class="button-background"></div>
+    <span class="button-text">Entrar al panel</span>
+    <div class="button-glow"></div>
+  </button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById('passwordToggle');
+    const passwordInput = document.getElementById('id_password');
+
+    toggle.addEventListener('click', function () {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      toggle.classList.toggle('toggle-active', type === 'text');
+    });
+  });
+</script>
+{% endblock %}
