@@ -17,6 +17,7 @@ db.sqlite3
 .claude/
 .impeccable/
 .gitattributes
+.editorconfig
 
 # Documentación y material de trabajo. docs/ llegó a pesar 13 MB en capturas.
 docs/
