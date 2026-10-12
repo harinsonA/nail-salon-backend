@@ -11,3 +11,20 @@ staticfiles/
 media/
 db.sqlite3
 *.log
+
+# Configuración de herramientas locales: no tienen nada que hacer dentro de la
+# imagen y hoy se estaban copiando enteras.
+.claude/
+.impeccable/
+.gitattributes
+
+# Documentación y material de trabajo. docs/ llegó a pesar 13 MB en capturas.
+docs/
+plans/
+PRODUCT.md
+DESIGN.md
+README.local.md
+
+# Orquestación y plantillas de entorno: la imagen no las usa.
+docker-compose.yml
+.env.example

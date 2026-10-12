@@ -138,3 +138,14 @@ AUTHENTICATION_SYSTEM_DOCS.md
 
 # Guia local personal (comandos de Docker y base de datos)
 README.local.md
+
+# Artefactos generados por las herramientas de diseño asistido (impeccable y
+# los skills de diseño). Son material de trabajo local, no del proyecto:
+# PRODUCT.md y DESIGN.md los redacta la herramienta entrevistando, docs/design
+# guarda inventarios, planes y capturas, y plans/ es la salida del auditor de
+# animaciones.
+PRODUCT.md
+DESIGN.md
+docs/design/
+.impeccable/
+plans/
