@@ -62,6 +62,7 @@ if not DEBUG:
 SHARED_APPS = [
     "django_tenants",
     "apps.tenancy",
+    "apps.panel",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
