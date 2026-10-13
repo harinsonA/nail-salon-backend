@@ -28,7 +28,7 @@ class BaseAdminTests(TestCase):
         pedido.session = {}
         set_urlconf(settings.PUBLIC_SCHEMA_URLCONF)
         try:
-            return render_to_string("base_admin.html", request=pedido)
+            return render_to_string("panel/base.html", request=pedido)
         finally:
             set_urlconf(None)
 
