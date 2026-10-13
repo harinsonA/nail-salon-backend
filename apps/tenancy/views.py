@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
-from django.views import defaults
 from django_tenants.utils import get_public_schema_name
 
 from apps.tenancy.alta import dominio_de, url_en_dominio
@@ -31,7 +30,3 @@ def url_de_entrada(request, subdominio):
     if not existe:
         return None
     return url_en_dominio(request, dominio, "/inicio_sesion/")
-
-
-def sin_permiso_en_el_panel(request, exception=None):
-    return defaults.permission_denied(request, exception, template_name="admin/sin_permiso.html")
