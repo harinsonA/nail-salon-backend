@@ -6,6 +6,7 @@ Grupos
 {% endblock %}
 
 {% block content %}
+{% include 'common/bs_modal.html' %}
 <section>
   {% if add_url %}
   <section class="d-inline-flex align-items-center gap-2">
@@ -89,12 +90,32 @@ Grupos
             return json.data;
           },
         },
+        drawCallback: () => {
+          initializeAllBSModals();
+        },
       },
     });
 
     $('#{{ filter_form.users.id_for_label }}').on('change', ({ target }) => {
       filterData.users = target.value;
       table.draw();
+    });
+
+    $('#modal').on('show.bs.modal', ({ target }) => {
+      const submitBtn = target.querySelector('#delete_submit_btn');
+      $(submitBtn).click(async () => {
+        submitBtn.disabled = true;
+        const modalForm = target.querySelector('#common-form-modal');
+        const reloadTable = (form, response, statusCode) => {
+          if ([200].includes(statusCode)) {
+            $('#modal').modal('hide');
+            table.draw();
+          }
+          submitBtn.disabled = statusCode === 200;
+          return [response, statusCode];
+        };
+        await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
+      });
     });
   });
 </script>
