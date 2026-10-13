@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block body_attrs %}data-login-url="{% url 'login' %}" data-session-idle-seconds="{{ session_idle_seconds|default:0 }}"
+  data-session-ping-url="{% url 'session_ping' %}"{% endblock %}
+
+{% block logout_url %}{% url 'logout' %}{% endblock %}
+
+{% block barra %}
+  {% include 'menu.html' %}
+{% endblock %}
+
+{% block modales %}
+  {% include 'common/session_modal.html' %}
+  {% include 'common/bs_modal.html' with modal_id='profile_modal' %}
+{% endblock %}
+
+{% block avisos %}
+  {% include 'common/aviso_de_pago.html' %}
+{% endblock %}
+
+{% block init_js %}
+  initializeBSModals('#profile-modal-btn', { modalID: '#profile_modal' });
+  $('#profile_modal').on('show.bs.modal', ({ target }) => submitProfileModalForm(target));
+{% endblock %}

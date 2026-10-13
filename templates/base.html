@@ -49,21 +49,19 @@
   {% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-light bg-gradient" data-session-idle-seconds="{{ session_idle_seconds|default:0 }}"
-  data-session-ping-url="{% url 'session_ping' %}">
-  <form id="logout_form" method="post" action="{% url 'logout' %}" hidden>{% csrf_token %}</form>
+<body class="bg-light bg-gradient" {% block body_attrs %}{% endblock %}>
+  <form id="logout_form" method="post" action="{% block logout_url %}{% endblock %}" hidden>{% csrf_token %}</form>
   <div class="sand-background">
     <div class="sand-wave wave-3"></div>
     <div class="sand-wave wave-2"></div>
     <div class="sand-wave wave-1"></div>
   </div>
 
-  <!-- Navbar que se expande en lg+ y usa offcanvas en pantallas menores -->
-  {% include 'menu.html' %}
-  {% include 'common/session_modal.html' %}
+  {% block barra %}{% endblock %}
+  {% block modales %}{% endblock %}
   <!-- Contenido principal con padding-top para el fixed navbar -->
   <section class="container" style="padding-top: 60px; margin-bottom: 100px;">
-    {% include 'common/aviso_de_pago.html' %}
+    {% block avisos %}{% endblock %}
     <section class="mt-3 mb-3">
       <h3 class="m-0 view-title">
         {% block view_title %}
@@ -72,7 +70,6 @@
       </h3>
     </section>
     <main class="container-main">
-      {% include 'common/bs_modal.html' with modal_id='profile_modal' %}
       {% block content %}
       {% endblock %}
     </main>
@@ -117,8 +114,7 @@
       notifyAlert({ message: msg });
       {% endfor %}
       {% endif %}
-      initializeBSModals('#profile-modal-btn', { modalID: '#profile_modal' });
-      $('#profile_modal').on('show.bs.modal', ({ target }) => submitProfileModalForm(target));
+      {% block init_js %}{% endblock %}
     });
   </script>
   {% block extra_js %}{% endblock %}
