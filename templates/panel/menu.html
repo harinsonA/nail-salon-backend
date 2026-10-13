@@ -1,0 +1,73 @@
+{% load static %}
+<nav class="menu navbar navbar-expand-lg fixed-top">
+  <div class="container">
+    <a class="menu__brand navbar-brand" href="{% url 'admin:index' %}" aria-label="Ir al inicio del panel"
+      title="Ir al inicio del panel">
+      <img class="menu__brand-icon" src="{% static 'images/icons/icono-1.png' %}" alt="Hi Agenda">
+    </a>
+    <button class="menu__toggler navbar-toggler" type="button" data-bs-toggle="offcanvas"
+      data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
+      <span class="menu__toggler-icon navbar-toggler-icon"></span>
+    </button>
+    <div class="menu__offcanvas offcanvas offcanvas-end" tabindex="-1" id="offcanvasDarkNavbar"
+      aria-labelledby="offcanvasDarkNavbarLabel">
+      <div class="offcanvas-header">
+        <h5 class="menu__offcanvas-title offcanvas-title" id="offcanvasDarkNavbarLabel">Menú</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <ul class="menu__nav navbar-nav justify-content-lg-end flex-grow-1">
+          {% for app in available_apps %}
+          <li class="nav-item dropdown">
+            <a class="menu__link nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              {{ app.name }}
+            </a>
+            <ul class="menu__dropdown dropdown-menu">
+              {% for model in app.models %}
+              {% if model.admin_url %}
+              <li>
+                <a class="menu__dropdown-item dropdown-item" href="{{ model.admin_url }}">
+                  {{ model.name }}
+                </a>
+              </li>
+              {% endif %}
+              {% endfor %}
+            </ul>
+          </li>
+          {% endfor %}
+          <li class="nav-item dropdown">
+            <a class="menu__link nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              <img src="{% static 'images/common/settings.svg' %}" alt="" width="20" height="20">
+            </a>
+            <ul class="menu__dropdown dropdown-menu">
+              {% if site_url %}
+              <li>
+                <a class="menu__dropdown-item dropdown-item" href="{{ site_url }}">
+                  Ver sitio
+                </a>
+              </li>
+              {% endif %}
+              {% if user.has_usable_password %}
+              <li>
+                <a class="menu__dropdown-item dropdown-item" href="{% url 'admin:password_change' %}">
+                  Cambiar contraseña
+                </a>
+              </li>
+              {% endif %}
+              <li>
+                <hr class="menu__divider dropdown-divider">
+              </li>
+              <li>
+                <button type="submit" form="logout_form" class="menu__dropdown-item menu__dropdown-item--danger dropdown-item">
+                  Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
