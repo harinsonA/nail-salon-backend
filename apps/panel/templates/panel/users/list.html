@@ -1,0 +1,153 @@
+{% extends 'panel/base.html' %}
+{% load static %}
+
+{% block view_title %}
+Usuarios
+{% endblock %}
+
+{% block content %}
+{% include 'common/bs_modal.html' %}
+<section>
+  {% if add_url %}
+  <section class="d-inline-flex align-items-center gap-2">
+    <a href="{{ add_url }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+      Usuario
+      <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
+    </a>
+  </section>
+  {% endif %}
+  <section class="row justify-content-center">
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Total de usuarios</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b id="total_users_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Activos</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b id="active_users_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Con acceso al panel</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b id="staff_users_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="mt-3 d-flex flex-wrap gap-3">
+    {% for field in filter_form %}
+    <div>
+      <label class="form-check-label form-label--custom" for="{{ field.id_for_label }}">
+        {{ field.label }}
+      </label>
+      {{ field }}
+    </div>
+    {% endfor %}
+  </section>
+  <section class="table-container--custom">
+    <table id="users_table" class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Usuario</th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Correo</th>
+          <th scope="col">Staff</th>
+          <th scope="col">Superusuario</th>
+          <th scope="col">Activo</th>
+          <th scope="col">Último acceso</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </section>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+  $(() => {
+    const flagColumn = (value) => value
+      ? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Sí" width="20" height="20">`
+      : `<img src="{% static 'images/common/cancel.svg' %}" alt="No" width="20" height="20">`;
+
+    const filterData = {
+      status: $('#{{ filter_form.status.id_for_label }}').val(),
+      role: $('#{{ filter_form.role.id_for_label }}').val(),
+      group: $('#{{ filter_form.group.id_for_label }}').val(),
+    };
+    const table = renderDataTable({
+      tableID: '#users_table',
+      url: '{{ list_url }}',
+      requestData: filterData,
+      columns: [
+        { data: 'username', className: 'fs-7 w-auto text-nowrap' },
+        { data: 'full_name', className: 'fs-7 w-auto text-nowrap' },
+        { data: 'email', className: 'fs-7 w-auto' },
+        { data: ({ is_staff }) => flagColumn(is_staff), className: 'fs-7 w-auto text-center' },
+        { data: ({ is_superuser }) => flagColumn(is_superuser), className: 'fs-7 w-auto text-center' },
+        { data: ({ is_active }) => flagColumn(is_active), className: 'fs-7 w-auto text-center' },
+        { data: 'last_login', className: 'fs-7 w-auto text-nowrap' },
+        { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
+      ],
+      extraConfig: {
+        ajax: {
+          dataSrc: (json) => {
+            $('#total_users_id').text(json.total_users);
+            $('#active_users_id').text(json.active_users);
+            $('#staff_users_id').text(json.staff_users);
+            return json.data;
+          },
+        },
+        drawCallback: () => {
+          initializeAllBSModals();
+        },
+      },
+    });
+
+    {% for field in filter_form %}
+    $('#{{ field.id_for_label }}').on('change', ({ target }) => {
+      filterData['{{ field.name }}'] = target.value;
+      table.draw();
+    });
+    {% endfor %}
+
+    $('#modal').on('show.bs.modal', ({ target }) => {
+      const submitBtn = target.querySelector('#delete_submit_btn');
+      $(submitBtn).click(async () => {
+        submitBtn.disabled = true;
+        const modalForm = target.querySelector('#common-form-modal');
+        const reloadTable = (form, response, statusCode) => {
+          if ([200].includes(statusCode)) {
+            $('#modal').modal('hide');
+            table.draw();
+          }
+          submitBtn.disabled = statusCode === 200;
+          return [response, statusCode];
+        };
+        await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
+      });
+    });
+  });
+</script>
+{% endblock %}
