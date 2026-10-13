@@ -270,7 +270,7 @@ function getCookie(name) {
   return cookieValue;
 }
 
-const LOGIN_URL = "/inicio_sesion/";
+const LOGIN_URL = document.body.dataset.loginUrl || "/inicio_sesion/";
 
 let isRedirectingToLogin = false;
 
