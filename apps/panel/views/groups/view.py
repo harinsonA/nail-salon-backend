@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_SELECT_CLASS
-from apps.panel.views.base import PanelListViewAjax, PanelView
+from apps.panel.views.base import PanelDeleteModalView, PanelListViewAjax, PanelView
 
 
 class GroupsFilterForm(forms.Form):
@@ -84,9 +84,10 @@ class GroupListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Eliminar",
-                        "link": reverse("admin:auth_group_delete", args=[item["pk"]]),
+                        "link": reverse("admin:auth_group_delete_modal", args=[item["pk"]]),
+                        "bsModal": True,
                         "icon": "delete",
-                        "className": "text-color-destructive",
+                        "className": "bs-modal text-color-destructive",
                     }
                 )
             item["options"] = options
@@ -98,3 +99,13 @@ class GroupListAjaxView(PanelListViewAjax):
             total_groups=Count("pk", distinct=True),
             groups_with_users=Count("pk", filter=Q(user__isnull=False), distinct=True),
         )
+
+
+class GroupDeleteModalView(PanelDeleteModalView):
+    success_message = "Grupo %(name)s eliminado exitosamente."
+
+    def get_additional_information(self, group):
+        return [
+            {"text": f"Permisos: {group.permissions.count()}", "icon": "key"},
+            {"text": f"Usuarios asignados: {group.user_set.count()}", "icon": "group"},
+        ]

@@ -1,9 +1,13 @@
+from unittest import mock
+
+from django.contrib.admin.models import DELETION, LogEntry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.db import connection
 from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name
 
+from apps.panel.admin.group import GroupAdmin
 from apps.tenancy.models import Dominio, Negocio
 
 User = get_user_model()
@@ -40,6 +44,9 @@ class GroupsScreenTests(TestCase):
         query = {"draw": 1, "start": 0, "length": 10, "order[0][column]": "0", "order[0][dir]": "asc", **params}
         return self.browser(user).get(LIST_AJAX_URL, query, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
 
+    def delete_modal_url(self, group):
+        return f"/admin/auth/group/{group.pk}/delete/modal/"
+
     def test_menu_link_opens_the_panel_list(self):
         response = self.browser(self.superuser).get(LIST_URL)
         self.assertTemplateUsed(response, "panel/groups/list.html")
@@ -47,6 +54,7 @@ class GroupsScreenTests(TestCase):
         self.assertContains(response, 'id="groups_table"')
         self.assertContains(response, f'url: \'{LIST_AJAX_URL}\'')
         self.assertContains(response, 'href="/admin/auth/group/add/"')
+        self.assertContains(response, 'id="modal"')
 
     def test_add_button_requires_add_permission(self):
         response = self.browser(self.viewer).get(LIST_URL)
@@ -82,11 +90,13 @@ class GroupsScreenTests(TestCase):
         payload = self.fetch(self.superuser, **{"order[0][column]": "2", "order[0][dir]": "desc"}).json()
         self.assertEqual([row["name"] for row in payload["data"]], ["Soporte", "Cobranza"])
 
-    def test_options_link_to_django_forms(self):
+    def test_options_link_to_edit_form_and_delete_modal(self):
         row = next(row for row in self.fetch(self.superuser).json()["data"] if row["name"] == "Soporte")
-        links = {option["label"]: option["link"] for option in row["options"]}
-        self.assertEqual(links["Editar"], f"/admin/auth/group/{self.support.pk}/change/")
-        self.assertEqual(links["Eliminar"], f"/admin/auth/group/{self.support.pk}/delete/")
+        options = {option["label"]: option for option in row["options"]}
+        self.assertEqual(options["Editar"]["link"], f"/admin/auth/group/{self.support.pk}/change/")
+        self.assertEqual(options["Eliminar"]["link"], self.delete_modal_url(self.support))
+        self.assertTrue(options["Eliminar"]["bsModal"])
+        self.assertIn("bs-modal", options["Eliminar"]["className"])
 
     def test_options_follow_permissions(self):
         rows = self.fetch(self.viewer).json()["data"]
@@ -108,3 +118,57 @@ class GroupsScreenTests(TestCase):
         response = self.browser(self.superuser).post("/admin/auth/group/add/", {"name": "Ventas"})
         self.assertRedirects(response, LIST_URL, fetch_redirect_response=False)
         self.assertTrue(Group.objects.filter(name="Ventas").exists())
+
+    def test_delete_modal_shows_the_group_details(self):
+        response = self.browser(self.superuser).get(
+            self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertTemplateUsed(response, "common/delete_modal.html")
+        self.assertContains(response, "Soporte")
+        self.assertContains(response, f"ID: {self.support.pk}")
+        self.assertContains(response, "Permisos: 2")
+        self.assertContains(response, "Usuarios asignados: 1")
+        self.assertContains(response, 'id="delete_submit_btn"')
+
+    def test_deleting_removes_the_group_and_logs_it(self):
+        response = self.browser(self.superuser).post(
+            self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["message"], "Grupo Soporte eliminado exitosamente.")
+        self.assertFalse(Group.objects.filter(pk=self.support.pk).exists())
+        self.assertTrue(User.objects.filter(pk=self.superuser.pk).exists())
+        log = LogEntry.objects.get(object_id=str(self.support.pk), content_type__model="group")
+        self.assertEqual((log.action_flag, log.object_repr, log.user_id), (DELETION, "Soporte", self.superuser.pk))
+
+    def test_delete_requires_delete_permission(self):
+        browser = self.browser(self.viewer)
+        url = self.delete_modal_url(self.support)
+        self.assertEqual(browser.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 403)
+        self.assertEqual(browser.post(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 403)
+        self.assertTrue(Group.objects.filter(pk=self.support.pk).exists())
+
+    def test_delete_without_session_answers_401(self):
+        response = Client(HTTP_HOST=PANEL).post(
+            self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertTrue(Group.objects.filter(pk=self.support.pk).exists())
+
+    def test_delete_of_a_missing_group_is_not_found(self):
+        response = self.browser(self.superuser).get("/admin/auth/group/999999/delete/modal/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_protected_relations_block_the_deletion(self):
+        blocked = ([], {}, set(), ["registro protegido"])
+        with mock.patch.object(GroupAdmin, "get_deleted_objects", return_value=blocked):
+            response = self.browser(self.superuser).post(
+                self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("No se puede eliminar «Soporte»", response.json()["message"])
+        self.assertTrue(Group.objects.filter(pk=self.support.pk).exists())
+
+    def test_edit_form_keeps_the_django_delete_page(self):
+        response = self.browser(self.superuser).get(f"/admin/auth/group/{self.support.pk}/delete/")
+        self.assertTemplateUsed(response, "admin/delete_confirmation.html")
