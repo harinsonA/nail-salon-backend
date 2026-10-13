@@ -38,7 +38,7 @@ class BaseAdminTests(TestCase):
 
     def test_no_arrastra_piezas_del_negocio(self):
         html = self.renderizar()
-        for pieza in ("menu__brand", "session_expiry_modal", "profile_modal", "data-session-ping-url", "pago pendiente"):
+        for pieza in ("Calendario", "session_expiry_modal", "profile_modal", "data-session-ping-url", "pago pendiente"):
             with self.subTest(pieza=pieza):
                 self.assertNotIn(pieza, html)
 

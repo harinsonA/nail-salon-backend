@@ -5,3 +5,7 @@
 {% block body_attrs %}data-login-url="{% url 'admin:login' %}"{% endblock %}
 
 {% block logout_url %}{% url 'admin:logout' %}{% endblock %}
+
+{% block barra %}
+  {% include 'panel/menu.html' %}
+{% endblock %}

@@ -37,19 +37,19 @@ class SitioDelPanelTests(TestCase):
         Dominio.objects.create(domain=PANEL, tenant=publico, is_primary=True)
         cls.admin = User.objects.create_superuser(username="admin", password="x")
 
-    def inicio(self, host=PANEL):
+    def listado_de_negocios(self, host=PANEL):
         connection.set_schema_to_public()
         panel = Client(HTTP_HOST=host)
         panel.force_login(self.admin)
-        return panel.get("/admin/")
+        return panel.get("/admin/tenancy/negocio/")
 
     def test_los_titulos_vienen_del_sitio(self):
-        respuesta = self.inicio()
-        self.assertContains(respuesta, "Hi Agenda · Panel")
-        self.assertContains(respuesta, "Negocios y titulares")
+        respuesta = self.listado_de_negocios()
+        self.assertContains(respuesta, "| Hi Agenda · Panel</title>")
+        self.assertContains(respuesta, ">Hi Agenda · Panel</a>")
 
     def test_ver_el_sitio_lleva_a_la_pagina_publica(self):
-        self.assertContains(self.inicio(), '<a href="http://localhost/">Ver el sitio</a>')
+        self.assertContains(self.listado_de_negocios(), '<a href="http://localhost/">Ver el sitio</a>')
 
     def test_ver_el_sitio_respeta_el_puerto_del_navegador(self):
-        self.assertContains(self.inicio(f"{PANEL}:8000"), '<a href="http://localhost:8000/">Ver el sitio</a>')
+        self.assertContains(self.listado_de_negocios(f"{PANEL}:8000"), '<a href="http://localhost:8000/">Ver el sitio</a>')
