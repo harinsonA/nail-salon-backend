@@ -160,8 +160,11 @@ class PanelYAltaTests(TestCase):
 
     def test_la_lista_no_muestra_public_y_no_se_borra_nada(self):
         negocio = Negocio.objects.create(schema_name="uno", nombre="Uno", titular=Persona.objects.create(nombres="X"))
-        lista = self.panel.get(url_panel("tenancy_negocio_changelist"))
-        self.assertEqual(list(lista.context["cl"].queryset), [negocio])
+        datos = self.panel.get(
+            url_panel("tenancy_negocio_list_ajax"), {"draw": 1, "start": 0, "length": 10},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual([fila["pk"] for fila in datos.json()["data"]], [negocio.pk])
         borrar = self.panel.get(url_panel("tenancy_negocio_delete", negocio.pk))
         self.assertEqual(borrar.status_code, 403)
 
