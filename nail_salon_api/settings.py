@@ -63,7 +63,7 @@ SHARED_APPS = [
     "django_tenants",
     "apps.tenancy",
     "apps.panel",
-    "django.contrib.admin",
+    "apps.panel.configuracion_admin.PanelAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -78,7 +78,7 @@ SHARED_APPS = [
 ]
 
 TENANT_APPS = [
-    "django.contrib.admin",
+    "apps.panel.configuracion_admin.PanelAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
