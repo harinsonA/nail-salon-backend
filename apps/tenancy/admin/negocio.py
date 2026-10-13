@@ -6,6 +6,7 @@ from django.urls import path
 from django_tenants.utils import get_public_schema_name, schema_exists
 from simple_history.admin import SimpleHistoryAdmin
 
+from apps.panel.views.businesses.view import BusinessListAjaxView, BusinessListView
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, url_en_dominio
 from apps.tenancy.estados import cambiar_estado
 from apps.tenancy.forms import AltaNegocioForm, CambiarEstadoForm, RestablecerClavePropietarioForm
@@ -78,7 +79,9 @@ class NegocioAdmin(SimpleHistoryAdmin):
         return False
 
     def get_urls(self):
+        list_ajax = BusinessListAjaxView.as_view(admin_site=self.admin_site, model_admin=self)
         propias = [
+            path("list/", list_ajax, name="tenancy_negocio_list_ajax"),
             path("alta/", self.admin_site.admin_view(self.alta_view), name="tenancy_negocio_alta"),
             path("<int:pk>/estado/", self.admin_site.admin_view(self.estado_view), name="tenancy_negocio_estado"),
             path(
@@ -89,6 +92,9 @@ class NegocioAdmin(SimpleHistoryAdmin):
             path("<int:pk>/reparar/", self.admin_site.admin_view(self.reparar_view), name="tenancy_negocio_reparar"),
         ]
         return [*propias, *super().get_urls()]
+
+    def changelist_view(self, request, extra_context=None):
+        return BusinessListView.as_view(admin_site=self.admin_site, model_admin=self)(request)
 
     def negocio_del_panel(self, request, pk):
         if not request.user.is_superuser:
