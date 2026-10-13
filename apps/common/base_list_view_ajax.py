@@ -7,7 +7,7 @@ from django.views.generic import ListView
 from apps.common.views.base_views import ProtectedAjaxView
 
 
-class BaseListViewAjax(ProtectedAjaxView, ListView):
+class AjaxListViewBase(ListView):
     http_method_names = ["get"]
     model = None
     filter_form_class = None
@@ -109,3 +109,7 @@ class BaseListViewAjax(ProtectedAjaxView, ListView):
 
     def render_to_response(self, context, **response_kwargs):
         return JsonResponse(context)
+
+
+class BaseListViewAjax(ProtectedAjaxView, AjaxListViewBase):
+    pass
