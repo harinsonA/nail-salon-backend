@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel · Hi Agenda{% endblock %}
+
+{% block body_attrs %}data-login-url="{% url 'admin:login' %}"{% endblock %}
+
+{% block logout_url %}{% url 'admin:logout' %}{% endblock %}
