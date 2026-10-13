@@ -1,7 +1,9 @@
+from bootstrap_modal_forms.generic import BSModalDeleteView
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.urls import reverse
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.base_list_view_ajax import AjaxListViewBase
 from apps.common.views.base_views import SESSION_EXPIRED_MESSAGE
@@ -16,9 +18,12 @@ class PanelAccessMixin:
     def dispatch(self, request, *args, **kwargs):
         if not self.admin_site.has_permission(request):
             return self.handle_no_session()
-        if self.model_admin is not None and not self.model_admin.has_view_permission(request):
+        if self.model_admin is not None and not self.has_model_permission(request):
             return self.handle_forbidden()
         return super().dispatch(request, *args, **kwargs)
+
+    def has_model_permission(self, request):
+        return self.model_admin.has_view_permission(request)
 
     def get_login_url(self):
         return reverse("admin:login", current_app=self.admin_site.name)
@@ -45,3 +50,45 @@ class PanelAjaxView(PanelAccessMixin):
 
 class PanelListViewAjax(PanelAjaxView, AjaxListViewBase):
     pass
+
+
+class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
+    template_name = "common/delete_modal.html"
+    success_message = "«%(name)s» eliminado exitosamente."
+    blocked_message = (
+        "No se puede eliminar «%(name)s»: tiene registros relacionados protegidos "
+        "o que no tienes permiso para eliminar."
+    )
+
+    def has_model_permission(self, request):
+        return self.model_admin.has_delete_permission(request, self.get_object())
+
+    def get_object(self, queryset=None):
+        obj = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
+        if obj is None:
+            raise Http404
+        return obj
+
+    def get_additional_information(self, obj):
+        return []
+
+    def get_context_data(self, **kwargs):
+        obj = self.get_object()
+        return {
+            **kwargs,
+            "view": self,
+            "object": obj,
+            "id_register": obj.pk,
+            "name_register": str(obj),
+            "aditional_information": self.get_additional_information(obj),
+        }
+
+    def post(self, request, *args, **kwargs):
+        obj = self.get_object()
+        name = str(obj)
+        _, _, perms_needed, protected = self.model_admin.get_deleted_objects([obj], request)
+        if perms_needed or protected:
+            return JsonResponse({"message": self.blocked_message % {"name": name}}, status=HTTP_400_BAD_REQUEST)
+        self.model_admin.log_deletions(request, [obj])
+        self.model_admin.delete_model(request, obj)
+        return JsonResponse({"message": self.success_message % {"name": name}})
