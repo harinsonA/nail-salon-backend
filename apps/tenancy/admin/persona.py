@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.urls import path
 from simple_history.admin import SimpleHistoryAdmin
 
+from apps.panel.views.people.view import PersonDeleteModalView, PersonListAjaxView, PersonListView
 from apps.tenancy.models import Persona, PersonaCorreo, PersonaDireccion, PersonaTelefono
 
 
@@ -27,6 +29,18 @@ class PersonaAdmin(SimpleHistoryAdmin):
     search_fields = ("nombres", "apellidos", "correos__correo", "telefonos__numero")
     fields = ("nombres", "apellidos", "notas")
     inlines = [PersonaCorreoInline, PersonaTelefonoInline, PersonaDireccionInline]
+
+    def get_urls(self):
+        list_ajax = PersonListAjaxView.as_view(admin_site=self.admin_site, model_admin=self)
+        delete_modal = PersonDeleteModalView.as_view(admin_site=self.admin_site, model_admin=self)
+        return [
+            path("list/", list_ajax, name="tenancy_persona_list_ajax"),
+            path("<int:pk>/delete/modal/", delete_modal, name="tenancy_persona_delete_modal"),
+            *super().get_urls(),
+        ]
+
+    def changelist_view(self, request, extra_context=None):
+        return PersonListView.as_view(admin_site=self.admin_site, model_admin=self)(request)
 
     @admin.display(description="Correo principal")
     def correo_principal(self, persona):
