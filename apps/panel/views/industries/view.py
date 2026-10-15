@@ -7,6 +7,9 @@ from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.panel.views.base import PanelDeleteModalView, PanelListViewAjax, PanelView
 from apps.tenancy.models import Rubro
 
+"""========================================================================="""
+# region ........ Forms
+
 
 class IndustriesFilterForm(forms.Form):
     class StatusChoices(TextChoices):
@@ -29,6 +32,13 @@ class IndustriesFilterForm(forms.Form):
         if status == self.StatusChoices.INACTIVE:
             return {"activo": False}
         return {}
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Views
 
 
 class IndustryListView(PanelView, TemplateView):
@@ -111,3 +121,7 @@ class IndustryDeleteModalView(PanelDeleteModalView):
             {"text": f"Código: {industry.codigo}", "icon": "tag"},
             {"text": f"Negocios asociados: {industry.negocios.count()}", "icon": "storefront"},
         ]
+
+
+# endregion
+"""========================================================================="""

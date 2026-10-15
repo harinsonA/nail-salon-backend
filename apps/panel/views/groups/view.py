@@ -7,6 +7,9 @@ from django.views.generic import TemplateView
 from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.panel.views.base import PanelDeleteModalView, PanelListViewAjax, PanelView
 
+"""========================================================================="""
+# region ........ Forms
+
 
 class GroupsFilterForm(forms.Form):
     class UsersChoices(TextChoices):
@@ -29,6 +32,13 @@ class GroupsFilterForm(forms.Form):
         if users == self.UsersChoices.WITHOUT_USERS:
             return {"user_count": 0}
         return {}
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Views
 
 
 class GroupListView(PanelView, TemplateView):
@@ -109,3 +119,7 @@ class GroupDeleteModalView(PanelDeleteModalView):
             {"text": f"Permisos: {group.permissions.count()}", "icon": "key"},
             {"text": f"Usuarios asignados: {group.user_set.count()}", "icon": "group"},
         ]
+
+
+# endregion
+"""========================================================================="""
