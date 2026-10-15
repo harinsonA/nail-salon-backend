@@ -7,18 +7,164 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
+from bootstrap_modal_forms.forms import BSModalForm
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from apps.common.form_classes import FORM_SELECT_CLASS
-from apps.panel.views.base import PanelDeleteModalView, PanelListViewAjax, PanelView
+from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.common.utils.passwords import PasswordPolicyValidator
+from apps.common.utils.utils import USERNAME_MAX_LENGTH, CommonCleaner
+from apps.panel.views.base import PanelCreateModalView, PanelDeleteModalView, PanelListViewAjax, PanelView
+
+"""========================================================================="""
+# region ........ Constants
+
 
 User = get_user_model()
 
 NEVER = "—"
+NAME_PART_MAX_LENGTH = 50
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Helpers
 
 
 def format_last_login(value):
     return timezone.localtime(value).strftime("%d/%m/%Y %H:%M") if value else NEVER
+
+
+def join_name_parts(*parts):
+    return " ".join(part for part in parts if part)
+
+
+def text_input(placeholder="", **attrs):
+    return forms.TextInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": placeholder, **attrs})
+
+
+def password_input():
+    return forms.PasswordInput(attrs={"class": FORM_CONTROL_CLASS, "autocomplete": "new-password"})
+
+
+def switch_input():
+    return forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"})
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Forms
+
+
+class UserCreateForm(BSModalForm):
+    username = forms.CharField(
+        label="Usuario",
+        help_text="Entre 3 y 30 caracteres: minúsculas, números, punto, guion y guion bajo.",
+        widget=text_input(
+            "ana.rojas", maxlength=USERNAME_MAX_LENGTH, autocapitalize="none", autocomplete="off", spellcheck="false"
+        ),
+    )
+    password = forms.CharField(
+        label="Contraseña",
+        strip=False,
+        help_text=PasswordPolicyValidator().get_help_text(),
+        widget=password_input(),
+    )
+    password_confirmation = forms.CharField(label="Repetir contraseña", strip=False, widget=password_input())
+    first_name = forms.CharField(label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana"))
+    second_name = forms.CharField(
+        label="Segundo nombre", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("María")
+    )
+    first_surname = forms.CharField(
+        label="Primer apellido", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Rojas")
+    )
+    second_surname = forms.CharField(
+        label="Segundo apellido", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("Pérez")
+    )
+    email = forms.EmailField(
+        label="Correo",
+        max_length=254,
+        widget=forms.EmailInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@hiagenda.cl"}),
+    )
+    is_active = forms.BooleanField(label="Activo", required=False, initial=True, widget=switch_input())
+    is_staff = forms.BooleanField(label="Acceso al panel", required=False, initial=True, widget=switch_input())
+    is_superuser = forms.BooleanField(label="Superusuario", required=False, initial=False, widget=switch_input())
+
+    def clean_username(self):
+        result = CommonCleaner.clean_username_field(self.cleaned_data["username"])
+        if result.is_err():
+            raise forms.ValidationError(result.value)
+        if User.objects.filter(username__iexact=result.value).exists():
+            raise forms.ValidationError("Ese usuario ya existe en el panel.")
+        return result.value
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Ese correo ya lo usa otro usuario del panel.")
+        return email
+
+    def clean_name_part(self, field_name):
+        value = " ".join(self.cleaned_data.get(field_name, "").split())
+        if not value:
+            return ""
+        result = CommonCleaner.clean_alphabetic_field(self.fields[field_name].label.lower(), value)
+        if result.is_err():
+            raise forms.ValidationError(result.value)
+        return result.value
+
+    def clean_first_name(self):
+        return self.clean_name_part("first_name")
+
+    def clean_second_name(self):
+        return self.clean_name_part("second_name")
+
+    def clean_first_surname(self):
+        return self.clean_name_part("first_surname")
+
+    def clean_second_surname(self):
+        return self.clean_name_part("second_surname")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirmation = cleaned_data.get("password_confirmation")
+        if password and confirmation and password != confirmation:
+            self.add_error("password_confirmation", "Las contraseñas no coinciden.")
+        elif password:
+            candidate = User(
+                username=cleaned_data.get("username", ""),
+                email=cleaned_data.get("email", ""),
+                first_name=self.full_first_name(),
+                last_name=self.full_last_name(),
+            )
+            result = CommonCleaner.clean_password_field(password, user=candidate)
+            if result.is_err():
+                self.add_error("password", result.value)
+        if cleaned_data.get("is_superuser"):
+            cleaned_data["is_staff"] = True
+        return cleaned_data
+
+    def full_first_name(self):
+        return join_name_parts(self.cleaned_data.get("first_name"), self.cleaned_data.get("second_name"))
+
+    def full_last_name(self):
+        return join_name_parts(self.cleaned_data.get("first_surname"), self.cleaned_data.get("second_surname"))
+
+    def user_data(self):
+        return {
+            "username": self.cleaned_data["username"],
+            "email": self.cleaned_data["email"],
+            "password": self.cleaned_data["password"],
+            "first_name": self.full_first_name(),
+            "last_name": self.full_last_name(),
+            "is_active": self.cleaned_data["is_active"],
+            "is_staff": self.cleaned_data["is_staff"],
+            "is_superuser": self.cleaned_data["is_superuser"],
+        }
 
 
 class UsersFilterForm(forms.Form):
@@ -75,6 +221,13 @@ class UsersFilterForm(forms.Form):
         return filters
 
 
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Views
+
+
 class UserListView(PanelView, TemplateView):
     template_name = "panel/users/list.html"
 
@@ -85,7 +238,9 @@ class UserListView(PanelView, TemplateView):
             {
                 "filter_form": UsersFilterForm(),
                 "list_url": reverse("admin:auth_user_list_ajax", current_app=self.admin_site.name),
-                "add_url": reverse("admin:auth_user_add", current_app=self.admin_site.name) if can_add else "",
+                "create_modal_url": (
+                    reverse("admin:auth_user_add_modal", current_app=self.admin_site.name) if can_add else ""
+                ),
             }
         )
         return context
@@ -182,3 +337,16 @@ class UserDeleteModalView(PanelDeleteModalView):
         if self.get_object().pk == request.user.pk:
             return JsonResponse({"message": self.own_account_message}, status=HTTP_400_BAD_REQUEST)
         return super().post(request, *args, **kwargs)
+
+
+class UserCreateModalView(PanelCreateModalView):
+    template_name = "panel/users/user_modal.html"
+    form_class = UserCreateForm
+    success_message = "Usuario %(name)s creado exitosamente."
+
+    def create_object(self, form):
+        return User.objects.create_user(**form.user_data())
+
+
+# endregion
+"""========================================================================="""

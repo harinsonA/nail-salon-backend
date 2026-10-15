@@ -1,4 +1,4 @@
-from bootstrap_modal_forms.generic import BSModalDeleteView
+from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
@@ -6,9 +6,21 @@ from django.urls import reverse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.base_list_view_ajax import AjaxListViewBase
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import SESSION_EXPIRED_MESSAGE
 
+"""========================================================================="""
+# region ........ Constants
+
+
 FORBIDDEN_MESSAGE = "No tienes permiso para ver esta información del panel."
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Mixins
 
 
 class PanelAccessMixin:
@@ -48,8 +60,36 @@ class PanelAjaxView(PanelAccessMixin):
         return JsonResponse({"message": FORBIDDEN_MESSAGE}, status=403)
 
 
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Views
+
+
 class PanelListViewAjax(PanelAjaxView, AjaxListViewBase):
     pass
+
+
+class PanelCreateModalView(PanelAjaxView, BSModalFormView):
+    success_message = "«%(name)s» creado exitosamente."
+
+    def has_model_permission(self, request):
+        return self.model_admin.has_add_permission(request)
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), "modal_url": self.request.path}
+
+    def create_object(self, form):
+        raise NotImplementedError
+
+    def form_invalid(self, form):
+        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
+
+    def form_valid(self, form):
+        obj = self.create_object(form)
+        self.model_admin.log_addition(self.request, obj, [{"added": {}}])
+        return JsonResponse({"message": self.success_message % {"name": str(obj)}})
 
 
 class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
@@ -92,3 +132,7 @@ class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
         self.model_admin.log_deletions(request, [obj])
         self.model_admin.delete_model(request, obj)
         return JsonResponse({"message": self.success_message % {"name": name}})
+
+
+# endregion
+"""========================================================================="""

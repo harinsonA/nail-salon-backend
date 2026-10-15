@@ -56,13 +56,13 @@ class UsersScreenTests(TestCase):
         self.assertTemplateUsed(response, "panel/users/list.html")
         self.assertContains(response, 'id="users_table"')
         self.assertContains(response, f'url: \'{LIST_AJAX_URL}\'')
-        self.assertContains(response, 'href="/admin/auth/user/add/"')
+        self.assertContains(response, 'data-form-url="/admin/auth/user/add/modal/"')
         self.assertContains(response, 'id="id_group"')
 
     def test_add_button_requires_add_permission(self):
         response = self.browser(self.viewer).get(LIST_URL)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "/admin/auth/user/add/")
+        self.assertNotContains(response, "/admin/auth/user/add/modal/")
 
     def test_staff_without_permission_gets_forbidden(self):
         response = self.browser(self.staff).get(LIST_URL)
@@ -113,9 +113,9 @@ class UsersScreenTests(TestCase):
         response = Client(HTTP_HOST=PANEL).get(LIST_AJAX_URL, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(response.status_code, 401)
 
-    def test_add_form_is_still_the_django_one(self):
+    def test_django_add_page_redirects_to_the_list(self):
         response = self.browser(self.superuser).get("/admin/auth/user/add/")
-        self.assertTemplateUsed(response, "admin/auth/user/add_form.html")
+        self.assertRedirects(response, LIST_URL, fetch_redirect_response=False)
 
     def test_delete_modal_shows_the_user_details(self):
         response = self.browser(self.superuser).get(

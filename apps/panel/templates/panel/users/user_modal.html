@@ -1,0 +1,94 @@
+{% load static %}
+<form id="user-form-modal" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined me-2">
+        person_add
+      </span>
+      <span class="pb-1">
+        Nuevo usuario del panel
+      </span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="mb-2">
+      <label for="{{ form.username.id_for_label }}" class="form-label form-label--custom">
+        {{ form.username.label }}
+      </label>
+      {{ form.username }}
+      <span class="invalid-feedback invalid-feedback--custom {{ form.username.id_for_label }}">
+        {{ form.username.errors.0 }}
+      </span>
+      <div class="form-text"><small>{{ form.username.help_text }}</small></div>
+    </div>
+    <div class="row g-2">
+      {% for field in form %}
+      {% if field.name == 'password' or field.name == 'password_confirmation' %}
+      <div class="col-12 col-sm-6 mb-2">
+        <label for="{{ field.id_for_label }}" class="form-label form-label--custom">
+          {{ field.label }}
+        </label>
+        <div class="input-group">
+          {{ field }}
+          <button type="button" class="btn btn-outline-secondary password-toggle" data-target="#{{ field.id_for_label }}"
+            aria-label="Mostrar u ocultar contraseña">
+            <img src="{% static 'images/common/visibility.svg' %}" alt="" width="18" height="18" class="eye-open">
+            <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="18" height="18" class="eye-closed d-none">
+          </button>
+          <span class="invalid-feedback invalid-feedback--custom {{ field.id_for_label }}">
+            {{ field.errors.0 }}
+          </span>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="form-text mb-2"><small>{{ form.password.help_text }}</small></div>
+    <div class="row g-2">
+      {% for field in form %}
+      {% if field.name == 'first_name' or field.name == 'second_name' or field.name == 'first_surname' or field.name == 'second_surname' %}
+      <div class="col-12 col-sm-6 mb-2">
+        <label for="{{ field.id_for_label }}" class="form-label form-label--custom">
+          {{ field.label }}{% if not field.field.required %} <span class="text-body-secondary">(opcional)</span>{% endif %}
+        </label>
+        {{ field }}
+        <span class="invalid-feedback invalid-feedback--custom {{ field.id_for_label }}">
+          {{ field.errors.0 }}
+        </span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      <label for="{{ form.email.id_for_label }}" class="form-label form-label--custom">
+        {{ form.email.label }}
+      </label>
+      {{ form.email }}
+      <span class="invalid-feedback invalid-feedback--custom {{ form.email.id_for_label }}">
+        {{ form.email.errors.0 }}
+      </span>
+    </div>
+    <div class="d-flex flex-wrap gap-4">
+      {% for field in form %}
+      {% if field.name == 'is_active' or field.name == 'is_staff' or field.name == 'is_superuser' %}
+      <div class="form-check form-switch">
+        <label class="form-check-label form-label--custom" for="{{ field.id_for_label }}">
+          {{ field.label }}
+        </label>
+        {{ field }}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="user_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+      Guardar
+    </button>
+  </div>
+</form>
