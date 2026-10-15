@@ -8,9 +8,10 @@ Usuarios
 {% block content %}
 {% include 'common/bs_modal.html' %}
 <section>
-  {% if add_url %}
+  {% if create_modal_url %}
   <section class="d-inline-flex align-items-center gap-2">
-    <a href="{{ add_url }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+    <a id="user-create-btn" data-form-url="{{ create_modal_url }}"
+      class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
       Usuario
       <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
     </a>
@@ -132,11 +133,29 @@ Usuarios
     });
     {% endfor %}
 
+    if ($('#user-create-btn').length) {
+      initializeBSModals('#user-create-btn');
+    }
+
+    $(document).on('click', '#modal .password-toggle', function () {
+      const input = document.querySelector(this.dataset.target);
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      $(this).find('.eye-open').toggleClass('d-none', show);
+      $(this).find('.eye-closed').toggleClass('d-none', !show);
+    });
+
+    $(document).on('change', '#modal #id_is_superuser', ({ target }) => {
+      if (target.checked) {
+        $('#modal #id_is_staff').prop('checked', true);
+      }
+    });
+
     $('#modal').on('show.bs.modal', ({ target }) => {
-      const submitBtn = target.querySelector('#delete_submit_btn');
+      const submitBtn = target.querySelector('#user_submit_btn') || target.querySelector('#delete_submit_btn');
       $(submitBtn).click(async () => {
         submitBtn.disabled = true;
-        const modalForm = target.querySelector('#common-form-modal');
+        const modalForm = target.querySelector('#user-form-modal') || target.querySelector('#common-form-modal');
         const reloadTable = (form, response, statusCode) => {
           if ([200].includes(statusCode)) {
             $('#modal').modal('hide');
