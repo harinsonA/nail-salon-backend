@@ -8,7 +8,18 @@ from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.panel.views.base import PanelDeleteModalView, PanelListViewAjax, PanelView
 from apps.tenancy.models import Persona, PersonaCorreo, PersonaTelefono
 
+"""========================================================================="""
+# region ........ Constants
+
+
 EMPTY = "—"
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Forms
 
 
 class PeopleFilterForm(forms.Form):
@@ -32,6 +43,13 @@ class PeopleFilterForm(forms.Form):
         if ownership == self.OwnershipChoices.WITHOUT_BUSINESS:
             return {"business_count": 0}
         return {}
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Views
 
 
 class PersonListView(PanelView, TemplateView):
@@ -139,3 +157,7 @@ class PersonDeleteModalView(PanelDeleteModalView):
             {"text": f"Teléfonos: {person.telefonos.count()}", "icon": "call"},
             {"text": f"Negocios como titular: {person.negocios_como_titular.count()}", "icon": "storefront"},
         ]
+
+
+# endregion
+"""========================================================================="""

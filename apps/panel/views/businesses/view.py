@@ -10,12 +10,30 @@ from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.panel.views.base import PanelListViewAjax, PanelView
 from apps.tenancy.models import Dominio, Negocio, Rubro
 
+"""========================================================================="""
+# region ........ Constants
+
+
 EMPTY = "—"
 ALL = "all"
 
 
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Helpers
+
+
 def businesses():
     return Negocio.objects.exclude(schema_name=get_public_schema_name())
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Forms
 
 
 class BusinessesFilterForm(forms.Form):
@@ -42,6 +60,13 @@ class BusinessesFilterForm(forms.Form):
         if cleaned_data.get("industry"):
             filters["rubro"] = cleaned_data["industry"]
         return filters
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Views
 
 
 class BusinessListView(PanelView, TemplateView):
@@ -147,3 +172,7 @@ class BusinessListAjaxView(PanelListViewAjax):
             overdue_businesses=Count("pk", filter=Q(estado=Negocio.Estado.MOROSO)),
             preparing_businesses=Count("pk", filter=Q(estado=Negocio.Estado.PREPARANDO)),
         )
+
+
+# endregion
+"""========================================================================="""
