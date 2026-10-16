@@ -53,13 +53,14 @@ class GroupsScreenTests(TestCase):
         self.assertTemplateUsed(response, "panel/base.html")
         self.assertContains(response, 'id="groups_table"')
         self.assertContains(response, f'url: \'{LIST_AJAX_URL}\'')
-        self.assertContains(response, 'href="/admin/auth/group/add/"')
+        self.assertContains(response, 'data-form-url="/admin/auth/group/add/modal/"')
         self.assertContains(response, 'id="modal"')
+        self.assertContains(response, 'id="xl_modal"')
 
     def test_add_button_requires_add_permission(self):
         response = self.browser(self.viewer).get(LIST_URL)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "/admin/auth/group/add/")
+        self.assertNotContains(response, "/admin/auth/group/add/modal/")
 
     def test_staff_without_permission_gets_forbidden(self):
         response = self.browser(self.staff).get(LIST_URL)
@@ -93,7 +94,8 @@ class GroupsScreenTests(TestCase):
     def test_options_link_to_edit_form_and_delete_modal(self):
         row = next(row for row in self.fetch(self.superuser).json()["data"] if row["name"] == "Soporte")
         options = {option["label"]: option for option in row["options"]}
-        self.assertEqual(options["Editar"]["link"], f"/admin/auth/group/{self.support.pk}/change/")
+        self.assertEqual(options["Editar"]["link"], f"/admin/auth/group/{self.support.pk}/change/modal/")
+        self.assertEqual(options["Editar"]["className"], "bs-xl-modal")
         self.assertEqual(options["Eliminar"]["link"], self.delete_modal_url(self.support))
         self.assertTrue(options["Eliminar"]["bsModal"])
         self.assertIn("bs-modal", options["Eliminar"]["className"])
@@ -110,14 +112,19 @@ class GroupsScreenTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["redirect"], "/admin/login/")
 
-    def test_add_form_is_still_the_django_one(self):
-        response = self.browser(self.superuser).get("/admin/auth/group/add/")
-        self.assertTemplateUsed(response, "admin/change_form.html")
+    def test_old_django_pages_redirect_to_the_list(self):
+        browser = self.browser(self.superuser)
+        for url in ("/admin/auth/group/add/", f"/admin/auth/group/{self.support.pk}/change/",
+                    f"/admin/auth/group/{self.support.pk}/", f"/admin/auth/group/{self.support.pk}/delete/"):
+            with self.subTest(url=url):
+                self.assertRedirects(browser.get(url, follow=True), LIST_URL)
 
-    def test_saving_a_group_returns_to_the_panel_list(self):
-        response = self.browser(self.superuser).post("/admin/auth/group/add/", {"name": "Ventas"})
-        self.assertRedirects(response, LIST_URL, fetch_redirect_response=False)
-        self.assertTrue(Group.objects.filter(name="Ventas").exists())
+    def test_posting_to_old_django_pages_changes_nothing(self):
+        browser = self.browser(self.superuser)
+        browser.post("/admin/auth/group/add/", {"name": "Ventas"})
+        browser.post(f"/admin/auth/group/{self.support.pk}/delete/", {"post": "yes"})
+        self.assertFalse(Group.objects.filter(name="Ventas").exists())
+        self.assertTrue(Group.objects.filter(pk=self.support.pk).exists())
 
     def test_delete_modal_shows_the_group_details(self):
         response = self.browser(self.superuser).get(
@@ -168,7 +175,3 @@ class GroupsScreenTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("No se puede eliminar «Soporte»", response.json()["message"])
         self.assertTrue(Group.objects.filter(pk=self.support.pk).exists())
-
-    def test_edit_form_keeps_the_django_delete_page(self):
-        response = self.browser(self.superuser).get(f"/admin/auth/group/{self.support.pk}/delete/")
-        self.assertTemplateUsed(response, "admin/delete_confirmation.html")

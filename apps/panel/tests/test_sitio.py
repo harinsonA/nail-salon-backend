@@ -41,7 +41,7 @@ class SitioDelPanelTests(TestCase):
         connection.set_schema_to_public()
         panel = Client(HTTP_HOST=host)
         panel.force_login(self.admin)
-        return panel.get("/admin/auth/group/add/")
+        return panel.get(f"/admin/auth/user/{self.admin.pk}/history/")
 
     def test_los_titulos_vienen_del_sitio(self):
         respuesta = self.pagina_de_django()
