@@ -1,14 +1,97 @@
+import re
+
+from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.db.models import Count, Q, TextChoices
 from django.urls import reverse
 from django.views.generic import TemplateView
 
-from apps.common.form_classes import FORM_SELECT_CLASS
-from apps.panel.views.base import PanelDeleteModalView, PanelListViewAjax, PanelView
+from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.panel.permissions import (
+    build_permission_rows,
+    merge_panel_permissions,
+    panel_permission_ids,
+    panel_permissions,
+    permission_action_labels,
+)
+from apps.panel.views.base import (
+    PanelCreateModalView,
+    PanelDeleteModalView,
+    PanelListViewAjax,
+    PanelUpdateModalView,
+    PanelView,
+)
+
+"""========================================================================="""
+# region ........ Constants
+
+
+GROUP_NAME_MIN_LENGTH = 3
+GROUP_NAME_MAX_LENGTH = 80
+GROUP_NAME_PATTERN = re.compile(r"^[^\W_][\w .-]*$")
+
+
+# endregion
+"""========================================================================="""
 
 """========================================================================="""
 # region ........ Forms
+
+
+class GroupForm(BSModalForm):
+    name = forms.CharField(
+        label="Nombre",
+        help_text="Entre 3 y 80 caracteres: letras, números, espacios, punto, guion y guion bajo.",
+        widget=forms.TextInput(
+            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Soporte", "maxlength": GROUP_NAME_MAX_LENGTH}
+        ),
+    )
+    permissions = forms.ModelMultipleChoiceField(
+        label="Permisos",
+        queryset=Permission.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        super().__init__(*args, **kwargs)
+        self.fields["permissions"].queryset = panel_permissions()
+        if instance is not None:
+            self.initial.update(
+                {
+                    "name": instance.name,
+                    "permissions": list(
+                        instance.permissions.filter(pk__in=panel_permission_ids()).values_list("pk", flat=True)
+                    ),
+                }
+            )
+
+    def clean_name(self):
+        name = " ".join(self.cleaned_data["name"].split())
+        if not GROUP_NAME_MIN_LENGTH <= len(name) <= GROUP_NAME_MAX_LENGTH:
+            raise forms.ValidationError(
+                f"El nombre debe tener entre {GROUP_NAME_MIN_LENGTH} y {GROUP_NAME_MAX_LENGTH} caracteres."
+            )
+        if not GROUP_NAME_PATTERN.match(name):
+            raise forms.ValidationError(
+                "El nombre solo admite letras, números, espacios, punto, guion y guion bajo, y debe empezar "
+                "con una letra o un número."
+            )
+        groups = Group.objects.exclude(pk=self.instance.pk) if self.instance else Group.objects.all()
+        if groups.filter(name__iexact=name).exists():
+            raise forms.ValidationError("Ya existe un grupo con ese nombre.")
+        return name
+
+    def save(self):
+        group = self.instance or Group()
+        group.name = self.cleaned_data["name"]
+        group.save()
+        current = set(group.permissions.values_list("pk", flat=True))
+        selected = {permission.pk for permission in self.cleaned_data["permissions"]}
+        group.permissions.set(merge_panel_permissions(current, selected))
+        return group
 
 
 class GroupsFilterForm(forms.Form):
@@ -38,6 +121,31 @@ class GroupsFilterForm(forms.Form):
 """========================================================================="""
 
 """========================================================================="""
+# region ........ Mixins
+
+
+class GroupModalMixin:
+    template_name = "panel/groups/group_modal.html"
+    form_class = GroupForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        group = context.get("object")
+        direct = set(context["form"].initial.get("permissions", []))
+        context.update(
+            {
+                "permission_actions": permission_action_labels(),
+                "permission_rows": build_permission_rows(direct),
+                "user_count": group.user_set.count() if group else 0,
+            }
+        )
+        return context
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
 # region ........ Views
 
 
@@ -51,7 +159,9 @@ class GroupListView(PanelView, TemplateView):
             {
                 "filter_form": GroupsFilterForm(),
                 "list_url": reverse("admin:auth_group_list_ajax", current_app=self.admin_site.name),
-                "add_url": reverse("admin:auth_group_add", current_app=self.admin_site.name) if can_add else "",
+                "create_modal_url": (
+                    reverse("admin:auth_group_add_modal", current_app=self.admin_site.name) if can_add else ""
+                ),
             }
         )
         return context
@@ -86,8 +196,10 @@ class GroupListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Editar",
-                        "link": reverse("admin:auth_group_change", args=[item["pk"]]),
+                        "link": reverse("admin:auth_group_change_modal", args=[item["pk"]]),
+                        "bsModal": True,
                         "icon": "edit_document",
+                        "className": "bs-xl-modal",
                     }
                 )
             if can_delete:
@@ -109,6 +221,20 @@ class GroupListAjaxView(PanelListViewAjax):
             total_groups=Count("pk", distinct=True),
             groups_with_users=Count("pk", filter=Q(user__isnull=False), distinct=True),
         )
+
+
+class GroupCreateModalView(GroupModalMixin, PanelCreateModalView):
+    success_message = "Grupo %(name)s creado exitosamente."
+
+    def create_object(self, form):
+        return form.save()
+
+
+class GroupUpdateModalView(GroupModalMixin, PanelUpdateModalView):
+    success_message = "Grupo %(name)s actualizado exitosamente."
+
+    def update_object(self, form):
+        return form.save()
 
 
 class GroupDeleteModalView(PanelDeleteModalView):

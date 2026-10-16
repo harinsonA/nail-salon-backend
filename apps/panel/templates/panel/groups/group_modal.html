@@ -1,0 +1,79 @@
+{% load static %}
+<form id="group-form-modal" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined me-2">
+        {% if object %}group{% else %}group_add{% endif %}
+      </span>
+      <span class="pb-1">
+        {% if object %}Editar grupo · {{ object.name }}{% else %}Nuevo grupo{% endif %}
+      </span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row g-4">
+      <div class="col-12 col-md-3">
+        <div class="nav flex-column side-tabs" role="tablist" aria-orientation="vertical">
+          <button class="nav-link active" id="group-tab-basic" data-bs-toggle="pill"
+            data-bs-target="#group-pane-basic" type="button" role="tab" aria-controls="group-pane-basic"
+            aria-selected="true">
+            <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+            Datos básicos
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+          <button class="nav-link" id="group-tab-permissions" data-bs-toggle="pill"
+            data-bs-target="#group-pane-permissions" type="button" role="tab" aria-controls="group-pane-permissions"
+            aria-selected="false">
+            <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+            Permisos
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+        </div>
+        {% if object %}
+        <div class="readonly-info">
+          <div class="readonly-info__item">
+            <span class="material-symbols-outlined" aria-hidden="true">group</span>
+            <div>
+              <span class="readonly-info__label">Usuarios asignados</span>
+              <span class="readonly-info__value">{{ user_count }}</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-12 col-md-9">
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="group-pane-basic" role="tabpanel" aria-labelledby="group-tab-basic">
+            <h6 class="side-tab-title">Datos básicos</h6>
+            <p class="side-tab-subtitle">El nombre con el que se reconoce el grupo al asignarlo a un usuario.</p>
+            <div class="mb-2">
+              <label for="{{ form.name.id_for_label }}" class="form-label form-label--custom">
+                {{ form.name.label }}
+              </label>
+              {{ form.name }}
+              <span class="invalid-feedback invalid-feedback--custom {{ form.name.id_for_label }}">
+                {{ form.name.errors.0 }}
+              </span>
+              <div class="form-text"><small>{{ form.name.help_text }}</small></div>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="group-pane-permissions" role="tabpanel" aria-labelledby="group-tab-permissions">
+            <h6 class="side-tab-title">Permisos</h6>
+            <p class="side-tab-subtitle">Lo que podrá ver y hacer en el panel cada usuario que tenga este grupo.</p>
+            {% include 'panel/permission_matrix.html' with field=form.permissions %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="group_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+      Guardar
+    </button>
+  </div>
+</form>
