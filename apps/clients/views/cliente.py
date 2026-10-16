@@ -20,6 +20,7 @@ from apps.common.form_classes import (
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT_CLASS,
 )
+from apps.common.form_fields import AlphabeticField, NoteField
 from apps.common.utils.phones import CountryPhonePrefix, get_whatsapp_url
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
@@ -59,7 +60,7 @@ class ClientsFilterForm(BSModalForm):
 
 
 class ClientsForm(BSModalForm):
-    name = forms.CharField(
+    name = AlphabeticField(
         label="Nombres",
         max_length=50,
         required=True,
@@ -70,7 +71,7 @@ class ClientsForm(BSModalForm):
             },
         ),
     )
-    last_name = forms.CharField(
+    last_name = AlphabeticField(
         label="Apellidos",
         required=False,
         max_length=50,
@@ -115,7 +116,7 @@ class ClientsForm(BSModalForm):
         initial=True,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
-    notes = forms.CharField(
+    notes = NoteField(
         label="Notas",
         required=False,
         help_text="Notas del cliente",
@@ -127,24 +128,6 @@ class ClientsForm(BSModalForm):
             }
         ),
     )
-
-    def clean_name(self):
-        name = self.cleaned_data.get("name", "").strip()
-        if not name:
-            raise forms.ValidationError("Este campo es obligatorio.")
-        result = CommonCleaner.clean_alphabetic_field("nombres", name)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return name
-
-    def clean_last_name(self):
-        last_name = self.cleaned_data.get("last_name", "").strip()
-        if not last_name:
-            return last_name
-        result = CommonCleaner.clean_alphabetic_field("apellidos", last_name)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return last_name
 
     def clean_phone(self):
         phone_prefix = self.cleaned_data.get("country_phone_prefix", "").strip()
@@ -161,15 +144,6 @@ class ClientsForm(BSModalForm):
         if not status:
             return Cliente.EstadoChoices.INACTIVO
         return Cliente.EstadoChoices.ACTIVO
-
-    def clean_notes(self):
-        notes = self.cleaned_data.get("notes", "")
-        if not notes:
-            return ""
-        result = CommonCleaner.clean_250_characters_field("notas", notes)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return result.value
 
     def clean(self):
         cleaned_data = super().clean()

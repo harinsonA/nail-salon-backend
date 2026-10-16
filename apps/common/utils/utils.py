@@ -6,7 +6,8 @@ from django.contrib.auth.password_validation import (
     validate_password,
 )
 from django.core.exceptions import ValidationError
-from result import Result, Ok, Err
+from result import Err, Ok, Result
+
 from apps.common.utils.passwords import PasswordPolicyValidator
 from apps.common.utils.phones import PhoneCleaner
 
@@ -32,6 +33,10 @@ def get_errors_to_response(errors):
     ]
 
 
+def is_ascii_digit(character):
+    return character.isascii() and character.isdigit()
+
+
 # endregion
 """========================================================================="""
 """========================================================================="""
@@ -45,7 +50,9 @@ class CommonCleaner(PasswordPolicyValidator):
         if any(character.isupper() for character in value):
             return Err("El usuario debe ir en minúsculas.")
         if not USERNAME_MIN_LENGTH <= len(value) <= USERNAME_MAX_LENGTH:
-            return Err(f"El usuario debe tener entre {USERNAME_MIN_LENGTH} y {USERNAME_MAX_LENGTH} caracteres.")
+            return Err(
+                f"El usuario debe tener entre {USERNAME_MIN_LENGTH} y {USERNAME_MAX_LENGTH} caracteres."
+            )
         if not USERNAME_PATTERN.match(value):
             return Err(
                 "El usuario debe empezar con una letra y solo admite letras minúsculas sin tilde, "
@@ -62,27 +69,63 @@ class CommonCleaner(PasswordPolicyValidator):
             validate_password(
                 field_value,
                 user=user,
-                password_validators=[UserAttributeSimilarityValidator(), CommonPasswordValidator()],
+                password_validators=[
+                    UserAttributeSimilarityValidator(),
+                    CommonPasswordValidator(),
+                ],
             )
         except ValidationError as error:
             return Err(error.messages[0])
         return Ok(field_value)
 
     @staticmethod
-    def clean_alphabetic_field(field_name: str, field_value: str) -> Result[str, str]:
+    def clean_alphabetic_field(
+        field_name: str, field_value: str, allow_dots: bool = False
+    ) -> Result[str, str]:
         """
         Cleans a string field to contain
         only alphabetic characters and spaces.
         """
         value = ""
         for character in field_value:
-            if not (character.isalpha() or character.isspace()):
-                return Err(
-                    f"El campo '{field_name}' debe solo contener "
-                    "caracteres alfabéticos y espacios."
+            if not (
+                character.isalpha()
+                or character.isspace()
+                or (allow_dots and character == ".")
+            ):
+                allowed = (
+                    "caracteres alfabéticos, espacios y puntos"
+                    if allow_dots
+                    else "caracteres alfabéticos y espacios"
                 )
+                return Err(f"El campo '{field_name}' debe solo contener {allowed}.")
             value += character
         return Ok(value.strip())
+
+    @staticmethod
+    def clean_alphanumeric_field(
+        field_name: str, field_value: str, allow_dots: bool = False
+    ) -> Result[str, str]:
+        for character in field_value:
+            if not (
+                character.isalpha()
+                or is_ascii_digit(character)
+                or character.isspace()
+                or (allow_dots and character == ".")
+            ):
+                allowed = (
+                    "letras, números, espacios y puntos"
+                    if allow_dots
+                    else "letras, números y espacios"
+                )
+                return Err(f"El campo '{field_name}' debe solo contener {allowed}.")
+        return Ok(field_value.strip())
+
+    @staticmethod
+    def clean_numeric_field(field_name: str, field_value: str) -> Result[str, str]:
+        if not all(is_ascii_digit(character) for character in field_value):
+            return Err(f"El campo '{field_name}' debe solo contener números.")
+        return Ok(field_value)
 
     @staticmethod
     def clean_phone_field(prefix_value: str, phone_number: str) -> Result[str, str]:

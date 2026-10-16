@@ -1,3 +1,4 @@
+from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.contrib.auth.models import Group, Permission
@@ -7,12 +8,18 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
-from bootstrap_modal_forms.forms import BSModalForm
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT2_CLASS, FORM_SELECT_CLASS
+from apps.common.form_classes import (
+    FORM_CONTROL_CLASS,
+    FORM_SELECT2_CLASS,
+    FORM_SELECT_CLASS,
+)
+from apps.common.form_fields import AlphabeticField
 from apps.common.utils.passwords import PasswordPolicyValidator
+from apps.common.utils.text import join_name_parts, split_name
 from apps.common.utils.utils import USERNAME_MAX_LENGTH, CommonCleaner
+from apps.common.widgets import password_input, switch_input, text_input
 from apps.panel.permissions import (
     build_permission_rows,
     group_permission_map,
@@ -40,7 +47,6 @@ NAME_PART_MAX_LENGTH = 50
 DATETIME_FORMAT = "%d/%m/%Y %H:%M"
 
 
-
 # endregion
 """========================================================================="""
 
@@ -56,30 +62,11 @@ def format_last_login(value):
     return format_datetime(value)
 
 
-def join_name_parts(*parts):
-    return " ".join(part for part in parts if part)
-
-
-def split_name(full_name):
-    first, _, rest = (full_name or "").strip().partition(" ")
-    return first, rest.strip()
-
-
-def text_input(placeholder="", **attrs):
-    return forms.TextInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": placeholder, **attrs})
-
-
-def password_input():
-    return forms.PasswordInput(attrs={"class": FORM_CONTROL_CLASS, "autocomplete": "new-password"})
-
-
-def switch_input():
-    return forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"})
-
-
 def user_permission_rows(user):
     direct = set(user.user_permissions.values_list("pk", flat=True))
-    inherited = set(Permission.objects.filter(group__user=user).values_list("pk", flat=True))
+    inherited = set(
+        Permission.objects.filter(group__user=user).values_list("pk", flat=True)
+    )
     return build_permission_rows(direct, inherited)
 
 
@@ -95,27 +82,49 @@ class UserFormBase(BSModalForm):
         label="Usuario",
         help_text="Entre 3 y 30 caracteres: minúsculas, números, punto, guion y guion bajo.",
         widget=text_input(
-            "ana.rojas", maxlength=USERNAME_MAX_LENGTH, autocapitalize="none", autocomplete="off", spellcheck="false"
+            "ana.rojas",
+            maxlength=USERNAME_MAX_LENGTH,
+            autocapitalize="none",
+            autocomplete="off",
+            spellcheck="false",
         ),
     )
-    first_name = forms.CharField(label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana"))
-    second_name = forms.CharField(
-        label="Segundo nombre", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("María")
+    first_name = AlphabeticField(
+        label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana")
     )
-    first_surname = forms.CharField(
-        label="Primer apellido", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Rojas")
+    second_name = AlphabeticField(
+        label="Segundo nombre",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("María"),
     )
-    second_surname = forms.CharField(
-        label="Segundo apellido", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("Pérez")
+    first_surname = AlphabeticField(
+        label="Primer apellido",
+        max_length=NAME_PART_MAX_LENGTH,
+        widget=text_input("Rojas"),
+    )
+    second_surname = AlphabeticField(
+        label="Segundo apellido",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("Pérez"),
     )
     email = forms.EmailField(
         label="Correo",
         max_length=254,
-        widget=forms.EmailInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@hiagenda.cl"}),
+        widget=forms.EmailInput(
+            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@hiagenda.cl"}
+        ),
     )
-    is_active = forms.BooleanField(label="Activo", required=False, initial=True, widget=switch_input())
-    is_staff = forms.BooleanField(label="Acceso al panel", required=False, initial=True, widget=switch_input())
-    is_superuser = forms.BooleanField(label="Superusuario", required=False, initial=False, widget=switch_input())
+    is_active = forms.BooleanField(
+        label="Activo", required=False, initial=True, widget=switch_input()
+    )
+    is_staff = forms.BooleanField(
+        label="Acceso al panel", required=False, initial=True, widget=switch_input()
+    )
+    is_superuser = forms.BooleanField(
+        label="Superusuario", required=False, initial=False, widget=switch_input()
+    )
 
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
@@ -138,27 +147,6 @@ class UserFormBase(BSModalForm):
         if self.other_users().filter(email__iexact=email).exists():
             raise forms.ValidationError("Ese correo ya lo usa otro usuario del panel.")
         return email
-
-    def clean_name_part(self, field_name):
-        value = " ".join(self.cleaned_data.get(field_name, "").split())
-        if not value:
-            return ""
-        result = CommonCleaner.clean_alphabetic_field(self.fields[field_name].label.lower(), value)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return result.value
-
-    def clean_first_name(self):
-        return self.clean_name_part("first_name")
-
-    def clean_second_name(self):
-        return self.clean_name_part("second_name")
-
-    def clean_first_surname(self):
-        return self.clean_name_part("first_surname")
-
-    def clean_second_surname(self):
-        return self.clean_name_part("second_surname")
 
     def clean_password_pair(self, cleaned_data):
         password = cleaned_data.get("password")
@@ -185,10 +173,15 @@ class UserFormBase(BSModalForm):
         return cleaned_data
 
     def full_first_name(self):
-        return join_name_parts(self.cleaned_data.get("first_name"), self.cleaned_data.get("second_name"))
+        return join_name_parts(
+            self.cleaned_data.get("first_name"), self.cleaned_data.get("second_name")
+        )
 
     def full_last_name(self):
-        return join_name_parts(self.cleaned_data.get("first_surname"), self.cleaned_data.get("second_surname"))
+        return join_name_parts(
+            self.cleaned_data.get("first_surname"),
+            self.cleaned_data.get("second_surname"),
+        )
 
 
 class UserCreateForm(UserFormBase):
@@ -198,7 +191,9 @@ class UserCreateForm(UserFormBase):
         help_text=PasswordPolicyValidator().get_help_text(),
         widget=password_input(),
     )
-    password_confirmation = forms.CharField(label="Repetir contraseña", strip=False, widget=password_input())
+    password_confirmation = forms.CharField(
+        label="Repetir contraseña", strip=False, widget=password_input()
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -227,7 +222,10 @@ class UserUpdateForm(UserFormBase):
         widget=password_input(),
     )
     password_confirmation = forms.CharField(
-        label="Repetir nueva contraseña", strip=False, required=False, widget=password_input()
+        label="Repetir nueva contraseña",
+        strip=False,
+        required=False,
+        widget=password_input(),
     )
     groups = forms.ModelMultipleChoiceField(
         label="Grupos",
@@ -260,14 +258,21 @@ class UserUpdateForm(UserFormBase):
                 "is_superuser": instance.is_superuser,
                 "groups": list(instance.groups.values_list("pk", flat=True)),
                 "user_permissions": list(
-                    instance.user_permissions.filter(pk__in=self.fields["user_permissions"].queryset)
-                    .values_list("pk", flat=True)
+                    instance.user_permissions.filter(
+                        pk__in=self.fields["user_permissions"].queryset
+                    ).values_list("pk", flat=True)
                 ),
             }
         )
         editor = getattr(self.request, "user", None)
         if self.is_own_account():
-            for field_name in ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"):
+            for field_name in (
+                "is_active",
+                "is_staff",
+                "is_superuser",
+                "groups",
+                "user_permissions",
+            ):
                 self.fields[field_name].disabled = True
         elif editor is None or not editor.is_superuser:
             self.fields["is_superuser"].disabled = True
@@ -311,9 +316,15 @@ class UserUpdateForm(UserFormBase):
     def save_permissions(user, groups, selected):
         current = set(user.user_permissions.values_list("pk", flat=True))
         inherited = set(
-            Permission.objects.filter(group__in=groups, pk__in=panel_permission_ids()).values_list("pk", flat=True)
+            Permission.objects.filter(
+                group__in=groups, pk__in=panel_permission_ids()
+            ).values_list("pk", flat=True)
         )
-        user.user_permissions.set(merge_panel_permissions(current, {permission.pk for permission in selected}, inherited))
+        user.user_permissions.set(
+            merge_panel_permissions(
+                current, {permission.pk for permission in selected}, inherited
+            )
+        )
 
 
 class UsersFilterForm(forms.Form):
@@ -386,9 +397,15 @@ class UserListView(PanelView, TemplateView):
         context.update(
             {
                 "filter_form": UsersFilterForm(),
-                "list_url": reverse("admin:auth_user_list_ajax", current_app=self.admin_site.name),
+                "list_url": reverse(
+                    "admin:auth_user_list_ajax", current_app=self.admin_site.name
+                ),
                 "create_modal_url": (
-                    reverse("admin:auth_user_add_modal", current_app=self.admin_site.name) if can_add else ""
+                    reverse(
+                        "admin:auth_user_add_modal", current_app=self.admin_site.name
+                    )
+                    if can_add
+                    else ""
                 ),
             }
         )
@@ -398,7 +415,16 @@ class UserListView(PanelView, TemplateView):
 class UserListAjaxView(PanelListViewAjax):
     model = User
     filter_form_class = UsersFilterForm
-    field_list = ["pk", "username", "full_name", "email", "is_staff", "is_superuser", "is_active", "last_login"]
+    field_list = [
+        "pk",
+        "username",
+        "full_name",
+        "email",
+        "is_staff",
+        "is_superuser",
+        "is_active",
+        "last_login",
+    ]
     ordering_fields = {
         "0": "username",
         "1": "full_name",
@@ -441,7 +467,9 @@ class UserListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Editar",
-                        "link": reverse("admin:auth_user_change_modal", args=[item["pk"]]),
+                        "link": reverse(
+                            "admin:auth_user_change_modal", args=[item["pk"]]
+                        ),
                         "bsModal": True,
                         "icon": "edit_document",
                         "className": "bs-xl-modal",
@@ -451,7 +479,9 @@ class UserListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Eliminar",
-                        "link": reverse("admin:auth_user_delete_modal", args=[item["pk"]]),
+                        "link": reverse(
+                            "admin:auth_user_delete_modal", args=[item["pk"]]
+                        ),
                         "bsModal": True,
                         "icon": "delete",
                         "className": "bs-modal text-color-destructive",
@@ -480,14 +510,19 @@ class UserDeleteModalView(PanelDeleteModalView):
         information.extend(
             [
                 {"text": f"Grupos: {user.groups.count()}", "icon": "group"},
-                {"text": f"Último acceso: {format_last_login(user.last_login)}", "icon": "schedule"},
+                {
+                    "text": f"Último acceso: {format_last_login(user.last_login)}",
+                    "icon": "schedule",
+                },
             ]
         )
         return information
 
     def post(self, request, *args, **kwargs):
         if self.get_object().pk == request.user.pk:
-            return JsonResponse({"message": self.own_account_message}, status=HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"message": self.own_account_message}, status=HTTP_400_BAD_REQUEST
+            )
         return super().post(request, *args, **kwargs)
 
 

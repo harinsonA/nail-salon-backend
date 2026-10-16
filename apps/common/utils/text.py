@@ -13,3 +13,12 @@ def truncate_text(value, limit: int = 80, suffix: str = "...") -> str:
     if len(text) <= limit:
         return text
     return text[:limit].rstrip() + suffix
+
+
+def join_name_parts(*parts):
+    return " ".join(part for part in parts if part)
+
+
+def split_name(full_name):
+    first, _, rest = (full_name or "").strip().partition(" ")
+    return first, rest.strip()

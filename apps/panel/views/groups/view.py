@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.utils.utils import CommonCleaner
+from apps.common.form_fields import AlphabeticField
 from apps.panel.permissions import (
     build_permission_rows,
     merge_panel_permissions,
@@ -38,7 +38,7 @@ GROUP_NAME_MAX_LENGTH = 80
 
 
 class GroupForm(BSModalForm):
-    name = forms.CharField(
+    name = AlphabeticField(
         label="Nombre",
         help_text="Entre 3 y 80 caracteres: solo letras y espacios.",
         widget=forms.TextInput(
@@ -67,18 +67,15 @@ class GroupForm(BSModalForm):
             )
 
     def clean_name(self):
-        name = " ".join(self.cleaned_data["name"].split())
+        name = self.cleaned_data["name"]
         if not GROUP_NAME_MIN_LENGTH <= len(name) <= GROUP_NAME_MAX_LENGTH:
             raise forms.ValidationError(
                 f"El nombre debe tener entre {GROUP_NAME_MIN_LENGTH} y {GROUP_NAME_MAX_LENGTH} caracteres."
             )
-        result = CommonCleaner.clean_alphabetic_field("nombre", name)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
         groups = Group.objects.exclude(pk=self.instance.pk) if self.instance else Group.objects.all()
-        if groups.filter(name__iexact=result.value).exists():
+        if groups.filter(name__iexact=name).exists():
             raise forms.ValidationError("Ya existe un grupo con ese nombre.")
-        return result.value
+        return name
 
     def save(self):
         group = self.instance or Group()

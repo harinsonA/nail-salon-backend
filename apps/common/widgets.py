@@ -1,5 +1,6 @@
 from django import forms
 
+from apps.common.form_classes import FORM_CONTROL_CLASS
 
 """========================================================================="""
 # region ........ functions
@@ -18,6 +19,28 @@ class BasePickerWidget(forms.TextInput):
                 default_attrs["class"] += f" {class_name}"
             default_attrs.update(attrs)
         super().__init__(attrs=default_attrs)
+
+
+# endregion
+"""========================================================================="""
+"""========================================================================="""
+# region ........ Inputs
+
+
+def text_input(placeholder="", **attrs):
+    return forms.TextInput(
+        attrs={"class": FORM_CONTROL_CLASS, "placeholder": placeholder, **attrs}
+    )
+
+
+def password_input():
+    return forms.PasswordInput(
+        attrs={"class": FORM_CONTROL_CLASS, "autocomplete": "new-password"}
+    )
+
+
+def switch_input():
+    return forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"})
 
 
 # endregion

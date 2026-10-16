@@ -1,3 +1,5 @@
+from bootstrap_modal_forms.forms import BSModalForm
+from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 from django import forms
 from django.db import transaction
 from django.db.models import Count, Q, TextChoices
@@ -5,18 +7,17 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
-from bootstrap_modal_forms.forms import BSModalForm
-from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.utils.utils import CommonCleaner, get_errors_to_response
+from apps.common.form_fields import AlphabeticField, NoteField
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from ...models.servicio import Servicio
-from ...models.categoria import Categoria
 
+from ...models.categoria import Categoria
+from ...models.servicio import Servicio
 
 """========================================================================="""
 # region ........ Form
@@ -51,7 +52,7 @@ class CategoriesFilterForm(BSModalForm):
 
 
 class CategoriesForm(BSModalForm):
-    name = forms.CharField(
+    name = AlphabeticField(
         label="Nombre de la categoria",
         max_length=100,
         required=True,
@@ -62,10 +63,9 @@ class CategoriesForm(BSModalForm):
             },
         ),
     )
-    description = forms.CharField(
+    description = NoteField(
         label="Descripcion",
         required=False,
-        max_length=500,
         widget=forms.Textarea(
             attrs={
                 "class": FORM_CONTROL_CLASS,
@@ -80,24 +80,6 @@ class CategoriesForm(BSModalForm):
         initial=True,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
-
-    def clean_name(self):
-        name = self.cleaned_data.get("name", "").strip()
-        if not name:
-            raise forms.ValidationError("Este campo es obligatorio.")
-        result = CommonCleaner.clean_alphabetic_field("nombre de la categoria", name)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return name
-
-    def clean_description(self):
-        description = self.cleaned_data.get("description", "").strip()
-        if not description:
-            return description
-        result = CommonCleaner.clean_250_characters_field("descripcion", description)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return description
 
     def clean_status(self):
         status = self.cleaned_data.get("status")
