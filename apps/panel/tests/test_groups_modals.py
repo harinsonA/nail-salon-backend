@@ -79,8 +79,11 @@ class GroupModalsTests(TestCase):
             "": "requerido",
             "ab": "entre 3 y 80",
             "a" * 81: "entre 3 y 80",
-            "-Soporte": "debe empezar con una letra o un número",
-            "Soporte@": "solo admite",
+            "Soporte 2": "caracteres alfabéticos",
+            "Soporte@": "caracteres alfabéticos",
+            "Soporte-técnico": "caracteres alfabéticos",
+            "Soporte_técnico": "caracteres alfabéticos",
+            "Soporte.": "caracteres alfabéticos",
             "soporte": "Ya existe un grupo con ese nombre.",
         }
         for name, message in cases.items():

@@ -24,7 +24,7 @@ from apps.tenancy.models import Rubro
 NAME_MAX_LENGTH = 80
 CODE_MIN_LENGTH = 3
 CODE_MAX_LENGTH = 30
-CODE_PATTERN = re.compile(r"^[a-z][a-z0-9_-]*$")
+CODE_PATTERN = re.compile(r"^[a-z]+(_[a-z]+)*$")
 
 
 # endregion
@@ -43,7 +43,7 @@ class IndustryForm(BSModalForm):
     )
     codigo = forms.CharField(
         label="Código",
-        help_text="Entre 3 y 30 caracteres: minúsculas sin tilde, números, guion y guion bajo, empezando por letra.",
+        help_text="Entre 3 y 30 caracteres: minúsculas sin tilde, separadas con guion bajo (peluqueria_canina).",
         widget=forms.TextInput(
             attrs={
                 "class": FORM_CONTROL_CLASS,
@@ -90,8 +90,8 @@ class IndustryForm(BSModalForm):
             raise forms.ValidationError(f"El código debe tener entre {CODE_MIN_LENGTH} y {CODE_MAX_LENGTH} caracteres.")
         if not CODE_PATTERN.match(codigo):
             raise forms.ValidationError(
-                "El código debe empezar con una letra y solo admite letras minúsculas sin tilde, números, guion y "
-                "guion bajo."
+                "El código solo admite letras minúsculas sin tilde, separadas con un guion bajo "
+                "(por ejemplo, peluqueria_canina)."
             )
         if self.other_industries().filter(codigo__iexact=codigo).exists():
             raise forms.ValidationError("Ya existe un rubro con ese código.")
