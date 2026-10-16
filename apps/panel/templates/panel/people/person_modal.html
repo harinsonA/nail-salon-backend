@@ -1,0 +1,137 @@
+<form id="person-form-modal" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined me-2">
+        person_add
+      </span>
+      <span class="pb-1">
+        Nueva persona
+      </span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row g-4">
+      <div class="col-12 col-md-3">
+        <div class="nav flex-column side-tabs" role="tablist" aria-orientation="vertical">
+          <button class="nav-link active" id="person-tab-basic" data-bs-toggle="pill"
+            data-bs-target="#person-pane-basic" type="button" role="tab" aria-controls="person-pane-basic"
+            aria-selected="true">
+            <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+            Datos básicos
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+          <button class="nav-link" id="person-tab-address" data-bs-toggle="pill"
+            data-bs-target="#person-pane-address" type="button" role="tab" aria-controls="person-pane-address"
+            aria-selected="false">
+            <span class="material-symbols-outlined" aria-hidden="true">home_pin</span>
+            Dirección
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+        </div>
+      </div>
+      <div class="col-12 col-md-9">
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="person-pane-basic" role="tabpanel" aria-labelledby="person-tab-basic">
+            <h6 class="side-tab-title">Datos básicos</h6>
+            <p class="side-tab-subtitle">Cómo se llama y cómo contactarla.</p>
+            <div class="row g-2">
+              {% for field in form %}
+              {% if field.name == 'first_name' or field.name == 'second_name' or field.name == 'first_surname' or field.name == 'second_surname' %}
+              <div class="col-12 col-sm-6 mb-2">
+                <label for="{{ field.id_for_label }}" class="form-label form-label--custom">
+                  {{ field.label }}{% if not field.field.required %} <span class="text-body-secondary">(opcional)</span>{% endif %}
+                </label>
+                {{ field }}
+                <span class="invalid-feedback invalid-feedback--custom {{ field.id_for_label }}">
+                  {{ field.errors.0 }}
+                </span>
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            <div class="mb-2">
+              <label for="{{ form.email.id_for_label }}" class="form-label form-label--custom">
+                {{ form.email.label }} <span class="text-body-secondary">(opcional)</span>
+              </label>
+              {{ form.email }}
+              <span class="invalid-feedback invalid-feedback--custom {{ form.email.id_for_label }}">
+                {{ form.email.errors.0 }}
+              </span>
+            </div>
+            <div class="row g-2 align-items-end">
+              <div class="col-12 col-sm-8 mb-2">
+                <label for="{{ form.phone.id_for_label }}" class="form-label form-label--custom">
+                  {{ form.phone.label }} <span class="text-body-secondary">(opcional)</span>
+                </label>
+                <div class="input-group">
+                  <div class="input-group-append">
+                    {{ form.country_phone_prefix }}
+                  </div>
+                  {{ form.phone }}
+                  <span class="invalid-feedback invalid-feedback--custom {{ form.phone.id_for_label }}">
+                    {{ form.phone.errors.0 }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-12 col-sm-4 mb-2">
+                <label for="{{ form.phone_type.id_for_label }}" class="form-label form-label--custom">
+                  {{ form.phone_type.label }}
+                </label>
+                {{ form.phone_type }}
+              </div>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <label class="form-check-label form-label--custom" for="{{ form.has_whatsapp.id_for_label }}">
+                {{ form.has_whatsapp.label }}
+              </label>
+              {{ form.has_whatsapp }}
+            </div>
+            <div class="mb-2">
+              <label for="{{ form.notes.id_for_label }}" class="form-label form-label--custom">
+                {{ form.notes.label }} <span class="text-body-secondary">(opcional)</span>
+              </label>
+              {{ form.notes }}
+              <span class="invalid-feedback invalid-feedback--custom {{ form.notes.id_for_label }}">
+                {{ form.notes.errors.0 }}
+              </span>
+              <div class="form-text"><small>{{ form.notes.help_text }}</small></div>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="person-pane-address" role="tabpanel" aria-labelledby="person-tab-address">
+            <h6 class="side-tab-title">Dirección</h6>
+            <p class="side-tab-subtitle">Dónde vive o dónde se le puede encontrar.</p>
+            <div class="profile-note">
+              <span class="material-symbols-outlined" aria-hidden="true">info</span>
+              <span>Es opcional: déjala vacía si no la conoces. Si la escribes, la calle es obligatoria.</span>
+            </div>
+            <div class="row g-2">
+              {% for field in form %}
+              {% if field.name == 'street' or field.name == 'number' or field.name == 'complement' or field.name == 'postal_code' or field.name == 'commune' or field.name == 'city' or field.name == 'region' or field.name == 'country' or field.name == 'reference' %}
+              <div class="{% if field.name == 'street' %}col-12 col-sm-8{% elif field.name == 'number' %}col-12 col-sm-4{% elif field.name == 'reference' %}col-12{% elif field.name == 'complement' or field.name == 'postal_code' %}col-12 col-sm-6{% else %}col-12 col-sm-6 col-lg-3{% endif %} mb-2">
+                <label for="{{ field.id_for_label }}" class="form-label form-label--custom">
+                  {{ field.label }}
+                </label>
+                {{ field }}
+                <span class="invalid-feedback invalid-feedback--custom {{ field.id_for_label }}">
+                  {{ field.errors.0 }}
+                </span>
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="person_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+      Guardar
+    </button>
+  </div>
+</form>

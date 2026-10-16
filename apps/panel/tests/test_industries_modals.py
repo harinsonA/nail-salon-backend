@@ -93,14 +93,23 @@ class IndustryModalsTests(TestCase):
         cases = {
             "Peluqueria": "minúsculas",
             "pe": "entre 3 y 30",
-            "1peluqueria": "debe empezar con una letra",
-            "peluquería": "debe empezar con una letra",
-            "pelu queria": "debe empezar con una letra",
+            "1peluqueria": "solo admite letras minúsculas",
+            "peluqueria2": "solo admite letras minúsculas",
+            "peluquería": "solo admite letras minúsculas",
+            "pelu queria": "solo admite letras minúsculas",
+            "pelu-queria": "solo admite letras minúsculas",
+            "_peluqueria": "solo admite letras minúsculas",
+            "peluqueria_": "solo admite letras minúsculas",
+            "pelu__queria": "solo admite letras minúsculas",
             "barberia": "Ya existe un rubro con ese código.",
         }
         for codigo, message in cases.items():
             with self.subTest(codigo=codigo):
                 self.assertIn(message, self.errors(self.post(CREATE_URL, codigo=codigo))["id_codigo"])
+
+    def test_code_can_be_split_with_underscores(self):
+        self.assertEqual(self.post(CREATE_URL, codigo="peluqueria_canina").status_code, 200)
+        self.assertTrue(Rubro.objects.filter(codigo="peluqueria_canina").exists())
 
     def test_a_posted_order_is_ignored(self):
         self.post(CREATE_URL, orden="9")

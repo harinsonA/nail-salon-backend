@@ -7,10 +7,12 @@ Personas
 
 {% block content %}
 {% include 'common/bs_modal.html' %}
+{% include 'common/bs_xl_modal.html' %}
 <section>
-  {% if add_url %}
+  {% if create_modal_url %}
   <section class="d-inline-flex align-items-center gap-2">
-    <a href="{{ add_url }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+    <a id="person-create-btn" data-form-url="{{ create_modal_url }}"
+      class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
       Persona
       <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
     </a>
@@ -94,6 +96,7 @@ Personas
         },
         drawCallback: () => {
           initializeAllBSModals();
+          initializeAllBSXLModals();
         },
       },
     });
@@ -101,6 +104,46 @@ Personas
     $('#{{ filter_form.ownership.id_for_label }}').on('change', ({ target }) => {
       filterData.ownership = target.value;
       table.draw();
+    });
+
+    if ($('#person-create-btn').length) {
+      initializeBSXLModals('#person-create-btn');
+    }
+
+    const showTabsWithErrors = (form) => {
+      let firstTab = null;
+      form.querySelectorAll('[data-bs-toggle="pill"]').forEach((tab) => {
+        const pane = form.querySelector(tab.dataset.bsTarget);
+        const hasErrors = Boolean(pane && pane.querySelector('.is-invalid'));
+        tab.classList.toggle('has-errors', hasErrors);
+        if (hasErrors && !firstTab) {
+          firstTab = tab;
+        }
+      });
+      if (firstTab) {
+        bootstrap.Tab.getOrCreateInstance(firstTab).show();
+      }
+    };
+
+    $('#xl_modal').on('show.bs.modal', ({ target }) => {
+      const submitBtn = target.querySelector('#person_submit_btn');
+      if (!submitBtn) return;
+      $(submitBtn).click(async () => {
+        submitBtn.disabled = true;
+        const modalForm = target.querySelector('#person-form-modal');
+        const reloadTable = (form, response, statusCode) => {
+          if (statusCode === 400) {
+            showTabsWithErrors(form);
+          }
+          if ([200].includes(statusCode)) {
+            $('#xl_modal').modal('hide');
+            table.draw();
+          }
+          submitBtn.disabled = statusCode === 200;
+          return [response, statusCode];
+        };
+        await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
+      });
     });
 
     $('#modal').on('show.bs.modal', ({ target }) => {
