@@ -82,7 +82,7 @@ class NegocioTests(TestCase):
 class RubrosInicialesTests(TestCase):
     def test_la_migracion_carga_los_rubros(self):
         self.assertEqual(
-            list(Rubro.objects.values_list("codigo", flat=True)),
+            list(Rubro.objects.order_by("orden").values_list("codigo", flat=True)),
             ["unas", "barberia", "peluqueria", "estetica", "salud", "otro"],
         )
 

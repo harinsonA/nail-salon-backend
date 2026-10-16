@@ -21,7 +21,7 @@ class IndustryModalsTests(TestCase):
         Rubro.objects.all().delete()
         public = Negocio.objects.create(schema_name=get_public_schema_name(), nombre="Hi Agenda")
         Dominio.objects.create(domain=PANEL, tenant=public, is_primary=True)
-        cls.barber = Rubro.objects.create(codigo="barberia", nombre="Barbería", orden=1)
+        cls.barber = Rubro.objects.create(codigo="barberia", nombre="Barbería")
         cls.spa = Rubro.objects.create(codigo="spa", nombre="Spa", orden=4, activo=False)
         Negocio.objects.create(
             schema_name="el_corte", nombre="El Corte", titular=Persona.objects.create(nombres="Carlos"), rubro=cls.barber
@@ -43,7 +43,7 @@ class IndustryModalsTests(TestCase):
         return f"/admin/tenancy/rubro/{industry.pk}/change/modal/"
 
     def payload(self, **changes):
-        data = {"nombre": "Peluquería", "codigo": "peluqueria", "orden": "2", "activo": "on"}
+        data = {"nombre": "Peluquería", "codigo": "peluqueria", "activo": "on"}
         data.update(changes)
         return {key: value for key, value in data.items() if value is not None}
 
@@ -57,12 +57,12 @@ class IndustryModalsTests(TestCase):
         self.assertEqual(response.status_code, 400)
         return {error["id_element"]: error["error"] for error in response.json()["errors"]}
 
-    def test_create_modal_proposes_the_next_order(self):
+    def test_create_modal_has_no_order_field(self):
         response = self.get(CREATE_URL)
         self.assertTemplateUsed(response, "panel/industries/industry_modal.html")
         html = response.content.decode()
         self.assertIn("Nuevo rubro", html)
-        self.assertRegex(html, r'name="orden" value="5"')
+        self.assertNotIn('name="orden"', html)
         self.assertRegex(html, r'name="activo"[^>]*checked')
         self.assertNotIn("Negocios que usan este rubro", html)
 
@@ -70,7 +70,7 @@ class IndustryModalsTests(TestCase):
         response = self.post(CREATE_URL, nombre="  Peluquería   canina ")
         self.assertEqual(response.json()["message"], "Rubro Peluquería canina creado exitosamente.")
         industry = Rubro.objects.get(codigo="peluqueria")
-        self.assertEqual((industry.nombre, industry.orden, industry.activo), ("Peluquería canina", 2, True))
+        self.assertEqual((industry.nombre, industry.orden, industry.activo), ("Peluquería canina", 0, True))
         log = LogEntry.objects.get(object_id=str(industry.pk), content_type__model="rubro")
         self.assertEqual(log.action_flag, ADDITION)
 
@@ -102,23 +102,22 @@ class IndustryModalsTests(TestCase):
             with self.subTest(codigo=codigo):
                 self.assertIn(message, self.errors(self.post(CREATE_URL, codigo=codigo))["id_codigo"])
 
-    def test_order_must_be_a_valid_number(self):
-        for orden in ("-1", "40000", "abc"):
-            with self.subTest(orden=orden):
-                self.assertIn("id_orden", self.errors(self.post(CREATE_URL, orden=orden)))
+    def test_a_posted_order_is_ignored(self):
+        self.post(CREATE_URL, orden="9")
+        self.assertEqual(Rubro.objects.get(codigo="peluqueria").orden, 0)
 
     def test_edit_modal_loads_the_industry_and_its_businesses(self):
         html = self.get(self.edit_url(self.barber)).content.decode()
         self.assertIn("Editar rubro · Barbería", html)
         self.assertRegex(html, r'name="codigo" value="barberia"')
-        self.assertRegex(html, r'name="orden" value="1"')
+        self.assertNotIn('name="orden"', html)
         self.assertIn("Negocios que usan este rubro: 1.", html)
 
     def test_edits_every_field_and_logs_the_change(self):
-        response = self.post(self.edit_url(self.spa), nombre="Spa y masajes", codigo="spa_masajes", orden="9", activo="on")
+        response = self.post(self.edit_url(self.spa), nombre="Spa y masajes", codigo="spa_masajes", activo="on")
         self.assertEqual(response.json()["message"], "Rubro Spa y masajes actualizado exitosamente.")
         spa = Rubro.objects.get(pk=self.spa.pk)
-        self.assertEqual((spa.nombre, spa.codigo, spa.orden, spa.activo), ("Spa y masajes", "spa_masajes", 9, True))
+        self.assertEqual((spa.nombre, spa.codigo, spa.orden, spa.activo), ("Spa y masajes", "spa_masajes", 4, True))
         log = LogEntry.objects.filter(object_id=str(spa.pk), content_type__model="rubro").latest("action_time")
         self.assertEqual(log.action_flag, CHANGE)
 

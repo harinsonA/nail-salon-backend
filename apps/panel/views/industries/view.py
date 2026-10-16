@@ -2,7 +2,7 @@ import re
 
 from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
-from django.db.models import Count, Max, Q, TextChoices
+from django.db.models import Count, Q, TextChoices
 from django.urls import reverse
 from django.views.generic import TemplateView
 
@@ -25,7 +25,6 @@ NAME_MAX_LENGTH = 80
 CODE_MIN_LENGTH = 3
 CODE_MAX_LENGTH = 30
 CODE_PATTERN = re.compile(r"^[a-z][a-z0-9_-]*$")
-ORDER_MAX_VALUE = 32767
 
 
 # endregion
@@ -56,13 +55,6 @@ class IndustryForm(BSModalForm):
             }
         ),
     )
-    orden = forms.IntegerField(
-        label="Orden",
-        min_value=0,
-        max_value=ORDER_MAX_VALUE,
-        help_text="Posición del rubro en las listas: los números más bajos van primero.",
-        widget=forms.NumberInput(attrs={"class": FORM_CONTROL_CLASS, "min": 0, "max": ORDER_MAX_VALUE}),
-    )
     activo = forms.BooleanField(
         label="Activo",
         required=False,
@@ -73,12 +65,8 @@ class IndustryForm(BSModalForm):
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
         super().__init__(*args, **kwargs)
-        if instance is None:
-            self.initial["orden"] = (Rubro.objects.aggregate(last=Max("orden"))["last"] or 0) + 1
-        else:
-            self.initial.update(
-                {"nombre": instance.nombre, "codigo": instance.codigo, "orden": instance.orden, "activo": instance.activo}
-            )
+        if instance is not None:
+            self.initial.update({"nombre": instance.nombre, "codigo": instance.codigo, "activo": instance.activo})
 
     def other_industries(self):
         return Rubro.objects.exclude(pk=self.instance.pk) if self.instance else Rubro.objects.all()
@@ -113,7 +101,6 @@ class IndustryForm(BSModalForm):
         industry = self.instance or Rubro()
         industry.nombre = self.cleaned_data["nombre"]
         industry.codigo = self.cleaned_data["codigo"]
-        industry.orden = self.cleaned_data["orden"]
         industry.activo = self.cleaned_data["activo"]
         industry.save()
         return industry
@@ -188,13 +175,12 @@ class IndustryListView(PanelView, TemplateView):
 class IndustryListAjaxView(PanelListViewAjax):
     model = Rubro
     filter_form_class = IndustriesFilterForm
-    field_list = ["pk", "nombre", "codigo", "activo", "orden", "business_count"]
+    field_list = ["pk", "nombre", "codigo", "activo", "business_count"]
     ordering_fields = {
         "0": "nombre",
         "1": "codigo",
         "2": "activo",
-        "3": "orden",
-        "4": "business_count",
+        "3": "business_count",
     }
 
     def get_queryset(self):

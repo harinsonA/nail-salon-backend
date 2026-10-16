@@ -14,8 +14,8 @@ from apps.tenancy.models import Rubro
 
 @admin.register(Rubro)
 class RubroAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "codigo", "activo", "orden")
-    list_editable = ("activo", "orden")
+    list_display = ("nombre", "codigo", "activo")
+    list_editable = ("activo",)
     search_fields = ("nombre", "codigo")
 
     def get_urls(self):
