@@ -97,7 +97,8 @@ class UsersScreenTests(TestCase):
     def test_options_link_to_edit_form_and_delete_modal(self):
         row = next(row for row in self.fetch(self.superuser).json()["data"] if row["username"] == "retired")
         options = {option["label"]: option for option in row["options"]}
-        self.assertEqual(options["Editar"]["link"], f"/admin/auth/user/{self.retired.pk}/change/")
+        self.assertEqual(options["Editar"]["link"], f"/admin/auth/user/{self.retired.pk}/change/modal/")
+        self.assertEqual(options["Editar"]["className"], "bs-xl-modal")
         self.assertEqual(options["Eliminar"]["link"], self.delete_modal_url(self.retired))
         self.assertTrue(options["Eliminar"]["bsModal"])
 

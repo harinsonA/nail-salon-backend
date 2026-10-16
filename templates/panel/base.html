@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Panel · Hi Agenda{% endblock %}
+
+{% block extra_css %}
+  <link href="{% static 'css/custom/custom.panel.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block body_attrs %}data-login-url="{% url 'admin:login' %}"{% endblock %}
 

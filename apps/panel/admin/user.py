@@ -5,7 +5,13 @@ from django.shortcuts import redirect
 from django.urls import path
 
 from apps.panel.deletion import CurrentSchemaDeletionMixin
-from apps.panel.views.users.view import UserCreateModalView, UserDeleteModalView, UserListAjaxView, UserListView
+from apps.panel.views.users.view import (
+    UserCreateModalView,
+    UserDeleteModalView,
+    UserListAjaxView,
+    UserListView,
+    UserUpdateModalView,
+)
 
 User = get_user_model()
 
@@ -17,10 +23,12 @@ class UserAdmin(CurrentSchemaDeletionMixin, DjangoUserAdmin):
     def get_urls(self):
         list_ajax = UserListAjaxView.as_view(admin_site=self.admin_site, model_admin=self)
         create_modal = UserCreateModalView.as_view(admin_site=self.admin_site, model_admin=self)
+        change_modal = UserUpdateModalView.as_view(admin_site=self.admin_site, model_admin=self)
         delete_modal = UserDeleteModalView.as_view(admin_site=self.admin_site, model_admin=self)
         return [
             path("list/", list_ajax, name="auth_user_list_ajax"),
             path("add/modal/", create_modal, name="auth_user_add_modal"),
+            path("<int:pk>/change/modal/", change_modal, name="auth_user_change_modal"),
             path("<int:pk>/delete/modal/", delete_modal, name="auth_user_delete_modal"),
             *super().get_urls(),
         ]
@@ -29,4 +37,13 @@ class UserAdmin(CurrentSchemaDeletionMixin, DjangoUserAdmin):
         return UserListView.as_view(admin_site=self.admin_site, model_admin=self)(request)
 
     def add_view(self, request, form_url="", extra_context=None):
+        return redirect("admin:auth_user_changelist")
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        return redirect("admin:auth_user_changelist")
+
+    def user_change_password(self, request, id, form_url=""):
+        return redirect("admin:auth_user_changelist")
+
+    def delete_view(self, request, object_id, extra_context=None):
         return redirect("admin:auth_user_changelist")

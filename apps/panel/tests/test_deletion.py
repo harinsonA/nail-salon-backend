@@ -43,10 +43,10 @@ class CurrentSchemaDeletionTests(TestCase):
             pass
         self.assertIn("authtoken", related_apps())
 
-    def test_django_delete_page_for_users_works_in_the_panel(self):
+    def test_deleting_a_user_from_the_panel_skips_business_tables(self):
         browser = Client(HTTP_HOST="admin.localhost")
         browser.force_login(self.superuser)
-        url = f"/admin/auth/user/{self.victim.pk}/delete/"
-        self.assertEqual(browser.get(url).status_code, 200)
-        self.assertRedirects(browser.post(url, {"post": "yes"}), "/admin/auth/user/", fetch_redirect_response=False)
+        url = f"/admin/auth/user/{self.victim.pk}/delete/modal/"
+        self.assertEqual(browser.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 200)
+        self.assertEqual(browser.post(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 200)
         self.assertFalse(User.objects.filter(pk=self.victim.pk).exists())

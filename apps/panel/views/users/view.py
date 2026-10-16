@@ -1,6 +1,6 @@
 from django import forms
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.contrib.auth.models import Group, Permission
 from django.db.models import Count, Q, TextChoices, Value
 from django.db.models.functions import Concat, Trim
 from django.http import JsonResponse
@@ -10,10 +10,16 @@ from django.views.generic import TemplateView
 from bootstrap_modal_forms.forms import BSModalForm
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT2_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.passwords import PasswordPolicyValidator
 from apps.common.utils.utils import USERNAME_MAX_LENGTH, CommonCleaner
-from apps.panel.views.base import PanelCreateModalView, PanelDeleteModalView, PanelListViewAjax, PanelView
+from apps.panel.views.base import (
+    PanelCreateModalView,
+    PanelDeleteModalView,
+    PanelListViewAjax,
+    PanelUpdateModalView,
+    PanelView,
+)
 
 """========================================================================="""
 # region ........ Constants
@@ -23,6 +29,16 @@ User = get_user_model()
 
 NEVER = "—"
 NAME_PART_MAX_LENGTH = 50
+DATETIME_FORMAT = "%d/%m/%Y %H:%M"
+
+PANEL_PERMISSION_MODELS = [
+    ("tenancy", "negocio", "Negocios"),
+    ("tenancy", "persona", "Personas"),
+    ("tenancy", "rubro", "Rubros"),
+    ("auth", "user", "Usuarios"),
+    ("auth", "group", "Grupos"),
+]
+PERMISSION_ACTIONS = [("view", "Ver"), ("add", "Agregar"), ("change", "Editar"), ("delete", "Eliminar")]
 
 
 # endregion
@@ -32,12 +48,21 @@ NAME_PART_MAX_LENGTH = 50
 # region ........ Helpers
 
 
+def format_datetime(value):
+    return timezone.localtime(value).strftime(DATETIME_FORMAT) if value else NEVER
+
+
 def format_last_login(value):
-    return timezone.localtime(value).strftime("%d/%m/%Y %H:%M") if value else NEVER
+    return format_datetime(value)
 
 
 def join_name_parts(*parts):
     return " ".join(part for part in parts if part)
+
+
+def split_name(full_name):
+    first, _, rest = (full_name or "").strip().partition(" ")
+    return first, rest.strip()
 
 
 def text_input(placeholder="", **attrs):
@@ -52,6 +77,48 @@ def switch_input():
     return forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"})
 
 
+def panel_permissions():
+    condition = Q()
+    for app_label, model, _ in PANEL_PERMISSION_MODELS:
+        codenames = [f"{action}_{model}" for action, _ in PERMISSION_ACTIONS]
+        condition |= Q(content_type__app_label=app_label, content_type__model=model, codename__in=codenames)
+    return Permission.objects.filter(condition).select_related("content_type")
+
+
+def group_permission_map():
+    panel_ids = set(panel_permissions().values_list("pk", flat=True))
+    mapping = {}
+    for group_id, permission_id in Group.permissions.through.objects.values_list("group_id", "permission_id"):
+        if permission_id in panel_ids:
+            mapping.setdefault(str(group_id), []).append(permission_id)
+    return mapping
+
+
+def permission_rows(user):
+    permissions = {
+        (permission.content_type.app_label, permission.codename): permission for permission in panel_permissions()
+    }
+    direct = set(user.user_permissions.values_list("pk", flat=True))
+    inherited = set(Permission.objects.filter(group__user=user).values_list("pk", flat=True))
+    rows = []
+    for app_label, model, label in PANEL_PERMISSION_MODELS:
+        cells = []
+        for action, action_label in PERMISSION_ACTIONS:
+            permission = permissions.get((app_label, f"{action}_{model}"))
+            if permission is None:
+                continue
+            cells.append(
+                {
+                    "id": permission.pk,
+                    "action": action_label,
+                    "direct": permission.pk in direct,
+                    "inherited": permission.pk in inherited,
+                }
+            )
+        rows.append({"label": label, "cells": cells})
+    return rows
+
+
 # endregion
 """========================================================================="""
 
@@ -59,7 +126,7 @@ def switch_input():
 # region ........ Forms
 
 
-class UserCreateForm(BSModalForm):
+class UserFormBase(BSModalForm):
     username = forms.CharField(
         label="Usuario",
         help_text="Entre 3 y 30 caracteres: minúsculas, números, punto, guion y guion bajo.",
@@ -67,13 +134,6 @@ class UserCreateForm(BSModalForm):
             "ana.rojas", maxlength=USERNAME_MAX_LENGTH, autocapitalize="none", autocomplete="off", spellcheck="false"
         ),
     )
-    password = forms.CharField(
-        label="Contraseña",
-        strip=False,
-        help_text=PasswordPolicyValidator().get_help_text(),
-        widget=password_input(),
-    )
-    password_confirmation = forms.CharField(label="Repetir contraseña", strip=False, widget=password_input())
     first_name = forms.CharField(label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana"))
     second_name = forms.CharField(
         label="Segundo nombre", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("María")
@@ -93,17 +153,25 @@ class UserCreateForm(BSModalForm):
     is_staff = forms.BooleanField(label="Acceso al panel", required=False, initial=True, widget=switch_input())
     is_superuser = forms.BooleanField(label="Superusuario", required=False, initial=False, widget=switch_input())
 
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        super().__init__(*args, **kwargs)
+
+    def other_users(self):
+        users = User.objects.all()
+        return users.exclude(pk=self.instance.pk) if self.instance else users
+
     def clean_username(self):
         result = CommonCleaner.clean_username_field(self.cleaned_data["username"])
         if result.is_err():
             raise forms.ValidationError(result.value)
-        if User.objects.filter(username__iexact=result.value).exists():
+        if self.other_users().filter(username__iexact=result.value).exists():
             raise forms.ValidationError("Ese usuario ya existe en el panel.")
         return result.value
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
+        if self.other_users().filter(email__iexact=email).exists():
             raise forms.ValidationError("Ese correo ya lo usa otro usuario del panel.")
         return email
 
@@ -128,22 +196,26 @@ class UserCreateForm(BSModalForm):
     def clean_second_surname(self):
         return self.clean_name_part("second_surname")
 
-    def clean(self):
-        cleaned_data = super().clean()
+    def clean_password_pair(self, cleaned_data):
         password = cleaned_data.get("password")
         confirmation = cleaned_data.get("password_confirmation")
         if password and confirmation and password != confirmation:
             self.add_error("password_confirmation", "Las contraseñas no coinciden.")
-        elif password:
-            candidate = User(
-                username=cleaned_data.get("username", ""),
-                email=cleaned_data.get("email", ""),
-                first_name=self.full_first_name(),
-                last_name=self.full_last_name(),
-            )
-            result = CommonCleaner.clean_password_field(password, user=candidate)
-            if result.is_err():
-                self.add_error("password", result.value)
+            return
+        if not password:
+            return
+        candidate = User(
+            username=cleaned_data.get("username", ""),
+            email=cleaned_data.get("email", ""),
+            first_name=self.full_first_name(),
+            last_name=self.full_last_name(),
+        )
+        result = CommonCleaner.clean_password_field(password, user=candidate)
+        if result.is_err():
+            self.add_error("password", result.value)
+
+    def clean(self):
+        cleaned_data = super().clean()
         if cleaned_data.get("is_superuser"):
             cleaned_data["is_staff"] = True
         return cleaned_data
@@ -153,6 +225,21 @@ class UserCreateForm(BSModalForm):
 
     def full_last_name(self):
         return join_name_parts(self.cleaned_data.get("first_surname"), self.cleaned_data.get("second_surname"))
+
+
+class UserCreateForm(UserFormBase):
+    password = forms.CharField(
+        label="Contraseña",
+        strip=False,
+        help_text=PasswordPolicyValidator().get_help_text(),
+        widget=password_input(),
+    )
+    password_confirmation = forms.CharField(label="Repetir contraseña", strip=False, widget=password_input())
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self.clean_password_pair(cleaned_data)
+        return cleaned_data
 
     def user_data(self):
         return {
@@ -165,6 +252,107 @@ class UserCreateForm(BSModalForm):
             "is_staff": self.cleaned_data["is_staff"],
             "is_superuser": self.cleaned_data["is_superuser"],
         }
+
+
+class UserUpdateForm(UserFormBase):
+    password = forms.CharField(
+        label="Nueva contraseña",
+        strip=False,
+        required=False,
+        help_text=PasswordPolicyValidator().get_help_text(),
+        widget=password_input(),
+    )
+    password_confirmation = forms.CharField(
+        label="Repetir nueva contraseña", strip=False, required=False, widget=password_input()
+    )
+    groups = forms.ModelMultipleChoiceField(
+        label="Grupos",
+        queryset=Group.objects.order_by("name"),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": FORM_SELECT2_CLASS}),
+    )
+    user_permissions = forms.ModelMultipleChoiceField(
+        label="Permisos individuales",
+        queryset=Permission.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(self, *args, instance=None, **kwargs):
+        super().__init__(*args, instance=instance, **kwargs)
+        self.fields["user_permissions"].queryset = panel_permissions()
+        first_name, second_name = split_name(instance.first_name)
+        first_surname, second_surname = split_name(instance.last_name)
+        self.initial.update(
+            {
+                "username": instance.username,
+                "first_name": first_name,
+                "second_name": second_name,
+                "first_surname": first_surname,
+                "second_surname": second_surname,
+                "email": instance.email,
+                "is_active": instance.is_active,
+                "is_staff": instance.is_staff,
+                "is_superuser": instance.is_superuser,
+                "groups": list(instance.groups.values_list("pk", flat=True)),
+                "user_permissions": list(
+                    instance.user_permissions.filter(pk__in=self.fields["user_permissions"].queryset)
+                    .values_list("pk", flat=True)
+                ),
+            }
+        )
+        editor = getattr(self.request, "user", None)
+        if self.is_own_account():
+            for field_name in ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"):
+                self.fields[field_name].disabled = True
+        elif editor is None or not editor.is_superuser:
+            self.fields["is_superuser"].disabled = True
+
+    def is_own_account(self):
+        editor = getattr(self.request, "user", None)
+        return editor is not None and editor.pk == self.instance.pk
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirmation = cleaned_data.get("password_confirmation")
+        if confirmation and not password:
+            self.add_error("password", "Escribe la nueva contraseña.")
+        elif password and not confirmation:
+            self.add_error("password_confirmation", "Repite la nueva contraseña.")
+        else:
+            self.clean_password_pair(cleaned_data)
+        return cleaned_data
+
+    def save(self):
+        user = self.instance
+        data = self.cleaned_data
+        user.username = data["username"]
+        user.email = data["email"]
+        user.first_name = self.full_first_name()
+        user.last_name = self.full_last_name()
+        user.is_active = data["is_active"]
+        user.is_staff = data["is_staff"]
+        user.is_superuser = data["is_superuser"]
+        if data.get("password"):
+            user.set_password(data["password"])
+        user.save()
+        if not self.fields["groups"].disabled:
+            user.groups.set(data["groups"])
+        if not self.fields["user_permissions"].disabled:
+            self.save_permissions(user, data["groups"], data["user_permissions"])
+        return user
+
+    @staticmethod
+    def save_permissions(user, groups, selected):
+        panel_ids = set(panel_permissions().values_list("pk", flat=True))
+        current = set(user.user_permissions.values_list("pk", flat=True))
+        inherited = set(
+            Permission.objects.filter(group__in=groups, pk__in=panel_ids).values_list("pk", flat=True)
+        )
+        outside_panel = current - panel_ids
+        kept_behind_a_group = current & inherited
+        user.user_permissions.set(outside_panel | kept_behind_a_group | {permission.pk for permission in selected})
 
 
 class UsersFilterForm(forms.Form):
@@ -285,14 +473,17 @@ class UserListAjaxView(PanelListViewAjax):
     def add_options_column(self, data):
         can_change = self.model_admin.has_change_permission(self.request)
         can_delete = self.model_admin.has_delete_permission(self.request)
+        editor_is_superuser = self.request.user.is_superuser
         for item in data:
             options = []
-            if can_change:
+            if can_change and (editor_is_superuser or not item["is_superuser"]):
                 options.append(
                     {
                         "label": "Editar",
-                        "link": reverse("admin:auth_user_change", args=[item["pk"]]),
+                        "link": reverse("admin:auth_user_change_modal", args=[item["pk"]]),
+                        "bsModal": True,
                         "icon": "edit_document",
+                        "className": "bs-xl-modal",
                     }
                 )
             if can_delete and item["pk"] != self.request.user.pk:
@@ -346,6 +537,39 @@ class UserCreateModalView(PanelCreateModalView):
 
     def create_object(self, form):
         return User.objects.create_user(**form.user_data())
+
+
+class UserUpdateModalView(PanelUpdateModalView):
+    template_name = "panel/users/user_edit_modal.html"
+    form_class = UserUpdateForm
+    success_message = "Usuario %(name)s actualizado exitosamente."
+
+    def has_model_permission(self, request):
+        user = self.get_object()
+        if user.is_superuser and not request.user.is_superuser:
+            return False
+        return super().has_model_permission(request)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+        context.update(
+            {
+                "permission_actions": [label for _, label in PERMISSION_ACTIONS],
+                "permission_rows": permission_rows(user),
+                "group_permissions": group_permission_map(),
+                "date_joined": format_datetime(user.date_joined),
+                "last_login": format_last_login(user.last_login),
+                "is_own_account": context["form"].is_own_account(),
+            }
+        )
+        return context
+
+    def update_object(self, form):
+        user = form.save()
+        if form.cleaned_data.get("password") and user.pk == self.request.user.pk:
+            update_session_auth_hash(self.request, user)
+        return user
 
 
 # endregion
