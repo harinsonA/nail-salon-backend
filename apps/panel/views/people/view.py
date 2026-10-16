@@ -1,3 +1,4 @@
+from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q, Subquery, TextChoices, Value
@@ -5,14 +6,29 @@ from django.db.models.functions import Concat, Trim
 from django.urls import reverse
 from django.views.generic import TemplateView
 
-from bootstrap_modal_forms.forms import BSModalForm
-
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.common.form_fields import (
+    AlphabeticField,
+    AlphanumericField,
+    NoteField,
+    NumericField,
+)
 from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.utils.text import join_name_parts
 from apps.common.utils.utils import CommonCleaner
-from apps.panel.views.base import PanelCreateModalView, PanelDeleteModalView, PanelListViewAjax, PanelView
-from apps.panel.views.users.view import join_name_parts, switch_input, text_input
-from apps.tenancy.models import Persona, PersonaCorreo, PersonaDireccion, PersonaTelefono
+from apps.common.widgets import switch_input, text_input
+from apps.panel.views.base import (
+    PanelCreateModalView,
+    PanelDeleteModalView,
+    PanelListViewAjax,
+    PanelView,
+)
+from apps.tenancy.models import (
+    Persona,
+    PersonaCorreo,
+    PersonaDireccion,
+    PersonaTelefono,
+)
 
 """========================================================================="""
 # region ........ Constants
@@ -34,7 +50,16 @@ ADDRESS_COUNTRIES = [
     ("UY", "Uruguay"),
     ("VE", "Venezuela"),
 ]
-ADDRESS_FIELDS = ("street", "number", "complement", "commune", "city", "region", "postal_code", "reference")
+ADDRESS_FIELDS = (
+    "street",
+    "number",
+    "complement",
+    "commune",
+    "city",
+    "region",
+    "postal_code",
+    "reference",
+)
 
 
 # endregion
@@ -68,21 +93,34 @@ class PeopleFilterForm(forms.Form):
 
 
 class PersonCreateForm(BSModalForm):
-    first_name = forms.CharField(label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana"))
-    second_name = forms.CharField(
-        label="Segundo nombre", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("María")
+    first_name = AlphabeticField(
+        label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana")
     )
-    first_surname = forms.CharField(
-        label="Primer apellido", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("Rojas")
+    second_name = AlphabeticField(
+        label="Segundo nombre",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("María"),
     )
-    second_surname = forms.CharField(
-        label="Segundo apellido", max_length=NAME_PART_MAX_LENGTH, required=False, widget=text_input("Pérez")
+    first_surname = AlphabeticField(
+        label="Primer apellido",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("Rojas"),
+    )
+    second_surname = AlphabeticField(
+        label="Segundo apellido",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("Pérez"),
     )
     email = forms.EmailField(
         label="Correo",
         max_length=254,
         required=False,
-        widget=forms.EmailInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@ejemplo.com"}),
+        widget=forms.EmailInput(
+            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@ejemplo.com"}
+        ),
     )
     country_phone_prefix = forms.ChoiceField(
         label="Prefijo país",
@@ -90,78 +128,83 @@ class PersonCreateForm(BSModalForm):
         initial=CountryPhonePrefix.CHILE,
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
-    phone = forms.CharField(label="Teléfono", max_length=20, required=False, widget=text_input("9 1234 5678"))
+    phone = NumericField(
+        label="Teléfono",
+        max_length=PHONE_MAX_DIGITS,
+        required=False,
+        widget=text_input("912345678"),
+    )
     phone_type = forms.ChoiceField(
         label="Tipo de teléfono",
         choices=PersonaTelefono.Tipo.choices,
         initial=PersonaTelefono.Tipo.MOVIL,
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
-    has_whatsapp = forms.BooleanField(label="Tiene WhatsApp", required=False, widget=switch_input())
-    notes = forms.CharField(
+    has_whatsapp = forms.BooleanField(
+        label="Tiene WhatsApp", required=False, widget=switch_input()
+    )
+    notes = NoteField(
         label="Nota",
         required=False,
         help_text="Hasta 250 caracteres.",
         widget=forms.Textarea(
-            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Prefiere que la contacten por WhatsApp.", "rows": 3}
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "placeholder": "Prefiere que la contacten por WhatsApp.",
+                "rows": 3,
+            }
         ),
     )
-    street = forms.CharField(label="Calle", max_length=150, required=False, widget=text_input("Av. Providencia"))
-    number = forms.CharField(label="Número", max_length=15, required=False, widget=text_input("1234"))
-    complement = forms.CharField(
-        label="Depto, oficina o local", max_length=60, required=False, widget=text_input("Depto 502")
+    street = AlphabeticField(
+        label="Calle",
+        max_length=150,
+        required=False,
+        allow_dots=True,
+        widget=text_input("Av. Providencia"),
     )
-    postal_code = forms.CharField(label="Código postal", max_length=12, required=False, widget=text_input("7500000"))
-    commune = forms.CharField(label="Comuna", max_length=80, required=False, widget=text_input("Providencia"))
-    city = forms.CharField(label="Ciudad", max_length=80, required=False, widget=text_input("Santiago"))
-    region = forms.CharField(label="Región", max_length=80, required=False, widget=text_input("Metropolitana"))
+    number = NumericField(
+        label="Número", max_length=15, required=False, widget=text_input("1234")
+    )
+    complement = AlphanumericField(
+        label="Depto, oficina o local",
+        max_length=60,
+        required=False,
+        allow_dots=True,
+        widget=text_input("Depto. 502"),
+    )
+    postal_code = NumericField(
+        label="Código postal",
+        max_length=12,
+        required=False,
+        widget=text_input("7500000"),
+    )
+    commune = AlphabeticField(
+        label="Comuna", max_length=80, required=False, widget=text_input("Providencia")
+    )
+    city = AlphabeticField(
+        label="Ciudad", max_length=80, required=False, widget=text_input("Santiago")
+    )
+    region = AlphabeticField(
+        label="Región",
+        max_length=80,
+        required=False,
+        widget=text_input("Metropolitana"),
+    )
     country = forms.ChoiceField(
         label="País",
         choices=ADDRESS_COUNTRIES,
         initial=DEFAULT_COUNTRY,
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
-    reference = forms.CharField(
-        label="Referencia", max_length=150, required=False, widget=text_input("Frente a la plaza")
+    reference = AlphanumericField(
+        label="Referencia",
+        max_length=150,
+        required=False,
+        widget=text_input("Frente a la plaza"),
     )
-
-    def clean_name_part(self, field_name):
-        value = " ".join(self.cleaned_data.get(field_name, "").split())
-        if not value:
-            return ""
-        result = CommonCleaner.clean_alphabetic_field(self.fields[field_name].label.lower(), value)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return result.value
-
-    def clean_first_name(self):
-        return self.clean_name_part("first_name")
-
-    def clean_second_name(self):
-        return self.clean_name_part("second_name")
-
-    def clean_first_surname(self):
-        return self.clean_name_part("first_surname")
-
-    def clean_second_surname(self):
-        return self.clean_name_part("second_surname")
 
     def clean_email(self):
         return self.cleaned_data["email"].strip().lower()
-
-    def clean_phone(self):
-        phone = "".join(self.cleaned_data["phone"].replace("-", " ").split())
-        if phone and not phone.isdigit():
-            raise forms.ValidationError("El número de teléfono solo debe contener dígitos, espacios o guiones.")
-        if len(phone) > PHONE_MAX_DIGITS:
-            raise forms.ValidationError(f"El número de teléfono no debe superar {PHONE_MAX_DIGITS} dígitos.")
-        return phone
-
-    def clean_notes(self):
-        result = CommonCleaner.clean_250_characters_field(self.fields["notes"].label.lower(), self.cleaned_data["notes"])
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        return result.value
 
     def clean(self):
         cleaned_data = super().clean()
@@ -172,18 +215,28 @@ class PersonCreateForm(BSModalForm):
 
     def validate_full_names(self, cleaned_data):
         if cleaned_data.get("second_surname") and not cleaned_data.get("first_surname"):
-            self.add_error("first_surname", "Escribe el primer apellido antes del segundo.")
+            self.add_error(
+                "first_surname", "Escribe el primer apellido antes del segundo."
+            )
         if len(self.full_names()) > FULL_NAME_MAX_LENGTH:
-            self.add_error("second_name", f"Los nombres juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.")
+            self.add_error(
+                "second_name",
+                f"Los nombres juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.",
+            )
         if len(self.full_surnames()) > FULL_NAME_MAX_LENGTH:
             self.add_error(
-                "second_surname", f"Los apellidos juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres."
+                "second_surname",
+                f"Los apellidos juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.",
             )
 
     def validate_mobile_phone(self, cleaned_data):
         phone = cleaned_data.get("phone")
         prefix = cleaned_data.get("country_phone_prefix")
-        if not phone or not prefix or cleaned_data.get("phone_type") != PersonaTelefono.Tipo.MOVIL:
+        if (
+            not phone
+            or not prefix
+            or cleaned_data.get("phone_type") != PersonaTelefono.Tipo.MOVIL
+        ):
             return
         result = CommonCleaner.clean_phone_field(prefix, phone)
         if result.is_err():
@@ -195,19 +248,30 @@ class PersonCreateForm(BSModalForm):
             self.add_error("street", "Escribe la calle para guardar la dirección.")
 
     def full_names(self):
-        return join_name_parts(self.cleaned_data.get("first_name"), self.cleaned_data.get("second_name"))
+        return join_name_parts(
+            self.cleaned_data.get("first_name"), self.cleaned_data.get("second_name")
+        )
 
     def full_surnames(self):
-        return join_name_parts(self.cleaned_data.get("first_surname"), self.cleaned_data.get("second_surname"))
+        return join_name_parts(
+            self.cleaned_data.get("first_surname"),
+            self.cleaned_data.get("second_surname"),
+        )
 
     def save(self):
         data = self.cleaned_data
         with transaction.atomic():
-            person = Persona(nombres=self.full_names(), apellidos=self.full_surnames(), notas=data["notes"] or None)
+            person = Persona(
+                nombres=self.full_names(),
+                apellidos=self.full_surnames(),
+                notas=data["notes"] or None,
+            )
             person._change_reason = "Alta desde el panel"
             person.save()
             if data["email"]:
-                PersonaCorreo.objects.create(persona=person, correo=data["email"], es_principal=True)
+                PersonaCorreo.objects.create(
+                    persona=person, correo=data["email"], es_principal=True
+                )
             if data["phone"]:
                 PersonaTelefono.objects.create(
                     persona=person,
@@ -250,9 +314,16 @@ class PersonListView(PanelView, TemplateView):
         context.update(
             {
                 "filter_form": PeopleFilterForm(),
-                "list_url": reverse("admin:tenancy_persona_list_ajax", current_app=self.admin_site.name),
+                "list_url": reverse(
+                    "admin:tenancy_persona_list_ajax", current_app=self.admin_site.name
+                ),
                 "create_modal_url": (
-                    reverse("admin:tenancy_persona_add_modal", current_app=self.admin_site.name) if can_add else ""
+                    reverse(
+                        "admin:tenancy_persona_add_modal",
+                        current_app=self.admin_site.name,
+                    )
+                    if can_add
+                    else ""
                 ),
             }
         )
@@ -271,7 +342,9 @@ class PersonListAjaxView(PanelListViewAjax):
     }
 
     def get_queryset(self):
-        main_email = PersonaCorreo.objects.filter(persona=OuterRef("pk"), es_principal=True).values("correo")[:1]
+        main_email = PersonaCorreo.objects.filter(
+            persona=OuterRef("pk"), es_principal=True
+        ).values("correo")[:1]
         main_phone = (
             PersonaTelefono.objects.filter(persona=OuterRef("pk"), es_principal=True)
             .annotate(full_number=Concat("codigo_pais", Value(" "), "numero"))
@@ -288,8 +361,12 @@ class PersonListAjaxView(PanelListViewAjax):
         search_value = self.request.GET.get("search[value]", "")
         if not search_value:
             return Q()
-        emails = PersonaCorreo.objects.filter(persona=OuterRef("pk"), correo__icontains=search_value)
-        phones = PersonaTelefono.objects.filter(persona=OuterRef("pk"), numero__icontains=search_value)
+        emails = PersonaCorreo.objects.filter(
+            persona=OuterRef("pk"), correo__icontains=search_value
+        )
+        phones = PersonaTelefono.objects.filter(
+            persona=OuterRef("pk"), numero__icontains=search_value
+        )
         return (
             Q(nombres__icontains=search_value)
             | Q(apellidos__icontains=search_value)
@@ -313,7 +390,9 @@ class PersonListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Editar",
-                        "link": reverse("admin:tenancy_persona_change", args=[item["pk"]]),
+                        "link": reverse(
+                            "admin:tenancy_persona_change", args=[item["pk"]]
+                        ),
                         "icon": "edit_document",
                     }
                 )
@@ -321,7 +400,9 @@ class PersonListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Eliminar",
-                        "link": reverse("admin:tenancy_persona_delete_modal", args=[item["pk"]]),
+                        "link": reverse(
+                            "admin:tenancy_persona_delete_modal", args=[item["pk"]]
+                        ),
                         "bsModal": True,
                         "icon": "delete",
                         "className": "bs-modal text-color-destructive",
@@ -334,7 +415,9 @@ class PersonListAjaxView(PanelListViewAjax):
     def additional_data(queryset):
         return Persona.objects.aggregate(
             total_people=Count("pk", distinct=True),
-            business_owners=Count("pk", filter=Q(negocios_como_titular__isnull=False), distinct=True),
+            business_owners=Count(
+                "pk", filter=Q(negocios_como_titular__isnull=False), distinct=True
+            ),
         )
 
 
@@ -355,7 +438,10 @@ class PersonDeleteModalView(PanelDeleteModalView):
         return [
             {"text": f"Correos: {person.correos.count()}", "icon": "mail"},
             {"text": f"Teléfonos: {person.telefonos.count()}", "icon": "call"},
-            {"text": f"Negocios como titular: {person.negocios_como_titular.count()}", "icon": "storefront"},
+            {
+                "text": f"Negocios como titular: {person.negocios_como_titular.count()}",
+                "icon": "storefront",
+            },
         ]
 
 

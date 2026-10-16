@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.utils.utils import CommonCleaner
+from apps.common.form_fields import AlphabeticField
 from apps.panel.views.base import (
     PanelCreateModalView,
     PanelDeleteModalView,
@@ -35,7 +35,7 @@ CODE_PATTERN = re.compile(r"^[a-z]+(_[a-z]+)*$")
 
 
 class IndustryForm(BSModalForm):
-    nombre = forms.CharField(
+    nombre = AlphabeticField(
         label="Nombre",
         widget=forms.TextInput(
             attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Barbería", "maxlength": NAME_MAX_LENGTH}
@@ -72,15 +72,12 @@ class IndustryForm(BSModalForm):
         return Rubro.objects.exclude(pk=self.instance.pk) if self.instance else Rubro.objects.all()
 
     def clean_nombre(self):
-        nombre = " ".join(self.cleaned_data["nombre"].split())
+        nombre = self.cleaned_data["nombre"]
         if len(nombre) > NAME_MAX_LENGTH:
             raise forms.ValidationError(f"El nombre no debe superar {NAME_MAX_LENGTH} caracteres.")
-        result = CommonCleaner.clean_alphabetic_field("nombre", nombre)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        if self.other_industries().filter(nombre__iexact=result.value).exists():
+        if self.other_industries().filter(nombre__iexact=nombre).exists():
             raise forms.ValidationError("Ya existe un rubro con ese nombre.")
-        return result.value
+        return nombre
 
     def clean_codigo(self):
         codigo = self.cleaned_data["codigo"].strip()
