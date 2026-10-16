@@ -13,6 +13,14 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT2_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.passwords import PasswordPolicyValidator
 from apps.common.utils.utils import USERNAME_MAX_LENGTH, CommonCleaner
+from apps.panel.permissions import (
+    build_permission_rows,
+    group_permission_map,
+    merge_panel_permissions,
+    panel_permission_ids,
+    panel_permissions,
+    permission_action_labels,
+)
 from apps.panel.views.base import (
     PanelCreateModalView,
     PanelDeleteModalView,
@@ -31,14 +39,6 @@ NEVER = "—"
 NAME_PART_MAX_LENGTH = 50
 DATETIME_FORMAT = "%d/%m/%Y %H:%M"
 
-PANEL_PERMISSION_MODELS = [
-    ("tenancy", "negocio", "Negocios"),
-    ("tenancy", "persona", "Personas"),
-    ("tenancy", "rubro", "Rubros"),
-    ("auth", "user", "Usuarios"),
-    ("auth", "group", "Grupos"),
-]
-PERMISSION_ACTIONS = [("view", "Ver"), ("add", "Agregar"), ("change", "Editar"), ("delete", "Eliminar")]
 
 
 # endregion
@@ -77,46 +77,10 @@ def switch_input():
     return forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"})
 
 
-def panel_permissions():
-    condition = Q()
-    for app_label, model, _ in PANEL_PERMISSION_MODELS:
-        codenames = [f"{action}_{model}" for action, _ in PERMISSION_ACTIONS]
-        condition |= Q(content_type__app_label=app_label, content_type__model=model, codename__in=codenames)
-    return Permission.objects.filter(condition).select_related("content_type")
-
-
-def group_permission_map():
-    panel_ids = set(panel_permissions().values_list("pk", flat=True))
-    mapping = {}
-    for group_id, permission_id in Group.permissions.through.objects.values_list("group_id", "permission_id"):
-        if permission_id in panel_ids:
-            mapping.setdefault(str(group_id), []).append(permission_id)
-    return mapping
-
-
-def permission_rows(user):
-    permissions = {
-        (permission.content_type.app_label, permission.codename): permission for permission in panel_permissions()
-    }
+def user_permission_rows(user):
     direct = set(user.user_permissions.values_list("pk", flat=True))
     inherited = set(Permission.objects.filter(group__user=user).values_list("pk", flat=True))
-    rows = []
-    for app_label, model, label in PANEL_PERMISSION_MODELS:
-        cells = []
-        for action, action_label in PERMISSION_ACTIONS:
-            permission = permissions.get((app_label, f"{action}_{model}"))
-            if permission is None:
-                continue
-            cells.append(
-                {
-                    "id": permission.pk,
-                    "action": action_label,
-                    "direct": permission.pk in direct,
-                    "inherited": permission.pk in inherited,
-                }
-            )
-        rows.append({"label": label, "cells": cells})
-    return rows
+    return build_permission_rows(direct, inherited)
 
 
 # endregion
@@ -345,14 +309,11 @@ class UserUpdateForm(UserFormBase):
 
     @staticmethod
     def save_permissions(user, groups, selected):
-        panel_ids = set(panel_permissions().values_list("pk", flat=True))
         current = set(user.user_permissions.values_list("pk", flat=True))
         inherited = set(
-            Permission.objects.filter(group__in=groups, pk__in=panel_ids).values_list("pk", flat=True)
+            Permission.objects.filter(group__in=groups, pk__in=panel_permission_ids()).values_list("pk", flat=True)
         )
-        outside_panel = current - panel_ids
-        kept_behind_a_group = current & inherited
-        user.user_permissions.set(outside_panel | kept_behind_a_group | {permission.pk for permission in selected})
+        user.user_permissions.set(merge_panel_permissions(current, {permission.pk for permission in selected}, inherited))
 
 
 class UsersFilterForm(forms.Form):
@@ -555,8 +516,8 @@ class UserUpdateModalView(PanelUpdateModalView):
         user = self.get_object()
         context.update(
             {
-                "permission_actions": [label for _, label in PERMISSION_ACTIONS],
-                "permission_rows": permission_rows(user),
+                "permission_actions": permission_action_labels(),
+                "permission_rows": user_permission_rows(user),
                 "group_permissions": group_permission_map(),
                 "date_joined": format_datetime(user.date_joined),
                 "last_login": format_last_login(user.last_login),
