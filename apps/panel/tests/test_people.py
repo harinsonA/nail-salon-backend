@@ -53,12 +53,12 @@ class PeopleScreenTests(TestCase):
         self.assertTemplateUsed(response, "panel/people/list.html")
         self.assertContains(response, 'id="people_table"')
         self.assertContains(response, f'url: \'{LIST_AJAX_URL}\'')
-        self.assertContains(response, 'href="/admin/tenancy/persona/add/"')
+        self.assertContains(response, 'data-form-url="/admin/tenancy/persona/add/modal/"')
 
     def test_add_button_requires_add_permission(self):
         response = self.browser(self.viewer).get(LIST_URL)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "/admin/tenancy/persona/add/")
+        self.assertNotContains(response, 'id="person-create-btn"')
 
     def test_staff_without_permission_gets_forbidden(self):
         response = self.browser(self.staff).get(LIST_URL)
