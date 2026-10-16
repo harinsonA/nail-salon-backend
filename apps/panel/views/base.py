@@ -92,6 +92,39 @@ class PanelCreateModalView(PanelAjaxView, BSModalFormView):
         return JsonResponse({"message": self.success_message % {"name": str(obj)}})
 
 
+class PanelUpdateModalView(PanelAjaxView, BSModalFormView):
+    success_message = "«%(name)s» actualizado exitosamente."
+
+    def has_model_permission(self, request):
+        return self.model_admin.has_change_permission(request, self.get_object())
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            obj = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
+            if obj is None:
+                raise Http404
+            self._object = obj
+        return self._object
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "instance": self.get_object()}
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), "modal_url": self.request.path, "object": self.get_object()}
+
+    def update_object(self, form):
+        raise NotImplementedError
+
+    def form_invalid(self, form):
+        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
+
+    def form_valid(self, form):
+        obj = self.update_object(form)
+        changed = [str(form.fields[name].label) for name in form.changed_data]
+        self.model_admin.log_change(self.request, obj, [{"changed": {"fields": changed}}] if changed else [])
+        return JsonResponse({"message": self.success_message % {"name": str(obj)}})
+
+
 class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
     template_name = "common/delete_modal.html"
     success_message = "«%(name)s» eliminado exitosamente."
