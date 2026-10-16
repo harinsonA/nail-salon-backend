@@ -8,9 +8,10 @@ Rubros
 {% block content %}
 {% include 'common/bs_modal.html' %}
 <section>
-  {% if add_url %}
+  {% if create_modal_url %}
   <section class="d-inline-flex align-items-center gap-2">
-    <a href="{{ add_url }}" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+    <a id="industry-create-btn" data-form-url="{{ create_modal_url }}"
+      class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
       Rubro
       <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
     </a>
@@ -57,7 +58,6 @@ Rubros
           <th scope="col">Nombre</th>
           <th scope="col">Código</th>
           <th scope="col">Activo</th>
-          <th scope="col">Orden</th>
           <th scope="col">Negocios</th>
           <th scope="col"></th>
         </tr>
@@ -86,7 +86,6 @@ Rubros
         { data: 'nombre', className: 'fs-7 w-auto text-nowrap' },
         { data: 'codigo', className: 'fs-7 w-auto text-nowrap' },
         { data: ({ activo }) => flagColumn(activo), className: 'fs-7 w-auto text-center' },
-        { data: 'orden', className: 'fs-7 w-auto text-center' },
         { data: 'business_count', className: 'fs-7 w-auto text-center' },
         { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
       ],
@@ -109,11 +108,15 @@ Rubros
       table.draw();
     });
 
+    if ($('#industry-create-btn').length) {
+      initializeBSModals('#industry-create-btn');
+    }
+
     $('#modal').on('show.bs.modal', ({ target }) => {
-      const submitBtn = target.querySelector('#delete_submit_btn');
+      const submitBtn = target.querySelector('#industry_submit_btn') || target.querySelector('#delete_submit_btn');
       $(submitBtn).click(async () => {
         submitBtn.disabled = true;
-        const modalForm = target.querySelector('#common-form-modal');
+        const modalForm = target.querySelector('#industry-form-modal') || target.querySelector('#common-form-modal');
         const reloadTable = (form, response, statusCode) => {
           if ([200].includes(statusCode)) {
             $('#modal').modal('hide');

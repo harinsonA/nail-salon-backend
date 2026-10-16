@@ -1,14 +1,109 @@
+import re
+
+from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
 from django.db.models import Count, Q, TextChoices
 from django.urls import reverse
 from django.views.generic import TemplateView
 
-from apps.common.form_classes import FORM_SELECT_CLASS
-from apps.panel.views.base import PanelDeleteModalView, PanelListViewAjax, PanelView
+from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.common.utils.utils import CommonCleaner
+from apps.panel.views.base import (
+    PanelCreateModalView,
+    PanelDeleteModalView,
+    PanelListViewAjax,
+    PanelUpdateModalView,
+    PanelView,
+)
 from apps.tenancy.models import Rubro
 
 """========================================================================="""
+# region ........ Constants
+
+
+NAME_MAX_LENGTH = 80
+CODE_MIN_LENGTH = 3
+CODE_MAX_LENGTH = 30
+CODE_PATTERN = re.compile(r"^[a-z][a-z0-9_-]*$")
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
 # region ........ Forms
+
+
+class IndustryForm(BSModalForm):
+    nombre = forms.CharField(
+        label="Nombre",
+        widget=forms.TextInput(
+            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Barbería", "maxlength": NAME_MAX_LENGTH}
+        ),
+    )
+    codigo = forms.CharField(
+        label="Código",
+        help_text="Entre 3 y 30 caracteres: minúsculas sin tilde, números, guion y guion bajo, empezando por letra.",
+        widget=forms.TextInput(
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "placeholder": "barberia",
+                "maxlength": CODE_MAX_LENGTH,
+                "autocapitalize": "none",
+                "autocomplete": "off",
+                "spellcheck": "false",
+            }
+        ),
+    )
+    activo = forms.BooleanField(
+        label="Activo",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"}),
+    )
+
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        super().__init__(*args, **kwargs)
+        if instance is not None:
+            self.initial.update({"nombre": instance.nombre, "codigo": instance.codigo, "activo": instance.activo})
+
+    def other_industries(self):
+        return Rubro.objects.exclude(pk=self.instance.pk) if self.instance else Rubro.objects.all()
+
+    def clean_nombre(self):
+        nombre = " ".join(self.cleaned_data["nombre"].split())
+        if len(nombre) > NAME_MAX_LENGTH:
+            raise forms.ValidationError(f"El nombre no debe superar {NAME_MAX_LENGTH} caracteres.")
+        result = CommonCleaner.clean_alphabetic_field("nombre", nombre)
+        if result.is_err():
+            raise forms.ValidationError(result.value)
+        if self.other_industries().filter(nombre__iexact=result.value).exists():
+            raise forms.ValidationError("Ya existe un rubro con ese nombre.")
+        return result.value
+
+    def clean_codigo(self):
+        codigo = self.cleaned_data["codigo"].strip()
+        if any(character.isupper() for character in codigo):
+            raise forms.ValidationError("El código debe ir en minúsculas.")
+        if not CODE_MIN_LENGTH <= len(codigo) <= CODE_MAX_LENGTH:
+            raise forms.ValidationError(f"El código debe tener entre {CODE_MIN_LENGTH} y {CODE_MAX_LENGTH} caracteres.")
+        if not CODE_PATTERN.match(codigo):
+            raise forms.ValidationError(
+                "El código debe empezar con una letra y solo admite letras minúsculas sin tilde, números, guion y "
+                "guion bajo."
+            )
+        if self.other_industries().filter(codigo__iexact=codigo).exists():
+            raise forms.ValidationError("Ya existe un rubro con ese código.")
+        return codigo
+
+    def save(self):
+        industry = self.instance or Rubro()
+        industry.nombre = self.cleaned_data["nombre"]
+        industry.codigo = self.cleaned_data["codigo"]
+        industry.activo = self.cleaned_data["activo"]
+        industry.save()
+        return industry
 
 
 class IndustriesFilterForm(forms.Form):
@@ -38,6 +133,24 @@ class IndustriesFilterForm(forms.Form):
 """========================================================================="""
 
 """========================================================================="""
+# region ........ Mixins
+
+
+class IndustryModalMixin:
+    template_name = "panel/industries/industry_modal.html"
+    form_class = IndustryForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        industry = context.get("object")
+        context["business_count"] = industry.negocios.count() if industry else 0
+        return context
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
 # region ........ Views
 
 
@@ -51,7 +164,9 @@ class IndustryListView(PanelView, TemplateView):
             {
                 "filter_form": IndustriesFilterForm(),
                 "list_url": reverse("admin:tenancy_rubro_list_ajax", current_app=self.admin_site.name),
-                "add_url": reverse("admin:tenancy_rubro_add", current_app=self.admin_site.name) if can_add else "",
+                "create_modal_url": (
+                    reverse("admin:tenancy_rubro_add_modal", current_app=self.admin_site.name) if can_add else ""
+                ),
             }
         )
         return context
@@ -60,13 +175,12 @@ class IndustryListView(PanelView, TemplateView):
 class IndustryListAjaxView(PanelListViewAjax):
     model = Rubro
     filter_form_class = IndustriesFilterForm
-    field_list = ["pk", "nombre", "codigo", "activo", "orden", "business_count"]
+    field_list = ["pk", "nombre", "codigo", "activo", "business_count"]
     ordering_fields = {
         "0": "nombre",
         "1": "codigo",
         "2": "activo",
-        "3": "orden",
-        "4": "business_count",
+        "3": "business_count",
     }
 
     def get_queryset(self):
@@ -87,8 +201,10 @@ class IndustryListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Editar",
-                        "link": reverse("admin:tenancy_rubro_change", args=[item["pk"]]),
+                        "link": reverse("admin:tenancy_rubro_change_modal", args=[item["pk"]]),
+                        "bsModal": True,
                         "icon": "edit_document",
+                        "className": "bs-modal",
                     }
                 )
             if can_delete:
@@ -110,6 +226,20 @@ class IndustryListAjaxView(PanelListViewAjax):
             total_industries=Count("pk"),
             active_industries=Count("pk", filter=Q(activo=True)),
         )
+
+
+class IndustryCreateModalView(IndustryModalMixin, PanelCreateModalView):
+    success_message = "Rubro %(name)s creado exitosamente."
+
+    def create_object(self, form):
+        return form.save()
+
+
+class IndustryUpdateModalView(IndustryModalMixin, PanelUpdateModalView):
+    success_message = "Rubro %(name)s actualizado exitosamente."
+
+    def update_object(self, form):
+        return form.save()
 
 
 class IndustryDeleteModalView(PanelDeleteModalView):

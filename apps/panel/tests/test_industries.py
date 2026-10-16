@@ -21,8 +21,8 @@ class IndustriesScreenTests(TestCase):
         Rubro.objects.all().delete()
         public = Negocio.objects.create(schema_name=get_public_schema_name(), nombre="Hi Agenda")
         Dominio.objects.create(domain=PANEL, tenant=public, is_primary=True)
-        cls.barber = Rubro.objects.create(codigo="barberia", nombre="Barbería", orden=1)
-        cls.spa = Rubro.objects.create(codigo="spa", nombre="Spa", orden=2, activo=False)
+        cls.barber = Rubro.objects.create(codigo="barberia", nombre="Barbería")
+        cls.spa = Rubro.objects.create(codigo="spa", nombre="Spa", activo=False)
         Negocio.objects.create(
             schema_name="el_corte", nombre="El Corte", titular=Persona.objects.create(nombres="Carlos"), rubro=cls.barber
         )
@@ -54,12 +54,12 @@ class IndustriesScreenTests(TestCase):
         self.assertTemplateUsed(response, "panel/industries/list.html")
         self.assertContains(response, 'id="industries_table"')
         self.assertContains(response, f'url: \'{LIST_AJAX_URL}\'')
-        self.assertContains(response, 'href="/admin/tenancy/rubro/add/"')
+        self.assertContains(response, 'data-form-url="/admin/tenancy/rubro/add/modal/"')
 
     def test_add_button_requires_add_permission(self):
         response = self.browser(self.viewer).get(LIST_URL)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "/admin/tenancy/rubro/add/")
+        self.assertNotContains(response, "/admin/tenancy/rubro/add/modal/")
 
     def test_staff_without_permission_gets_forbidden(self):
         response = self.browser(self.staff).get(LIST_URL)
@@ -81,13 +81,24 @@ class IndustriesScreenTests(TestCase):
         self.assertEqual(self.names(self.superuser, **{"search[value]": "barb"}), ["Barbería"])
         self.assertEqual(self.names(self.superuser, **{"search[value]": "spa"}), ["Spa"])
 
-    def test_order_by_display_order(self):
-        self.assertEqual(self.names(self.superuser, **{"order[0][column]": "3", "order[0][dir]": "desc"}), ["Spa", "Barbería"])
+    def test_order_by_business_count(self):
+        self.assertEqual(self.names(self.superuser, **{"order[0][column]": "3", "order[0][dir]": "desc"}), ["Barbería", "Spa"])
+
+    def test_the_list_has_no_order_column(self):
+        response = self.browser(self.superuser).get(LIST_URL)
+        self.assertNotContains(response, "<th scope=\"col\">Orden</th>", html=False)
+        self.assertNotIn("orden", self.fetch(self.superuser).json()["data"][0])
+
+    def test_industries_are_listed_by_name_everywhere(self):
+        Rubro.objects.create(codigo="aaa", nombre="Uñas", orden=0)
+        Rubro.objects.create(codigo="zzz", nombre="Aromaterapia", orden=99)
+        self.assertEqual(list(Rubro.objects.values_list("nombre", flat=True)), ["Aromaterapia", "Barbería", "Spa", "Uñas"])
 
     def test_options_link_to_edit_form_and_delete_modal(self):
         row = next(row for row in self.fetch(self.superuser).json()["data"] if row["nombre"] == "Spa")
         options = {option["label"]: option for option in row["options"]}
-        self.assertEqual(options["Editar"]["link"], f"/admin/tenancy/rubro/{self.spa.pk}/change/")
+        self.assertEqual(options["Editar"]["link"], f"/admin/tenancy/rubro/{self.spa.pk}/change/modal/")
+        self.assertTrue(options["Editar"]["bsModal"])
         self.assertEqual(options["Eliminar"]["link"], self.delete_modal_url(self.spa))
         self.assertTrue(options["Eliminar"]["bsModal"])
 
