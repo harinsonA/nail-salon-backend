@@ -1,6 +1,6 @@
 venv/
-__pycache__/
-*.pyc
+**/__pycache__/
+**/*.pyc
 .git/
 .gitignore
 .github/
@@ -29,3 +29,7 @@ README.local.md
 # Orquestación y plantillas de entorno: la imagen no las usa.
 docker-compose.yml
 .env.example
+
+static/images/logos/logo-1.png
+static/images/logos/logo-2.png
+static/images/logos/logo-4.png
