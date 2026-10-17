@@ -13,8 +13,8 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
-      - name: Construir imagen
-        run: docker build -t nail-salon-backend:ci .
+      - name: Construir imagen de pruebas (target test)
+        run: docker build --target test -t nail-salon-backend:ci .
 
       - name: Levantar PostgreSQL efímero
         run: |
@@ -86,6 +86,11 @@ jobs:
 
       - name: Pruebas automáticas
         run: docker exec web python manage.py test --noinput
+
+      - name: Imagen de producción sin la carpeta tests
+        run: |
+          docker build --target prod -t nail-salon-backend:prod .
+          docker run --rm --entrypoint sh nail-salon-backend:prod -c 'test ! -e /app/tests'
 
       - name: Logs del contenedor (migraciones + gunicorn)
         if: always()
