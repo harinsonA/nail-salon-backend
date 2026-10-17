@@ -107,6 +107,7 @@ jobs:
     env:
       IMAGEN: docker.io/harinsonarellan/hai-agenda
       RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      RENDER_WORKER_DEPLOY_HOOK: ${{ secrets.RENDER_WORKER_DEPLOY_HOOK }}
     steps:
       - name: Confirmar que el commit sigue siendo el último de main
         id: vigencia
@@ -149,6 +150,10 @@ jobs:
             ${{ env.IMAGEN }}:${{ env.ETIQUETA }}
             ${{ env.IMAGEN }}:latest
 
-      - name: Desplegar en Render el commit publicado
+      - name: Desplegar el web en Render con el commit publicado
         if: steps.vigencia.outputs.vigente == 'true' && env.RENDER_DEPLOY_HOOK != ''
         run: curl -fsS -G "$RENDER_DEPLOY_HOOK" --data-urlencode "imgURL=$IMAGEN:$ETIQUETA" -o /dev/null
+
+      - name: Desplegar el worker en Render con el commit publicado
+        if: steps.vigencia.outputs.vigente == 'true' && env.RENDER_WORKER_DEPLOY_HOOK != ''
+        run: curl -fsS -G "$RENDER_WORKER_DEPLOY_HOOK" --data-urlencode "imgURL=$IMAGEN:$ETIQUETA" -o /dev/null
