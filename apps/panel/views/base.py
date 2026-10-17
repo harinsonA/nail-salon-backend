@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.base_list_view_ajax import AjaxListViewBase
-from apps.common.utils.utils import get_errors_to_response
+from apps.common.utils.utils import get_errors_to_response, get_related_errors_to_response
 from apps.common.views.base_views import SESSION_EXPIRED_MESSAGE
 
 """========================================================================="""
@@ -71,6 +71,31 @@ class PanelListViewAjax(PanelAjaxView, AjaxListViewBase):
     pass
 
 
+class RelatedFormsMixin:
+    def get_related_forms(self, data):
+        return {}
+
+    def related_forms(self):
+        if not hasattr(self, "_related_forms"):
+            data = self.request.POST if self.request.method == "POST" else None
+            self._related_forms = self.get_related_forms(data)
+        return self._related_forms
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), **self.related_forms()}
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        related = list(self.related_forms().values())
+        results = [form.is_valid(), *(related_form.is_valid() for related_form in related)]
+        if all(results):
+            return self.form_valid(form)
+        errors = get_errors_to_response(form.errors)
+        for related_form in related:
+            errors += get_related_errors_to_response(related_form)
+        return JsonResponse({"errors": errors}, status=HTTP_400_BAD_REQUEST)
+
+
 class PanelCreateModalView(PanelAjaxView, BSModalFormView):
     success_message = "«%(name)s» creado exitosamente."
 
@@ -118,9 +143,12 @@ class PanelUpdateModalView(PanelAjaxView, BSModalFormView):
     def form_invalid(self, form):
         return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
 
+    def get_changed_fields(self, form):
+        return [str(form.fields[name].label) for name in form.changed_data]
+
     def form_valid(self, form):
         obj = self.update_object(form)
-        changed = [str(form.fields[name].label) for name in form.changed_data]
+        changed = self.get_changed_fields(form)
         self.model_admin.log_change(self.request, obj, [{"changed": {"fields": changed}}] if changed else [])
         return JsonResponse({"message": self.success_message % {"name": str(obj)}})
 

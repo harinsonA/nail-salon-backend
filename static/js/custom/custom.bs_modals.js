@@ -135,6 +135,34 @@ const showOkInBSModal = (form) => {
   });
 };
 
+const showTabsWithErrors = (form) => {
+  let firstTab = null;
+  form.querySelectorAll('[data-bs-toggle="pill"]').forEach((tab) => {
+    const pane = form.querySelector(tab.dataset.bsTarget);
+    const hasErrors = Boolean(pane && pane.querySelector(".is-invalid"));
+    tab.classList.toggle("has-errors", hasErrors);
+    if (hasErrors && !firstTab) {
+      firstTab = tab;
+    }
+  });
+  if (firstTab) {
+    bootstrap.Tab.getOrCreateInstance(firstTab).show();
+  }
+};
+
+const submitSerializedBSModal = (form) =>
+  new Promise((resolve) => {
+    $.ajax({
+      url: form.action,
+      method: "POST",
+      dataType: "json",
+      headers: { "X-CSRFToken": getCSRFToken() },
+      data: $(form).serialize(),
+      success: (data) => resolve([data, 200]),
+      error: (xhr) => resolve([xhr.responseJSON, xhr.status]),
+    });
+  });
+
 const submitRequestBSModal = async (form, settings = {}) => {
   const { extraData = null, reload = false, callBack = null } = settings;
   const formData = new FormData(form);

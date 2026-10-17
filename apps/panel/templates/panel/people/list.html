@@ -110,24 +110,10 @@ Personas
       initializeBSXLModals('#person-create-btn');
     }
 
-    const showTabsWithErrors = (form) => {
-      let firstTab = null;
-      form.querySelectorAll('[data-bs-toggle="pill"]').forEach((tab) => {
-        const pane = form.querySelector(tab.dataset.bsTarget);
-        const hasErrors = Boolean(pane && pane.querySelector('.is-invalid'));
-        tab.classList.toggle('has-errors', hasErrors);
-        if (hasErrors && !firstTab) {
-          firstTab = tab;
-        }
-      });
-      if (firstTab) {
-        bootstrap.Tab.getOrCreateInstance(firstTab).show();
-      }
-    };
-
     $('#xl_modal').on('show.bs.modal', ({ target }) => {
       const submitBtn = target.querySelector('#person_submit_btn');
       if (!submitBtn) return;
+      initializeFormsets(target);
       $(submitBtn).click(async () => {
         submitBtn.disabled = true;
         const modalForm = target.querySelector('#person-form-modal');

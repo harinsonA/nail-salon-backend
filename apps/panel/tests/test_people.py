@@ -86,10 +86,11 @@ class PeopleScreenTests(TestCase):
         Persona.objects.create(nombres="Borrada").delete()
         self.assertNotIn("Borrada", self.names(self.superuser))
 
-    def test_options_link_to_edit_form_and_delete_modal(self):
+    def test_options_link_to_edit_and_delete_modals(self):
         row = next(row for row in self.fetch(self.superuser).json()["data"] if row["full_name"] == "Lucía")
         options = {option["label"]: option for option in row["options"]}
-        self.assertEqual(options["Editar"]["link"], f"/admin/tenancy/persona/{self.contact.pk}/change/")
+        self.assertEqual(options["Editar"]["link"], f"/admin/tenancy/persona/{self.contact.pk}/change/modal/")
+        self.assertEqual(options["Editar"]["className"], "bs-xl-modal")
         self.assertEqual(options["Eliminar"]["link"], self.delete_modal_url(self.contact))
         self.assertTrue(options["Eliminar"]["bsModal"])
 

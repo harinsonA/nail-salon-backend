@@ -1,0 +1,10 @@
+<label for="{{ field.id_for_label }}" class="form-label form-label--custom">
+  {{ field.label }}{% if optional %} <span class="text-body-secondary">(opcional)</span>{% endif %}
+</label>
+{{ field }}
+<span class="invalid-feedback invalid-feedback--custom {{ field.id_for_label }}">
+  {{ field.errors.0 }}
+</span>
+{% if field.help_text %}
+<div class="form-text"><small>{{ field.help_text }}</small></div>
+{% endif %}

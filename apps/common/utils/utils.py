@@ -5,7 +5,8 @@ from django.contrib.auth.password_validation import (
     UserAttributeSimilarityValidator,
     validate_password,
 )
-from django.core.exceptions import ValidationError
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
+from django.forms import BaseFormSet
 from result import Err, Ok, Result
 
 from apps.common.utils.passwords import PasswordPolicyValidator
@@ -31,6 +32,38 @@ def get_errors_to_response(errors):
         for field, error in errors.items()
         if error
     ]
+
+
+def get_form_errors_to_response(form):
+    main_field = getattr(form, "non_field_errors_target", None) or next(iter(form.fields))
+    return [
+        {
+            "id_element": f"id_{form.add_prefix(main_field if field == NON_FIELD_ERRORS else field)}",
+            "error": error[0],
+        }
+        for field, error in form.errors.items()
+        if error
+    ]
+
+
+def get_formset_errors_to_response(formset):
+    errors = [
+        error
+        for form in formset.forms
+        if not form.cleaned_data.get("DELETE")
+        for error in get_form_errors_to_response(form)
+    ]
+    if formset.non_form_errors():
+        errors.append(
+            {"id_element": f"id_{formset.prefix}-errors", "error": formset.non_form_errors()[0]}
+        )
+    return errors
+
+
+def get_related_errors_to_response(related_form):
+    if isinstance(related_form, BaseFormSet):
+        return get_formset_errors_to_response(related_form)
+    return get_form_errors_to_response(related_form)
 
 
 def is_ascii_digit(character):

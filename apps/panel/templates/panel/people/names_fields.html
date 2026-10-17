@@ -1,0 +1,14 @@
+<div class="row g-2">
+  <div class="col-12 col-sm-6 mb-2">
+    {% include 'common/form_field.html' with field=form.first_name %}
+  </div>
+  <div class="col-12 col-sm-6 mb-2">
+    {% include 'common/form_field.html' with field=form.second_name optional=True %}
+  </div>
+  <div class="col-12 col-sm-6 mb-2">
+    {% include 'common/form_field.html' with field=form.first_surname optional=True %}
+  </div>
+  <div class="col-12 col-sm-6 mb-2">
+    {% include 'common/form_field.html' with field=form.second_surname optional=True %}
+  </div>
+</div>

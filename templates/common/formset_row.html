@@ -1,0 +1,19 @@
+<div class="formset-row">
+  {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+  <div class="formset-row__header">
+    <div class="form-check form-switch m-0">
+      <label class="form-check-label form-label--custom" for="{{ form.es_principal.id_for_label }}">
+        {{ form.es_principal.label }}
+      </label>
+      {{ form.es_principal }}
+    </div>
+    <span class="d-none">{{ form.DELETE }}</span>
+    {% if not form.is_locked %}
+    <button type="button" class="btn btn-sm btn-link text-color-destructive formset-remove">
+      <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+      Quitar
+    </button>
+    {% endif %}
+  </div>
+  {% include fields_template %}
+</div>

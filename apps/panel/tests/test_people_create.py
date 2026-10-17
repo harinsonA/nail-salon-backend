@@ -18,6 +18,22 @@ User = get_user_model()
 
 PANEL = "admin.localhost"
 LIST_URL = "/admin/tenancy/persona/"
+CONTACT_FIELDS = {
+    "email": "email-correo",
+    "country_phone_prefix": "phone-codigo_pais",
+    "phone": "phone-numero",
+    "phone_type": "phone-tipo",
+    "has_whatsapp": "phone-tiene_whatsapp",
+    "street": "address-calle",
+    "number": "address-numero",
+    "complement": "address-complemento",
+    "postal_code": "address-codigo_postal",
+    "commune": "address-comuna",
+    "city": "address-ciudad",
+    "region": "address-region",
+    "country": "address-pais",
+    "reference": "address-referencia",
+}
 CREATE_URL = "/admin/tenancy/persona/add/modal/"
 
 
@@ -66,7 +82,11 @@ class PersonCreateModalTests(TestCase):
             "reference": "",
         }
         data.update(changes)
-        return {key: value for key, value in data.items() if value is not None}
+        return {
+            CONTACT_FIELDS.get(key, key): value
+            for key, value in data.items()
+            if value is not None
+        }
 
     def post(self, user=None, **changes):
         return self.browser(user or self.superuser).post(
@@ -75,8 +95,10 @@ class PersonCreateModalTests(TestCase):
 
     def errors(self, response):
         self.assertEqual(response.status_code, 400)
+        field_ids = {f"id_{name}": f"id_{key}" for key, name in CONTACT_FIELDS.items()}
         return {
-            error["id_element"]: error["error"] for error in response.json()["errors"]
+            field_ids.get(error["id_element"], error["id_element"]): error["error"]
+            for error in response.json()["errors"]
         }
 
     def test_modal_has_both_tabs(self):
