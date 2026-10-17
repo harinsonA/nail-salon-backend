@@ -176,40 +176,13 @@ Usuarios
       this.dataset.direct = this.checked ? '1' : '0';
     });
 
-    const showTabsWithErrors = (form) => {
-      let firstTab = null;
-      form.querySelectorAll('[data-bs-toggle="pill"]').forEach((tab) => {
-        const pane = form.querySelector(tab.dataset.bsTarget);
-        const hasErrors = Boolean(pane && pane.querySelector('.is-invalid'));
-        tab.classList.toggle('has-errors', hasErrors);
-        if (hasErrors && !firstTab) {
-          firstTab = tab;
-        }
-      });
-      if (firstTab) {
-        bootstrap.Tab.getOrCreateInstance(firstTab).show();
-      }
-    };
-
-    const submitUserUpdateForm = (form) => new Promise((resolve) => {
-      $.ajax({
-        url: form.action,
-        method: 'POST',
-        dataType: 'json',
-        headers: { 'X-CSRFToken': getCSRFToken() },
-        data: $(form).serialize(),
-        success: (data) => resolve([data, 200]),
-        error: (xhr) => resolve([xhr.responseJSON, xhr.status]),
-      });
-    });
-
     $('#xl_modal').on('show.bs.modal', ({ target }) => {
       const submitBtn = target.querySelector('#user_update_submit_btn');
       if (!submitBtn) return;
       $(submitBtn).click(async () => {
         submitBtn.disabled = true;
         const modalForm = target.querySelector('#user-edit-form-modal');
-        const [response, statusCode] = await submitUserUpdateForm(modalForm);
+        const [response, statusCode] = await submitSerializedBSModal(modalForm);
         showOkInBSModal(modalForm);
         if (statusCode === 400) {
           showErrorsInBSModal(modalForm, response?.errors || []);

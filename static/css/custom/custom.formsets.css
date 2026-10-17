@@ -1,0 +1,55 @@
+.formset-row {
+  padding: 0.75rem 0.9rem 0.25rem;
+  margin-bottom: 0.75rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.formset-row:has(input[name$="-es_principal"]:checked) {
+  border-color: var(--color-primary);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+.formset-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.formset-row__header .form-check-label {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.formset-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.formset-remove .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.formset-empty-message {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  background-color: var(--bg-muted);
+  border: 1px dashed var(--border-medium);
+  border-radius: 10px;
+}
+
+.formset-add .material-symbols-outlined {
+  font-size: 18px;
+}
