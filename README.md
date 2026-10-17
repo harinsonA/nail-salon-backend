@@ -109,7 +109,7 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 | Categoría | Tecnología |
 |---|---|
 | **Backend** | Python 3.12, Django 4.2 |
-| **Infraestructura** | Docker (imagen `python:3.12.8-slim`), Render, GitHub Actions (CI) |
+| **Infraestructura** | Docker (imagen `python:3.12.8-slim`, multi-stage), Docker Hub (imagen privada), Render, GitHub Actions (CI/CD) |
 | **Base de Datos** | PostgreSQL 13+ |
 | **Tareas en segundo plano** | Celery 5.5 + Redis 7 (broker y result backend) |
 | **Resultados tipados** | result 0.17 (`Ok` / `Err`) |
@@ -191,6 +191,7 @@ nail-salon-backend/
 │   ├── services/              # Cálculo de métricas y períodos
 │   └── views/charts/          # Un endpoint AJAX por gráfico
 ├── templates/                 # Templates globales (base, menú, modales, imports)
+├── tests/                     # Pruebas por app; quedan fuera de la imagen de producción
 ├── static/
 │   ├── css/custom/            # Estilos personalizados
 │   ├── images/                # Iconos SVG internos
@@ -557,7 +558,37 @@ Acceder a `http://localhost:8000/` → redirige a `/calendario/` tras iniciar se
 
 ## 🚀 Deployment
 
-La aplicación se despliega en [Render](https://render.com) como Web Service con **runtime Docker**: Render construye la imagen desde el `Dockerfile` del repositorio en cada push a `main` y la pone en producción. Las migraciones corren en el Pre-Deploy Command (`python manage.py migrate`), con respaldo en el `entrypoint.sh` de la imagen, que además limpia las sesiones vencidas con `clearsessions`.
+La aplicación corre en [Render](https://render.com) como Web Service desde una **imagen privada en Docker Hub** (`harinsonarellan/hai-agenda`). Render no construye nada: GitHub Actions construye la imagen, la publica y le pide a Render que la despliegue.
+
+En cada merge a `main`:
+
+1. El CI construye la etapa `test` del `Dockerfile`, la arranca en modo producción contra un PostgreSQL efímero y corre el smoke test HTTP, `makemigrations --check` y la suite completa.
+2. Si todo pasa, construye la etapa `prod` (sin `tests/`) para `linux/amd64` y la publica con dos tags: `sha-<7 caracteres del commit>` y `latest`.
+3. Llama al deploy hook de Render con el tag `sha-…`, para que Render despliegue exactamente ese commit.
+
+Las publicaciones van en fila, y un run se omite si ya hay un commit más nuevo en `main`: dos merges seguidos nunca dejan desplegado el commit viejo. En las Pull Requests solo corren las pruebas; nada sin mergear llega a Docker Hub.
+
+Las migraciones corren en el Pre-Deploy Command, `python manage.py preparar_despliegue` (`migrar_esquemas` + `configurar_plataforma`), con respaldo en el `entrypoint.sh` de la imagen, que además limpia las sesiones vencidas.
+
+### Etapas del `Dockerfile`
+
+| Etapa | Contenido |
+|---|---|
+| `base` | `python:3.12.8-slim` + locale `es_CL` |
+| `deps` | Dependencias de `requirements.txt`, sin caché de pip |
+| `app` | Solo el código que la aplicación ejecuta + `collectstatic` |
+| `test` | `app` + `tests/`; la usa el CI para las pruebas |
+| `prod` | `app`; última etapa, la que se publica y corre en Render |
+
+### Configuración fuera del repositorio
+
+| Dónde | Qué |
+|---|---|
+| GitHub → Settings → Secrets and variables → Actions | `DOCKER_USER`, `DOCKER_TOKEN` (token **Read & Write** de Docker Hub) y `RENDER_DEPLOY_HOOK` |
+| Render → Workspace Settings → Container Registry Credentials | `docker-hub-hai-agenda` (token **Read-only** de Docker Hub) |
+| Render → servicio → Settings → Source | Existing Image `docker.io/harinsonarellan/hai-agenda:latest` con esa credencial |
+
+Para volver a una versión anterior: Render → servicio → **Events** → **Rollback** en el deploy deseado. Requiere que su tag `sha-…` siga existiendo en Docker Hub.
 
 La base de datos es una instancia PostgreSQL administrada de Render (no un contenedor), inyectada vía `DATABASE_URL`.
 
@@ -574,8 +605,6 @@ CELERY_TASK_ALWAYS_EAGER=True   # mientras no exista el worker
 ```
 
 `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS` se derivan automáticamente de `RENDER_EXTERNAL_HOSTNAME`, que Render inyecta solo.
-
-En cada Pull Request, GitHub Actions compila la imagen y la arranca en modo producción contra un PostgreSQL efímero con un smoke test HTTP (ver `.github/workflows/ci.yml`).
 
 ## 🤝 Contribución
 
