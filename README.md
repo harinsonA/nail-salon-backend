@@ -558,13 +558,13 @@ Acceder a `http://localhost:8000/` → redirige a `/calendario/` tras iniciar se
 
 ## 🚀 Deployment
 
-La aplicación corre en [Render](https://render.com) como Web Service desde una **imagen privada en Docker Hub** (`harinsonarellan/hai-agenda`). Render no construye nada: GitHub Actions construye la imagen, la publica y le pide a Render que la despliegue.
+La aplicación corre en [Render](https://render.com) en dos servicios, un Web Service y un Background Worker, que usan la misma **imagen privada de Docker Hub** (`harinsonarellan/hai-agenda`). Render no construye nada: GitHub Actions construye la imagen, la publica y le pide a Render que despliegue los dos servicios.
 
 En cada merge a `main`:
 
 1. El CI construye la etapa `test` del `Dockerfile`, la arranca en modo producción contra un PostgreSQL efímero y corre el smoke test HTTP, `makemigrations --check` y la suite completa.
 2. Si todo pasa, construye la etapa `prod` (sin `tests/`) para `linux/amd64` y la publica con dos tags: `sha-<7 caracteres del commit>` y `latest`.
-3. Llama al deploy hook de Render con el tag `sha-…`, para que Render despliegue exactamente ese commit.
+3. Llama a los deploy hooks del web y del worker con el tag `sha-…`, para que los dos desplieguen exactamente ese commit.
 
 Las publicaciones van en fila, y un run se omite si ya hay un commit más nuevo en `main`: dos merges seguidos nunca dejan desplegado el commit viejo. En las Pull Requests solo corren las pruebas; nada sin mergear llega a Docker Hub.
 
@@ -584,15 +584,15 @@ Las migraciones corren en el Pre-Deploy Command, `python manage.py preparar_desp
 
 | Dónde | Qué |
 |---|---|
-| GitHub → Settings → Secrets and variables → Actions | `DOCKER_USER`, `DOCKER_TOKEN` (token **Read & Write** de Docker Hub) y `RENDER_DEPLOY_HOOK` |
+| GitHub → Settings → Secrets and variables → Actions | `DOCKER_USER`, `DOCKER_TOKEN` (token **Read & Write** de Docker Hub), `RENDER_DEPLOY_HOOK` (web) y `RENDER_WORKER_DEPLOY_HOOK` (worker) |
 | Render → Workspace Settings → Container Registry Credentials | `docker-hub-hai-agenda` (token **Read-only** de Docker Hub) |
-| Render → servicio → Settings → Source | Existing Image `docker.io/harinsonarellan/hai-agenda:latest` con esa credencial |
+| Render → web y worker → Settings → Source | Existing Image `docker.io/harinsonarellan/hai-agenda:latest` con esa credencial; el worker define su comando de Celery en **Docker Command** |
 
-Para volver a una versión anterior: Render → servicio → **Events** → **Rollback** en el deploy deseado. Requiere que su tag `sha-…` siga existiendo en Docker Hub.
+Para volver a una versión anterior: Render → servicio → **Events** → **Rollback** en el deploy deseado, en el web y en el worker. Requiere que su tag `sha-…` siga existiendo en Docker Hub.
 
 La base de datos es una instancia PostgreSQL administrada de Render (no un contenedor), inyectada vía `DATABASE_URL`.
 
-Para que las importaciones corran realmente en segundo plano hacen falta dos servicios más en la misma región: una instancia **Key Value (Redis)** como broker y un **Background Worker** que ejecute `celery -A nail_salon_api worker`. Mientras no existan, `CELERY_TASK_ALWAYS_EAGER=True` mantiene el procesamiento síncrono dentro del request.
+Las importaciones CSV y la preparación de negocios nuevos corren en segundo plano en el **Background Worker** (`celery -A nail_salon_api worker`), con una instancia **Key Value (Redis)** como broker en la misma región. Sin worker ni Redis, `CELERY_TASK_ALWAYS_EAGER=True` hace que las tareas corran de forma síncrona dentro del request.
 
 ### Variables de entorno para producción (Dashboard de Render)
 
@@ -601,7 +601,7 @@ DATABASE_URL=postgresql://...   # connection string de la BD administrada
 SECRET_KEY=clave-secreta-segura
 DEBUG=False                     # opcional: es el default si no se define
 REDIS_URL=redis://...           # Internal URL de la instancia Key Value
-CELERY_TASK_ALWAYS_EAGER=True   # mientras no exista el worker
+CELERY_TASK_ALWAYS_EAGER=False  # True corre las tareas dentro del request, sin el worker
 ```
 
 `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS` se derivan automáticamente de `RENDER_EXTERNAL_HOSTNAME`, que Render inyecta solo.
