@@ -121,12 +121,22 @@ class PeopleScreenTests(TestCase):
         self.assertEqual(log.action_flag, DELETION)
 
     def test_a_business_owner_cannot_be_deleted(self):
-        response = self.browser(self.superuser).post(
-            self.delete_modal_url(self.owner), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
+        message = "No se puede eliminar a «Carlos Rojas»: es titular de un negocio. Primero cambia el titular."
+        browser = self.browser(self.superuser)
+        modal = browser.get(self.delete_modal_url(self.owner), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertContains(modal, message)
+        self.assertNotContains(modal, 'id="delete_submit_btn"')
+        response = browser.post(self.delete_modal_url(self.owner), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(response.status_code, 400)
-        self.assertIn("es titular de un negocio", response.json()["message"])
+        self.assertEqual(response.json()["message"], message)
         self.assertTrue(Persona.objects.filter(pk=self.owner.pk).exists())
+
+    def test_delete_modal_of_a_person_without_business_offers_the_deletion(self):
+        response = self.browser(self.superuser).get(
+            self.delete_modal_url(self.contact), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertContains(response, 'id="delete_submit_btn"')
+        self.assertNotContains(response, "No se puede eliminar")
 
     def test_delete_requires_delete_permission(self):
         response = self.browser(self.viewer).post(

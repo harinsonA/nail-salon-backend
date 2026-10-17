@@ -118,6 +118,13 @@ class IndustriesScreenTests(TestCase):
         self.assertContains(response, "Código: barberia")
         self.assertContains(response, "Negocios asociados: 1")
 
+    def test_delete_modal_of_an_unused_industry_offers_the_deletion(self):
+        response = self.browser(self.superuser).get(
+            self.delete_modal_url(self.spa), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertContains(response, 'id="delete_submit_btn"')
+        self.assertNotContains(response, "No se puede eliminar")
+
     def test_deleting_an_unused_industry_logs_it(self):
         response = self.browser(self.superuser).post(
             self.delete_modal_url(self.spa), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
@@ -128,6 +135,11 @@ class IndustriesScreenTests(TestCase):
         self.assertEqual(log.action_flag, DELETION)
 
     def test_an_industry_in_use_cannot_be_deleted(self):
+        modal = self.browser(self.superuser).get(
+            self.delete_modal_url(self.barber), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertContains(modal, "No se puede eliminar el rubro «Barbería»: tiene negocios asociados.")
+        self.assertNotContains(modal, 'id="delete_submit_btn"')
         response = self.browser(self.superuser).post(
             self.delete_modal_url(self.barber), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
         )

@@ -241,7 +241,10 @@ class IndustryUpdateModalView(IndustryModalMixin, PanelUpdateModalView):
 
 class IndustryDeleteModalView(PanelDeleteModalView):
     success_message = "Rubro %(name)s eliminado exitosamente."
-    blocked_message = "No se puede eliminar el rubro «%(name)s»: tiene negocios asociados."
+    in_use_message = "No se puede eliminar el rubro «%(name)s»: tiene negocios asociados."
+
+    def is_blocked(self, industry):
+        return industry.negocios.exists()
 
     def get_additional_information(self, industry):
         return [

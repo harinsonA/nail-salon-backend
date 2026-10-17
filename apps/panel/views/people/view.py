@@ -432,7 +432,10 @@ class PersonCreateModalView(PanelCreateModalView):
 
 class PersonDeleteModalView(PanelDeleteModalView):
     success_message = "Persona %(name)s eliminada exitosamente."
-    blocked_message = "No se puede eliminar a «%(name)s»: es titular de un negocio. Primero cambia el titular."
+    in_use_message = "No se puede eliminar a «%(name)s»: es titular de un negocio. Primero cambia el titular."
+
+    def is_blocked(self, person):
+        return person.negocios_como_titular.exists()
 
     def get_additional_information(self, person):
         return [
