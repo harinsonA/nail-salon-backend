@@ -160,6 +160,7 @@ class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
         "No se puede eliminar «%(name)s»: tiene registros relacionados protegidos "
         "o que no tienes permiso para eliminar."
     )
+    in_use_message = ""
 
     def has_model_permission(self, request):
         return self.model_admin.has_delete_permission(request, self.get_object())
@@ -173,6 +174,12 @@ class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
     def get_additional_information(self, obj):
         return []
 
+    def is_blocked(self, obj):
+        return False
+
+    def get_blocked_reason(self, obj):
+        return self.in_use_message % {"name": str(obj)} if self.is_blocked(obj) else ""
+
     def get_context_data(self, **kwargs):
         obj = self.get_object()
         return {
@@ -182,11 +189,15 @@ class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
             "id_register": obj.pk,
             "name_register": str(obj),
             "aditional_information": self.get_additional_information(obj),
+            "blocked_reason": self.get_blocked_reason(obj),
         }
 
     def post(self, request, *args, **kwargs):
         obj = self.get_object()
         name = str(obj)
+        blocked_reason = self.get_blocked_reason(obj)
+        if blocked_reason:
+            return JsonResponse({"message": blocked_reason}, status=HTTP_400_BAD_REQUEST)
         _, _, perms_needed, protected = self.model_admin.get_deleted_objects([obj], request)
         if perms_needed or protected:
             return JsonResponse({"message": self.blocked_message % {"name": name}}, status=HTTP_400_BAD_REQUEST)

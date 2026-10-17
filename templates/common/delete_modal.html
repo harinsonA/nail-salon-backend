@@ -28,6 +28,21 @@
       </p>
       {% endfor %}
     </div>
+    {% if blocked_reason %}
+    <div class="delete-warning-container">
+      <div class="delete-warning-header">
+        <span class="material-symbols-outlined text-destructive me-2" aria-hidden="true">lock</span>
+      </div>
+      <div>
+        <p class="m-0 text-destructive">
+          No se puede eliminar.
+        </p>
+        <p class="m-0 text-muted-foreground">
+          {{ blocked_reason }}
+        </p>
+      </div>
+    </div>
+    {% else %}
     <div class="delete-warning-container">
       <div class="delete-warning-header">
         <img src="{% static 'images/common/warning-text-danger.svg' %}" alt="Advertencia" width="24" height="24" class="me-2">
@@ -42,13 +57,16 @@
         </p>
       </div>
     </div>
+    {% endif %}
   </div>
   <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-secondary bg-gradient me-2" data-bs-dismiss="modal">
-      Cancelar
+      {% if blocked_reason %}Cerrar{% else %}Cancelar{% endif %}
     </button>
+    {% if not blocked_reason %}
     <button id="delete_submit_btn" type="button" class="btn btn-sm btn-danger bg-gradient">
       Eliminar
     </button>
+    {% endif %}
   </div>
 </form>

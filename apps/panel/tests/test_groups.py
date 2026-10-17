@@ -135,18 +135,38 @@ class GroupsScreenTests(TestCase):
         self.assertContains(response, f"ID: {self.support.pk}")
         self.assertContains(response, "Permisos: 2")
         self.assertContains(response, "Usuarios asignados: 1")
+
+    def test_delete_modal_of_a_group_without_users_offers_the_deletion(self):
+        response = self.browser(self.superuser).get(
+            self.delete_modal_url(self.billing), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
         self.assertContains(response, 'id="delete_submit_btn"')
+        self.assertContains(response, "Esta acción es irreversible")
+        self.assertNotContains(response, "No se puede eliminar")
 
     def test_deleting_removes_the_group_and_logs_it(self):
         response = self.browser(self.superuser).post(
-            self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            self.delete_modal_url(self.billing), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["message"], "Grupo Soporte eliminado exitosamente.")
-        self.assertFalse(Group.objects.filter(pk=self.support.pk).exists())
-        self.assertTrue(User.objects.filter(pk=self.superuser.pk).exists())
-        log = LogEntry.objects.get(object_id=str(self.support.pk), content_type__model="group")
-        self.assertEqual((log.action_flag, log.object_repr, log.user_id), (DELETION, "Soporte", self.superuser.pk))
+        self.assertEqual(response.json()["message"], "Grupo Cobranza eliminado exitosamente.")
+        self.assertFalse(Group.objects.filter(pk=self.billing.pk).exists())
+        log = LogEntry.objects.get(object_id=str(self.billing.pk), content_type__model="group")
+        self.assertEqual((log.action_flag, log.object_repr, log.user_id), (DELETION, "Cobranza", self.superuser.pk))
+
+    def test_a_group_with_users_cannot_be_deleted(self):
+        message = "No se puede eliminar el grupo «Soporte»: tiene usuarios asignados. Primero quítalos del grupo."
+        browser = self.browser(self.superuser)
+        modal = browser.get(self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertContains(modal, message)
+        self.assertNotContains(modal, 'id="delete_submit_btn"')
+        self.assertContains(modal, "Cerrar")
+        response = browser.post(self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["message"], message)
+        self.assertTrue(Group.objects.filter(pk=self.support.pk).exists())
+        self.assertTrue(self.superuser.groups.filter(pk=self.support.pk).exists())
+        self.assertFalse(LogEntry.objects.filter(object_id=str(self.support.pk), content_type__model="group").exists())
 
     def test_delete_requires_delete_permission(self):
         browser = self.browser(self.viewer)
@@ -170,8 +190,8 @@ class GroupsScreenTests(TestCase):
         blocked = ([], {}, set(), ["registro protegido"])
         with mock.patch.object(GroupAdmin, "get_deleted_objects", return_value=blocked):
             response = self.browser(self.superuser).post(
-                self.delete_modal_url(self.support), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+                self.delete_modal_url(self.billing), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
             )
         self.assertEqual(response.status_code, 400)
-        self.assertIn("No se puede eliminar «Soporte»", response.json()["message"])
-        self.assertTrue(Group.objects.filter(pk=self.support.pk).exists())
+        self.assertIn("No se puede eliminar «Cobranza»", response.json()["message"])
+        self.assertTrue(Group.objects.filter(pk=self.billing.pk).exists())

@@ -232,6 +232,13 @@ class GroupUpdateModalView(GroupModalMixin, PanelUpdateModalView):
 
 class GroupDeleteModalView(PanelDeleteModalView):
     success_message = "Grupo %(name)s eliminado exitosamente."
+    in_use_message = (
+        "No se puede eliminar el grupo «%(name)s»: tiene usuarios asignados. "
+        "Primero quítalos del grupo."
+    )
+
+    def is_blocked(self, group):
+        return group.user_set.exists()
 
     def get_additional_information(self, group):
         return [
