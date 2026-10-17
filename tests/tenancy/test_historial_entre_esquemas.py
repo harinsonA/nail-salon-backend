@@ -10,7 +10,7 @@ from apps.profiles.models import Perfil
 from apps.tenancy.models import Negocio
 from apps.tenancy.propietario import restablecer_clave_del_propietario
 from apps.tenancy.tasks import preparar_negocio
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 

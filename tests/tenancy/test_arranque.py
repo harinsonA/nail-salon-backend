@@ -9,7 +9,7 @@ from apps.profiles.models import Perfil
 from apps.tenancy.esquemas import clasificar_negocios
 from apps.tenancy.models import Negocio, Persona
 from apps.tenancy.tasks import preparar_negocio
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 

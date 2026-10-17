@@ -7,7 +7,7 @@ from django_tenants.utils import get_public_schema_name
 from apps.clients.models import Cliente
 from apps.tenancy.entorno_local import TABLAS_RENOMBRADAS, tablas_solo_de_negocio
 from apps.tenancy.models import Dominio, Negocio
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 
 class AislamientoDeEsquemasTests(NegocioTestCase):

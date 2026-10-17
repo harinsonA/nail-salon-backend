@@ -14,7 +14,7 @@ from django_tenants.utils import get_public_schema_name, schema_context
 from apps.profiles.models import Perfil
 from apps.tenancy.models import Dominio, Negocio, Persona, PersonaCorreo
 from apps.tenancy.tasks import preparar_negocio
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 

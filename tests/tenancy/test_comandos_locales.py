@@ -11,7 +11,7 @@ from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
 from apps.settings.models import Preference
 from apps.settings.preferences.constants import Scope
-from apps.tenancy.testing import borrar_negocio_de_prueba, crear_negocio_de_prueba
+from tests.base import borrar_negocio_de_prueba, crear_negocio_de_prueba
 
 User = get_user_model()
 

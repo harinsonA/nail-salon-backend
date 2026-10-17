@@ -13,7 +13,7 @@ from django_tenants.utils import get_public_schema_name
 from apps.profiles.models import Perfil
 from apps.tenancy.estados import cambiar_estado, estados_posibles
 from apps.tenancy.models import Dominio, Negocio, Persona
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 Estado = Negocio.Estado

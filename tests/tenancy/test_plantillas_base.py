@@ -3,7 +3,7 @@ from django.test import Client
 from django.urls import reverse
 
 from apps.profiles.models import Perfil
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 

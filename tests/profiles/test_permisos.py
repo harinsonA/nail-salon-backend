@@ -9,7 +9,7 @@ from django_tenants.utils import get_public_schema_name
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import PARA_TODO_EL_EQUIPO, SOLO_ADMINISTRACION
 from apps.tenancy.models import Dominio, Negocio
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 

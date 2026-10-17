@@ -2,7 +2,7 @@ from django.db import connection
 
 from apps.settings.models import ConfiguracionNegocio, Preference
 from apps.settings.preferences.constants import Scope
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 
 class ConfiguracionNegocioTests(NegocioTestCase):

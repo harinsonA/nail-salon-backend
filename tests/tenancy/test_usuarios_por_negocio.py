@@ -4,7 +4,7 @@ from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name, schema_context
 
 from apps.clients.models import Cliente
-from apps.tenancy.testing import borrar_negocio_de_prueba, crear_negocio_de_prueba
+from tests.base import borrar_negocio_de_prueba, crear_negocio_de_prueba
 
 User = get_user_model()
 
