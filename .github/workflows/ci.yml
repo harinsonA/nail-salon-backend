@@ -95,3 +95,60 @@ jobs:
       - name: Logs del contenedor (migraciones + gunicorn)
         if: always()
         run: docker logs web
+
+  publicar-imagen:
+    name: Publicar imagen en Docker Hub
+    needs: docker-smoke-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publicar-imagen
+      cancel-in-progress: false
+    env:
+      IMAGEN: docker.io/harinsonarellan/hai-agenda
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+    steps:
+      - name: Confirmar que el commit sigue siendo el último de main
+        id: vigencia
+        run: |
+          ultimo=$(git ls-remote "https://github.com/${{ github.repository }}" refs/heads/main | cut -f1)
+          echo "Último commit de main: $ultimo · commit de este run: $GITHUB_SHA"
+          if [ "$ultimo" = "$GITHUB_SHA" ]; then
+            echo "vigente=true" >> "$GITHUB_OUTPUT"
+            echo "ETIQUETA=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          else
+            echo "Hay un commit más nuevo en main: su propio run publica y despliega."
+            echo "vigente=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout del código
+        if: steps.vigencia.outputs.vigente == 'true'
+        uses: actions/checkout@v4
+
+      - name: Preparar Buildx
+        if: steps.vigencia.outputs.vigente == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login en Docker Hub
+        if: steps.vigencia.outputs.vigente == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Construir y publicar la imagen de producción (target prod)
+        if: steps.vigencia.outputs.vigente == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: prod
+          platforms: linux/amd64
+          provenance: false
+          push: true
+          tags: |
+            ${{ env.IMAGEN }}:${{ env.ETIQUETA }}
+            ${{ env.IMAGEN }}:latest
+
+      - name: Desplegar en Render el commit publicado
+        if: steps.vigencia.outputs.vigente == 'true' && env.RENDER_DEPLOY_HOOK != ''
+        run: curl -fsS -G "$RENDER_DEPLOY_HOOK" --data-urlencode "imgURL=$IMAGEN:$ETIQUETA" -o /dev/null
