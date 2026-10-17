@@ -1,0 +1,85 @@
+<form id="person-form-modal" action="{{ modal_url }}" method="post">
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined me-2">
+        manage_accounts
+      </span>
+      <span class="pb-1">
+        Editar persona · {{ object }}
+      </span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <div class="row g-4">
+      <div class="col-12 col-md-3">
+        <div class="nav flex-column side-tabs" role="tablist" aria-orientation="vertical">
+          <button class="nav-link active" id="person-tab-basic" data-bs-toggle="pill"
+            data-bs-target="#person-pane-basic" type="button" role="tab" aria-controls="person-pane-basic"
+            aria-selected="true">
+            <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+            Datos básicos
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+          <button class="nav-link" id="person-tab-emails" data-bs-toggle="pill"
+            data-bs-target="#person-pane-emails" type="button" role="tab" aria-controls="person-pane-emails"
+            aria-selected="false">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            Correos
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+          <button class="nav-link" id="person-tab-phones" data-bs-toggle="pill"
+            data-bs-target="#person-pane-phones" type="button" role="tab" aria-controls="person-pane-phones"
+            aria-selected="false">
+            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+            Teléfonos
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+          <button class="nav-link" id="person-tab-addresses" data-bs-toggle="pill"
+            data-bs-target="#person-pane-addresses" type="button" role="tab" aria-controls="person-pane-addresses"
+            aria-selected="false">
+            <span class="material-symbols-outlined" aria-hidden="true">home_pin</span>
+            Direcciones
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+        </div>
+      </div>
+      <div class="col-12 col-md-9">
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="person-pane-basic" role="tabpanel" aria-labelledby="person-tab-basic">
+            <h6 class="side-tab-title">Datos básicos</h6>
+            <p class="side-tab-subtitle">Cómo se llama y lo que conviene recordar de ella.</p>
+            {% include 'panel/people/names_fields.html' %}
+            <div class="mb-2">
+              {% include 'common/form_field.html' with field=form.notes optional=True %}
+            </div>
+          </div>
+          <div class="tab-pane fade" id="person-pane-emails" role="tabpanel" aria-labelledby="person-tab-emails">
+            <h6 class="side-tab-title">Correos</h6>
+            <p class="side-tab-subtitle">Uno de ellos es el principal: al marcar otro, deja de serlo.</p>
+            {% include 'common/formset_section.html' with formset=emails fields_template='panel/people/email_fields.html' add_label='Agregar correo' empty_label='No tiene correos registrados.' %}
+          </div>
+          <div class="tab-pane fade" id="person-pane-phones" role="tabpanel" aria-labelledby="person-tab-phones">
+            <h6 class="side-tab-title">Teléfonos</h6>
+            <p class="side-tab-subtitle">Uno de ellos es el principal: al marcar otro, deja de serlo.</p>
+            {% include 'common/formset_section.html' with formset=phones fields_template='panel/people/phone_fields.html' add_label='Agregar teléfono' empty_label='No tiene teléfonos registrados.' %}
+          </div>
+          <div class="tab-pane fade" id="person-pane-addresses" role="tabpanel" aria-labelledby="person-tab-addresses">
+            <h6 class="side-tab-title">Direcciones</h6>
+            <p class="side-tab-subtitle">Una de ellas es la principal: al marcar otra, deja de serlo.</p>
+            {% include 'common/formset_section.html' with formset=addresses fields_template='panel/people/address_fields.html' add_label='Agregar dirección' empty_label='No tiene direcciones registradas.' %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="person_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+      Guardar
+    </button>
+  </div>
+</form>

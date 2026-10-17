@@ -1,8 +1,10 @@
 from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q, Subquery, TextChoices, Value
 from django.db.models.functions import Concat, Trim
+from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.urls import reverse
 from django.views.generic import TemplateView
 
@@ -14,14 +16,15 @@ from apps.common.form_fields import (
     NumericField,
 )
 from apps.common.utils.phones import CountryPhonePrefix
-from apps.common.utils.text import join_name_parts
-from apps.common.utils.utils import CommonCleaner
+from apps.common.utils.text import join_name_parts, split_name
 from apps.common.widgets import switch_input, text_input
 from apps.panel.views.base import (
     PanelCreateModalView,
     PanelDeleteModalView,
     PanelListViewAjax,
+    PanelUpdateModalView,
     PanelView,
+    RelatedFormsMixin,
 )
 from apps.tenancy.models import (
     Persona,
@@ -38,6 +41,7 @@ EMPTY = "—"
 NAME_PART_MAX_LENGTH = 50
 FULL_NAME_MAX_LENGTH = 100
 PHONE_MAX_DIGITS = 15
+ACCESS_EMAIL_LABEL = "acceso"
 DEFAULT_COUNTRY = "CL"
 ADDRESS_COUNTRIES = [
     ("CL", "Chile"),
@@ -50,16 +54,8 @@ ADDRESS_COUNTRIES = [
     ("UY", "Uruguay"),
     ("VE", "Venezuela"),
 ]
-ADDRESS_FIELDS = (
-    "street",
-    "number",
-    "complement",
-    "commune",
-    "city",
-    "region",
-    "postal_code",
-    "reference",
-)
+CONTACT_FORM_OPTIONS = {"empty_permitted": True, "use_required_attribute": False}
+MAIN_ITEM_FIELD = "es_principal"
 
 
 # endregion
@@ -92,7 +88,7 @@ class PeopleFilterForm(forms.Form):
         return {}
 
 
-class PersonCreateForm(BSModalForm):
+class PersonNamesForm(BSModalForm):
     first_name = AlphabeticField(
         label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana")
     )
@@ -114,35 +110,6 @@ class PersonCreateForm(BSModalForm):
         required=False,
         widget=text_input("Pérez"),
     )
-    email = forms.EmailField(
-        label="Correo",
-        max_length=254,
-        required=False,
-        widget=forms.EmailInput(
-            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@ejemplo.com"}
-        ),
-    )
-    country_phone_prefix = forms.ChoiceField(
-        label="Prefijo país",
-        choices=CountryPhonePrefix.choices,
-        initial=CountryPhonePrefix.CHILE,
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    phone = NumericField(
-        label="Teléfono",
-        max_length=PHONE_MAX_DIGITS,
-        required=False,
-        widget=text_input("912345678"),
-    )
-    phone_type = forms.ChoiceField(
-        label="Tipo de teléfono",
-        choices=PersonaTelefono.Tipo.choices,
-        initial=PersonaTelefono.Tipo.MOVIL,
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    has_whatsapp = forms.BooleanField(
-        label="Tiene WhatsApp", required=False, widget=switch_input()
-    )
     notes = NoteField(
         label="Nota",
         required=False,
@@ -155,65 +122,9 @@ class PersonCreateForm(BSModalForm):
             }
         ),
     )
-    street = AlphabeticField(
-        label="Calle",
-        max_length=150,
-        required=False,
-        allow_dots=True,
-        widget=text_input("Av. Providencia"),
-    )
-    number = NumericField(
-        label="Número", max_length=15, required=False, widget=text_input("1234")
-    )
-    complement = AlphanumericField(
-        label="Depto, oficina o local",
-        max_length=60,
-        required=False,
-        allow_dots=True,
-        widget=text_input("Depto. 502"),
-    )
-    postal_code = NumericField(
-        label="Código postal",
-        max_length=12,
-        required=False,
-        widget=text_input("7500000"),
-    )
-    commune = AlphabeticField(
-        label="Comuna", max_length=80, required=False, widget=text_input("Providencia")
-    )
-    city = AlphabeticField(
-        label="Ciudad", max_length=80, required=False, widget=text_input("Santiago")
-    )
-    region = AlphabeticField(
-        label="Región",
-        max_length=80,
-        required=False,
-        widget=text_input("Metropolitana"),
-    )
-    country = forms.ChoiceField(
-        label="País",
-        choices=ADDRESS_COUNTRIES,
-        initial=DEFAULT_COUNTRY,
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    reference = AlphanumericField(
-        label="Referencia",
-        max_length=150,
-        required=False,
-        widget=text_input("Frente a la plaza"),
-    )
-
-    def clean_email(self):
-        return self.cleaned_data["email"].strip().lower()
 
     def clean(self):
         cleaned_data = super().clean()
-        self.validate_full_names(cleaned_data)
-        self.validate_mobile_phone(cleaned_data)
-        self.validate_address(cleaned_data)
-        return cleaned_data
-
-    def validate_full_names(self, cleaned_data):
         if cleaned_data.get("second_surname") and not cleaned_data.get("first_surname"):
             self.add_error(
                 "first_surname", "Escribe el primer apellido antes del segundo."
@@ -228,24 +139,7 @@ class PersonCreateForm(BSModalForm):
                 "second_surname",
                 f"Los apellidos juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.",
             )
-
-    def validate_mobile_phone(self, cleaned_data):
-        phone = cleaned_data.get("phone")
-        prefix = cleaned_data.get("country_phone_prefix")
-        if (
-            not phone
-            or not prefix
-            or cleaned_data.get("phone_type") != PersonaTelefono.Tipo.MOVIL
-        ):
-            return
-        result = CommonCleaner.clean_phone_field(prefix, phone)
-        if result.is_err():
-            self.add_error("phone", result.value)
-
-    def validate_address(self, cleaned_data):
-        has_address = any(cleaned_data.get(field) for field in ADDRESS_FIELDS)
-        if has_address and not cleaned_data.get("street"):
-            self.add_error("street", "Escribe la calle para guardar la dirección.")
+        return cleaned_data
 
     def full_names(self):
         return join_name_parts(
@@ -258,44 +152,230 @@ class PersonCreateForm(BSModalForm):
             self.cleaned_data.get("second_surname"),
         )
 
+    def person_data(self):
+        return {
+            "nombres": self.full_names(),
+            "apellidos": self.full_surnames(),
+            "notas": self.cleaned_data["notes"] or None,
+        }
+
+
+class PersonCreateForm(PersonNamesForm):
     def save(self):
-        data = self.cleaned_data
-        with transaction.atomic():
-            person = Persona(
-                nombres=self.full_names(),
-                apellidos=self.full_surnames(),
-                notas=data["notes"] or None,
-            )
-            person._change_reason = "Alta desde el panel"
-            person.save()
-            if data["email"]:
-                PersonaCorreo.objects.create(
-                    persona=person, correo=data["email"], es_principal=True
-                )
-            if data["phone"]:
-                PersonaTelefono.objects.create(
-                    persona=person,
-                    codigo_pais=data["country_phone_prefix"],
-                    numero=data["phone"],
-                    tipo=data["phone_type"],
-                    tiene_whatsapp=data["has_whatsapp"],
-                    es_principal=True,
-                )
-            if data["street"]:
-                PersonaDireccion.objects.create(
-                    persona=person,
-                    calle=data["street"],
-                    numero=data["number"],
-                    complemento=data["complement"],
-                    comuna=data["commune"],
-                    ciudad=data["city"],
-                    region=data["region"],
-                    pais=data["country"],
-                    codigo_postal=data["postal_code"],
-                    referencia=data["reference"],
-                    es_principal=True,
-                )
+        person = Persona(**self.person_data())
+        person._change_reason = "Alta desde el panel"
+        person.save()
         return person
+
+
+class PersonUpdateForm(PersonNamesForm):
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        super().__init__(*args, **kwargs)
+        first_name, second_name = split_name(instance.nombres)
+        first_surname, second_surname = split_name(instance.apellidos)
+        self.initial.update(
+            {
+                "first_name": first_name,
+                "second_name": second_name,
+                "first_surname": first_surname,
+                "second_surname": second_surname,
+                "notes": instance.notas or "",
+            }
+        )
+
+    def save(self):
+        for field, value in self.person_data().items():
+            setattr(self.instance, field, value)
+        self.instance._change_reason = "Edición desde el panel"
+        self.instance.save()
+        return self.instance
+
+
+class PersonEmailForm(forms.ModelForm):
+    correo = forms.EmailField(
+        label="Correo",
+        max_length=254,
+        widget=forms.EmailInput(
+            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@ejemplo.com"}
+        ),
+    )
+
+    class Meta:
+        model = PersonaCorreo
+        fields = ["correo"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.is_locked():
+            self.fields["correo"].disabled = True
+            self.fields["correo"].help_text = (
+                "Es el correo de acceso de su negocio: no se cambia ni se quita desde aquí."
+            )
+
+    def is_locked(self):
+        return bool(self.instance.pk) and self.instance.etiqueta == ACCESS_EMAIL_LABEL
+
+    def clean_correo(self):
+        return self.cleaned_data["correo"].strip().lower()
+
+
+class PersonPhoneForm(forms.ModelForm):
+    non_field_errors_target = "numero"
+
+    codigo_pais = forms.ChoiceField(
+        label="Prefijo país",
+        choices=CountryPhonePrefix.choices,
+        initial=CountryPhonePrefix.CHILE,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    numero = NumericField(
+        label="Teléfono", max_length=PHONE_MAX_DIGITS, widget=text_input("912345678")
+    )
+    tipo = forms.ChoiceField(
+        label="Tipo de teléfono",
+        choices=PersonaTelefono.Tipo.choices,
+        initial=PersonaTelefono.Tipo.MOVIL,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    tiene_whatsapp = forms.BooleanField(
+        label="Tiene WhatsApp", required=False, widget=switch_input()
+    )
+
+    class Meta:
+        model = PersonaTelefono
+        fields = ["codigo_pais", "numero", "tipo", "tiene_whatsapp"]
+
+
+class PersonAddressForm(forms.ModelForm):
+    calle = AlphabeticField(
+        label="Calle",
+        max_length=150,
+        allow_dots=True,
+        error_messages={"required": "Escribe la calle para guardar la dirección."},
+        widget=text_input("Av. Providencia"),
+    )
+    numero = NumericField(
+        label="Número", max_length=15, required=False, widget=text_input("1234")
+    )
+    complemento = AlphanumericField(
+        label="Depto, oficina o local",
+        max_length=60,
+        required=False,
+        allow_dots=True,
+        widget=text_input("Depto. 502"),
+    )
+    codigo_postal = NumericField(
+        label="Código postal",
+        max_length=12,
+        required=False,
+        widget=text_input("7500000"),
+    )
+    comuna = AlphabeticField(
+        label="Comuna", max_length=80, required=False, widget=text_input("Providencia")
+    )
+    ciudad = AlphabeticField(
+        label="Ciudad", max_length=80, required=False, widget=text_input("Santiago")
+    )
+    region = AlphabeticField(
+        label="Región",
+        max_length=80,
+        required=False,
+        widget=text_input("Metropolitana"),
+    )
+    pais = forms.ChoiceField(
+        label="País",
+        choices=ADDRESS_COUNTRIES,
+        initial=DEFAULT_COUNTRY,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    referencia = AlphanumericField(
+        label="Referencia",
+        max_length=150,
+        required=False,
+        widget=text_input("Frente a la plaza"),
+    )
+
+    class Meta:
+        model = PersonaDireccion
+        fields = [
+            "calle",
+            "numero",
+            "complemento",
+            "codigo_postal",
+            "comuna",
+            "ciudad",
+            "region",
+            "pais",
+            "referencia",
+        ]
+
+
+class MainItemFormSet(BaseInlineFormSet):
+    item_name = ""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = self.queryset.order_by(f"-{MAIN_ITEM_FIELD}", "pk")
+
+    def kept_forms(self):
+        return [
+            form
+            for form in self.forms
+            if form.cleaned_data and not form.cleaned_data.get("DELETE")
+        ]
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        kept = self.kept_forms()
+        main = [form for form in kept if form.cleaned_data.get(MAIN_ITEM_FIELD)]
+        if len(main) > 1:
+            raise ValidationError(f"Solo puede haber {self.item_name} principal.")
+        if kept and not main:
+            raise ValidationError(f"Marca {self.item_name} como principal.")
+
+
+class PersonEmailFormSet(MainItemFormSet):
+    item_name = "un correo"
+
+    def clean(self):
+        super().clean()
+        if any(
+            form.cleaned_data.get("DELETE") and form.is_locked()
+            for form in self.forms
+        ):
+            raise ValidationError(
+                "El correo de acceso de su negocio no se puede quitar."
+            )
+
+
+class PersonPhoneFormSet(MainItemFormSet):
+    item_name = "un teléfono"
+
+
+class PersonAddressFormSet(MainItemFormSet):
+    item_name = "una dirección"
+
+
+def contact_formset(form, formset):
+    return inlineformset_factory(
+        Persona,
+        form._meta.model,
+        form=form,
+        formset=formset,
+        fields=[*form._meta.fields, MAIN_ITEM_FIELD],
+        labels={MAIN_ITEM_FIELD: "Principal"},
+        widgets={MAIN_ITEM_FIELD: switch_input()},
+        extra=0,
+        can_delete=True,
+    )
+
+
+EmailFormSet = contact_formset(PersonEmailForm, PersonEmailFormSet)
+PhoneFormSet = contact_formset(PersonPhoneForm, PersonPhoneFormSet)
+AddressFormSet = contact_formset(PersonAddressForm, PersonAddressFormSet)
 
 
 # endregion
@@ -391,9 +471,11 @@ class PersonListAjaxView(PanelListViewAjax):
                     {
                         "label": "Editar",
                         "link": reverse(
-                            "admin:tenancy_persona_change", args=[item["pk"]]
+                            "admin:tenancy_persona_change_modal", args=[item["pk"]]
                         ),
+                        "bsModal": True,
                         "icon": "edit_document",
+                        "className": "bs-xl-modal",
                     }
                 )
             if can_delete:
@@ -421,13 +503,60 @@ class PersonListAjaxView(PanelListViewAjax):
         )
 
 
-class PersonCreateModalView(PanelCreateModalView):
+class PersonCreateModalView(RelatedFormsMixin, PanelCreateModalView):
     template_name = "panel/people/person_modal.html"
     form_class = PersonCreateForm
     success_message = "Persona %(name)s creada exitosamente."
 
+    def get_related_forms(self, data):
+        return {
+            "email_form": PersonEmailForm(data, prefix="email", **CONTACT_FORM_OPTIONS),
+            "phone_form": PersonPhoneForm(data, prefix="phone", **CONTACT_FORM_OPTIONS),
+            "address_form": PersonAddressForm(
+                data, prefix="address", **CONTACT_FORM_OPTIONS
+            ),
+        }
+
+    @transaction.atomic
     def create_object(self, form):
-        return form.save()
+        person = form.save()
+        for contact_form in self.related_forms().values():
+            if contact_form.has_changed():
+                contact = contact_form.save(commit=False)
+                contact.persona = person
+                contact.es_principal = True
+                contact.save()
+        return person
+
+
+class PersonUpdateModalView(RelatedFormsMixin, PanelUpdateModalView):
+    template_name = "panel/people/person_edit_modal.html"
+    form_class = PersonUpdateForm
+    success_message = "Persona %(name)s actualizada exitosamente."
+    section_labels = {"emails": "Correos", "phones": "Teléfonos", "addresses": "Direcciones"}
+
+    def get_related_forms(self, data):
+        person = self.get_object()
+        return {
+            "emails": EmailFormSet(data, instance=person, prefix="correos"),
+            "phones": PhoneFormSet(data, instance=person, prefix="telefonos"),
+            "addresses": AddressFormSet(data, instance=person, prefix="direcciones"),
+        }
+
+    def get_changed_fields(self, form):
+        sections = [
+            self.section_labels[name]
+            for name, formset in self.related_forms().items()
+            if formset.has_changed()
+        ]
+        return super().get_changed_fields(form) + sections
+
+    @transaction.atomic
+    def update_object(self, form):
+        person = form.save()
+        for formset in self.related_forms().values():
+            formset.save()
+        return person
 
 
 class PersonDeleteModalView(PanelDeleteModalView):
