@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 
 from apps.profiles.models import Perfil, PerfilDireccion, PerfilTelefono
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 

@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import puede_gestionar
-from apps.tenancy.testing import NegocioTestCase
+from tests.base import NegocioTestCase
 
 User = get_user_model()
 Rol = Perfil.Rol

@@ -13,7 +13,7 @@ from apps.profiles.models import Perfil
 from apps.tareas.cola import encolar
 from apps.tareas.decorators import background_task
 from apps.tareas.models import TareaEnProceso
-from apps.tenancy.testing import borrar_negocio_de_prueba, crear_negocio_de_prueba
+from tests.base import borrar_negocio_de_prueba, crear_negocio_de_prueba
 from nail_salon_api.celery import app
 
 User = get_user_model()
