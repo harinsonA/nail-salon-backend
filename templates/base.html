@@ -108,6 +108,7 @@
   <script src="{% static 'js/custom/custom.bs_modals.js' %}"></script>
   <script src="{% static 'js/custom/custom.formsets.js' %}"></script>
   <script src="{% static 'js/custom/custom.select2.js' %}"></script>
+  {% block section_js %}{% endblock %}
   <script>
     $(() => {
       {% if messages %}

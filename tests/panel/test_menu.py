@@ -57,11 +57,14 @@ class MenuDelPanelTests(TestCase):
             with self.subTest(ruta=ruta):
                 self.assertContains(respuesta, f'href="{ruta}"')
 
-    def test_la_tuerca_lleva_al_sitio_a_la_clave_y_al_cierre_de_sesion(self):
+    def test_la_tuerca_lleva_al_sitio_al_perfil_y_al_cierre_de_sesion(self):
         respuesta = self.inicio()
         self.assertContains(respuesta, 'href="http://localhost/"')
         self.assertContains(respuesta, "Ver sitio")
-        self.assertContains(respuesta, 'href="/admin/password_change/"')
+        self.assertContains(respuesta, 'data-form-url="/admin/account/modal/"')
+        self.assertContains(respuesta, 'id="account_modal"')
+        self.assertContains(respuesta, "initializeUserEditModal('#account_modal')")
+        self.assertNotContains(respuesta, "/admin/password_change/")
         self.assertContains(respuesta, 'action="/admin/logout/"')
         self.assertContains(respuesta, 'form="logout_form"')
 
@@ -75,8 +78,9 @@ class MenuDelPanelTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertNotContains(respuesta, "/admin/tenancy/negocio/")
         self.assertNotContains(respuesta, "/admin/auth/user/")
+        self.assertContains(respuesta, 'data-form-url="/admin/account/modal/"')
         self.assertContains(respuesta, "Cerrar sesión")
 
-    def test_una_cuenta_sin_clave_utilizable_no_ve_cambiar_contrasena(self):
+    def test_una_cuenta_sin_clave_utilizable_tambien_ve_su_perfil(self):
         sin_clave = User.objects.create_superuser(username="sin-clave", password=None)
-        self.assertNotContains(self.inicio(sin_clave), "Cambiar contraseña")
+        self.assertContains(self.inicio(sin_clave), 'data-form-url="/admin/account/modal/"')
