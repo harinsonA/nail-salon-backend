@@ -10,6 +10,7 @@ from apps.panel.views.businesses.view import (
     BusinessCreateView,
     BusinessListAjaxView,
     BusinessListView,
+    BusinessUpdateView,
 )
 from apps.tenancy.alta import correo_de_acceso
 from apps.tenancy.estados import cambiar_estado
@@ -233,6 +234,9 @@ class NegocioAdmin(SimpleHistoryAdmin):
         return BusinessCreateView.as_view(admin_site=self.admin_site, model_admin=self)(
             request
         )
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        return BusinessUpdateView.as_view(admin_site=self.admin_site, model_admin=self)(request, pk=object_id)
 
     def alta_view(self, request):
         return redirect("admin:tenancy_negocio_add")

@@ -4,16 +4,20 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q, Subquery, TextChoices, Value
 from django.db.models.functions import Concat, Trim
-from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.urls import reverse
 from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.forms import OPTIONAL_FORM_OPTIONS, AddressForm
 from apps.common.form_fields import (
     AlphabeticField,
     NoteField,
     NumericField,
+)
+from apps.common.forms import (
+    OPTIONAL_FORM_OPTIONS,
+    AddressForm,
+    MainItemFormSet,
+    main_item_formset,
 )
 from apps.common.utils.phones import CountryPhonePrefix
 from apps.common.utils.text import join_name_parts, split_name
@@ -42,7 +46,6 @@ NAME_PART_MAX_LENGTH = 50
 FULL_NAME_MAX_LENGTH = 100
 PHONE_MAX_DIGITS = 15
 ACCESS_EMAIL_LABEL = "acceso"
-MAIN_ITEM_FIELD = "es_principal"
 
 
 # endregion
@@ -196,9 +199,9 @@ class PersonEmailForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.is_locked():
             self.fields["correo"].disabled = True
-            self.fields["correo"].help_text = (
-                "Es el correo de acceso de su negocio: no se cambia ni se quita desde aquí."
-            )
+            self.fields[
+                "correo"
+            ].help_text = "Es el correo de acceso de su negocio: no se cambia ni se quita desde aquí."
 
     def is_locked(self):
         return bool(self.instance.pk) and self.instance.etiqueta == ACCESS_EMAIL_LABEL
@@ -239,40 +242,13 @@ class PersonAddressForm(AddressForm):
         model = PersonaDireccion
 
 
-class MainItemFormSet(BaseInlineFormSet):
-    item_name = ""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.queryset = self.queryset.order_by(f"-{MAIN_ITEM_FIELD}", "pk")
-
-    def kept_forms(self):
-        return [
-            form
-            for form in self.forms
-            if form.cleaned_data and not form.cleaned_data.get("DELETE")
-        ]
-
-    def clean(self):
-        super().clean()
-        if any(self.errors):
-            return
-        kept = self.kept_forms()
-        main = [form for form in kept if form.cleaned_data.get(MAIN_ITEM_FIELD)]
-        if len(main) > 1:
-            raise ValidationError(f"Solo puede haber {self.item_name} principal.")
-        if kept and not main:
-            raise ValidationError(f"Marca {self.item_name} como principal.")
-
-
 class PersonEmailFormSet(MainItemFormSet):
     item_name = "un correo"
 
     def clean(self):
         super().clean()
         if any(
-            form.cleaned_data.get("DELETE") and form.is_locked()
-            for form in self.forms
+            form.cleaned_data.get("DELETE") and form.is_locked() for form in self.forms
         ):
             raise ValidationError(
                 "El correo de acceso de su negocio no se puede quitar."
@@ -287,23 +263,9 @@ class PersonAddressFormSet(MainItemFormSet):
     item_name = "una dirección"
 
 
-def contact_formset(form, formset):
-    return inlineformset_factory(
-        Persona,
-        form._meta.model,
-        form=form,
-        formset=formset,
-        fields=[*form._meta.fields, MAIN_ITEM_FIELD],
-        labels={MAIN_ITEM_FIELD: "Principal"},
-        widgets={MAIN_ITEM_FIELD: switch_input()},
-        extra=0,
-        can_delete=True,
-    )
-
-
-EmailFormSet = contact_formset(PersonEmailForm, PersonEmailFormSet)
-PhoneFormSet = contact_formset(PersonPhoneForm, PersonPhoneFormSet)
-AddressFormSet = contact_formset(PersonAddressForm, PersonAddressFormSet)
+EmailFormSet = main_item_formset(Persona, PersonEmailForm, PersonEmailFormSet)
+PhoneFormSet = main_item_formset(Persona, PersonPhoneForm, PersonPhoneFormSet)
+AddressFormSet = main_item_formset(Persona, PersonAddressForm, PersonAddressFormSet)
 
 
 # endregion
@@ -438,8 +400,12 @@ class PersonCreateModalView(RelatedFormsMixin, PanelCreateModalView):
 
     def get_related_forms(self, data):
         return {
-            "email_form": PersonEmailForm(data, prefix="email", **OPTIONAL_FORM_OPTIONS),
-            "phone_form": PersonPhoneForm(data, prefix="phone", **OPTIONAL_FORM_OPTIONS),
+            "email_form": PersonEmailForm(
+                data, prefix="email", **OPTIONAL_FORM_OPTIONS
+            ),
+            "phone_form": PersonPhoneForm(
+                data, prefix="phone", **OPTIONAL_FORM_OPTIONS
+            ),
             "address_form": PersonAddressForm(
                 data, prefix="address", **OPTIONAL_FORM_OPTIONS
             ),
@@ -461,7 +427,11 @@ class PersonUpdateModalView(RelatedFormsMixin, PanelUpdateModalView):
     template_name = "panel/people/person_edit_modal.html"
     form_class = PersonUpdateForm
     success_message = "Persona %(name)s actualizada exitosamente."
-    section_labels = {"emails": "Correos", "phones": "Teléfonos", "addresses": "Direcciones"}
+    section_labels = {
+        "emails": "Correos",
+        "phones": "Teléfonos",
+        "addresses": "Direcciones",
+    }
 
     def get_related_forms(self, data):
         person = self.get_object()

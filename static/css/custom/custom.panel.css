@@ -204,3 +204,86 @@
   outline: 2px solid var(--color-primary-hover);
   outline-offset: 2px;
 }
+
+.readonly-info--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.readonly-info--grid .readonly-info__item + .readonly-info__item {
+  margin-top: 0;
+}
+
+.readonly-info__value {
+  overflow-wrap: anywhere;
+}
+
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.action-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.action-list__icon {
+  font-size: 22px;
+  color: var(--color-primary-hover);
+}
+
+.action-list__text {
+  flex: 1 1 auto;
+}
+
+.action-list__label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.action-list__description {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.action-list__item .btn {
+  flex: 0 0 auto;
+}
+
+.icon-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-link);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.icon-link-button .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.icon-link-button:hover {
+  color: var(--text-link-hover);
+  background-color: var(--color-primary-soft);
+}
+
+.icon-link-button:focus-visible {
+  outline: 2px solid var(--color-primary-hover);
+  outline-offset: 1px;
+}
+
