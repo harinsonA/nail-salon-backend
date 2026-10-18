@@ -1,11 +1,10 @@
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
 from django_tenants.utils import get_public_schema_name
 
+from apps.common.utils.utils import CommonCleaner
 from apps.tenancy.alta import dominio_de, url_en_dominio
 from apps.tenancy.models import Dominio
-from apps.tenancy.subdominios import validar_subdominio
 
 
 def pagina_publica(request):
@@ -21,9 +20,7 @@ def pagina_publica(request):
 
 
 def url_de_entrada(request, subdominio):
-    try:
-        validar_subdominio(subdominio)
-    except ValidationError:
+    if CommonCleaner.clean_subdomain_field(subdominio).is_err():
         return None
     dominio = dominio_de(subdominio)
     existe = Dominio.objects.filter(domain=dominio).exclude(tenant__schema_name=get_public_schema_name()).exists()

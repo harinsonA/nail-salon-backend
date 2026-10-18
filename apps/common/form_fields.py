@@ -54,6 +54,21 @@ class NumericField(CleanedCharField):
         return CommonCleaner.clean_numeric_field(field_name, value)
 
 
+class LowercaseCodeField(CleanedCharField):
+    def to_python(self, value):
+        return super().to_python(value).lower()
+
+
+class SubdomainField(LowercaseCodeField):
+    def check(self, field_name, value):
+        return CommonCleaner.clean_subdomain_field(value)
+
+
+class SchemaField(LowercaseCodeField):
+    def check(self, field_name, value):
+        return CommonCleaner.clean_schema_field(value)
+
+
 class NoteField(CleanedCharField):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("max_length", NOTE_MAX_LENGTH)

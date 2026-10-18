@@ -1,0 +1,116 @@
+from django import forms
+
+from apps.common.form_classes import FORM_SELECT_CLASS
+from apps.common.form_fields import AlphabeticField, AlphanumericField, NumericField
+from apps.common.widgets import text_input
+
+"""========================================================================="""
+# region ........ Constants
+
+
+DEFAULT_COUNTRY = "CL"
+ADDRESS_COUNTRIES = [
+    ("CL", "Chile"),
+    ("AR", "Argentina"),
+    ("CO", "Colombia"),
+    ("EC", "Ecuador"),
+    ("MX", "México"),
+    ("PE", "Perú"),
+    ("DO", "República Dominicana"),
+    ("UY", "Uruguay"),
+    ("VE", "Venezuela"),
+]
+INVALID_CLASS = "is-invalid"
+OPTIONAL_FORM_OPTIONS = {"empty_permitted": True, "use_required_attribute": False}
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Functions
+
+
+def mark_invalid_fields(*forms_to_mark):
+    for form in forms_to_mark:
+        for name in form.errors:
+            if name not in form.fields:
+                continue
+            widget = form.fields[name].widget
+            classes = widget.attrs.get("class", "").split()
+            if INVALID_CLASS not in classes:
+                widget.attrs["class"] = " ".join([*classes, INVALID_CLASS])
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Forms
+
+
+class AddressForm(forms.ModelForm):
+    calle = AlphabeticField(
+        label="Calle",
+        max_length=150,
+        allow_dots=True,
+        error_messages={"required": "Escribe la calle para guardar la dirección."},
+        widget=text_input("Av. Providencia"),
+    )
+    numero = NumericField(
+        label="Número", max_length=15, required=False, widget=text_input("1234")
+    )
+    complemento = AlphanumericField(
+        label="Depto, oficina o local",
+        max_length=60,
+        required=False,
+        allow_dots=True,
+        widget=text_input("Depto. 502"),
+    )
+    codigo_postal = NumericField(
+        label="Código postal",
+        max_length=12,
+        required=False,
+        widget=text_input("7500000"),
+    )
+    comuna = AlphabeticField(
+        label="Comuna", max_length=80, required=False, widget=text_input("Providencia")
+    )
+    ciudad = AlphabeticField(
+        label="Ciudad", max_length=80, required=False, widget=text_input("Santiago")
+    )
+    region = AlphabeticField(
+        label="Región",
+        max_length=80,
+        required=False,
+        widget=text_input("Metropolitana"),
+    )
+    pais = forms.ChoiceField(
+        label="País",
+        choices=ADDRESS_COUNTRIES,
+        initial=DEFAULT_COUNTRY,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    referencia = AlphanumericField(
+        label="Referencia",
+        max_length=150,
+        required=False,
+        widget=text_input("Frente a la plaza"),
+    )
+
+    class Meta:
+        fields = [
+            "calle",
+            "numero",
+            "complemento",
+            "codigo_postal",
+            "comuna",
+            "ciudad",
+            "region",
+            "pais",
+            "referencia",
+        ]
+
+
+# endregion
+"""========================================================================="""

@@ -1,0 +1,42 @@
+{% extends 'panel/base.html' %}
+
+{% block view_title %}
+Negocio creado
+{% endblock %}
+
+{% block content %}
+<h6 class="side-tab-title">«{{ business.nombre }}» quedó registrado</h6>
+<p class="side-tab-subtitle">Se está preparando en segundo plano. Revisa su estado en la lista de negocios.</p>
+<div class="readonly-info">
+  <div class="readonly-info__item">
+    <span class="material-symbols-outlined" aria-hidden="true">language</span>
+    <div>
+      <span class="readonly-info__label">Dirección</span>
+      <span class="readonly-info__value">
+        <a href="{{ business_url }}" target="_blank" rel="noopener noreferrer">{{ business_url }}</a>
+      </span>
+    </div>
+  </div>
+  <div class="readonly-info__item">
+    <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+    <div>
+      <span class="readonly-info__label">Correo del propietario</span>
+      <span class="readonly-info__value">{{ email }}</span>
+    </div>
+  </div>
+  <div class="readonly-info__item">
+    <span class="material-symbols-outlined" aria-hidden="true">key</span>
+    <div>
+      <span class="readonly-info__label">Clave temporal</span>
+      <code class="temporary-password">{{ password }}</code>
+    </div>
+  </div>
+</div>
+<div class="profile-note mt-3 mb-0">
+  <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+  <span>Cópiala ahora: no se guarda en ninguna parte y no se vuelve a mostrar. Al entrar, el propietario tendrá que cambiarla.</span>
+</div>
+<div class="page-actions">
+  <a href="{{ list_url }}" class="btn btn-sm btn-primary bg-gradient">Volver a la lista de negocios</a>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'panel/base.html' %}
+
+{% block view_title %}
+Nuevo negocio
+{% endblock %}
+
+{% block content %}
+{% with active=sections_with_errors.0|default:'basic' %}
+<form id="business-create-form" method="post" novalidate>
+  {% csrf_token %}
+  <div class="row g-4">
+    <div class="col-12 col-md-3">
+      <div class="nav flex-column side-tabs" role="tablist" aria-orientation="vertical">
+        <button class="nav-link{% if active == 'basic' %} active{% endif %}{% if 'basic' in sections_with_errors %} has-errors{% endif %}"
+          id="business-tab-basic" data-bs-toggle="pill" data-bs-target="#business-pane-basic" type="button"
+          role="tab" aria-controls="business-pane-basic" aria-selected="{% if active == 'basic' %}true{% else %}false{% endif %}">
+          <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+          Datos básicos
+          <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+        </button>
+        <button class="nav-link{% if active == 'address' %} active{% endif %}{% if 'address' in sections_with_errors %} has-errors{% endif %}"
+          id="business-tab-address" data-bs-toggle="pill" data-bs-target="#business-pane-address" type="button"
+          role="tab" aria-controls="business-pane-address" aria-selected="{% if active == 'address' %}true{% else %}false{% endif %}">
+          <span class="material-symbols-outlined" aria-hidden="true">home_pin</span>
+          Dirección
+          <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+        </button>
+        <button class="nav-link{% if active == 'notes' %} active{% endif %}{% if 'notes' in sections_with_errors %} has-errors{% endif %}"
+          id="business-tab-notes" data-bs-toggle="pill" data-bs-target="#business-pane-notes" type="button"
+          role="tab" aria-controls="business-pane-notes" aria-selected="{% if active == 'notes' %}true{% else %}false{% endif %}">
+          <span class="material-symbols-outlined" aria-hidden="true">sticky_note_2</span>
+          Notas internas
+          <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+        </button>
+      </div>
+    </div>
+    <div class="col-12 col-md-9">
+      <div class="tab-content">
+        <div class="tab-pane fade{% if active == 'basic' %} show active{% endif %}" id="business-pane-basic" role="tabpanel"
+          aria-labelledby="business-tab-basic">
+          <h6 class="side-tab-title">Datos básicos</h6>
+          <p class="side-tab-subtitle">Cómo se llama, dónde vive en Hi Agenda y quién es su dueño.</p>
+          <div class="row g-2">
+            <div class="col-12 mb-2">
+              {% include 'common/form_field.html' with field=form.nombre %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.subdominio %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.esquema %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.titular %}
+              <a href="{{ people_url }}" class="inline-link mt-1" target="_blank" rel="noopener noreferrer">
+                <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+                Ir a Personas
+                <span class="visually-hidden">(se abre en una pestaña nueva)</span>
+              </a>
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.correo %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.rubro %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.zona_horaria %}
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane fade{% if active == 'address' %} show active{% endif %}" id="business-pane-address" role="tabpanel"
+          aria-labelledby="business-tab-address">
+          <h6 class="side-tab-title">Dirección</h6>
+          <p class="side-tab-subtitle">Dónde atiende el negocio.</p>
+          <div class="profile-note">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <span>Es opcional: déjala vacía si todavía no la tienes. Si la escribes, la calle es obligatoria.</span>
+          </div>
+          {% include 'common/address_fields.html' with form=address_form %}
+        </div>
+        <div class="tab-pane fade{% if active == 'notes' %} show active{% endif %}" id="business-pane-notes" role="tabpanel"
+          aria-labelledby="business-tab-notes">
+          <h6 class="side-tab-title">Notas internas</h6>
+          <p class="side-tab-subtitle">Acuerdos y datos que el equipo debe tener presentes.</p>
+          <div class="mb-2">
+            {% include 'common/form_field.html' with field=form.notas_internas optional=True %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-actions">
+    <a href="{{ list_url }}" class="btn btn-sm btn-danger bg-gradient me-2">Cancelar</a>
+    <button type="submit" class="btn btn-sm btn-primary bg-gradient">Crear negocio</button>
+  </div>
+</form>
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    const subdomain = document.getElementById('{{ form.subdominio.id_for_label }}');
+    const schema = document.getElementById('{{ form.esquema.id_for_label }}');
+    const schemaFrom = (value) => value.trim().toLowerCase().replaceAll('-', '_');
+    let schemaEdited = schema.value !== '' && schema.value !== schemaFrom(subdomain.value);
+    schema.addEventListener('input', () => {
+      schemaEdited = schema.value !== '';
+    });
+    subdomain.addEventListener('input', () => {
+      if (!schemaEdited) {
+        schema.value = schemaFrom(subdomain.value);
+      }
+    });
+  });
+</script>
+{% endblock %}

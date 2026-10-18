@@ -9,9 +9,9 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.common.forms import OPTIONAL_FORM_OPTIONS, AddressForm
 from apps.common.form_fields import (
     AlphabeticField,
-    AlphanumericField,
     NoteField,
     NumericField,
 )
@@ -42,19 +42,6 @@ NAME_PART_MAX_LENGTH = 50
 FULL_NAME_MAX_LENGTH = 100
 PHONE_MAX_DIGITS = 15
 ACCESS_EMAIL_LABEL = "acceso"
-DEFAULT_COUNTRY = "CL"
-ADDRESS_COUNTRIES = [
-    ("CL", "Chile"),
-    ("AR", "Argentina"),
-    ("CO", "Colombia"),
-    ("EC", "Ecuador"),
-    ("MX", "México"),
-    ("PE", "Perú"),
-    ("DO", "República Dominicana"),
-    ("UY", "Uruguay"),
-    ("VE", "Venezuela"),
-]
-CONTACT_FORM_OPTIONS = {"empty_permitted": True, "use_required_attribute": False}
 MAIN_ITEM_FIELD = "es_principal"
 
 
@@ -247,68 +234,9 @@ class PersonPhoneForm(forms.ModelForm):
         fields = ["codigo_pais", "numero", "tipo", "tiene_whatsapp"]
 
 
-class PersonAddressForm(forms.ModelForm):
-    calle = AlphabeticField(
-        label="Calle",
-        max_length=150,
-        allow_dots=True,
-        error_messages={"required": "Escribe la calle para guardar la dirección."},
-        widget=text_input("Av. Providencia"),
-    )
-    numero = NumericField(
-        label="Número", max_length=15, required=False, widget=text_input("1234")
-    )
-    complemento = AlphanumericField(
-        label="Depto, oficina o local",
-        max_length=60,
-        required=False,
-        allow_dots=True,
-        widget=text_input("Depto. 502"),
-    )
-    codigo_postal = NumericField(
-        label="Código postal",
-        max_length=12,
-        required=False,
-        widget=text_input("7500000"),
-    )
-    comuna = AlphabeticField(
-        label="Comuna", max_length=80, required=False, widget=text_input("Providencia")
-    )
-    ciudad = AlphabeticField(
-        label="Ciudad", max_length=80, required=False, widget=text_input("Santiago")
-    )
-    region = AlphabeticField(
-        label="Región",
-        max_length=80,
-        required=False,
-        widget=text_input("Metropolitana"),
-    )
-    pais = forms.ChoiceField(
-        label="País",
-        choices=ADDRESS_COUNTRIES,
-        initial=DEFAULT_COUNTRY,
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    referencia = AlphanumericField(
-        label="Referencia",
-        max_length=150,
-        required=False,
-        widget=text_input("Frente a la plaza"),
-    )
-
-    class Meta:
+class PersonAddressForm(AddressForm):
+    class Meta(AddressForm.Meta):
         model = PersonaDireccion
-        fields = [
-            "calle",
-            "numero",
-            "complemento",
-            "codigo_postal",
-            "comuna",
-            "ciudad",
-            "region",
-            "pais",
-            "referencia",
-        ]
 
 
 class MainItemFormSet(BaseInlineFormSet):
@@ -510,10 +438,10 @@ class PersonCreateModalView(RelatedFormsMixin, PanelCreateModalView):
 
     def get_related_forms(self, data):
         return {
-            "email_form": PersonEmailForm(data, prefix="email", **CONTACT_FORM_OPTIONS),
-            "phone_form": PersonPhoneForm(data, prefix="phone", **CONTACT_FORM_OPTIONS),
+            "email_form": PersonEmailForm(data, prefix="email", **OPTIONAL_FORM_OPTIONS),
+            "phone_form": PersonPhoneForm(data, prefix="phone", **OPTIONAL_FORM_OPTIONS),
             "address_form": PersonAddressForm(
-                data, prefix="address", **CONTACT_FORM_OPTIONS
+                data, prefix="address", **OPTIONAL_FORM_OPTIONS
             ),
         }
 

@@ -68,7 +68,7 @@
           <div class="tab-pane fade" id="person-pane-addresses" role="tabpanel" aria-labelledby="person-tab-addresses">
             <h6 class="side-tab-title">Direcciones</h6>
             <p class="side-tab-subtitle">Una de ellas es la principal: al marcar otra, deja de serlo.</p>
-            {% include 'common/formset_section.html' with formset=addresses fields_template='panel/people/address_fields.html' add_label='Agregar dirección' empty_label='No tiene direcciones registradas.' %}
+            {% include 'common/formset_section.html' with formset=addresses fields_template='common/address_fields.html' add_label='Agregar dirección' empty_label='No tiene direcciones registradas.' %}
           </div>
         </div>
       </div>

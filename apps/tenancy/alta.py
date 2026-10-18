@@ -3,48 +3,40 @@ from django.contrib.auth.hashers import make_password
 from django.db import transaction
 
 from apps.common.claves import generar_clave_temporal
-from apps.tenancy.models import Dominio, Negocio, Persona, PersonaCorreo, PersonaTelefono
-from apps.tenancy.subdominios import esquema_desde_subdominio
+from apps.tenancy.models import Dominio, Negocio, PersonaCorreo
 
 
 def dominio_de(subdominio):
     return f"{subdominio}.{settings.DOMINIO_BASE}"
 
 
-def dar_de_alta(datos, creado_por):
+def dar_de_alta(datos, creado_por, direccion=None):
     from apps.tenancy.tasks import preparar_negocio
 
     clave = generar_clave_temporal()
     with transaction.atomic():
-        titular = datos.get("titular") or crear_persona(datos)
+        titular = datos["titular"]
         registrar_correo(titular, datos["correo"])
         negocio = Negocio(
-            schema_name=esquema_desde_subdominio(datos["subdominio"]),
+            schema_name=datos["esquema"],
             nombre=datos["nombre"],
             titular=titular,
             rubro=datos.get("rubro"),
             zona_horaria=datos["zona_horaria"],
+            notas_internas=datos.get("notas_internas") or None,
             creado_por=creado_por,
             estado=Negocio.Estado.PREPARANDO,
         )
-        negocio._change_reason = "Alta desde el panel"
+        negocio._change_reason = "Creado desde el panel"
         negocio.save()
         Dominio.objects.create(domain=dominio_de(datos["subdominio"]), tenant=negocio, is_primary=True)
+        if direccion is not None:
+            direccion.negocio = negocio
+            direccion.es_principal = True
+            direccion.save()
         hash_clave = make_password(clave)
         transaction.on_commit(lambda: preparar_negocio.delay(negocio.pk, datos["correo"], hash_clave))
     return negocio, clave
-
-
-def crear_persona(datos):
-    persona = Persona.objects.create(nombres=datos["nombres"], apellidos=datos.get("apellidos", ""))
-    if datos.get("telefono"):
-        PersonaTelefono.objects.create(
-            persona=persona,
-            codigo_pais=datos["codigo_pais"],
-            numero=datos["telefono"],
-            es_principal=True,
-        )
-    return persona
 
 
 def registrar_correo(persona, correo):
