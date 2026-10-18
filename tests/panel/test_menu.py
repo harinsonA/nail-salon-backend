@@ -65,6 +65,10 @@ class MenuDelPanelTests(TestCase):
         self.assertContains(respuesta, 'action="/admin/logout/"')
         self.assertContains(respuesta, 'form="logout_form"')
 
+    def test_ver_sitio_se_abre_en_una_pestana_nueva(self):
+        html = self.inicio().content.decode()
+        self.assertRegex(html, r'href="http://localhost/" target="_blank"\s+rel="noopener noreferrer"')
+
     def test_ver_sitio_respeta_el_puerto_del_navegador(self):
         self.panel = Client(HTTP_HOST=f"{PANEL}:8000")
         self.assertContains(self.inicio(), 'href="http://localhost:8000/"')
