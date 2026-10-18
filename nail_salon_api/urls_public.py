@@ -9,4 +9,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 ]
 
-handler403 = "apps.panel.views.sin_permiso.view.sin_permiso_en_el_panel"
+handler400 = "apps.common.views.error_views.bad_request"
+handler403 = "apps.common.views.error_views.permission_denied"
+handler404 = "apps.common.views.error_views.page_not_found"
+handler500 = "apps.common.views.error_views.server_error"
