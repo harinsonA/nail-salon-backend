@@ -568,5 +568,17 @@ class UserUpdateModalView(PanelUpdateModalView):
         return user
 
 
+class AccountModalView(UserUpdateModalView):
+    success_message = "Tu perfil se actualizó exitosamente."
+
+    def has_model_permission(self, request):
+        return True
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            self._object = User.objects.get(pk=self.request.user.pk)
+        return self._object
+
+
 # endregion
 """========================================================================="""

@@ -49,13 +49,12 @@
                 </a>
               </li>
               {% endif %}
-              {% if user.has_usable_password %}
               <li>
-                <a class="menu__dropdown-item dropdown-item" href="{% url 'admin:password_change' %}">
-                  Cambiar contraseña
+                <a id="account-modal-btn" class="menu__dropdown-item dropdown-item" role="button"
+                  data-form-url="{% url 'admin:account_modal' %}">
+                  Perfil
                 </a>
               </li>
-              {% endif %}
               <li>
                 <hr class="menu__divider dropdown-divider">
               </li>

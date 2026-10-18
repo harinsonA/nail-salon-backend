@@ -14,3 +14,16 @@
 {% block barra %}
   {% include 'panel/menu.html' %}
 {% endblock %}
+
+{% block modales %}
+  {% include 'common/bs_xl_modal.html' with modal_id='account_modal' %}
+{% endblock %}
+
+{% block section_js %}
+  <script src="{% static 'js/custom/custom.panel.js' %}"></script>
+{% endblock %}
+
+{% block init_js %}
+  initializeBSXLModals('#account-modal-btn', { modalID: '#account_modal' });
+  initializeUserEditModal('#account_modal');
+{% endblock %}
