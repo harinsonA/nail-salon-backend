@@ -1,0 +1,234 @@
+{% extends 'panel/base.html' %}
+
+{% block view_title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+{% with active=sections_with_errors.0|default:'basic' %}
+<form id="business-form" method="post" novalidate>
+  {% csrf_token %}
+  <div class="row g-4">
+    <div class="col-12 col-md-3">
+      <div class="nav flex-column side-tabs" role="tablist" aria-orientation="vertical">
+        <button class="nav-link{% if active == 'basic' %} active{% endif %}{% if 'basic' in sections_with_errors %} has-errors{% endif %}"
+          id="business-tab-basic" data-bs-toggle="pill" data-bs-target="#business-pane-basic" type="button"
+          role="tab" aria-controls="business-pane-basic" aria-selected="{% if active == 'basic' %}true{% else %}false{% endif %}">
+          <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+          Datos básicos
+          <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+        </button>
+        <button class="nav-link{% if active == 'addresses' %} active{% endif %}{% if 'addresses' in sections_with_errors %} has-errors{% endif %}"
+          id="business-tab-addresses" data-bs-toggle="pill" data-bs-target="#business-pane-addresses" type="button"
+          role="tab" aria-controls="business-pane-addresses" aria-selected="{% if active == 'addresses' %}true{% else %}false{% endif %}">
+          <span class="material-symbols-outlined" aria-hidden="true">home_pin</span>
+          {% if business %}Direcciones{% else %}Dirección{% endif %}
+          <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+        </button>
+        <button class="nav-link{% if active == 'notes' %} active{% endif %}{% if 'notes' in sections_with_errors %} has-errors{% endif %}"
+          id="business-tab-notes" data-bs-toggle="pill" data-bs-target="#business-pane-notes" type="button"
+          role="tab" aria-controls="business-pane-notes" aria-selected="{% if active == 'notes' %}true{% else %}false{% endif %}">
+          <span class="material-symbols-outlined" aria-hidden="true">sticky_note_2</span>
+          Notas internas
+          <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+        </button>
+        {% if business %}
+        <button class="nav-link" id="business-tab-actions" data-bs-toggle="pill" data-bs-target="#business-pane-actions"
+          type="button" role="tab" aria-controls="business-pane-actions" aria-selected="false">
+          <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+          Acciones
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-12 col-md-9">
+      <div class="tab-content">
+        <div class="tab-pane fade{% if active == 'basic' %} show active{% endif %}" id="business-pane-basic" role="tabpanel"
+          aria-labelledby="business-tab-basic">
+          <h6 class="side-tab-title">Datos básicos</h6>
+          <p class="side-tab-subtitle">Cómo se llama, dónde vive en Hi Agenda y quién es su dueño.</p>
+          {% if business %}
+          <div class="readonly-info readonly-info--grid mt-0 mb-3">
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+              <div>
+                <span class="readonly-info__label">Nombre del negocio</span>
+                <span class="readonly-info__value">{{ business.nombre }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">language</span>
+              <div>
+                <span class="readonly-info__label">Subdominio</span>
+                <span class="readonly-info__value d-inline-flex align-items-center gap-1">
+                  {{ domain }}
+                  {% if business_url %}
+                  <a href="{{ business_url }}" class="icon-link-button" target="_blank" rel="noopener noreferrer"
+                    title="Abrir el negocio en una pestaña nueva" aria-label="Abrir el negocio en una pestaña nueva">
+                    <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+                  </a>
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">database</span>
+              <div>
+                <span class="readonly-info__label">Esquema</span>
+                <span class="readonly-info__value">{{ business.schema_name }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">person</span>
+              <div>
+                <span class="readonly-info__label">Titular</span>
+                <span class="readonly-info__value">{{ business.titular|default:"—" }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              <div>
+                <span class="readonly-info__label">Correo de acceso del propietario</span>
+                <span class="readonly-info__value">{{ access_email|default:"—" }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">toggle_on</span>
+              <div>
+                <span class="readonly-info__label">Estado</span>
+                <span class="readonly-info__value">{{ business.get_estado_display }} desde el {{ business.estado_desde|date:"d/m/Y H:i" }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">event</span>
+              <div>
+                <span class="readonly-info__label">Creado</span>
+                <span class="readonly-info__value">{{ business.created|date:"d/m/Y H:i" }}{% if business.creado_por %} por {{ business.creado_por.username }}{% endif %}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+              <div>
+                <span class="readonly-info__label">Última modificación</span>
+                <span class="readonly-info__value">{{ business.modified|date:"d/m/Y H:i" }}</span>
+              </div>
+            </div>
+          </div>
+          {% if business.error_preparacion %}
+          <div class="delete-warning-container mb-3">
+            <div class="delete-warning-header">
+              <span class="material-symbols-outlined text-destructive me-2" aria-hidden="true">error</span>
+            </div>
+            <div>
+              <p class="m-0 text-destructive">La preparación falló</p>
+              <p class="m-0 text-muted-foreground">{{ business.error_preparacion }}</p>
+            </div>
+          </div>
+          {% endif %}
+          {% endif %}
+          <div class="row g-2">
+            {% if not business %}
+            <div class="col-12 mb-2">
+              {% include 'common/form_field.html' with field=form.nombre %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.subdominio %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.esquema %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.titular %}
+              <a href="{{ people_url }}" class="inline-link mt-1" target="_blank" rel="noopener noreferrer">
+                <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+                Ir a Personas
+                <span class="visually-hidden">(se abre en una pestaña nueva)</span>
+              </a>
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.correo %}
+            </div>
+            {% endif %}
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.rubro %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.zona_horaria %}
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane fade{% if active == 'addresses' %} show active{% endif %}" id="business-pane-addresses" role="tabpanel"
+          aria-labelledby="business-tab-addresses">
+          {% if business %}
+          <h6 class="side-tab-title">Direcciones</h6>
+          <p class="side-tab-subtitle">Dónde atiende el negocio. Una de ellas es la principal: al marcar otra, deja de serlo.</p>
+          {% include 'common/formset_section.html' with formset=addresses fields_template='common/address_fields.html' add_label='Agregar dirección' empty_label='No tiene direcciones registradas.' %}
+          {% else %}
+          <h6 class="side-tab-title">Dirección</h6>
+          <p class="side-tab-subtitle">Dónde atiende el negocio.</p>
+          <div class="profile-note">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <span>Es opcional: déjala vacía si todavía no la tienes. Si la escribes, la calle es obligatoria.</span>
+          </div>
+          {% include 'common/address_fields.html' with form=addresses %}
+          {% endif %}
+        </div>
+        <div class="tab-pane fade{% if active == 'notes' %} show active{% endif %}" id="business-pane-notes" role="tabpanel"
+          aria-labelledby="business-tab-notes">
+          <h6 class="side-tab-title">Notas internas</h6>
+          <p class="side-tab-subtitle">Acuerdos y datos que el equipo debe tener presentes.</p>
+          <div class="mb-2">
+            {% include 'common/form_field.html' with field=form.notas_internas optional=True %}
+          </div>
+        </div>
+        {% if business %}
+        <div class="tab-pane fade" id="business-pane-actions" role="tabpanel" aria-labelledby="business-tab-actions">
+          <h6 class="side-tab-title">Acciones</h6>
+          <p class="side-tab-subtitle">Lo que se puede hacer hoy con este negocio.</p>
+          <div class="action-list">
+            {% for action in actions %}
+            <div class="action-list__item">
+              <span class="material-symbols-outlined action-list__icon" aria-hidden="true">{{ action.icon }}</span>
+              <div class="action-list__text">
+                <span class="action-list__label">{{ action.label }}</span>
+                <span class="action-list__description">{{ action.description }}</span>
+              </div>
+              <a href="{{ action.link }}" class="btn btn-sm btn-outline-primary">{{ action.label }}</a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="page-actions">
+    <a href="{{ list_url }}" class="btn btn-sm btn-danger bg-gradient me-2">Cancelar</a>
+    <button type="submit" class="btn btn-sm btn-primary bg-gradient">
+      {% if business %}Guardar cambios{% else %}Crear negocio{% endif %}
+    </button>
+  </div>
+</form>
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $(() => {
+    initializeFormsets(document);
+    const subdomain = document.getElementById('{{ form.subdominio.id_for_label }}');
+    const schema = document.getElementById('{{ form.esquema.id_for_label }}');
+    if (!subdomain || !schema) return;
+    const schemaFrom = (value) => value.trim().toLowerCase().replaceAll('-', '_');
+    let schemaEdited = schema.value !== '' && schema.value !== schemaFrom(subdomain.value);
+    schema.addEventListener('input', () => {
+      schemaEdited = schema.value !== '';
+    });
+    subdomain.addEventListener('input', () => {
+      if (!schemaEdited) {
+        schema.value = schemaFrom(subdomain.value);
+      }
+    });
+  });
+</script>
+{% endblock %}

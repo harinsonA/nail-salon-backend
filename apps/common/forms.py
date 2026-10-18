@@ -1,8 +1,10 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.forms import BaseFormSet, BaseInlineFormSet, inlineformset_factory
 
 from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.common.form_fields import AlphabeticField, AlphanumericField, NumericField
-from apps.common.widgets import text_input
+from apps.common.widgets import switch_input, text_input
 
 """========================================================================="""
 # region ........ Constants
@@ -22,6 +24,7 @@ ADDRESS_COUNTRIES = [
 ]
 INVALID_CLASS = "is-invalid"
 OPTIONAL_FORM_OPTIONS = {"empty_permitted": True, "use_required_attribute": False}
+MAIN_ITEM_FIELD = "es_principal"
 
 
 # endregion
@@ -33,6 +36,9 @@ OPTIONAL_FORM_OPTIONS = {"empty_permitted": True, "use_required_attribute": Fals
 
 def mark_invalid_fields(*forms_to_mark):
     for form in forms_to_mark:
+        if isinstance(form, BaseFormSet):
+            mark_invalid_fields(*form.forms)
+            continue
         for name in form.errors:
             if name not in form.fields:
                 continue
@@ -40,6 +46,20 @@ def mark_invalid_fields(*forms_to_mark):
             classes = widget.attrs.get("class", "").split()
             if INVALID_CLASS not in classes:
                 widget.attrs["class"] = " ".join([*classes, INVALID_CLASS])
+
+
+def main_item_formset(parent_model, form, formset):
+    return inlineformset_factory(
+        parent_model,
+        form._meta.model,
+        form=form,
+        formset=formset,
+        fields=[*form._meta.fields, MAIN_ITEM_FIELD],
+        labels={MAIN_ITEM_FIELD: "Principal"},
+        widgets={MAIN_ITEM_FIELD: switch_input()},
+        extra=0,
+        can_delete=True,
+    )
 
 
 # endregion
@@ -110,6 +130,32 @@ class AddressForm(forms.ModelForm):
             "pais",
             "referencia",
         ]
+
+
+class MainItemFormSet(BaseInlineFormSet):
+    item_name = ""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queryset = self.queryset.order_by(f"-{MAIN_ITEM_FIELD}", "pk")
+
+    def kept_forms(self):
+        return [
+            form
+            for form in self.forms
+            if form.cleaned_data and not form.cleaned_data.get("DELETE")
+        ]
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        kept = self.kept_forms()
+        main = [form for form in kept if form.cleaned_data.get(MAIN_ITEM_FIELD)]
+        if len(main) > 1:
+            raise ValidationError(f"Solo puede haber {self.item_name} principal.")
+        if kept and not main:
+            raise ValidationError(f"Marca {self.item_name} como principal.")
 
 
 # endregion

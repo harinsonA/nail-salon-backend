@@ -1,20 +1,40 @@
 from django import forms
 from django.conf import settings
+from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Exists, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Concat, Trim
-from django.urls import reverse
+from django.forms import BaseFormSet
+from django.http import Http404
+from django.shortcuts import redirect
 from django.template.response import TemplateResponse
+from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import FormView, TemplateView
 from django_tenants.utils import get_public_schema_name, schema_exists
 
-from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT2_CLASS, FORM_SELECT_CLASS
-from apps.common.form_fields import AlphabeticField, NoteField, SchemaField, SubdomainField
-from apps.common.forms import OPTIONAL_FORM_OPTIONS, AddressForm, mark_invalid_fields
+from apps.common.form_classes import (
+    FORM_CONTROL_CLASS,
+    FORM_SELECT2_CLASS,
+    FORM_SELECT_CLASS,
+)
+from apps.common.form_fields import (
+    AlphabeticField,
+    NoteField,
+    SchemaField,
+    SubdomainField,
+)
+from apps.common.forms import (
+    OPTIONAL_FORM_OPTIONS,
+    AddressForm,
+    MainItemFormSet,
+    main_item_formset,
+    mark_invalid_fields,
+)
 from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
 from apps.common.widgets import text_input
 from apps.panel.views.base import PanelListViewAjax, PanelView, RelatedFormsMixin
-from apps.tenancy.alta import dar_de_alta, dominio_de, url_en_dominio
+from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
 
 """========================================================================="""
@@ -35,7 +55,11 @@ TIME_ZONES = [
     ("America/Montevideo", "Uruguay (Montevideo)"),
     ("America/Caracas", "Venezuela (Caracas)"),
 ]
-CODE_INPUT_ATTRS = {"autocapitalize": "none", "autocomplete": "off", "spellcheck": "false"}
+CODE_INPUT_ATTRS = {
+    "autocapitalize": "none",
+    "autocomplete": "off",
+    "spellcheck": "false",
+}
 
 
 # endregion
@@ -47,6 +71,86 @@ CODE_INPUT_ATTRS = {"autocapitalize": "none", "autocomplete": "off", "spellcheck
 
 def businesses():
     return Negocio.objects.exclude(schema_name=get_public_schema_name())
+
+
+def business_actions(pk, status):
+    if status == Negocio.Estado.PREPARANDO:
+        actions = [
+            {
+                "label": "Reparar alta",
+                "link": reverse("admin:tenancy_negocio_reparar", args=[pk]),
+                "icon": "build",
+                "description": "Vuelve a lanzar la preparación del negocio con el correo de acceso del titular.",
+            }
+        ]
+    else:
+        actions = [
+            {
+                "label": "Restablecer clave del propietario",
+                "link": reverse("admin:tenancy_negocio_clave_propietario", args=[pk]),
+                "icon": "key",
+                "description": "Genera una clave temporal nueva para el propietario y la muestra una sola vez.",
+            }
+        ]
+    actions.append(
+        {
+            "label": "Cambiar estado",
+            "link": reverse("admin:tenancy_negocio_estado", args=[pk]),
+            "icon": "sync_alt",
+            "description": "Activa, pausa, marca como moroso o cancela el negocio. Pide un motivo para el historial.",
+        }
+    )
+    return actions
+
+
+def has_errors(related_form):
+    if isinstance(related_form, BaseFormSet):
+        return any(related_form.errors) or bool(related_form.non_form_errors())
+    return bool(related_form.errors)
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Mixins
+
+
+class BusinessFormMixin(RelatedFormsMixin):
+    template_name = "panel/businesses/form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "list_url": reverse(
+                    "admin:tenancy_negocio_changelist", current_app=self.admin_site.name
+                ),
+                "people_url": reverse(
+                    "admin:tenancy_persona_changelist", current_app=self.admin_site.name
+                ),
+                "sections_with_errors": self.sections_with_errors(context["form"]),
+            }
+        )
+        return context
+
+    def sections_with_errors(self, form):
+        if not form.is_bound:
+            return []
+        sections = {
+            "basic": any(name != "notas_internas" for name in form.errors),
+            "addresses": has_errors(self.related_forms()["addresses"]),
+            "notes": "notas_internas" in form.errors,
+        }
+        return [name for name, with_errors in sections.items() if with_errors]
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        addresses = self.related_forms()["addresses"]
+        if all([form.is_valid(), addresses.is_valid()]):
+            return self.form_valid(form)
+        mark_invalid_fields(form, addresses)
+        return self.form_invalid(form)
 
 
 # endregion
@@ -87,7 +191,45 @@ class BusinessAddressForm(AddressForm):
         model = NegocioDireccion
 
 
-class BusinessCreateForm(forms.Form):
+class BusinessSettingsForm(forms.Form):
+    rubro = forms.ModelChoiceField(
+        label="Rubro",
+        queryset=Rubro.objects.filter(activo=True),
+        empty_label="Selecciona un rubro",
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    zona_horaria = forms.ChoiceField(
+        label="Zona horaria",
+        choices=TIME_ZONES,
+        initial=DEFAULT_TIME_ZONE,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    notas_internas = NoteField(
+        label="Notas internas",
+        required=False,
+        help_text="Solo las ve el equipo de Hi Agenda. Hasta 250 caracteres.",
+        widget=forms.Textarea(
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "placeholder": "Acordamos el primer mes sin costo.",
+                "rows": 4,
+            }
+        ),
+    )
+
+
+class BusinessCreateForm(BusinessSettingsForm):
+    field_order = [
+        "nombre",
+        "subdominio",
+        "esquema",
+        "titular",
+        "correo",
+        "rubro",
+        "zona_horaria",
+        "notas_internas",
+    ]
+
     nombre = AlphabeticField(
         label="Nombre del negocio",
         max_length=150,
@@ -122,30 +264,6 @@ class BusinessCreateForm(forms.Form):
             attrs={"class": FORM_CONTROL_CLASS, "placeholder": "carlos@elcorte.cl"}
         ),
     )
-    rubro = forms.ModelChoiceField(
-        label="Rubro",
-        queryset=Rubro.objects.filter(activo=True),
-        empty_label="Selecciona un rubro",
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    zona_horaria = forms.ChoiceField(
-        label="Zona horaria",
-        choices=TIME_ZONES,
-        initial=DEFAULT_TIME_ZONE,
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    notas_internas = NoteField(
-        label="Notas internas",
-        required=False,
-        help_text="Solo las ve el equipo de Hi Agenda. Hasta 250 caracteres.",
-        widget=forms.Textarea(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Acordamos el primer mes sin costo.",
-                "rows": 4,
-            }
-        ),
-    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -162,12 +280,48 @@ class BusinessCreateForm(forms.Form):
 
     def clean_esquema(self):
         esquema = self.cleaned_data["esquema"]
-        if Negocio.objects.filter(schema_name=esquema).exists() or schema_exists(esquema):
-            raise forms.ValidationError("Ya existe un esquema con ese nombre en la base.")
+        if Negocio.objects.filter(schema_name=esquema).exists() or schema_exists(
+            esquema
+        ):
+            raise forms.ValidationError(
+                "Ya existe un esquema con ese nombre en la base."
+            )
         return esquema
 
     def clean_correo(self):
         return self.cleaned_data["correo"].strip().lower()
+
+
+class BusinessUpdateForm(BusinessSettingsForm):
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        super().__init__(*args, **kwargs)
+        self.fields["rubro"].queryset = Rubro.objects.filter(
+            Q(activo=True) | Q(pk=instance.rubro_id)
+        )
+        self.initial.update(
+            {
+                "rubro": instance.rubro_id,
+                "zona_horaria": instance.zona_horaria,
+                "notas_internas": instance.notas_internas or "",
+            }
+        )
+
+    def save(self):
+        business = self.instance
+        business.rubro = self.cleaned_data["rubro"]
+        business.zona_horaria = self.cleaned_data["zona_horaria"]
+        business.notas_internas = self.cleaned_data["notas_internas"] or None
+        business._change_reason = "Edición desde el panel"
+        business.save()
+        return business
+
+
+class BusinessAddressFormSet(MainItemFormSet):
+    item_name = "una dirección"
+
+
+AddressFormSet = main_item_formset(Negocio, BusinessAddressForm, BusinessAddressFormSet)
 
 
 # endregion
@@ -182,12 +336,21 @@ class BusinessListView(PanelView, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        can_add = self.request.user.is_superuser and self.model_admin.has_add_permission(self.request)
+        can_add = (
+            self.request.user.is_superuser
+            and self.model_admin.has_add_permission(self.request)
+        )
         context.update(
             {
                 "filter_form": BusinessesFilterForm(),
-                "list_url": reverse("admin:tenancy_negocio_list_ajax", current_app=self.admin_site.name),
-                "add_url": reverse("admin:tenancy_negocio_add", current_app=self.admin_site.name) if can_add else "",
+                "list_url": reverse(
+                    "admin:tenancy_negocio_list_ajax", current_app=self.admin_site.name
+                ),
+                "add_url": reverse(
+                    "admin:tenancy_negocio_add", current_app=self.admin_site.name
+                )
+                if can_add
+                else "",
             }
         )
         return context
@@ -196,7 +359,15 @@ class BusinessListView(PanelView, TemplateView):
 class BusinessListAjaxView(PanelListViewAjax):
     model = Negocio
     filter_form_class = BusinessesFilterForm
-    field_list = ["pk", "nombre", "domain", "estado", "owner_name", "industry_name", "created"]
+    field_list = [
+        "pk",
+        "nombre",
+        "domain",
+        "estado",
+        "owner_name",
+        "industry_name",
+        "created",
+    ]
     ordering_fields = {
         "0": "nombre",
         "1": "domain",
@@ -207,12 +378,16 @@ class BusinessListAjaxView(PanelListViewAjax):
     }
 
     def get_queryset(self):
-        primary_domain = Dominio.objects.filter(tenant=OuterRef("pk"), is_primary=True).values("domain")[:1]
+        primary_domain = Dominio.objects.filter(
+            tenant=OuterRef("pk"), is_primary=True
+        ).values("domain")[:1]
         return (
             businesses()
             .annotate(
                 domain=Subquery(primary_domain),
-                owner_name=Trim(Concat("titular__nombres", Value(" "), "titular__apellidos")),
+                owner_name=Trim(
+                    Concat("titular__nombres", Value(" "), "titular__apellidos")
+                ),
                 industry_name=F("rubro__nombre"),
             )
             .filter(**self.get_filters())
@@ -222,7 +397,9 @@ class BusinessListAjaxView(PanelListViewAjax):
         search_value = self.request.GET.get("search[value]", "")
         if not search_value:
             return Q()
-        domains = Dominio.objects.filter(tenant=OuterRef("pk"), domain__icontains=search_value)
+        domains = Dominio.objects.filter(
+            tenant=OuterRef("pk"), domain__icontains=search_value
+        )
         return (
             Q(nombre__icontains=search_value)
             | Q(schema_name__icontains=search_value)
@@ -250,25 +427,17 @@ class BusinessListAjaxView(PanelListViewAjax):
                 options.append(
                     {
                         "label": "Editar",
-                        "link": reverse("admin:tenancy_negocio_change", args=[item["pk"]]),
+                        "link": reverse(
+                            "admin:tenancy_negocio_change", args=[item["pk"]]
+                        ),
                         "icon": "edit_document",
                     }
                 )
             if is_superuser:
-                if item["estado"] == Negocio.Estado.PREPARANDO:
-                    options.append(
-                        {"label": "Reparar alta", "link": reverse("admin:tenancy_negocio_reparar", args=[item["pk"]])}
-                    )
-                else:
-                    options.append(
-                        {
-                            "label": "Restablecer clave del propietario",
-                            "link": reverse("admin:tenancy_negocio_clave_propietario", args=[item["pk"]]),
-                        }
-                    )
-                options.append(
-                    {"label": "Cambiar estado", "link": reverse("admin:tenancy_negocio_estado", args=[item["pk"]])}
-                )
+                options += [
+                    {"label": action["label"], "link": action["link"]}
+                    for action in business_actions(item["pk"], item["estado"])
+                ]
             item["options"] = options
         return data
 
@@ -278,53 +447,35 @@ class BusinessListAjaxView(PanelListViewAjax):
             total_businesses=Count("pk"),
             active_businesses=Count("pk", filter=Q(estado=Negocio.Estado.ACTIVO)),
             overdue_businesses=Count("pk", filter=Q(estado=Negocio.Estado.MOROSO)),
-            preparing_businesses=Count("pk", filter=Q(estado=Negocio.Estado.PREPARANDO)),
+            preparing_businesses=Count(
+                "pk", filter=Q(estado=Negocio.Estado.PREPARANDO)
+            ),
         )
 
 
-class BusinessCreateView(RelatedFormsMixin, PanelView, FormView):
-    template_name = "panel/businesses/create.html"
+class BusinessCreateView(BusinessFormMixin, PanelView, FormView):
     form_class = BusinessCreateForm
 
     def has_model_permission(self, request):
-        return request.user.is_superuser and self.model_admin.has_add_permission(request)
+        return request.user.is_superuser and self.model_admin.has_add_permission(
+            request
+        )
 
     def get_related_forms(self, data):
-        return {"address_form": BusinessAddressForm(data, prefix="address", **OPTIONAL_FORM_OPTIONS)}
+        return {
+            "addresses": BusinessAddressForm(
+                data, prefix="address", **OPTIONAL_FORM_OPTIONS
+            )
+        }
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "title": "Nuevo negocio",
-                "list_url": reverse("admin:tenancy_negocio_changelist", current_app=self.admin_site.name),
-                "people_url": reverse("admin:tenancy_persona_changelist", current_app=self.admin_site.name),
-                "sections_with_errors": self.sections_with_errors(context["form"]),
-            }
-        )
-        return context
-
-    def sections_with_errors(self, form):
-        if not form.is_bound:
-            return []
-        sections = {
-            "basic": any(name != "notas_internas" for name in form.errors),
-            "address": bool(self.related_forms()["address_form"].errors),
-            "notes": "notas_internas" in form.errors,
-        }
-        return [name for name, has_errors in sections.items() if has_errors]
-
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        address_form = self.related_forms()["address_form"]
-        if all([form.is_valid(), address_form.is_valid()]):
-            return self.form_valid(form)
-        mark_invalid_fields(form, address_form)
-        return self.form_invalid(form)
+        return {**super().get_context_data(**kwargs), "title": "Nuevo negocio"}
 
     def form_valid(self, form):
-        address_form = self.related_forms()["address_form"]
-        address = address_form.save(commit=False) if address_form.has_changed() else None
+        address_form = self.related_forms()["addresses"]
+        address = (
+            address_form.save(commit=False) if address_form.has_changed() else None
+        )
         business, password = dar_de_alta(form.cleaned_data, self.request.user, address)
         self.model_admin.log_addition(self.request, business, [{"added": {}}])
         response = TemplateResponse(
@@ -336,12 +487,86 @@ class BusinessCreateView(RelatedFormsMixin, PanelView, FormView):
                 "business": business,
                 "email": form.cleaned_data["correo"],
                 "password": password,
-                "business_url": url_en_dominio(self.request, business.domains.get(is_primary=True).domain),
-                "list_url": reverse("admin:tenancy_negocio_changelist", current_app=self.admin_site.name),
+                "business_url": url_en_dominio(
+                    self.request, business.domains.get(is_primary=True).domain
+                ),
+                "list_url": reverse(
+                    "admin:tenancy_negocio_changelist", current_app=self.admin_site.name
+                ),
             },
         )
         response["Cache-Control"] = "no-store"
         return response
+
+
+class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
+    form_class = BusinessUpdateForm
+
+    def has_model_permission(self, request):
+        return request.user.is_superuser and self.model_admin.has_change_permission(
+            request, self.get_object()
+        )
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            business = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
+            if business is None:
+                raise Http404
+            self._object = business
+        return self._object
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "instance": self.get_object()}
+
+    def get_related_forms(self, data):
+        return {
+            "addresses": AddressFormSet(
+                data, instance=self.get_object(), prefix="direcciones"
+            )
+        }
+
+    def get_context_data(self, **kwargs):
+        business = self.get_object()
+        domain = business.domains.filter(is_primary=True).first()
+        return {
+            **super().get_context_data(**kwargs),
+            "title": f"Editar negocio · {business.nombre}",
+            "business": business,
+            "domain": domain.domain if domain else EMPTY,
+            "business_url": url_en_dominio(self.request, domain.domain) if domain else "",
+            "access_email": correo_de_acceso(business.titular)
+            if business.titular
+            else None,
+            "actions": [
+                *business_actions(business.pk, business.estado),
+                {
+                    "label": "Ver historial",
+                    "link": reverse(
+                        "admin:tenancy_negocio_history", args=[business.pk]
+                    ),
+                    "icon": "history",
+                    "description": "Todos los cambios del negocio, con quién los hizo y su motivo.",
+                },
+            ],
+        }
+
+    def form_valid(self, form):
+        addresses = self.related_forms()["addresses"]
+        with transaction.atomic():
+            business = form.save()
+            addresses.save()
+        changed = [str(form.fields[name].label) for name in form.changed_data]
+        if addresses.has_changed():
+            changed.append("Direcciones")
+        self.model_admin.log_change(
+            self.request,
+            business,
+            [{"changed": {"fields": changed}}] if changed else [],
+        )
+        messages.success(
+            self.request, f"«{business.nombre}» se actualizó exitosamente."
+        )
+        return redirect("admin:tenancy_negocio_change", business.pk)
 
 
 # endregion
