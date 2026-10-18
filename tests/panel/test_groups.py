@@ -64,7 +64,7 @@ class GroupsScreenTests(TestCase):
 
     def test_staff_without_permission_gets_forbidden(self):
         response = self.browser(self.staff).get(LIST_URL)
-        self.assertContains(response, "No tienes permiso para esta acción del panel.", status_code=403)
+        self.assertContains(response, "Tu usuario del panel no tiene permiso para esta acción.", status_code=403)
 
     def test_list_returns_groups_with_counts_and_totals(self):
         payload = self.fetch(self.superuser).json()

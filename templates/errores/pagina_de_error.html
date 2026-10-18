@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+{% load static %}
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Error {{ status }} · Hi Agenda</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/icons/icono-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/icons/icono-16x16.png' %}">
+  <link href="{% static 'css/custom/colors.main.css' %}" rel="stylesheet">
+  <link href="{% static 'css/custom/custom.error_page.css' %}" rel="stylesheet">
+</head>
+
+<body class="error-page">
+  <div class="sand-background">
+    <div class="sand-wave wave-3"></div>
+    <div class="sand-wave wave-2"></div>
+    <div class="sand-wave wave-1"></div>
+  </div>
+
+  <main class="error-card" aria-labelledby="error_title">
+    <img class="error-card__art" src="{% static 'images/tables/empty-1.png' %}" alt="Reloj de arena roto" width="148" height="173">
+    <span class="error-card__code">Error {{ status }}</span>
+    <h1 class="error-card__title" id="error_title">{{ title }}</h1>
+    <p class="error-card__description">{{ description }}</p>
+
+    <div class="error-card__actions">
+      <a class="error-btn error-btn--primary" href="{{ home_url }}">{{ home_label }}</a>
+      {% if redirect %}
+      <button class="error-btn error-btn--ghost" type="button" data-error-action="back">Volver atrás</button>
+      {% else %}
+      <button class="error-btn error-btn--ghost" type="button" data-error-action="reload">Reintentar</button>
+      {% endif %}
+    </div>
+
+    {% if redirect %}
+    <div class="error-card__countdown" data-redirect-url="{{ home_url }}" data-seconds="{{ redirect_seconds }}"
+      data-destination="{{ destination }}">
+      <span class="error-card__countdown-text" aria-live="polite">Te llevamos {{ destination }} en {{ redirect_seconds }} s</span>
+      <div class="error-card__track">
+        <div class="error-card__fill"></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <p class="error-card__footer">{{ footer }}</p>
+  </main>
+
+  <script src="{% static 'js/custom/custom.error_page.js' %}"></script>
+</body>
+
+</html>
