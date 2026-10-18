@@ -62,12 +62,12 @@ class BusinessesScreenTests(TestCase):
         self.assertTemplateUsed(response, "panel/businesses/list.html")
         self.assertContains(response, 'id="businesses_table"')
         self.assertContains(response, f'url: \'{LIST_AJAX_URL}\'')
-        self.assertContains(response, 'href="/admin/tenancy/negocio/alta/"')
+        self.assertContains(response, 'href="/admin/tenancy/negocio/add/"')
 
     def test_add_button_is_only_for_superusers(self):
         response = self.browser(self.viewer).get(LIST_URL)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "/admin/tenancy/negocio/alta/")
+        self.assertNotContains(response, "/admin/tenancy/negocio/add/")
 
     def test_staff_without_permission_gets_forbidden(self):
         response = self.browser(self.staff).get(LIST_URL)

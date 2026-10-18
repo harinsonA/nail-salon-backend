@@ -73,7 +73,7 @@ class PaginasDeErrorDelPanelTests(TestCase):
         self.panel.force_login(self.staff)
 
     def test_una_accion_reservada_muestra_el_403_del_panel(self):
-        alta = reverse("admin:tenancy_negocio_alta", urlconf=settings.PUBLIC_SCHEMA_URLCONF)
+        alta = reverse("admin:tenancy_negocio_add", urlconf=settings.PUBLIC_SCHEMA_URLCONF)
         respuesta = self.panel.get(alta)
         self.assertContains(respuesta, "Tu usuario del panel no tiene permiso para esta acción.", status_code=403)
         self.assertContains(respuesta, 'href="/admin/"', status_code=403)

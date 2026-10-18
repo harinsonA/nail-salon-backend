@@ -1,5 +1,3 @@
-from zoneinfo import available_timezones
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -9,12 +7,13 @@ from model_utils.fields import MonitorField
 from model_utils.models import TimeStampedModel
 
 from apps.common.historial import HistorialRecords
-from apps.tenancy.subdominios import validar_esquema
+from apps.common.utils.utils import CommonCleaner
 
 
 def validar_zona_horaria(valor):
-    if valor not in available_timezones():
-        raise ValidationError("«%(valor)s» no es una zona horaria válida.", params={"valor": valor})
+    resultado = CommonCleaner.clean_time_zone_field(valor)
+    if resultado.is_err():
+        raise ValidationError(resultado.value)
 
 
 class Negocio(TenantMixin, TimeStampedModel):
@@ -83,4 +82,6 @@ class Negocio(TenantMixin, TimeStampedModel):
     def clean(self):
         super().clean()
         if self.schema_name and self.schema_name != get_public_schema_name():
-            validar_esquema(self.schema_name)
+            resultado = CommonCleaner.clean_schema_field(self.schema_name)
+            if resultado.is_err():
+                raise ValidationError(resultado.value)

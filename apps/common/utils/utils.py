@@ -9,6 +9,7 @@ from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.forms import BaseFormSet
 from result import Err, Ok, Result
 
+from apps.common.utils.businesses import BusinessCleaner
 from apps.common.utils.passwords import PasswordPolicyValidator
 from apps.common.utils.phones import PhoneCleaner
 
@@ -76,7 +77,7 @@ def is_ascii_digit(character):
 # region ........ Classes
 
 
-class CommonCleaner(PasswordPolicyValidator):
+class CommonCleaner(PasswordPolicyValidator, BusinessCleaner):
     @staticmethod
     def clean_username_field(field_value: str) -> Result[str, str]:
         value = field_value.strip()

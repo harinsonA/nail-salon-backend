@@ -32,6 +32,7 @@ class PanelYAltaTests(TestCase):
         publico = Negocio.objects.create(schema_name=get_public_schema_name(), nombre="Hi Agenda")
         Dominio.objects.create(domain=PANEL, tenant=publico, is_primary=True)
         cls.admin = User.objects.create_superuser(username="admin", email="admin@correo.cl", password="x")
+        cls.titular = Persona.objects.create(nombres="Carlos", apellidos="Rojas")
 
     def setUp(self):
         connection.set_schema_to_public()
@@ -48,25 +49,41 @@ class PanelYAltaTests(TestCase):
         datos = {
             "nombre": "Barbería El Corte",
             "subdominio": "el-corte",
+            "esquema": "el_corte",
+            "titular": self.titular.pk,
+            "correo": "Carlos@ElCorte.cl",
             "rubro": Rubro.objects.get(codigo="barberia").pk,
             "zona_horaria": "America/Santiago",
-            "nombres": "Carlos",
-            "apellidos": "Rojas",
-            "codigo_pais": "+56",
-            "telefono": "912345678",
-            "correo": "Carlos@ElCorte.cl",
+            "notas_internas": "",
+            "address-calle": "",
+            "address-numero": "",
+            "address-complemento": "",
+            "address-codigo_postal": "",
+            "address-comuna": "",
+            "address-ciudad": "",
+            "address-region": "",
+            "address-pais": "CL",
+            "address-referencia": "",
         }
         datos.update(cambios)
         return datos
 
-    def dar_de_alta(self, **cambios):
-        return self.panel.post(url_panel("tenancy_negocio_alta"), self.datos(**cambios))
+    def crear(self, **cambios):
+        return self.panel.post(url_panel("tenancy_negocio_add"), self.datos(**cambios))
 
-    def test_el_formulario_de_alta_carga_y_agregar_lleva_ahi(self):
-        self.assertContains(self.panel.get(url_panel("tenancy_negocio_alta")), "Dar de alta")
+    def test_la_pagina_de_crear_carga_y_la_de_alta_lleva_ahi(self):
+        respuesta = self.panel.get(url_panel("tenancy_negocio_add"))
+        self.assertTemplateUsed(respuesta, "panel/businesses/create.html")
+        self.assertTemplateUsed(respuesta, "panel/base.html")
+        for texto in ("Nuevo negocio", "Datos básicos", "Dirección", "Notas internas", "Crear negocio"):
+            with self.subTest(texto=texto):
+                self.assertContains(respuesta, texto)
+        for campo in ("nombres", "apellidos", "telefono", "codigo_pais"):
+            with self.subTest(campo=campo):
+                self.assertNotContains(respuesta, f'name="{campo}"')
         self.assertRedirects(
-            self.panel.get(url_panel("tenancy_negocio_add")),
-            url_panel("tenancy_negocio_alta"),
+            self.panel.get(url_panel("tenancy_negocio_alta")),
+            url_panel("tenancy_negocio_add"),
             fetch_redirect_response=False,
         )
 
@@ -74,43 +91,90 @@ class PanelYAltaTests(TestCase):
     def test_rechaza_subdominios_invalidos_reservados_o_tomados(self, encolar):
         tomado = Negocio.objects.create(schema_name="tomado", nombre="Tomado", titular=Persona.objects.create(nombres="X"))
         Dominio.objects.create(domain="tomado.localhost", tenant=tomado)
-        for subdominio in ("admin", "Mi Barberia", "ab", "tomado", "legado"):
+        for subdominio in ("admin", "Mi Barberia", "ab", "tomado", "legado", "salon2", "el_corte"):
             with self.subTest(subdominio=subdominio):
-                respuesta = self.dar_de_alta(subdominio=subdominio)
+                respuesta = self.crear(subdominio=subdominio, esquema="otro_esquema")
                 self.assertEqual(respuesta.status_code, 200)
                 self.assertIn("subdominio", respuesta.context["form"].errors)
+                self.assertEqual(respuesta.context["sections_with_errors"], ["basic"])
         encolar.assert_not_called()
 
     @mock.patch.object(preparar_negocio, "delay")
-    def test_pide_un_titular_y_valida_su_telefono(self, encolar):
-        sin_titular = self.dar_de_alta(nombres="")
-        self.assertIn("nombres", sin_titular.context["form"].errors)
-        telefono_malo = self.dar_de_alta(telefono="812345678")
-        self.assertIn("telefono", telefono_malo.context["form"].errors)
+    def test_rechaza_esquemas_invalidos_reservados_o_tomados(self, encolar):
+        Negocio.objects.create(schema_name="tomado", nombre="Tomado", titular=Persona.objects.create(nombres="X"))
+        casos = {
+            "el-corte": "solo admite letras minúsculas",
+            "corte2": "solo admite letras minúsculas",
+            "ab": "entre 3 y 40",
+            "pg_datos": "reservado",
+            "public": "reservado",
+            "tomado": "Ya existe un esquema",
+        }
+        for esquema, mensaje in casos.items():
+            with self.subTest(esquema=esquema):
+                errores = self.crear(esquema=esquema).context["form"].errors
+                self.assertIn(mensaje, errores["esquema"][0])
+        with mock.patch("apps.panel.views.businesses.view.schema_exists", return_value=True):
+            errores = self.crear(esquema="huerfano").context["form"].errors
+        self.assertIn("Ya existe un esquema", errores["esquema"][0])
         encolar.assert_not_called()
 
-    def test_alta_completa_de_punta_a_punta(self):
+    @mock.patch.object(preparar_negocio, "delay")
+    def test_pide_un_titular_existente_y_un_correo(self, encolar):
+        sin_titular = self.crear(titular="", correo="")
+        self.assertIn("titular", sin_titular.context["form"].errors)
+        self.assertIn("correo", sin_titular.context["form"].errors)
+        inexistente = self.crear(titular=999999)
+        self.assertIn("titular", inexistente.context["form"].errors)
+        self.assertContains(sin_titular, "is-invalid")
+        encolar.assert_not_called()
+
+    @mock.patch.object(preparar_negocio, "delay")
+    def test_aplica_las_reglas_de_los_campos(self, encolar):
+        respuesta = self.crear(
+            nombre="Barbería 21", rubro="", notas_internas="x" * 251, **{"address-comuna": "Providencia 2"}
+        )
+        form = respuesta.context["form"]
+        self.assertIn("caracteres alfabéticos y espacios", form.errors["nombre"][0])
+        self.assertIn("rubro", form.errors)
+        self.assertIn("250", form.errors["notas_internas"][0])
+        direccion = respuesta.context["address_form"]
+        self.assertEqual(direccion.errors["calle"][0], "Escribe la calle para guardar la dirección.")
+        self.assertIn("caracteres alfabéticos", direccion.errors["comuna"][0])
+        self.assertEqual(respuesta.context["sections_with_errors"], ["basic", "address", "notes"])
+        self.assertFalse(Negocio.objects.filter(schema_name="el_corte").exists())
+        encolar.assert_not_called()
+
+    def test_creacion_completa_de_punta_a_punta(self):
         with self.captureOnCommitCallbacks(execute=True):
-            respuesta = self.dar_de_alta()
+            respuesta = self.crear(
+                esquema="corte_central",
+                notas_internas="Primer mes sin costo.",
+                **{"address-calle": "Av. Providencia", "address-numero": "1234", "address-comuna": "Providencia"},
+            )
 
         self.assertEqual(respuesta.status_code, 200)
+        self.assertTemplateUsed(respuesta, "panel/businesses/created.html")
         self.assertIn("no-store", respuesta["Cache-Control"])
-        clave = respuesta.context["clave"]
+        clave = respuesta.context["password"]
         self.assertContains(respuesta, clave)
-        negocio = Negocio.objects.get(schema_name="el_corte")
+        negocio = Negocio.objects.get(schema_name="corte_central")
         self.assertEqual(negocio.estado, Negocio.Estado.ACTIVO)
         self.assertIsNone(negocio.error_preparacion)
         self.assertEqual(negocio.creado_por, self.admin)
+        self.assertEqual(negocio.titular, self.titular)
         self.assertEqual(negocio.rubro.codigo, "barberia")
+        self.assertEqual(negocio.notas_internas, "Primer mes sin costo.")
         self.assertEqual(negocio.domains.get(is_primary=True).domain, "el-corte.localhost")
-        self.assertEqual(negocio.titular.correos.get(es_principal=True).correo, "carlos@elcorte.cl")
-        self.assertEqual(negocio.titular.telefonos.get(es_principal=True).numero, "912345678")
+        direccion = negocio.direcciones.get()
+        self.assertEqual((direccion.calle, direccion.numero, direccion.comuna, direccion.es_principal), ("Av. Providencia", "1234", "Providencia", True))
+        self.assertTrue(self.titular.correos.filter(correo="carlos@elcorte.cl", etiqueta="acceso").exists())
         self.assertEqual(
             list(negocio.history.values_list("history_change_reason", flat=True)),
-            ["Alta terminada", "Alta desde el panel"],
+            ["Alta terminada", "Creado desde el panel"],
         )
 
-        with schema_context("el_corte"):
+        with schema_context("corte_central"):
             propietario = User.objects.get(email="carlos@elcorte.cl")
             self.assertTrue(propietario.check_password(clave))
             self.assertNotIn(clave, propietario.password)
@@ -127,14 +191,28 @@ class PanelYAltaTests(TestCase):
         self.assertRedirects(navegador.get(reverse("calendar")), reverse("cambiar_clave"), fetch_redirect_response=False)
 
     @mock.patch.object(preparar_negocio, "delay")
-    def test_con_un_titular_existente_suma_el_correo_sin_cambiar_su_principal(self, encolar):
-        persona = Persona.objects.create(nombres="Carlos")
-        PersonaCorreo.objects.create(persona=persona, correo="carlos@gmail.com", es_principal=True)
+    def test_no_repite_subdominio_ni_esquema(self, encolar):
         with self.captureOnCommitCallbacks(execute=True):
-            self.dar_de_alta(titular=persona.pk, nombres="", correo="local@elcorte.cl")
-        self.assertEqual(Negocio.objects.get(schema_name="el_corte").titular, persona)
-        self.assertEqual(persona.correos.get(es_principal=True).correo, "carlos@gmail.com")
-        self.assertTrue(persona.correos.filter(correo="local@elcorte.cl", es_principal=False).exists())
+            self.crear()
+        repetido = self.crear(nombre="Otro Corte").context["form"].errors
+        self.assertEqual(repetido["subdominio"], ["Ese subdominio ya lo usa otro negocio."])
+        self.assertEqual(repetido["esquema"], ["Ya existe un esquema con ese nombre en la base."])
+        self.assertEqual(Negocio.objects.filter(nombre="Otro Corte").count(), 0)
+        encolar.assert_called_once()
+
+    @mock.patch.object(preparar_negocio, "delay")
+    def test_sin_direccion_no_crea_ninguna(self, encolar):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear()
+        self.assertFalse(Negocio.objects.get(schema_name="el_corte").direcciones.exists())
+
+    @mock.patch.object(preparar_negocio, "delay")
+    def test_con_un_titular_existente_suma_el_correo_sin_cambiar_su_principal(self, encolar):
+        PersonaCorreo.objects.create(persona=self.titular, correo="carlos@gmail.com", es_principal=True)
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear(correo="local@elcorte.cl")
+        self.assertEqual(self.titular.correos.get(es_principal=True).correo, "carlos@gmail.com")
+        self.assertTrue(self.titular.correos.filter(correo="local@elcorte.cl", es_principal=False).exists())
         encolar.assert_called_once()
         negocio_id, correo, hash_clave = encolar.call_args.args
         self.assertEqual(correo, "local@elcorte.cl")
@@ -152,11 +230,13 @@ class PanelYAltaTests(TestCase):
         self.assertIn("sin espacio en disco", negocio.error_preparacion)
         self.assertEqual(negocio.history.first().history_change_reason, "La preparación falló")
 
-    def test_solo_un_superusuario_da_de_alta(self):
+    def test_solo_un_superusuario_crea_negocios(self):
         staff = User.objects.create_user(username="staff", password="x", is_staff=True)
         navegador = Client(HTTP_HOST=PANEL)
         navegador.force_login(staff)
-        self.assertEqual(navegador.get(url_panel("tenancy_negocio_alta")).status_code, 403)
+        self.assertEqual(navegador.get(url_panel("tenancy_negocio_add")).status_code, 403)
+        self.assertEqual(navegador.post(url_panel("tenancy_negocio_add"), self.datos()).status_code, 403)
+        self.assertFalse(Negocio.objects.filter(schema_name="el_corte").exists())
 
     def test_la_lista_no_muestra_public_y_no_se_borra_nada(self):
         negocio = Negocio.objects.create(schema_name="uno", nombre="Uno", titular=Persona.objects.create(nombres="X"))
