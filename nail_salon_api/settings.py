@@ -115,6 +115,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "apps.common.middleware.SessionExpiryMiddleware",
+    "apps.seguridad.middleware.SingleSessionMiddleware",
     "apps.profiles.middleware.CambioDeClaveObligatorioMiddleware",
     "apps.tenancy.middleware.EstadoDelNegocioMiddleware",
     "apps.profiles.middleware.PermisosPorRolMiddleware",
