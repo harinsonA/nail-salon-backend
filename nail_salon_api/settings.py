@@ -175,6 +175,9 @@ else:
 
 DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
+TEST_RUNNER = "tests.runner.FastTestRunner"
+DATABASE_TEST_HOST = config("DATABASE_TEST_HOST", default="")
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
