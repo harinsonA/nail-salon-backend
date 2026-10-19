@@ -133,3 +133,19 @@ class RescateDelPropietarioTests(NegocioTestCase):
         self.assertRedirects(
             respuesta, url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
         )
+
+    def test_la_ficha_muestra_el_acceso_del_propietario_y_la_accion(self):
+        ficha = self.panel.get(url_panel("tenancy_negocio_change", self.negocio.pk))
+        self.assertContains(ficha, "Acceso del propietario")
+        self.assertContains(ficha, "Sin bloqueo")
+        self.assertContains(ficha, url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk))
+        self.bloquear_propietario()
+        hora = timezone.localtime(self.estado_en_el_negocio().until).strftime("%H:%M")
+        ficha = self.panel.get(url_panel("tenancy_negocio_change", self.negocio.pk))
+        self.assertContains(ficha, f"Bloqueado hasta las {hora}")
+
+    def test_la_ficha_de_un_alta_sin_terminar_no_consulta_el_esquema(self):
+        Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
+        ficha = self.panel.get(url_panel("tenancy_negocio_change", self.negocio.pk))
+        self.assertContains(ficha, "Acceso del propietario")
+        self.assertNotContains(ficha, url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk))

@@ -93,6 +93,13 @@
               </div>
             </div>
             <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">{% if owner_locked %}lock{% else %}lock_open{% endif %}</span>
+              <div>
+                <span class="readonly-info__label">Acceso del propietario</span>
+                <span class="readonly-info__value{% if owner_locked %} text-color-destructive{% endif %}">{{ owner_access|default:"—" }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
               <span class="material-symbols-outlined" aria-hidden="true">toggle_on</span>
               <div>
                 <span class="readonly-info__label">Estado</span>

@@ -34,8 +34,10 @@ from apps.common.forms import (
 from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
 from apps.common.widgets import text_input
 from apps.panel.views.base import PanelListViewAjax, PanelView, RelatedFormsMixin
+from apps.seguridad.access import describe_lock
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
+from apps.tenancy.propietario import owner_lock_status
 
 """========================================================================="""
 # region ........ Constants
@@ -89,8 +91,14 @@ def business_actions(pk, status):
                 "label": "Restablecer clave del propietario",
                 "link": reverse("admin:tenancy_negocio_clave_propietario", args=[pk]),
                 "icon": "key",
-                "description": "Genera una clave temporal nueva para el propietario y la muestra una sola vez.",
-            }
+                "description": "Genera una clave temporal nueva para el propietario, lo desbloquea si estaba bloqueado y la muestra una sola vez.",
+            },
+            {
+                "label": "Desbloquear propietario",
+                "link": reverse("admin:tenancy_negocio_desbloquear_propietario", args=[pk]),
+                "icon": "lock_open",
+                "description": "Quita el bloqueo por intentos fallidos sin cambiarle la clave.",
+            },
         ]
     actions.append(
         {
@@ -525,9 +533,17 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
             )
         }
 
+    def owner_access(self, business):
+        if business.estado == Negocio.Estado.PREPARANDO or not schema_exists(
+            business.schema_name
+        ):
+            return None
+        return owner_lock_status(business)
+
     def get_context_data(self, **kwargs):
         business = self.get_object()
         domain = business.domains.filter(is_primary=True).first()
+        owner_access = self.owner_access(business)
         return {
             **super().get_context_data(**kwargs),
             "title": f"Editar negocio · {business.nombre}",
@@ -537,6 +553,8 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
             "access_email": correo_de_acceso(business.titular)
             if business.titular
             else None,
+            "owner_access": describe_lock(owner_access) if owner_access else "",
+            "owner_locked": bool(owner_access and owner_access.is_locked),
             "actions": [
                 *business_actions(business.pk, business.estado),
                 {

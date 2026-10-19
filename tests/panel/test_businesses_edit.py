@@ -171,7 +171,7 @@ class BusinessEditTests(TestCase):
         active = self.browser().get(self.url()).context["actions"]
         self.assertEqual(
             [action["label"] for action in active],
-            ["Restablecer clave del propietario", "Cambiar estado", "Ver historial"],
+            ["Restablecer clave del propietario", "Desbloquear propietario", "Cambiar estado", "Ver historial"],
         )
         self.assertEqual(
             active[-1]["link"], f"/admin/tenancy/negocio/{self.business.pk}/history/"
