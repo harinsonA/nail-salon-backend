@@ -11,8 +11,13 @@ from apps.common.claves import generar_clave_temporal
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import puede_gestionar, roles_que_puede_crear
+from apps.seguridad.access import describe_lock, status_of, unlock
+from apps.seguridad.models import AccesoUsuario
 
 User = get_user_model()
+
+UNLOCK_REASON = "Desbloqueado desde Equipo"
+RESET_UNLOCK_REASON = "Desbloqueado al restablecer la clave desde Equipo"
 
 """========================================================================="""
 # region ........ Forms
@@ -58,6 +63,7 @@ def asignar_clave_temporal(usuario):
     usuario.set_password(clave)
     usuario.save()
     Perfil.objects.filter(user=usuario).update(debe_cambiar_clave=True)
+    unlock(usuario, RESET_UNLOCK_REASON)
     return clave
 
 
@@ -68,7 +74,11 @@ class EquipoView(ProtectedView, TemplateView):
         context = super().get_context_data(**kwargs)
         usuario = self.request.user
         miembros = User.objects.select_related("perfil").order_by("-is_active", "first_name", "email")
-        context["miembros"] = [(miembro, puede_gestionar(usuario, miembro)) for miembro in miembros]
+        accesos = {acceso.user_id: acceso for acceso in AccesoUsuario.objects.all()}
+        context["miembros"] = []
+        for miembro in miembros:
+            status = status_of(accesos.get(miembro.pk))
+            context["miembros"].append((miembro, puede_gestionar(usuario, miembro), status, describe_lock(status)))
         context["puede_crear"] = bool(roles_que_puede_crear(usuario))
         return context
 
@@ -107,6 +117,17 @@ class CambiarActivoView(ProtectedView, MiembroGestionadoMixin, View):
         miembro.save(update_fields=["is_active"])
         accion = "reactivado" if miembro.is_active else "desactivado"
         messages.success(request, f"{miembro.get_full_name() or miembro.email} quedó {accion}.")
+        return redirect("equipo")
+
+
+class UnlockMemberView(ProtectedView, MiembroGestionadoMixin, View):
+    def post(self, request, pk):
+        miembro = self.obtener_miembro(pk)
+        nombre = miembro.get_full_name() or miembro.email
+        if unlock(miembro, UNLOCK_REASON):
+            messages.success(request, f"{nombre} quedó desbloqueado: ya puede entrar con su clave actual.")
+        else:
+            messages.info(request, f"{nombre} no estaba bloqueado.")
         return redirect("equipo")
 
 

@@ -132,3 +132,102 @@ class BloqueoAisladoPorNegocioTests(NegocioTestCase):
             self.assertEqual(lock_status(otra_laura).state, LockState.FREE)
         connection.set_tenant(self.negocio)
         self.assertEqual(lock_status(laura).state, LockState.TEMPORARY)
+
+
+class DesbloquearDesdeEquipoTests(NegocioTestCase):
+    esquema = "equipo_bloqueo"
+    dominio = "equipo-bloqueo.localhost"
+
+    def crear(self, rol, nombre):
+        usuario = User.objects.create_user(
+            username=nombre, email=f"{nombre}@correo.cl", password=CLAVE
+        )
+        Perfil.objects.filter(user=usuario).update(rol=rol, debe_cambiar_clave=False)
+        return User.objects.select_related("perfil").get(pk=usuario.pk)
+
+    def navegador_de(self, usuario):
+        navegador = Client(HTTP_HOST=self.dominio)
+        navegador.force_login(usuario)
+        return navegador
+
+    def bloquear(self, usuario):
+        for _ in range(5):
+            register_failure(usuario)
+
+    def setUp(self):
+        super().setUp()
+        self.maria = self.crear(Rol.PROPIETARIO, "maria")
+        self.ana = self.crear(Rol.ENCARGADO, "ana")
+        self.sofi = self.crear(Rol.ENCARGADO, "sofi")
+        self.laura = self.crear(Rol.COLABORADOR, "laura")
+
+    def test_la_lista_muestra_el_candado_y_el_boton_solo_a_quien_puede(self):
+        self.bloquear(self.laura)
+        lista = self.navegador_de(self.maria).get(reverse("equipo"))
+        hora = timezone.localtime(lock_status(self.laura).until).strftime("%H:%M")
+        self.assertContains(lista, f'title="Bloqueado hasta las {hora}"')
+        self.assertContains(lista, 'title="Sin bloqueo"')
+        self.assertContains(lista, reverse("equipo_desbloquear", args=[self.laura.pk]))
+        self.assertNotContains(lista, reverse("equipo_desbloquear", args=[self.ana.pk]))
+
+    def test_la_encargada_desbloquea_a_la_colaboradora_y_queda_su_nombre(self):
+        self.bloquear(self.laura)
+        respuesta = self.navegador_de(self.ana).post(
+            reverse("equipo_desbloquear", args=[self.laura.pk]), follow=True
+        )
+        self.assertContains(
+            respuesta, "quedó desbloqueado: ya puede entrar con su clave actual."
+        )
+        self.assertFalse(lock_status(self.laura).is_locked)
+        ultimo = AccesoUsuario.objects.get(user=self.laura).history.first()
+        self.assertEqual(ultimo.history_change_reason, "Desbloqueado desde Equipo")
+        self.assertEqual(ultimo.history_user, self.ana)
+
+    def test_la_propietaria_desbloquea_a_una_encargada(self):
+        self.bloquear(self.sofi)
+        self.navegador_de(self.maria).post(
+            reverse("equipo_desbloquear", args=[self.sofi.pk])
+        )
+        self.assertFalse(lock_status(self.sofi).is_locked)
+
+    def test_una_encargada_no_desbloquea_a_otra_encargada(self):
+        self.bloquear(self.sofi)
+        respuesta = self.navegador_de(self.ana).post(
+            reverse("equipo_desbloquear", args=[self.sofi.pk])
+        )
+        self.assertEqual(respuesta.status_code, 403)
+        self.assertTrue(lock_status(self.sofi).is_locked)
+
+    def test_nadie_del_negocio_desbloquea_a_la_propietaria(self):
+        self.bloquear(self.maria)
+        respuesta = self.navegador_de(self.ana).post(
+            reverse("equipo_desbloquear", args=[self.maria.pk])
+        )
+        self.assertEqual(respuesta.status_code, 403)
+        self.assertTrue(lock_status(self.maria).is_locked)
+
+    def test_una_colaboradora_no_entra_a_desbloquear(self):
+        self.bloquear(self.sofi)
+        respuesta = self.navegador_de(self.laura).post(
+            reverse("equipo_desbloquear", args=[self.sofi.pk])
+        )
+        self.assertEqual(respuesta.status_code, 403)
+
+    def test_desbloquear_a_quien_no_esta_bloqueado_lo_dice(self):
+        respuesta = self.navegador_de(self.maria).post(
+            reverse("equipo_desbloquear", args=[self.laura.pk]), follow=True
+        )
+        self.assertContains(respuesta, "no estaba bloqueado.")
+
+    def test_restablecer_la_clave_tambien_desbloquea(self):
+        self.bloquear(self.laura)
+        self.navegador_de(self.maria).post(
+            reverse("equipo_restablecer_clave", args=[self.laura.pk])
+        )
+        self.assertFalse(lock_status(self.laura).is_locked)
+        self.assertEqual(
+            AccesoUsuario.objects.get(user=self.laura)
+            .history.first()
+            .history_change_reason,
+            "Desbloqueado al restablecer la clave desde Equipo",
+        )

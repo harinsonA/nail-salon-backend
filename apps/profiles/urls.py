@@ -1,6 +1,12 @@
 from django.urls import path
 from apps.profiles.views.cambiar_clave.view import CambiarClaveView
-from apps.profiles.views.equipo.view import CambiarActivoView, CrearMiembroView, EquipoView, RestablecerClaveView
+from apps.profiles.views.equipo.view import (
+    CambiarActivoView,
+    CrearMiembroView,
+    EquipoView,
+    RestablecerClaveView,
+    UnlockMemberView,
+)
 from apps.profiles.views.login.view import LoginView, LogoutView
 from apps.profiles.views.profile.view import ProfileModalView
 from apps.profiles.views.session.view import SessionPingView
@@ -15,4 +21,5 @@ urlpatterns = [
     path("equipo/crear/", CrearMiembroView.as_view(), name="equipo_crear"),
     path("equipo/<int:pk>/activar/", CambiarActivoView.as_view(), name="equipo_activar"),
     path("equipo/<int:pk>/restablecer-clave/", RestablecerClaveView.as_view(), name="equipo_restablecer_clave"),
+    path("equipo/<int:pk>/desbloquear/", UnlockMemberView.as_view(), name="equipo_desbloquear"),
 ]
