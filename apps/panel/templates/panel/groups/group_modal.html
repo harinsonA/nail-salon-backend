@@ -3,7 +3,7 @@
   {% csrf_token %}
   <div class="modal-header bg-primary bg-gradient">
     <h5 class="modal-title d-inline-flex align-items-center">
-      <span class="material-symbols-outlined me-2">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">
         {% if object %}group{% else %}group_add{% endif %}
       </span>
       <span class="pb-1">

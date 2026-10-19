@@ -36,7 +36,7 @@
 }
 
 .formset-remove .material-symbols-outlined {
-  font-size: 18px;
+  font-size: var(--icon-size-small);
 }
 
 .formset-empty-message {
@@ -51,5 +51,5 @@
 }
 
 .formset-add .material-symbols-outlined {
-  font-size: 18px;
+  font-size: var(--icon-size-small);
 }

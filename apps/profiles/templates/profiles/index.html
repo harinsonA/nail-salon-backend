@@ -2,7 +2,7 @@
   {% csrf_token %}
   <div class="modal-header bg-primary bg-gradient">
     <h5 class="modal-title d-inline-flex align-items-center">
-      <span class="material-symbols-outlined me-2">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">
         manage_accounts
       </span>
       <span class="pb-1">
@@ -49,7 +49,7 @@
           </label>
           <div class="input-group">
             <span class="input-group-text">
-              <span class="material-symbols-outlined icon-sm">account_circle</span>
+              <span class="material-symbols-outlined icon--field">account_circle</span>
             </span>
             {{ form.username }}
             <span class="invalid-feedback invalid-feedback--custom {{ form.username.id_for_label }}">
@@ -83,7 +83,7 @@
           </label>
           <div class="input-group">
             <span class="input-group-text">
-              <span class="material-symbols-outlined icon-sm">mail</span>
+              <span class="material-symbols-outlined icon--field">mail</span>
             </span>
             {{ form.email }}
             <span class="invalid-feedback invalid-feedback--custom {{ form.email.id_for_label }}">
@@ -112,7 +112,7 @@
         {% endfor %}
 
         <div class="profile-note">
-          <img src="/static/images/common/info.svg" alt="" width="20" height="20" class="flex-shrink-0">
+          <img src="/static/images/common/info.svg" alt="" width="18" height="18" class="icon--inline flex-shrink-0">
           <span>Deja los campos de contraseña vacíos si no deseas cambiarla.</span>
         </div>
         <div class="mb-3">
@@ -121,12 +121,12 @@
           </label>
           <div class="input-group">
             <span class="input-group-text">
-              <span class="material-symbols-outlined icon-sm">password</span>
+              <span class="material-symbols-outlined icon--field">password</span>
             </span>
             {{ form.current_password }}
             <button type="button" class="input-group-text profile-pw-toggle"
               data-target="{{ form.current_password.id_for_label }}" aria-label="Mostrar contraseña">
-              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
+              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="icon--field pw-toggle-icon">
             </button>
             <span
               class="invalid-feedback invalid-feedback--custom {{ form.current_password.id_for_label }}">
@@ -140,12 +140,12 @@
           </label>
           <div class="input-group">
             <span class="input-group-text">
-              <span class="material-symbols-outlined icon-sm">vpn_key</span>
+              <span class="material-symbols-outlined icon--field">vpn_key</span>
             </span>
             {{ form.new_password }}
             <button type="button" class="input-group-text profile-pw-toggle"
               data-target="{{ form.new_password.id_for_label }}" aria-label="Mostrar contraseña">
-              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
+              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="icon--field pw-toggle-icon">
             </button>
             <span class="invalid-feedback invalid-feedback--custom {{ form.new_password.id_for_label }}">
               {{ form.new_password.errors.0 }}
@@ -158,12 +158,12 @@
           </label>
           <div class="input-group">
             <span class="input-group-text">
-              <span class="material-symbols-outlined icon-sm">vpn_key</span>
+              <span class="material-symbols-outlined icon--field">vpn_key</span>
             </span>
             {{ form.confirm_password }}
             <button type="button" class="input-group-text profile-pw-toggle"
               data-target="{{ form.confirm_password.id_for_label }}" aria-label="Mostrar contraseña">
-              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="pw-toggle-icon">
+              <img src="/static/images/common/visibility.svg" alt="" width="20" height="20" class="icon--field pw-toggle-icon">
             </button>
             <span
               class="invalid-feedback invalid-feedback--custom {{ form.confirm_password.id_for_label }}">

@@ -18,7 +18,7 @@ Ingresos
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
             <span>Total de ingresos</span>
-            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="icon--small ms-2">
           </h6>
           <h4 class="card-title text-end text-success">
             <b id="incomes_totals_id">0</b>
@@ -31,7 +31,7 @@ Ingresos
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
             <span>Cantidad de pagos recibidos</span>
-            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="icon--small ms-2">
           </h6>
           <h4 class="card-title text-end text-primary">
             <b id="incomes_count_id">0</b>
@@ -44,7 +44,7 @@ Ingresos
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
             <span>Promedio por pago</span>
-            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="ms-2">
+            <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="icon--small ms-2">
           </h6>
           <h4 class="card-title text-end">
             <b id="incomes_average_id">0</b>
@@ -64,14 +64,14 @@ Ingresos
     <div class="d-flex align-items-end flex-wrap gap-2">
       <div class="input-group" style="max-width: 240px;">
         <span class="input-group-text">
-          <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
+          <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20" class="icon--field">
         </span>
         <span class="input-group-text">Desde</span>
         {{ filter_form.date_from }}
       </div>
       <div class="input-group" style="max-width: 240px;">
         <span class="input-group-text">
-          <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20">
+          <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="20" height="20" class="icon--field">
         </span>
         <span class="input-group-text">Hasta</span>
         {{ filter_form.date_to }}

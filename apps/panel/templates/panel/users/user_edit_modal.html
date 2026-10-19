@@ -3,7 +3,7 @@
   {% csrf_token %}
   <div class="modal-header bg-primary bg-gradient">
     <h5 class="modal-title d-inline-flex align-items-center">
-      <span class="material-symbols-outlined me-2">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">
         manage_accounts
       </span>
       <span class="pb-1">
@@ -136,9 +136,9 @@
                   {{ field }}
                   <button type="button" class="btn btn-outline-secondary password-toggle"
                     data-target="#{{ field.id_for_label }}" aria-label="Mostrar u ocultar contraseña">
-                    <img src="{% static 'images/common/visibility.svg' %}" alt="" width="18" height="18" class="eye-open">
-                    <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="18" height="18"
-                      class="eye-closed d-none">
+                    <img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="icon--field eye-open">
+                    <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="20" height="20"
+                      class="icon--field eye-closed d-none">
                   </button>
                   <span class="invalid-feedback invalid-feedback--custom {{ field.id_for_label }}">
                     {{ field.errors.0 }}

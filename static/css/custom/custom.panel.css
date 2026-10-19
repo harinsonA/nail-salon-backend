@@ -24,7 +24,7 @@
 }
 
 .side-tabs .nav-link .material-symbols-outlined {
-  font-size: 18px;
+  font-size: var(--icon-size-menu);
   color: var(--text-muted);
 }
 
@@ -97,7 +97,7 @@
 
 .readonly-info__item .material-symbols-outlined {
   margin-top: 1px;
-  font-size: 18px;
+  font-size: var(--icon-size-inline);
   color: var(--text-muted);
 }
 
@@ -193,7 +193,7 @@
 }
 
 .inline-link .material-symbols-outlined {
-  font-size: 16px;
+  font-size: var(--icon-size-small);
 }
 
 .inline-link:hover {
@@ -236,7 +236,7 @@
 }
 
 .action-list__icon {
-  font-size: 22px;
+  font-size: var(--icon-size-cell);
   color: var(--color-primary-hover);
 }
 
@@ -274,7 +274,7 @@
 }
 
 .icon-link-button .material-symbols-outlined {
-  font-size: 16px;
+  font-size: var(--icon-size-small);
 }
 
 .icon-link-button:hover {

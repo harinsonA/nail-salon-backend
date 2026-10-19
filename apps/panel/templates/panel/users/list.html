@@ -14,7 +14,7 @@ Usuarios
     <a id="user-create-btn" data-form-url="{{ create_modal_url }}"
       class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
       Usuario
-      <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
+      <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16" class="icon--small">
     </a>
   </section>
   {% endif %}
@@ -90,8 +90,8 @@ Usuarios
 <script>
   $(() => {
     const flagColumn = (value) => value
-      ? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Sí" width="20" height="20">`
-      : `<img src="{% static 'images/common/cancel.svg' %}" alt="No" width="20" height="20">`;
+      ? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Sí" width="20" height="20" class="icon--cell">`
+      : `<img src="{% static 'images/common/cancel.svg' %}" alt="No" width="20" height="20" class="icon--cell">`;
 
     const filterData = {
       status: $('#{{ filter_form.status.id_for_label }}').val(),
