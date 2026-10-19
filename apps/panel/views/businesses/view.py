@@ -1,3 +1,5 @@
+from bootstrap_modal_forms.forms import BSModalForm
+from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -5,13 +7,14 @@ from django.db import transaction
 from django.db.models import Count, Exists, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Concat, Trim
 from django.forms import BaseFormSet
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import FormView, TemplateView
 from django_tenants.utils import get_public_schema_name, schema_exists
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
@@ -33,17 +36,20 @@ from apps.common.forms import (
 )
 from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
 from apps.common.widgets import text_input
-from apps.panel.views.base import PanelListViewAjax, PanelView, RelatedFormsMixin
+from apps.common.utils.utils import get_errors_to_response
+from apps.panel.views.base import PanelAjaxView, PanelListViewAjax, PanelView, RelatedFormsMixin
 from apps.seguridad.access import describe_lock
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
-from apps.tenancy.propietario import owner_lock_status
+from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_propietario
 
 """========================================================================="""
 # region ........ Constants
 
 
 EMPTY = "—"
+NOT_READY_MESSAGE = "El negocio todavía no está listo: primero repara su alta."
+NO_OWNER_MESSAGE = "Este negocio no tiene propietario: repara su alta."
 ALL = "all"
 DEFAULT_TIME_ZONE = "America/Santiago"
 TIME_ZONES = [
@@ -90,6 +96,7 @@ def business_actions(pk, status):
             {
                 "label": "Restablecer clave del propietario",
                 "link": reverse("admin:tenancy_negocio_clave_propietario", args=[pk]),
+                "modal": True,
                 "icon": "key",
                 "description": "Genera una clave temporal nueva para el propietario, lo desbloquea si estaba bloqueado y la muestra una sola vez.",
             },
@@ -192,6 +199,15 @@ class BusinessesFilterForm(forms.Form):
         if cleaned_data.get("industry"):
             filters["rubro"] = cleaned_data["industry"]
         return filters
+
+
+class OwnerPasswordResetForm(BSModalForm):
+    identity_confirmed = forms.BooleanField(
+        label="Confirmé la identidad del titular",
+        help_text="Por ejemplo, llamándolo a su teléfono registrado antes de entregarle la clave.",
+        error_messages={"required": "Confirma la identidad del titular antes de generar la clave."},
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
 
 
 class BusinessAddressForm(AddressForm):
@@ -445,6 +461,7 @@ class BusinessListAjaxView(PanelListViewAjax):
                 options += [
                     {"label": action["label"], "link": action["link"]}
                     for action in business_actions(item["pk"], item["estado"])
+                    if not action.get("modal")
                 ]
             item["options"] = options
         return data
@@ -585,6 +602,65 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
             self.request, f"«{business.nombre}» se actualizó exitosamente."
         )
         return redirect("admin:tenancy_negocio_change", business.pk)
+
+
+class OwnerPasswordResetModalView(PanelAjaxView, BSModalFormView):
+    template_name = "panel/businesses/owner_password_modal.html"
+    form_class = OwnerPasswordResetForm
+
+    def has_model_permission(self, request):
+        return request.user.is_superuser and self.model_admin.has_change_permission(request, self.get_object())
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            business = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
+            if business is None:
+                raise Http404
+            self._object = business
+        return self._object
+
+    def not_ready_reason(self):
+        business = self.get_object()
+        if business.estado == Negocio.Estado.PREPARANDO or not schema_exists(business.schema_name):
+            return NOT_READY_MESSAGE
+        return ""
+
+    def business_url(self):
+        domain = self.get_object().domains.filter(is_primary=True).first()
+        return url_en_dominio(self.request, domain.domain) if domain else ""
+
+    def get(self, request, *args, **kwargs):
+        if request.headers.get("x-requested-with") != "XMLHttpRequest":
+            return redirect("admin:tenancy_negocio_change", self.get_object().pk)
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            "modal_url": self.request.path,
+            "business": self.get_object(),
+            "business_url": self.business_url(),
+            "blocked_reason": self.not_ready_reason(),
+        }
+
+    def form_invalid(self, form):
+        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
+
+    def form_valid(self, form):
+        reason = self.not_ready_reason()
+        if reason:
+            return JsonResponse({"message": reason}, status=HTTP_400_BAD_REQUEST)
+        business = self.get_object()
+        result = restablecer_clave_del_propietario(business, self.request.user)
+        if result is None:
+            return JsonResponse({"message": NO_OWNER_MESSAGE}, status=HTTP_400_BAD_REQUEST)
+        email, password = result
+        self.model_admin.log_change(self.request, business, "Clave del propietario restablecida.")
+        response = JsonResponse(
+            {"message": "Se generó una clave temporal nueva.", "email": email, "password": password}
+        )
+        response["Cache-Control"] = "no-store"
+        return response
 
 
 # endregion

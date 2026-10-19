@@ -10,14 +10,15 @@ from apps.panel.views.businesses.view import (
     BusinessCreateView,
     BusinessListAjaxView,
     BusinessListView,
+    OwnerPasswordResetModalView,
     BusinessUpdateView,
 )
 from apps.tenancy.alta import correo_de_acceso
 from apps.tenancy.estados import cambiar_estado
-from apps.tenancy.forms import CambiarEstadoForm, RestablecerClavePropietarioForm
+from apps.tenancy.forms import CambiarEstadoForm
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion
 from apps.seguridad.access import describe_lock
-from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_propietario, unlock_owner
+from apps.tenancy.propietario import owner_lock_status, unlock_owner
 from apps.tenancy.tasks import preparar_negocio
 
 
@@ -102,7 +103,7 @@ class NegocioAdmin(SimpleHistoryAdmin):
             ),
             path(
                 "<int:pk>/clave-propietario/",
-                self.admin_site.admin_view(self.clave_propietario_view),
+                OwnerPasswordResetModalView.as_view(admin_site=self.admin_site, model_admin=self),
                 name="tenancy_negocio_clave_propietario",
             ),
             path(
@@ -136,42 +137,6 @@ class NegocioAdmin(SimpleHistoryAdmin):
             "negocio": negocio,
             **extra,
         }
-
-    def clave_propietario_view(self, request, pk):
-        negocio = self.negocio_del_panel(request, pk)
-        if negocio.estado == Negocio.Estado.PREPARANDO or not schema_exists(
-            negocio.schema_name
-        ):
-            messages.error(
-                request, "El negocio todavía no está listo: primero repara su alta."
-            )
-            return redirect("admin:tenancy_negocio_change", negocio.pk)
-        form = RestablecerClavePropietarioForm(
-            request.POST if request.method == "POST" else None
-        )
-        titulo = f"Restablecer la clave del propietario de «{negocio.nombre}»"
-        if request.method == "POST" and form.is_valid():
-            resultado = restablecer_clave_del_propietario(negocio, request.user)
-            if resultado is None:
-                messages.error(
-                    request, "Este negocio no tiene propietario: repara su alta."
-                )
-                return redirect("admin:tenancy_negocio_change", negocio.pk)
-            correo, clave = resultado
-            respuesta = TemplateResponse(
-                request,
-                "admin/tenancy/negocio/clave_propietario.html",
-                self.contexto_del_panel(
-                    request, negocio, titulo, correo=correo, clave=clave
-                ),
-            )
-            respuesta["Cache-Control"] = "no-store"
-            return respuesta
-        return TemplateResponse(
-            request,
-            "admin/tenancy/negocio/clave_propietario.html",
-            self.contexto_del_panel(request, negocio, titulo, form=form),
-        )
 
     def unlock_owner_view(self, request, pk):
         negocio = self.negocio_del_panel(request, pk)

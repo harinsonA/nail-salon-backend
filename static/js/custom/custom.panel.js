@@ -59,3 +59,55 @@ const initializeUserEditModal = (modalID, { onSaved = () => {} } = {}) => {
     });
   });
 };
+
+const initializeOwnerPasswordModal = (modalID) => {
+  $(modalID).on("show.bs.modal", ({ target }) => {
+    const submitBtn = target.querySelector("#owner_password_submit_btn");
+    if (!submitBtn) return;
+    const form = target.querySelector("#owner-password-form-modal");
+    const result = form.querySelector(".owner-password__result");
+    const passwordNode = result.querySelector("[data-owner-password]");
+
+    $(submitBtn).click(async () => {
+      submitBtn.disabled = true;
+      const [response, statusCode] = await submitRequestBSModal(form);
+      if (statusCode !== 200) {
+        submitBtn.disabled = false;
+        return;
+      }
+      form.querySelector(".owner-password__request").classList.add("d-none");
+      form.querySelectorAll("input[type=checkbox]").forEach((input) => {
+        input.disabled = true;
+      });
+      result.querySelector("[data-owner-email]").textContent = response.email;
+      passwordNode.textContent = response.password;
+      result.classList.remove("d-none");
+      submitBtn.remove();
+      const closeBtn = form.querySelector(".owner-password__close");
+      closeBtn.textContent = "Cerrar";
+      closeBtn.classList.replace("btn-secondary", "btn-primary");
+      closeBtn.classList.remove("me-2");
+      closeBtn.focus();
+    });
+
+    $(form).on("click", ".owner-password__copy", async function () {
+      const icon = this.querySelector(".material-symbols-outlined");
+      try {
+        await navigator.clipboard.writeText(passwordNode.textContent);
+        icon.textContent = "check";
+        setTimeout(() => {
+          icon.textContent = "content_copy";
+        }, 1500);
+      } catch {
+        notifyAlert({ message: "No se pudo copiar: selecciona la clave y cópiala a mano." }, 400);
+      }
+    });
+  });
+
+  $(modalID).on("hidden.bs.modal", ({ target }) => {
+    if (target.querySelector("#owner-password-form-modal")) {
+      target.querySelector(".modal-content").innerHTML = "";
+    }
+  });
+};
+

@@ -167,6 +167,14 @@ class BusinessEditTests(TestCase):
         )
         self.assertIn('aria-label="Abrir el negocio en una pestaña nueva"', html)
 
+    def test_owner_password_action_opens_a_modal(self):
+        response = self.browser().get(self.url())
+        url = f"/admin/tenancy/negocio/{self.business.pk}/clave-propietario/"
+        self.assertContains(response, f'class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{url}"')
+        self.assertNotContains(response, f'href="{url}"')
+        self.assertContains(response, 'id="modal"')
+        self.assertContains(response, "initializeOwnerPasswordModal('#modal')")
+
     def test_actions_follow_the_status(self):
         active = self.browser().get(self.url()).context["actions"]
         self.assertEqual(

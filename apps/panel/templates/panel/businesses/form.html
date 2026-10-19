@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block content %}
+{% if business %}{% include 'common/bs_modal.html' %}{% endif %}
 {% with active=sections_with_errors.0|default:'basic' %}
 <form id="business-form" method="post" novalidate>
   {% csrf_token %}
@@ -200,7 +201,13 @@
                 <span class="action-list__label">{{ action.label }}</span>
                 <span class="action-list__description">{{ action.description }}</span>
               </div>
+              {% if action.modal %}
+              <button type="button" class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{{ action.link }}">
+                {{ action.label }}
+              </button>
+              {% else %}
               <a href="{{ action.link }}" class="btn btn-sm btn-outline-primary">{{ action.label }}</a>
+              {% endif %}
             </div>
             {% endfor %}
           </div>
@@ -223,6 +230,8 @@
 <script>
   $(() => {
     initializeFormsets(document);
+    initializeAllBSModals();
+    initializeOwnerPasswordModal('#modal');
     const subdomain = document.getElementById('{{ form.subdominio.id_for_label }}');
     const schema = document.getElementById('{{ form.esquema.id_for_label }}');
     if (!subdomain || !schema) return;

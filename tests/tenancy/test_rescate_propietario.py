@@ -1,4 +1,3 @@
-import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -93,9 +92,11 @@ class RescateDelPropietarioTests(NegocioTestCase):
     def test_restablecer_la_clave_tambien_desbloquea(self):
         self.bloquear_propietario(definitivo=True)
         respuesta = self.panel.post(
-            url_panel("tenancy_negocio_clave_propietario", self.negocio.pk), {"identidad_confirmada": "on"}
+            url_panel("tenancy_negocio_clave_propietario", self.negocio.pk),
+            {"identity_confirmed": "on"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
-        clave = re.search(r"<code[^>]*>([a-z2-9-]{14})</code>", respuesta.content.decode()).group(1)
+        clave = respuesta.json()["password"]
         self.assertFalse(self.estado_en_el_negocio().is_locked)
         with schema_context(self.esquema):
             acceso = AccesoUsuario.objects.get(user=self.propietario)
