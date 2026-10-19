@@ -122,13 +122,47 @@ class ClavesYRepararTests(NegocioTestCase):
         self.assertEqual(respuesta.status_code, 400)
         self.assertEqual(respuesta.json()["message"], "Este negocio no tiene propietario: repara su alta.")
 
+    def test_el_modal_de_reparar_muestra_el_error_y_el_correo(self):
+        Negocio.objects.filter(pk=self.negocio.pk).update(
+            estado=Negocio.Estado.PREPARANDO, error_preparacion="OperationalError: sin espacio en disco"
+        )
+        PersonaCorreo.objects.create(persona=self.negocio.titular, correo="maria@correo.cl", etiqueta="acceso")
+        modal = self.ajax("get", url_panel("tenancy_negocio_reparar", self.negocio.pk))
+        self.assertTemplateUsed(modal, "panel/businesses/business_repair_modal.html")
+        self.assertContains(modal, "La última preparación falló")
+        self.assertContains(modal, "OperationalError: sin espacio en disco")
+        self.assertContains(modal, "maria@correo.cl")
+        self.assertContains(modal, "status-current__badge--fallido")
+        self.assertContains(modal, 'status-current__badge--fallido">Falló</span>')
+        self.assertContains(modal, 'id="business_repair_submit_btn"')
+
+    def test_sin_error_registrado_avisa_que_la_tarea_no_termino(self):
+        Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
+        PersonaCorreo.objects.create(persona=self.negocio.titular, correo="maria@correo.cl", etiqueta="acceso")
+        modal = self.ajax("get", url_panel("tenancy_negocio_reparar", self.negocio.pk))
+        self.assertContains(modal, "La preparación no terminó")
+        self.assertContains(modal, "status-current__badge--preparando")
+        self.assertNotContains(modal, "La última preparación falló")
+
     def test_reparar_desde_el_panel_vuelve_a_encolar_con_el_correo_de_acceso(self):
         Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
         PersonaCorreo.objects.create(persona=self.negocio.titular, correo="personal@correo.cl", es_principal=True)
         PersonaCorreo.objects.create(persona=self.negocio.titular, correo="maria@correo.cl", etiqueta="acceso")
         with mock.patch.object(preparar_negocio, "delay") as encolar:
-            self.panel.post(url_panel("tenancy_negocio_reparar", self.negocio.pk))
+            respuesta = self.ajax("post", url_panel("tenancy_negocio_reparar", self.negocio.pk))
         encolar.assert_called_once_with(self.negocio.pk, "maria@correo.cl", None)
+        self.assertEqual(respuesta.json(), {"message": "La preparación se volvió a encolar.", "email": "maria@correo.cl"})
+        registro = LogEntry.objects.filter(object_id=str(self.negocio.pk), content_type__model="negocio").latest("action_time")
+        self.assertEqual(registro.change_message, "Preparación encolada de nuevo.")
+
+    def test_sin_correo_de_acceso_no_se_repara(self):
+        Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
+        url = url_panel("tenancy_negocio_reparar", self.negocio.pk)
+        self.assertContains(self.ajax("get", url), "El titular no tiene correo")
+        with mock.patch.object(preparar_negocio, "delay") as encolar:
+            respuesta = self.ajax("post", url)
+        self.assertEqual(respuesta.status_code, 400)
+        encolar.assert_not_called()
 
     def test_reparar_por_comando_deja_el_negocio_activo(self):
         Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
@@ -145,9 +179,15 @@ class ClavesYRepararTests(NegocioTestCase):
         for negocio in (self.esquema, "no-existe"):
             with self.subTest(negocio=negocio), self.assertRaises(CommandError):
                 call_command("reparar_negocio", negocio, stdout=StringIO())
-        respuesta = self.panel.post(url_panel("tenancy_negocio_reparar", self.negocio.pk))
+        url = url_panel("tenancy_negocio_reparar", self.negocio.pk)
+        modal = self.ajax("get", url)
+        self.assertContains(modal, "Solo se reparan las altas que quedaron en «preparando».")
+        self.assertNotContains(modal, 'id="business_repair_submit_btn"')
+        with mock.patch.object(preparar_negocio, "delay") as encolar:
+            self.assertEqual(self.ajax("post", url).status_code, 400)
+        encolar.assert_not_called()
         self.assertRedirects(
-            respuesta, url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
+            self.panel.get(url), url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
         )
 
     def test_solo_un_superusuario_restablece_o_repara(self):

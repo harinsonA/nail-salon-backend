@@ -1,7 +1,5 @@
-from django.contrib import admin, messages
-from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404, redirect
-from django.template.response import TemplateResponse
+from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import path
 from django_tenants.utils import get_public_schema_name
 from simple_history.admin import SimpleHistoryAdmin
@@ -10,14 +8,13 @@ from apps.panel.views.businesses.view import (
     BusinessCreateView,
     BusinessListAjaxView,
     BusinessListView,
+    BusinessRepairModalView,
     BusinessStatusModalView,
     OwnerPasswordResetModalView,
     OwnerUnlockModalView,
     BusinessUpdateView,
 )
-from apps.tenancy.alta import correo_de_acceso
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion
-from apps.tenancy.tasks import preparar_negocio
 
 
 class DominioInline(admin.TabularInline):
@@ -111,7 +108,7 @@ class NegocioAdmin(SimpleHistoryAdmin):
             ),
             path(
                 "<int:pk>/reparar/",
-                self.admin_site.admin_view(self.reparar_view),
+                BusinessRepairModalView.as_view(admin_site=self.admin_site, model_admin=self),
                 name="tenancy_negocio_reparar",
             ),
         ]
@@ -120,52 +117,6 @@ class NegocioAdmin(SimpleHistoryAdmin):
     def changelist_view(self, request, extra_context=None):
         return BusinessListView.as_view(admin_site=self.admin_site, model_admin=self)(
             request
-        )
-
-    def negocio_del_panel(self, request, pk):
-        if not request.user.is_superuser:
-            raise PermissionDenied
-        return get_object_or_404(self.get_queryset(request), pk=pk)
-
-    def contexto_del_panel(self, request, negocio, titulo, **extra):
-        return {
-            **self.admin_site.each_context(request),
-            "opts": self.model._meta,
-            "title": titulo,
-            "negocio": negocio,
-            **extra,
-        }
-
-    def reparar_view(self, request, pk):
-        negocio = self.negocio_del_panel(request, pk)
-        if negocio.estado != Negocio.Estado.PREPARANDO:
-            messages.error(
-                request, "Solo se reparan las altas que quedaron en «preparando»."
-            )
-            return redirect("admin:tenancy_negocio_change", negocio.pk)
-        correo = correo_de_acceso(negocio.titular)
-        if request.method == "POST":
-            if correo is None:
-                messages.error(
-                    request,
-                    "El titular no tiene correo: agrégale uno en su ficha antes de reparar.",
-                )
-            else:
-                preparar_negocio.delay(negocio.pk, correo, None)
-                messages.success(
-                    request,
-                    "La preparación se volvió a encolar. Revisa el estado en unos segundos.",
-                )
-            return redirect("admin:tenancy_negocio_change", negocio.pk)
-        return TemplateResponse(
-            request,
-            "admin/tenancy/negocio/reparar.html",
-            self.contexto_del_panel(
-                request,
-                negocio,
-                f"Reparar el alta de «{negocio.nombre}»",
-                correo=correo,
-            ),
         )
 
     def add_view(self, request, form_url="", extra_context=None):
