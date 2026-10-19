@@ -25,6 +25,8 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
   - **Cierre del navegador**: la cookie de sesión no se guarda en disco
 - Aviso en pantalla "¿Sigues ahí?" dos minutos antes, con cuenta regresiva y opción de seguir conectada
 - Respuesta diferenciada ante una sesión vencida: redirección al login en navegación normal, `401` con JSON en peticiones AJAX
+- **Bloqueo por intentos fallidos** en el panel y en cada negocio: aviso cuando queda un intento, 15 minutos de bloqueo al 5.º fallo seguido y bloqueo sin vencimiento al 10.º (valores en `SECURITY_*`). El mensaje dice a quién pedir ayuda según el rol. Desbloquean: el panel (Usuarios y el propietario de cada negocio), el propietario o un encargado desde Equipo, o el comando `desbloquear_usuario`
+- **Sesión única** por cuenta, en el panel y en los negocios: entrar en otro dispositivo cierra la sesión anterior con un aviso. Se apaga con `SECURITY_SINGLE_SESSION=False`
 
 ### 📅 Calendario y Agenda
 
@@ -404,6 +406,11 @@ python manage.py cambiar_estado_negocio mi-barberia moroso --motivo "dos meses s
 
 # Retomar un alta que quedó en «preparando» (se puede repetir)
 python manage.py reparar_negocio mi-barberia
+
+# Desbloquear una cuenta bloqueada por intentos fallidos: un usuario del panel por su
+# nombre de usuario, o una persona de un negocio por su correo con --negocio
+python manage.py desbloquear_usuario admin
+python manage.py desbloquear_usuario ana@correo.cl --negocio mi-barberia
 ```
 
 Los negocios se dan de alta desde el panel (`admin.localhost:8000/admin/` → Negocios → Agregar): el panel muestra una sola vez la clave temporal del propietario y el worker de Celery prepara el negocio en segundo plano. `DOMINIO_BASE` (por defecto `localhost`) define la dirección de cada negocio: `subdominio.DOMINIO_BASE`.
