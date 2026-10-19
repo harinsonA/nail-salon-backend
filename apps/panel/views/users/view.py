@@ -2,7 +2,7 @@ from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.contrib.auth.models import Group, Permission
-from django.db.models import Count, Q, TextChoices, Value
+from django.db.models import Case, Count, F, IntegerField, Q, TextChoices, Value, When
 from django.db.models.functions import Concat, Trim
 from django.http import JsonResponse
 from django.urls import reverse
@@ -29,12 +29,15 @@ from apps.panel.permissions import (
     permission_action_labels,
 )
 from apps.panel.views.base import (
+    PanelAjaxView,
     PanelCreateModalView,
     PanelDeleteModalView,
     PanelListViewAjax,
+    PanelObjectMixin,
     PanelUpdateModalView,
     PanelView,
 )
+from apps.seguridad.access import LockState, lock_status, unlock
 
 """========================================================================="""
 # region ........ Constants
@@ -45,6 +48,13 @@ User = get_user_model()
 NEVER = "—"
 NAME_PART_MAX_LENGTH = 50
 DATETIME_FORMAT = "%d/%m/%Y %H:%M"
+TIME_FORMAT = "%H:%M"
+
+LOCK_FREE = 0
+LOCK_TEMPORARY = 1
+LOCK_PERMANENT = 2
+UNLOCK_REASON = "Desbloqueado desde el panel"
+PASSWORD_UNLOCK_REASON = "Desbloqueado al cambiar la contraseña desde el panel"
 
 
 # endregion
@@ -60,6 +70,30 @@ def format_datetime(value):
 
 def format_last_login(value):
     return format_datetime(value)
+
+
+def locked_users_filter(now):
+    return Q(acceso__bloqueado=True) | Q(acceso__bloqueado_hasta__gt=now)
+
+
+def with_lock_level(queryset, now):
+    return queryset.annotate(
+        lock=Case(
+            When(acceso__bloqueado=True, then=Value(LOCK_PERMANENT)),
+            When(acceso__bloqueado_hasta__gt=now, then=Value(LOCK_TEMPORARY)),
+            default=Value(LOCK_FREE),
+            output_field=IntegerField(),
+        ),
+        lock_until=F("acceso__bloqueado_hasta"),
+    )
+
+
+def format_lock(level, until):
+    if level == LOCK_PERMANENT:
+        return "Bloqueado hasta que alguien lo desbloquee"
+    if level == LOCK_TEMPORARY:
+        return f"Bloqueado hasta las {timezone.localtime(until).strftime(TIME_FORMAT)}"
+    return ""
 
 
 def user_permission_rows(user):
@@ -306,6 +340,8 @@ class UserUpdateForm(UserFormBase):
         if data.get("password"):
             user.set_password(data["password"])
         user.save()
+        if data.get("password"):
+            unlock(user, PASSWORD_UNLOCK_REASON)
         if not self.fields["groups"].disabled:
             user.groups.set(data["groups"])
         if not self.fields["user_permissions"].disabled:
@@ -332,6 +368,7 @@ class UsersFilterForm(forms.Form):
         ALL = "all", "Todos"
         ACTIVE = "active", "Activos"
         INACTIVE = "inactive", "Inactivos"
+        LOCKED = "locked", "Bloqueados"
 
     class RoleChoices(TextChoices):
         ALL = "all", "Todos"
@@ -369,6 +406,8 @@ class UsersFilterForm(forms.Form):
             filters["is_active"] = True
         elif status == self.StatusChoices.INACTIVE:
             filters["is_active"] = False
+        elif status == self.StatusChoices.LOCKED:
+            filters["lock__gt"] = LOCK_FREE
         role = cleaned_data.get("role")
         if role == self.RoleChoices.SUPERUSER:
             filters["is_superuser"] = True
@@ -423,6 +462,8 @@ class UserListAjaxView(PanelListViewAjax):
         "is_staff",
         "is_superuser",
         "is_active",
+        "lock",
+        "lock_until",
         "last_login",
     ]
     ordering_fields = {
@@ -432,13 +473,15 @@ class UserListAjaxView(PanelListViewAjax):
         "3": "is_staff",
         "4": "is_superuser",
         "5": "is_active",
-        "6": "last_login",
+        "6": "lock",
+        "7": "last_login",
     }
 
     def get_queryset(self):
-        return User.objects.annotate(
+        users = User.objects.annotate(
             full_name=Trim(Concat("first_name", Value(" "), "last_name")),
-        ).filter(**self.get_filters())
+        )
+        return with_lock_level(users, timezone.now()).filter(**self.get_filters())
 
     def get_filter_by_search(self):
         search_value = self.request.GET.get("search[value]", "")
@@ -455,6 +498,7 @@ class UserListAjaxView(PanelListViewAjax):
         values = super().get_values(queryset)
         for value in values:
             value["last_login"] = format_last_login(value["last_login"])
+            value["lock_label"] = format_lock(value["lock"], value.pop("lock_until"))
         return values
 
     def add_options_column(self, data):
@@ -473,6 +517,22 @@ class UserListAjaxView(PanelListViewAjax):
                         "bsModal": True,
                         "icon": "edit_document",
                         "className": "bs-xl-modal",
+                    }
+                )
+            if (
+                can_change
+                and item["lock"] != LOCK_FREE
+                and (editor_is_superuser or not item["is_superuser"])
+            ):
+                options.append(
+                    {
+                        "label": "Desbloquear",
+                        "link": reverse(
+                            "admin:auth_user_unlock_modal", args=[item["pk"]]
+                        ),
+                        "bsModal": True,
+                        "icon": "lock_open",
+                        "className": "bs-modal",
                     }
                 )
             if can_delete and item["pk"] != self.request.user.pk:
@@ -496,6 +556,7 @@ class UserListAjaxView(PanelListViewAjax):
             total_users=Count("pk"),
             active_users=Count("pk", filter=Q(is_active=True)),
             staff_users=Count("pk", filter=Q(is_staff=True)),
+            locked_users=Count("pk", filter=locked_users_filter(timezone.now())),
         )
 
 
@@ -566,6 +627,44 @@ class UserUpdateModalView(PanelUpdateModalView):
         if form.cleaned_data.get("password") and user.pk == self.request.user.pk:
             update_session_auth_hash(self.request, user)
         return user
+
+
+class UserUnlockModalView(PanelObjectMixin, PanelAjaxView, TemplateView):
+    template_name = "panel/users/unlock_modal.html"
+
+    def has_model_permission(self, request):
+        user = self.get_object()
+        if user.is_superuser and not request.user.is_superuser:
+            return False
+        return self.model_admin.has_change_permission(request, user)
+
+    def get_context_data(self, **kwargs):
+        user = self.get_object()
+        status = lock_status(user)
+        return {
+            **super().get_context_data(**kwargs),
+            "modal_url": self.request.path,
+            "object": user,
+            "status": status,
+            "is_temporary": status.state is LockState.TEMPORARY,
+            "until": (
+                timezone.localtime(status.until).strftime(TIME_FORMAT)
+                if status.until
+                else ""
+            ),
+            "last_failure": format_datetime(status.last_failure),
+            "last_login": format_last_login(user.last_login),
+        }
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        if not unlock(user, UNLOCK_REASON):
+            return JsonResponse(
+                {"message": f"«{user}» no está bloqueado."},
+                status=HTTP_400_BAD_REQUEST,
+            )
+        self.model_admin.log_change(request, user, UNLOCK_REASON)
+        return JsonResponse({"message": f"«{user}» quedó desbloqueado."})
 
 
 class AccountModalView(UserUpdateModalView):
