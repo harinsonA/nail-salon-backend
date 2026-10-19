@@ -101,7 +101,7 @@ class BusinessesScreenTests(TestCase):
     def test_superuser_options_follow_the_business_state(self):
         active = [option["label"] for option in self.row(self.superuser, "El Corte")["options"]]
         preparing = [option["label"] for option in self.row(self.superuser, "Uñas Lucía")["options"]]
-        self.assertEqual(active, ["Editar", "Restablecer clave del propietario", "Cambiar estado"])
+        self.assertEqual(active, ["Editar", "Restablecer clave del propietario", "Desbloquear propietario", "Cambiar estado"])
         self.assertEqual(preparing, ["Editar", "Reparar alta", "Cambiar estado"])
         links = {option["label"]: option["link"] for option in self.row(self.superuser, "El Corte")["options"]}
         self.assertEqual(links["Cambiar estado"], f"/admin/tenancy/negocio/{self.cut.pk}/estado/")

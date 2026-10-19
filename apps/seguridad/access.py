@@ -51,6 +51,14 @@ def status_of(access, now=None):
     return LockStatus(LockState.FREE, **details)
 
 
+def describe_lock(status):
+    if status.state is LockState.PERMANENT:
+        return "Bloqueado hasta que alguien lo desbloquee"
+    if status.state is LockState.TEMPORARY:
+        return f"Bloqueado hasta las {timezone.localtime(status.until).strftime('%H:%M')}"
+    return "Sin bloqueo"
+
+
 def lock_status(user, now=None):
     return status_of(AccesoUsuario.objects.filter(user=user).first(), now)
 

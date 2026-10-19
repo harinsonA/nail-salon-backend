@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'change' negocio.pk %}">{{ negocio.nombre }}</a>
+  &rsaquo; Desbloquear al propietario
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if status is None %}
+  <p>Este negocio no tiene propietario: repara su alta.</p>
+  <div class="submit-row">
+    <a href="{% url opts|admin_urlname:'change' negocio.pk %}" class="button">Volver al negocio</a>
+  </div>
+  {% elif status.is_locked %}
+  <fieldset class="module aligned">
+    <div class="form-row">
+      <div class="flex-container"><label>Estado:</label><span>{{ description }}</span></div>
+    </div>
+    <div class="form-row">
+      <div class="flex-container"><label>Intentos fallidos:</label><span>{{ status.failures }}</span></div>
+    </div>
+    <div class="form-row">
+      <div class="flex-container"><label>Último intento:</label><span>{{ status.last_failure|date:"d/m/Y H:i" }}</span></div>
+      <div class="help">Al desbloquearlo podrá entrar con su clave actual. Si crees que alguien intentó adivinarla, mejor restablece su clave: eso también lo desbloquea.</div>
+    </div>
+  </fieldset>
+  <form method="post">
+    {% csrf_token %}
+    <div class="submit-row">
+      <input type="submit" class="default" value="Desbloquear al propietario">
+    </div>
+  </form>
+  {% else %}
+  <p>El propietario de «{{ negocio.nombre }}» no está bloqueado.</p>
+  <div class="submit-row">
+    <a href="{% url opts|admin_urlname:'change' negocio.pk %}" class="button">Volver al negocio</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
