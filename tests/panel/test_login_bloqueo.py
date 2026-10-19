@@ -3,14 +3,12 @@ from datetime import timedelta
 from django.contrib.auth import authenticate, get_user_model
 from django.db import connection
 from django.test import Client, TestCase
-from django.urls import reverse
 from django.utils import timezone
 from django_tenants.utils import get_public_schema_name
 
 from apps.seguridad.access import LockState, lock_status
 from apps.seguridad.models import AccesoUsuario
 from apps.tenancy.models import Dominio, Negocio
-from tests.base import NegocioTestCase
 
 User = get_user_model()
 
@@ -109,17 +107,3 @@ class BloqueoEnElLoginDelPanelTests(TestCase):
             self.assertIsNone(authenticate(None, username="admin", password=INCORRECTA))
         self.assertIsNone(authenticate(None, username="admin", password=CLAVE))
         self.assertEqual(lock_status(self.admin).state, LockState.TEMPORARY)
-
-
-class LoginDelNegocioSinBloqueoTodaviaTests(NegocioTestCase):
-    esquema = "sinbloqueo"
-    dominio = "sinbloqueo.localhost"
-
-    def test_los_fallos_en_un_negocio_no_se_cuentan_aun(self):
-        User.objects.create_user(username="maria", email="maria@correo.cl", password=CLAVE)
-        navegador = Client(HTTP_HOST=self.dominio)
-        for _ in range(6):
-            navegador.post(reverse("login"), {"username": "maria@correo.cl", "password": INCORRECTA})
-        self.assertFalse(AccesoUsuario.objects.exists())
-        respuesta = navegador.post(reverse("login"), {"username": "maria@correo.cl", "password": CLAVE})
-        self.assertRedirects(respuesta, reverse("calendar"), fetch_redirect_response=False)
