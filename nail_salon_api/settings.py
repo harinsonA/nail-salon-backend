@@ -75,6 +75,7 @@ SHARED_APPS = [
     "django_filters",
     "bootstrap_modal_forms",
     "simple_history",
+    "apps.seguridad",
 ]
 
 TENANT_APPS = [
@@ -92,6 +93,7 @@ TENANT_APPS = [
     "apps.settings",
     "apps.profiles",
     "apps.tareas",
+    "apps.seguridad",
 ]
 
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
