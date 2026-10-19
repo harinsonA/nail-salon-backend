@@ -12,15 +12,15 @@ const renderIcon = (icon) => {
   if (!icon) return "";
   const src = iconImageMap[icon];
   return src
-    ? `<img src="${src}" alt="" width="18" height="18">`
-    : `<span class="material-symbols-outlined">${icon}</span>`;
+    ? `<img src="${src}" alt="" class="icon--menu" width="18" height="18">`
+    : `<span class="material-symbols-outlined icon--menu" aria-hidden="true">${icon}</span>`;
 };
 
 const optionsColumn = (options = []) => {
   if (!options.length) return "";
   return `<div class="btn-group dropstart">
       <a role="button" class="dropdown-toggle dropdown-toggle--not-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <img src="/static/images/tables/options.svg" alt="Opciones" width="24" height="24">
+        <img src="/static/images/tables/options.svg" alt="Opciones" width="24" height="24" class="icon--action">
       </a>
       <ul class="dropdown-menu">
         ${options
@@ -46,7 +46,7 @@ const optionsColumn = (options = []) => {
 const whatsappColumn = (modalUrl, phone = "") =>
   modalUrl
     ? `<a role="button" class="bs-modal" data-form-url="${modalUrl}" title="WhatsApp: ${phone}" aria-label="Enviar WhatsApp a ${phone}">
-        <img src="/static/images/common/whatsapp.svg" alt="" width="22" height="22">
+        <img src="/static/images/common/whatsapp.svg" alt="" width="20" height="20" class="icon--cell">
       </a>`
     : "—";
 
@@ -211,7 +211,7 @@ const buildExportButtonNode = ({
   $(`<a id="${id}" role="button" data-url="${url}"
         class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">
         ${label}
-        <img src="/static/images/common/download.svg" alt="Descargar" width="16" height="16">
+        <img src="/static/images/common/download.svg" alt="Descargar" width="16" height="16" class="icon--small">
       </a>`)[0];
 
 // Arma los parámetros que necesita la URL de descarga (lee el DOM en el momento del click)

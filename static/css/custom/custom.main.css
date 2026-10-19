@@ -439,7 +439,7 @@
 }
 
 .accordion-custom .services-list-added .service-added-item .service-added-info .service-added-datetime .service-added-icon {
-	font-size: 1rem;
+	font-size: var(--icon-size-small);
 	color: var(--accordion-primary);
 }
 
@@ -539,7 +539,7 @@
 }
 
 .view-title .btn .material-symbols-outlined {
-	font-size: 1.15rem;
+	font-size: var(--icon-size-small);
 }
 
 /* ==========================================================================
@@ -716,7 +716,7 @@ input.monthpicker {
 }
 
 .profile-identity-meta .material-symbols-outlined {
-	font-size: 16px;
+	font-size: var(--icon-size-small);
 	flex: 0 0 auto;
 }
 
@@ -762,7 +762,7 @@ input.monthpicker {
 }
 
 .profile-note .material-symbols-outlined {
-	font-size: 18px;
+	font-size: var(--icon-size-inline);
 	flex: 0 0 auto;
 	margin-top: 1px;
 }
@@ -1034,7 +1034,7 @@ input.monthpicker {
 }
 
 .import-fields__req .material-symbols-outlined {
-	font-size: 1rem;
+	font-size: var(--icon-size-small);
 }
 /**** End Import Fields Component ****/
 

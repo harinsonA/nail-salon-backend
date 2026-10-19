@@ -624,6 +624,23 @@ CELERY_TASK_ALWAYS_EAGER=False  # True corre las tareas dentro del request, sin 
 - Mensajes de commit descriptivos en español
 - Actualizar documentación cuando sea necesario
 
+### Tamaños de íconos
+
+Cada contexto tiene un tamaño fijo, definido como variable en `static/css/custom/custom.icons.css`. Se aplica con la clase `icon--<contexto>`, que sirve tanto para `<img>` como para `material-symbols-outlined`. En los `<img>` también se ponen `width` y `height` con el mismo tamaño, para reservar el espacio. Los componentes que dimensionan sus íconos por CSS (pestañas laterales, datos de solo lectura, notas, formsets) usan las mismas variables.
+
+| Contexto | Clase | Tamaño |
+|---|---|---|
+| Dentro de un botón, con o sin texto (Agregar, Importar, Exportar, Guardar), y junto a texto pequeño (metadatos, ayuda al lado del título de una tarjeta) | `icon--small` | 16px |
+| Menús: opciones de una tabla, menú de usuario, pestañas laterales | `icon--menu` | 18px |
+| Junto a texto normal: enlace «Volver», datos de solo lectura, notas | `icon--inline` | 18px |
+| Dentro o al lado de un campo de formulario: mostrar contraseña, ícono de un `input-group`, aviso junto a un botón | `icon--field` | 20px |
+| Estado en una celda de tabla (✓, ✗, candado, WhatsApp) o ícono de una fila de lista | `icon--cell` | 20px |
+| Botón de solo ícono de las tablas (los tres puntos de opciones) | `icon--action` | 24px |
+| Título de un modal o de una sección | `icon--title` | 24px |
+| Ícono principal de un aviso destacado dentro de un modal | `icon--notice` | 24px |
+
+Los íconos de las tablas y menús son SVG propios en `static/images/common/`, en el color de texto de la paleta (`#8b6655`). Un ícono que comunica un estado de alerta usa el color de peligro (`#9b4a4a`). Un ícono de estado sin texto al lado lleva el texto en `alt` y `title`. La única excepción son los indicadores de totales del calendario (`custom.calendar.css`), que se dibujan más grandes a propósito.
+
 ## 📄 Licencia
 
 Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.

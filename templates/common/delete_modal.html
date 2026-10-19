@@ -3,7 +3,7 @@
   {% csrf_token %}
   <div class="modal-header bg-danger-subtle bg-gradient">
     <h5 class="modal-title  d-inline-flex align-items-center">
-      <img src="{% static 'images/common/warning-text-danger.svg' %}" alt="Advertencia" width="24" height="24" class="me-2">
+      <img src="{% static 'images/common/warning-text-danger.svg' %}" alt="Advertencia" width="24" height="24" class="icon--title me-2">
       <span class="pb-1 text-color-destructive">
         {{ name_register }}
       </span>
@@ -20,7 +20,7 @@
       {% for information in aditional_information %}
       <p class="delete-information-detail">
         {% if information.icon %}
-        <span class="material-symbols-outlined me-2">
+        <span class="material-symbols-outlined icon--small me-2">
           {{ information.icon }}
         </span>
         {% endif %}
@@ -31,7 +31,7 @@
     {% if blocked_reason %}
     <div class="delete-warning-container">
       <div class="delete-warning-header">
-        <span class="material-symbols-outlined text-destructive me-2" aria-hidden="true">lock</span>
+        <span class="material-symbols-outlined icon--notice text-destructive me-2" aria-hidden="true">lock</span>
       </div>
       <div>
         <p class="m-0 text-destructive">
@@ -45,7 +45,7 @@
     {% else %}
     <div class="delete-warning-container">
       <div class="delete-warning-header">
-        <img src="{% static 'images/common/warning-text-danger.svg' %}" alt="Advertencia" width="24" height="24" class="me-2">
+        <img src="{% static 'images/common/warning-text-danger.svg' %}" alt="Advertencia" width="24" height="24" class="icon--notice me-2">
       </div>
       <div>
         <p class="m-0 text-destructive">

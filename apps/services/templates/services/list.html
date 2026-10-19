@@ -26,12 +26,12 @@ Lista de servicios
     <a id="service-create-btn" data-form-url="{%  url 'service_create_modal' %}"
       class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
       Servicio
-      <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16">
+      <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16" class="icon--small">
     </a>
     <a href="{% url 'service_import' %}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
       role="button">
       Importar
-      <img src="{% static 'images/common/upload.svg' %}" alt="" width="16" height="16">
+      <img src="{% static 'images/common/upload.svg' %}" alt="" width="16" height="16" class="icon--small">
     </a>
   </section>
   <section class="row justify-content-center">
@@ -97,8 +97,8 @@ Lista de servicios
       $('#categoriesHintModal').modal('show');
     }
     const statusColumn = (status) => status
-      ? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Activo" width="20" height="20">`
-      : `<img src="{% static 'images/common/cancel.svg' %}" alt="Inactivo" width="20" height="20">`;
+      ? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Activo" width="20" height="20" class="icon--cell">`
+      : `<img src="{% static 'images/common/cancel.svg' %}" alt="Inactivo" width="20" height="20" class="icon--cell">`;
 
     const filterData = {
       status: $('#{{ filter_form.status.id_for_label }}').val(),

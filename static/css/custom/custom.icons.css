@@ -68,3 +68,62 @@ Material Symbols son fuentes variables que permiten ajustar:
         'GRAD' 0,
         'opsz' 24;
 }
+
+:root {
+    --icon-size-small: 16px;
+    --icon-size-menu: 18px;
+    --icon-size-inline: 18px;
+    --icon-size-field: 20px;
+    --icon-size-cell: 20px;
+    --icon-size-action: 24px;
+    --icon-size-title: 24px;
+    --icon-size-notice: 24px;
+}
+
+.icon--small {
+    width: var(--icon-size-small);
+    height: var(--icon-size-small);
+    font-size: var(--icon-size-small);
+}
+
+.icon--menu {
+    width: var(--icon-size-menu);
+    height: var(--icon-size-menu);
+    font-size: var(--icon-size-menu);
+}
+
+.icon--inline {
+    width: var(--icon-size-inline);
+    height: var(--icon-size-inline);
+    font-size: var(--icon-size-inline);
+}
+
+.icon--field {
+    width: var(--icon-size-field);
+    height: var(--icon-size-field);
+    font-size: var(--icon-size-field);
+}
+
+.icon--cell {
+    width: var(--icon-size-cell);
+    height: var(--icon-size-cell);
+    font-size: var(--icon-size-cell);
+}
+
+.icon--action {
+    width: var(--icon-size-action);
+    height: var(--icon-size-action);
+    font-size: var(--icon-size-action);
+}
+
+.icon--title {
+    width: var(--icon-size-title);
+    height: var(--icon-size-title);
+    font-size: var(--icon-size-title);
+}
+
+.icon--notice {
+    width: var(--icon-size-notice);
+    height: var(--icon-size-notice);
+    font-size: var(--icon-size-notice);
+}
