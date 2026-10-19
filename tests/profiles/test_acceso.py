@@ -54,6 +54,22 @@ class AccesoConCorreoTests(NegocioTestCase):
         self.assertEqual(ajax.json()["redirect"], reverse("cambiar_clave"))
         self.assertEqual(navegador.get(reverse("cambiar_clave")).status_code, 200)
 
+    def test_crear_la_clave_permite_ver_lo_que_se_escribe(self):
+        self.crear_usuario(debe_cambiar_clave=True)
+        navegador, _ = self.entrar(CORREO)
+        html = navegador.get(reverse("cambiar_clave")).content.decode()
+        self.assertEqual(html.count('class="gentle-toggle"'), 2)
+        for campo in ("id_new_password1", "id_new_password2"):
+            with self.subTest(campo=campo):
+                self.assertRegex(html, rf'id="{campo}"[^>]*>\s*<label[^>]*>[^<]*</label>\s*<button type="button" class="gentle-toggle"')
+        self.assertEqual(html.count("document.querySelectorAll('.gentle-toggle')"), 1)
+
+    def test_el_login_mantiene_un_solo_manejador_del_ojito(self):
+        html = Client(HTTP_HOST=self.dominio).get(reverse("login")).content.decode()
+        self.assertEqual(html.count('class="gentle-toggle"'), 1)
+        self.assertEqual(html.count("document.querySelectorAll('.gentle-toggle')"), 1)
+        self.assertNotIn("passwordToggle", html)
+
     def test_cambiar_la_clave_libera_la_app(self):
         usuario = self.crear_usuario(debe_cambiar_clave=True)
         navegador, _ = self.entrar(CORREO)

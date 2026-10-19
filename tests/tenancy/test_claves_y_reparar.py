@@ -1,8 +1,8 @@
-import re
 from io import StringIO
 from unittest import mock
 
 from django.conf import settings
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -42,13 +42,46 @@ class ClavesYRepararTests(NegocioTestCase):
         self.panel = Client(HTTP_HOST="admin.localhost")
         self.panel.force_login(self.admin)
 
+    def ajax(self, metodo, url, datos=None):
+        return getattr(self.panel, metodo)(url, datos or {}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+    def test_el_modal_pide_confirmar_la_identidad(self):
+        url = url_panel("tenancy_negocio_clave_propietario", self.negocio.pk)
+        modal = self.ajax("get", url)
+        self.assertTemplateUsed(modal, "panel/businesses/owner_password_modal.html")
+        self.assertContains(modal, 'name="identity_confirmed"')
+        self.assertContains(modal, 'id="owner_password_submit_btn"')
+        self.assertContains(modal, f'action="{url}"')
+        self.assertNotContains(modal, "Dirección del negocio")
+        Dominio.objects.create(domain="claves.localhost", tenant=self.negocio, is_primary=True)
+        modal = self.ajax("get", url)
+        self.assertContains(modal, "Dirección del negocio")
+        self.assertContains(
+            modal,
+            'href="http://claves.localhost/" class="icon-link-button" target="_blank" rel="noopener noreferrer"',
+        )
+        self.assertRedirects(
+            self.panel.get(url), url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
+        )
+
     def test_restablecer_la_clave_del_propietario_exige_confirmar_identidad(self):
         url = url_panel("tenancy_negocio_clave_propietario", self.negocio.pk)
-        sin_confirmar = self.panel.post(url, {})
-        self.assertIn("identidad_confirmada", sin_confirmar.context["form"].errors)
-        respuesta = self.panel.post(url, {"identidad_confirmada": "on"})
+        sin_confirmar = self.ajax("post", url)
+        self.assertEqual(sin_confirmar.status_code, 400)
+        self.assertEqual(
+            sin_confirmar.json()["errors"],
+            [{"id_element": "id_identity_confirmed", "error": "Confirma la identidad del titular antes de generar la clave."}],
+        )
+        with schema_context(self.esquema):
+            self.assertTrue(User.objects.get(pk=self.propietario.pk).check_password("vieja"))
+        respuesta = self.ajax("post", url, {"identity_confirmed": "on"})
         self.assertIn("no-store", respuesta["Cache-Control"])
-        clave = re.search(r"<code[^>]*>([a-z2-9-]{14})</code>", respuesta.content.decode()).group(1)
+        datos = respuesta.json()
+        self.assertEqual(datos["email"], "maria@correo.cl")
+        clave = datos["password"]
+        self.assertRegex(clave, r"^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$")
+        registro = LogEntry.objects.filter(object_id=str(self.negocio.pk), content_type__model="negocio").latest("action_time")
+        self.assertEqual(registro.change_message, "Clave del propietario restablecida.")
         with schema_context(self.esquema):
             self.propietario.refresh_from_db()
             self.assertTrue(self.propietario.check_password(clave))
@@ -70,12 +103,24 @@ class ClavesYRepararTests(NegocioTestCase):
 
     def test_no_se_restablece_la_clave_de_un_alta_sin_terminar(self):
         Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
-        respuesta = self.panel.post(
-            url_panel("tenancy_negocio_clave_propietario", self.negocio.pk), {"identidad_confirmada": "on"}
+        url = url_panel("tenancy_negocio_clave_propietario", self.negocio.pk)
+        modal = self.ajax("get", url)
+        self.assertContains(modal, "El negocio todavía no está listo: primero repara su alta.")
+        self.assertNotContains(modal, 'id="owner_password_submit_btn"')
+        respuesta = self.ajax("post", url, {"identity_confirmed": "on"})
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertEqual(respuesta.json()["message"], "El negocio todavía no está listo: primero repara su alta.")
+        with schema_context(self.esquema):
+            self.assertTrue(User.objects.get(pk=self.propietario.pk).check_password("vieja"))
+
+    def test_sin_propietario_no_genera_clave(self):
+        with schema_context(self.esquema):
+            Perfil.objects.filter(user=self.propietario).update(rol=Perfil.Rol.ENCARGADO)
+        respuesta = self.ajax(
+            "post", url_panel("tenancy_negocio_clave_propietario", self.negocio.pk), {"identity_confirmed": "on"}
         )
-        self.assertRedirects(
-            respuesta, url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
-        )
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertEqual(respuesta.json()["message"], "Este negocio no tiene propietario: repara su alta.")
 
     def test_reparar_desde_el_panel_vuelve_a_encolar_con_el_correo_de_acceso(self):
         Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
@@ -113,3 +158,11 @@ class ClavesYRepararTests(NegocioTestCase):
         for nombre in ("tenancy_negocio_clave_propietario", "tenancy_negocio_reparar"):
             with self.subTest(nombre=nombre):
                 self.assertEqual(navegador.get(url_panel(nombre, self.negocio.pk)).status_code, 403)
+        respuesta = navegador.post(
+            url_panel("tenancy_negocio_clave_propietario", self.negocio.pk),
+            {"identity_confirmed": "on"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(respuesta.status_code, 403)
+        with schema_context(self.esquema):
+            self.assertTrue(User.objects.get(pk=self.propietario.pk).check_password("vieja"))

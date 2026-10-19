@@ -40,8 +40,8 @@
           <div class="field-container">
             <input type="password" name="password" id="id_password" placeholder=" " required>
             <label for="id_password">Contraseña</label>
-            <button type="button" class="gentle-toggle" id="passwordToggle"
-              aria-label="Mostrar u ocultar contraseña">
+            <button type="button" class="gentle-toggle"
+              aria-label="Mostrar u ocultar contraseña" aria-pressed="false">
               <img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="icon--field eye-open">
               <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="20" height="20" class="icon--field eye-closed">
             </button>
@@ -55,19 +55,4 @@
           <div class="button-glow"></div>
         </button>
       </form>
-{% endblock %}
-
-{% block scripts %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const toggle = document.getElementById('passwordToggle');
-      const passwordInput = document.getElementById('id_password');
-
-      toggle.addEventListener('click', function () {
-        const type = passwordInput.type === 'password' ? 'text' : 'password';
-        passwordInput.type = type;
-        toggle.classList.toggle('toggle-active', type === 'text');
-      });
-    });
-  </script>
 {% endblock %}

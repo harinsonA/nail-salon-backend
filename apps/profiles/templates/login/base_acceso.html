@@ -518,6 +518,16 @@
           container.style.transform = 'translateY(0)';
         });
       });
+
+      document.querySelectorAll('.gentle-toggle').forEach(function (toggle) {
+        const input = toggle.closest('.field-container').querySelector('input');
+        toggle.addEventListener('click', function () {
+          const show = input.type === 'password';
+          input.type = show ? 'text' : 'password';
+          toggle.classList.toggle('toggle-active', show);
+          toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+        });
+      });
     });
   </script>
   {% block scripts %}{% endblock %}
