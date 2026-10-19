@@ -48,6 +48,7 @@ SOLO_ADMINISTRACION = {
     "equipo_crear",
     "equipo_activar",
     "equipo_restablecer_clave",
+    "equipo_desbloquear",
 }
 
 PARA_TODO_EL_EQUIPO = {
