@@ -4,6 +4,7 @@ from django.utils import timezone
 from apps.seguridad.access import LockState
 
 LOCK_STATUS_ATTRIBUTE = "lock_status"
+LOCKED_USER_ATTRIBUTE = "lock_status_user"
 
 
 def locked_message(status, unlock_hint):
@@ -27,10 +28,14 @@ def last_attempt_warning(status):
 class LockAwareAuthenticationMixin:
     unlock_hint = ""
 
+    def get_unlock_hint(self, user):
+        return self.unlock_hint
+
     def get_invalid_login_error(self):
         status = getattr(self.request, LOCK_STATUS_ATTRIBUTE, None)
         if status is not None and status.is_locked:
-            return ValidationError(locked_message(status, self.unlock_hint), code="locked")
+            hint = self.get_unlock_hint(getattr(self.request, LOCKED_USER_ATTRIBUTE, None))
+            return ValidationError(locked_message(status, hint), code="locked")
         message = str(self.error_messages["invalid_login"])
         warning = last_attempt_warning(status) if status is not None else ""
         return ValidationError(f"{message} {warning}".strip(), code="invalid_login")
