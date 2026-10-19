@@ -12,8 +12,12 @@ Negocio creado
     <span class="material-symbols-outlined" aria-hidden="true">language</span>
     <div>
       <span class="readonly-info__label">Dirección</span>
-      <span class="readonly-info__value">
-        <a href="{{ business_url }}" target="_blank" rel="noopener noreferrer">{{ business_url }}</a>
+      <span class="readonly-info__value d-inline-flex align-items-center gap-1">
+        {{ business_url }}
+        <a href="{{ business_url }}" class="icon-link-button" target="_blank" rel="noopener noreferrer"
+          title="Abrir el negocio en una pestaña nueva" aria-label="Abrir el negocio en una pestaña nueva">
+          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+        </a>
       </span>
     </div>
   </div>
@@ -21,14 +25,24 @@ Negocio creado
     <span class="material-symbols-outlined" aria-hidden="true">mail</span>
     <div>
       <span class="readonly-info__label">Correo del propietario</span>
-      <span class="readonly-info__value">{{ email }}</span>
+      <span class="readonly-info__value d-inline-flex align-items-center gap-1">
+        <span data-copy-value>{{ email }}</span>
+        <button type="button" class="icon-link-button copy-button" title="Copiar el correo" aria-label="Copiar el correo">
+          <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+        </button>
+      </span>
     </div>
   </div>
   <div class="readonly-info__item">
     <span class="material-symbols-outlined" aria-hidden="true">key</span>
     <div>
       <span class="readonly-info__label">Clave temporal</span>
-      <code class="temporary-password">{{ password }}</code>
+      <span class="d-inline-flex align-items-center gap-1">
+        <code class="temporary-password" data-copy-value>{{ password }}</code>
+        <button type="button" class="icon-link-button copy-button" title="Copiar la clave" aria-label="Copiar la clave">
+          <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+        </button>
+      </span>
     </div>
   </div>
 </div>

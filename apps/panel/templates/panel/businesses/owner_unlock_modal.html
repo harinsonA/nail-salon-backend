@@ -1,0 +1,82 @@
+<form id="owner-unlock-form-modal" action="{{ modal_url }}" method="post" data-action-modal>
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">lock_open</span>
+      <span class="pb-1">Desbloquear propietario</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    {% include 'panel/businesses/action_modal_business.html' %}
+
+    {% if blocked_reason %}
+    <div class="delete-warning-container mb-0">
+      <div class="delete-warning-header">
+        <span class="material-symbols-outlined icon--notice text-destructive me-2" aria-hidden="true">lock</span>
+      </div>
+      <div>
+        <p class="m-0 text-destructive">No se puede desbloquear.</p>
+        <p class="m-0 text-muted-foreground">{{ blocked_reason }}</p>
+      </div>
+    </div>
+    {% elif not status.is_locked %}
+    {% include 'panel/businesses/action_modal_success.html' with title='El propietario no está bloqueado' text='Puede entrar con su clave actual: no hay nada que desbloquear.' %}
+    {% else %}
+    <div class="action-modal__request">
+      <div class="lock-status">
+        <span class="material-symbols-outlined icon--notice" aria-hidden="true">lock</span>
+        <div>
+          <span class="lock-status__title">{{ lock_description }}</span>
+          <span class="lock-status__text">El propietario no puede entrar a su negocio por intentos fallidos.</span>
+        </div>
+      </div>
+      <div class="readonly-info">
+        <div class="readonly-info__item">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <div>
+            <span class="readonly-info__label">Intentos fallidos</span>
+            <span class="readonly-info__value">{{ status.failures }}</span>
+          </div>
+        </div>
+        <div class="readonly-info__item">
+          <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+          <div>
+            <span class="readonly-info__label">Último intento</span>
+            <span class="readonly-info__value">{{ status.last_failure|date:"d/m/Y H:i"|default:"—" }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="profile-note mt-3 mb-0">
+        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+        <span>Al desbloquearlo podrá entrar con su clave actual. Si crees que alguien intentó adivinarla, mejor restablece su clave: eso también lo desbloquea.</span>
+      </div>
+    </div>
+
+    <div class="action-modal__result d-none" aria-live="polite">
+      {% include 'panel/businesses/action_modal_success.html' with title='Propietario desbloqueado' text='Ya puede entrar a su negocio con su clave actual.' %}
+      <div class="readonly-info">
+        <div class="readonly-info__item">
+          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+          <div>
+            <span class="readonly-info__label">Correo del propietario</span>
+            <span class="readonly-info__value" data-result="email"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-secondary bg-gradient me-2 action-modal__close" data-bs-dismiss="modal">
+      {% if blocked_reason or not status.is_locked %}Cerrar{% else %}Cancelar{% endif %}
+    </button>
+    {% if not blocked_reason and status.is_locked %}
+    <button id="owner_unlock_submit_btn" type="button"
+      class="btn btn-sm btn-primary bg-gradient d-inline-flex align-items-center gap-1 action-modal__submit">
+      <span class="material-symbols-outlined icon--small" aria-hidden="true">lock_open</span>
+      Desbloquear propietario
+    </button>
+    {% endif %}
+  </div>
+</form>

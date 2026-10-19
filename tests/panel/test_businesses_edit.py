@@ -173,7 +173,9 @@ class BusinessEditTests(TestCase):
         self.assertContains(response, f'class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{url}"')
         self.assertNotContains(response, f'href="{url}"')
         self.assertContains(response, 'id="modal"')
-        self.assertContains(response, "initializeOwnerPasswordModal('#modal')")
+        self.assertContains(response, "initializeBusinessActionModal('#modal')")
+        unlock = f"/admin/tenancy/negocio/{self.business.pk}/desbloquear-propietario/"
+        self.assertContains(response, f'class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{unlock}"')
 
     def test_actions_follow_the_status(self):
         active = self.browser().get(self.url()).context["actions"]

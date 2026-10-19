@@ -101,15 +101,16 @@ class BusinessesScreenTests(TestCase):
     def test_superuser_options_follow_the_business_state(self):
         active = [option["label"] for option in self.row(self.superuser, "El Corte")["options"]]
         preparing = [option["label"] for option in self.row(self.superuser, "Uñas Lucía")["options"]]
-        self.assertEqual(active, ["Editar", "Desbloquear propietario", "Cambiar estado"])
+        self.assertEqual(active, ["Editar", "Cambiar estado"])
         self.assertEqual(preparing, ["Editar", "Reparar alta", "Cambiar estado"])
         links = {option["label"]: option["link"] for option in self.row(self.superuser, "El Corte")["options"]}
         self.assertEqual(links["Cambiar estado"], f"/admin/tenancy/negocio/{self.cut.pk}/estado/")
 
-    def test_owner_password_reset_is_only_in_the_edit_page(self):
+    def test_owner_modal_actions_are_only_in_the_edit_page(self):
         links = [option["link"] for option in self.row(self.superuser, "El Corte")["options"]]
         self.assertNotIn(f"/admin/tenancy/negocio/{self.cut.pk}/clave-propietario/", links)
-        self.assertNotContains(self.browser(self.superuser).get(LIST_URL), "initializeOwnerPasswordModal")
+        self.assertNotIn(f"/admin/tenancy/negocio/{self.cut.pk}/desbloquear-propietario/", links)
+        self.assertNotContains(self.browser(self.superuser).get(LIST_URL), "initializeBusinessActionModal")
 
     def test_there_is_no_delete_option(self):
         for row in self.fetch(self.superuser).json()["data"]:

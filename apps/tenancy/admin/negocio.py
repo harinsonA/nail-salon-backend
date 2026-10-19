@@ -3,7 +3,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path
-from django_tenants.utils import get_public_schema_name, schema_exists
+from django_tenants.utils import get_public_schema_name
 from simple_history.admin import SimpleHistoryAdmin
 
 from apps.panel.views.businesses.view import (
@@ -11,14 +11,13 @@ from apps.panel.views.businesses.view import (
     BusinessListAjaxView,
     BusinessListView,
     OwnerPasswordResetModalView,
+    OwnerUnlockModalView,
     BusinessUpdateView,
 )
 from apps.tenancy.alta import correo_de_acceso
 from apps.tenancy.estados import cambiar_estado
 from apps.tenancy.forms import CambiarEstadoForm
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion
-from apps.seguridad.access import describe_lock
-from apps.tenancy.propietario import owner_lock_status, unlock_owner
 from apps.tenancy.tasks import preparar_negocio
 
 
@@ -108,7 +107,7 @@ class NegocioAdmin(SimpleHistoryAdmin):
             ),
             path(
                 "<int:pk>/desbloquear-propietario/",
-                self.admin_site.admin_view(self.unlock_owner_view),
+                OwnerUnlockModalView.as_view(admin_site=self.admin_site, model_admin=self),
                 name="tenancy_negocio_desbloquear_propietario",
             ),
             path(
@@ -137,42 +136,6 @@ class NegocioAdmin(SimpleHistoryAdmin):
             "negocio": negocio,
             **extra,
         }
-
-    def unlock_owner_view(self, request, pk):
-        negocio = self.negocio_del_panel(request, pk)
-        if negocio.estado == Negocio.Estado.PREPARANDO or not schema_exists(
-            negocio.schema_name
-        ):
-            messages.error(
-                request, "El negocio todavía no está listo: primero repara su alta."
-            )
-            return redirect("admin:tenancy_negocio_change", negocio.pk)
-        if request.method == "POST":
-            result = unlock_owner(negocio, request.user)
-            if result is None:
-                messages.error(
-                    request, "Este negocio no tiene propietario: repara su alta."
-                )
-            elif result[1]:
-                messages.success(
-                    request,
-                    f"El propietario ({result[0]}) quedó desbloqueado: ya puede entrar con su clave actual.",
-                )
-            else:
-                messages.info(request, "El propietario no estaba bloqueado: no hubo cambios.")
-            return redirect("admin:tenancy_negocio_change", negocio.pk)
-        status = owner_lock_status(negocio)
-        return TemplateResponse(
-            request,
-            "admin/tenancy/negocio/desbloquear_propietario.html",
-            self.contexto_del_panel(
-                request,
-                negocio,
-                f"Desbloquear al propietario de «{negocio.nombre}»",
-                status=status,
-                description=describe_lock(status) if status else "",
-            ),
-        )
 
     def reparar_view(self, request, pk):
         negocio = self.negocio_del_panel(request, pk)

@@ -197,6 +197,13 @@ class PanelYAltaTests(TestCase):
         self.assertIn("no-store", respuesta["Cache-Control"])
         clave = respuesta.context["password"]
         self.assertContains(respuesta, clave)
+        self.assertContains(respuesta, f'<code class="temporary-password" data-copy-value>{clave}</code>')
+        self.assertContains(respuesta, '<span data-copy-value>carlos@elcorte.cl</span>')
+        self.assertContains(respuesta, 'class="icon-link-button copy-button"', count=2)
+        self.assertContains(
+            respuesta,
+            'href="http://el-corte.localhost/" class="icon-link-button" target="_blank" rel="noopener noreferrer"',
+        )
         negocio = Negocio.objects.get(schema_name="corte_central")
         self.assertEqual(negocio.estado, Negocio.Estado.ACTIVO)
         self.assertIsNone(negocio.error_preparacion)

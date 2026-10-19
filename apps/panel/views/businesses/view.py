@@ -41,7 +41,7 @@ from apps.panel.views.base import PanelAjaxView, PanelListViewAjax, PanelView, R
 from apps.seguridad.access import describe_lock
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
-from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_propietario
+from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_propietario, unlock_owner
 
 """========================================================================="""
 # region ........ Constants
@@ -50,6 +50,7 @@ from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_pr
 EMPTY = "—"
 NOT_READY_MESSAGE = "El negocio todavía no está listo: primero repara su alta."
 NO_OWNER_MESSAGE = "Este negocio no tiene propietario: repara su alta."
+NOT_LOCKED_MESSAGE = "El propietario no estaba bloqueado: no hubo cambios."
 ALL = "all"
 DEFAULT_TIME_ZONE = "America/Santiago"
 TIME_ZONES = [
@@ -103,6 +104,7 @@ def business_actions(pk, status):
             {
                 "label": "Desbloquear propietario",
                 "link": reverse("admin:tenancy_negocio_desbloquear_propietario", args=[pk]),
+                "modal": True,
                 "icon": "lock_open",
                 "description": "Quita el bloqueo por intentos fallidos sin cambiarle la clave.",
             },
@@ -168,6 +170,46 @@ class BusinessFormMixin(RelatedFormsMixin):
         return self.form_invalid(form)
 
 
+class BusinessActionModalMixin(PanelAjaxView):
+    def has_model_permission(self, request):
+        return request.user.is_superuser and self.model_admin.has_change_permission(request, self.get_object())
+
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            business = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
+            if business is None:
+                raise Http404
+            self._object = business
+        return self._object
+
+    def not_ready_reason(self):
+        business = self.get_object()
+        if business.estado == Negocio.Estado.PREPARANDO or not schema_exists(business.schema_name):
+            return NOT_READY_MESSAGE
+        return ""
+
+    def business_url(self):
+        domain = self.get_object().domains.filter(is_primary=True).first()
+        return url_en_dominio(self.request, domain.domain) if domain else ""
+
+    def get(self, request, *args, **kwargs):
+        if request.headers.get("x-requested-with") != "XMLHttpRequest":
+            return redirect("admin:tenancy_negocio_change", self.get_object().pk)
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            "modal_url": self.request.path,
+            "business": self.get_object(),
+            "business_url": self.business_url(),
+            "blocked_reason": self.not_ready_reason(),
+        }
+
+    def form_invalid(self, form):
+        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
+
+
 # endregion
 """========================================================================="""
 
@@ -208,6 +250,10 @@ class OwnerPasswordResetForm(BSModalForm):
         error_messages={"required": "Confirma la identidad del titular antes de generar la clave."},
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
+
+
+class OwnerUnlockForm(BSModalForm):
+    pass
 
 
 class BusinessAddressForm(AddressForm):
@@ -604,47 +650,9 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
         return redirect("admin:tenancy_negocio_change", business.pk)
 
 
-class OwnerPasswordResetModalView(PanelAjaxView, BSModalFormView):
+class OwnerPasswordResetModalView(BusinessActionModalMixin, BSModalFormView):
     template_name = "panel/businesses/owner_password_modal.html"
     form_class = OwnerPasswordResetForm
-
-    def has_model_permission(self, request):
-        return request.user.is_superuser and self.model_admin.has_change_permission(request, self.get_object())
-
-    def get_object(self):
-        if not hasattr(self, "_object"):
-            business = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
-            if business is None:
-                raise Http404
-            self._object = business
-        return self._object
-
-    def not_ready_reason(self):
-        business = self.get_object()
-        if business.estado == Negocio.Estado.PREPARANDO or not schema_exists(business.schema_name):
-            return NOT_READY_MESSAGE
-        return ""
-
-    def business_url(self):
-        domain = self.get_object().domains.filter(is_primary=True).first()
-        return url_en_dominio(self.request, domain.domain) if domain else ""
-
-    def get(self, request, *args, **kwargs):
-        if request.headers.get("x-requested-with") != "XMLHttpRequest":
-            return redirect("admin:tenancy_negocio_change", self.get_object().pk)
-        return super().get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        return {
-            **super().get_context_data(**kwargs),
-            "modal_url": self.request.path,
-            "business": self.get_object(),
-            "business_url": self.business_url(),
-            "blocked_reason": self.not_ready_reason(),
-        }
-
-    def form_invalid(self, form):
-        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
 
     def form_valid(self, form):
         reason = self.not_ready_reason()
@@ -661,6 +669,35 @@ class OwnerPasswordResetModalView(PanelAjaxView, BSModalFormView):
         )
         response["Cache-Control"] = "no-store"
         return response
+
+
+class OwnerUnlockModalView(BusinessActionModalMixin, BSModalFormView):
+    template_name = "panel/businesses/owner_unlock_modal.html"
+    form_class = OwnerUnlockForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if context["blocked_reason"]:
+            return context
+        status = owner_lock_status(self.get_object())
+        if status is None:
+            context["blocked_reason"] = NO_OWNER_MESSAGE
+            return context
+        return {**context, "status": status, "lock_description": describe_lock(status)}
+
+    def form_valid(self, form):
+        reason = self.not_ready_reason()
+        if reason:
+            return JsonResponse({"message": reason}, status=HTTP_400_BAD_REQUEST)
+        business = self.get_object()
+        result = unlock_owner(business, self.request.user)
+        if result is None:
+            return JsonResponse({"message": NO_OWNER_MESSAGE}, status=HTTP_400_BAD_REQUEST)
+        email, unlocked = result
+        if not unlocked:
+            return JsonResponse({"message": NOT_LOCKED_MESSAGE}, status=HTTP_400_BAD_REQUEST)
+        self.model_admin.log_change(self.request, business, "Propietario desbloqueado.")
+        return JsonResponse({"message": "El propietario quedó desbloqueado.", "email": email})
 
 
 # endregion

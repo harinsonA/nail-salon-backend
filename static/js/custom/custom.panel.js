@@ -60,13 +60,12 @@ const initializeUserEditModal = (modalID, { onSaved = () => {} } = {}) => {
   });
 };
 
-const initializeOwnerPasswordModal = (modalID) => {
+const initializeBusinessActionModal = (modalID) => {
   $(modalID).on("show.bs.modal", ({ target }) => {
-    const submitBtn = target.querySelector("#owner_password_submit_btn");
+    const form = target.querySelector("form[data-action-modal]");
+    const submitBtn = form?.querySelector(".action-modal__submit");
     if (!submitBtn) return;
-    const form = target.querySelector("#owner-password-form-modal");
-    const result = form.querySelector(".owner-password__result");
-    const passwordNode = result.querySelector("[data-owner-password]");
+    const result = form.querySelector(".action-modal__result");
 
     $(submitBtn).click(async () => {
       submitBtn.disabled = true;
@@ -75,39 +74,41 @@ const initializeOwnerPasswordModal = (modalID) => {
         submitBtn.disabled = false;
         return;
       }
-      form.querySelector(".owner-password__request").classList.add("d-none");
+      form.querySelector(".action-modal__request")?.classList.add("d-none");
       form.querySelectorAll("input[type=checkbox]").forEach((input) => {
         input.disabled = true;
       });
-      result.querySelector("[data-owner-email]").textContent = response.email;
-      passwordNode.textContent = response.password;
+      result.querySelectorAll("[data-result]").forEach((node) => {
+        node.textContent = response[node.dataset.result] ?? "";
+      });
       result.classList.remove("d-none");
       submitBtn.remove();
-      const closeBtn = form.querySelector(".owner-password__close");
+      const closeBtn = form.querySelector(".action-modal__close");
       closeBtn.textContent = "Cerrar";
       closeBtn.classList.replace("btn-secondary", "btn-primary");
       closeBtn.classList.remove("me-2");
       closeBtn.focus();
     });
 
-    $(form).on("click", ".owner-password__copy", async function () {
-      const icon = this.querySelector(".material-symbols-outlined");
-      try {
-        await navigator.clipboard.writeText(passwordNode.textContent);
-        icon.textContent = "check";
-        setTimeout(() => {
-          icon.textContent = "content_copy";
-        }, 1500);
-      } catch {
-        notifyAlert({ message: "No se pudo copiar: selecciona la clave y cópiala a mano." }, 400);
-      }
-    });
   });
 
   $(modalID).on("hidden.bs.modal", ({ target }) => {
-    if (target.querySelector("#owner-password-form-modal")) {
+    if (target.querySelector("form[data-sensitive]")) {
       target.querySelector(".modal-content").innerHTML = "";
     }
   });
 };
 
+$(document).on("click", ".copy-button", async function () {
+  const icon = this.querySelector(".material-symbols-outlined");
+  const source = this.parentElement.querySelector("[data-copy-value]");
+  try {
+    await navigator.clipboard.writeText(source.textContent.trim());
+    icon.textContent = "check";
+    setTimeout(() => {
+      icon.textContent = "content_copy";
+    }, 1500);
+  } catch {
+    notifyAlert({ message: "No se pudo copiar: selecciónalo y cópialo a mano." }, 400);
+  }
+});
