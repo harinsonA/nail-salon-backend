@@ -10,13 +10,12 @@ from apps.panel.views.businesses.view import (
     BusinessCreateView,
     BusinessListAjaxView,
     BusinessListView,
+    BusinessStatusModalView,
     OwnerPasswordResetModalView,
     OwnerUnlockModalView,
     BusinessUpdateView,
 )
 from apps.tenancy.alta import correo_de_acceso
-from apps.tenancy.estados import cambiar_estado
-from apps.tenancy.forms import CambiarEstadoForm
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion
 from apps.tenancy.tasks import preparar_negocio
 
@@ -97,7 +96,7 @@ class NegocioAdmin(SimpleHistoryAdmin):
             ),
             path(
                 "<int:pk>/estado/",
-                self.admin_site.admin_view(self.estado_view),
+                BusinessStatusModalView.as_view(admin_site=self.admin_site, model_admin=self),
                 name="tenancy_negocio_estado",
             ),
             path(
@@ -167,37 +166,6 @@ class NegocioAdmin(SimpleHistoryAdmin):
                 f"Reparar el alta de «{negocio.nombre}»",
                 correo=correo,
             ),
-        )
-
-    def estado_view(self, request, pk):
-        if not request.user.is_superuser:
-            raise PermissionDenied
-        negocio = get_object_or_404(self.get_queryset(request), pk=pk)
-        form = CambiarEstadoForm(
-            negocio, request.POST if request.method == "POST" else None
-        )
-        if request.method == "POST" and form.is_valid():
-            cambiar_estado(
-                negocio,
-                form.cleaned_data["estado"],
-                form.cleaned_data["motivo"],
-                request.user,
-            )
-            messages.success(
-                request,
-                f"«{negocio.nombre}» quedó {negocio.get_estado_display().lower()}.",
-            )
-            return redirect("admin:tenancy_negocio_change", negocio.pk)
-        return TemplateResponse(
-            request,
-            "admin/tenancy/negocio/estado.html",
-            {
-                **self.admin_site.each_context(request),
-                "opts": self.model._meta,
-                "title": f"Cambiar el estado de «{negocio.nombre}»",
-                "negocio": negocio,
-                "form": form,
-            },
         )
 
     def add_view(self, request, form_url="", extra_context=None):

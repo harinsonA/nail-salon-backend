@@ -6,6 +6,7 @@ Negocios
 {% endblock %}
 
 {% block content %}
+{% include 'common/bs_modal.html' %}
 <section>
   {% if add_url %}
   <section class="d-inline-flex align-items-center gap-2">
@@ -134,8 +135,13 @@ Negocios
             return json.data;
           },
         },
+        drawCallback: () => {
+          initializeAllBSModals();
+        },
       },
     });
+
+    initializeBusinessActionModal('#modal', { onDone: () => table.draw(false) });
 
     {% for field in filter_form %}
     $('#{{ field.id_for_label }}').on('change', ({ target }) => {

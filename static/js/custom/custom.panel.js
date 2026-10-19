@@ -60,7 +60,7 @@ const initializeUserEditModal = (modalID, { onSaved = () => {} } = {}) => {
   });
 };
 
-const initializeBusinessActionModal = (modalID) => {
+const initializeBusinessActionModal = (modalID, { onDone = () => {} } = {}) => {
   $(modalID).on("show.bs.modal", ({ target }) => {
     const form = target.querySelector("form[data-action-modal]");
     const submitBtn = form?.querySelector(".action-modal__submit");
@@ -82,6 +82,7 @@ const initializeBusinessActionModal = (modalID) => {
         node.textContent = response[node.dataset.result] ?? "";
       });
       result.classList.remove("d-none");
+      $(modalID).data("actionDone", true);
       submitBtn.remove();
       const closeBtn = form.querySelector(".action-modal__close");
       closeBtn.textContent = "Cerrar";
@@ -95,6 +96,10 @@ const initializeBusinessActionModal = (modalID) => {
   $(modalID).on("hidden.bs.modal", ({ target }) => {
     if (target.querySelector("form[data-sensitive]")) {
       target.querySelector(".modal-content").innerHTML = "";
+    }
+    if ($(modalID).data("actionDone")) {
+      $(modalID).data("actionDone", false);
+      onDone();
     }
   });
 };

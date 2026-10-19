@@ -40,6 +40,7 @@ from apps.common.utils.utils import get_errors_to_response
 from apps.panel.views.base import PanelAjaxView, PanelListViewAjax, PanelView, RelatedFormsMixin
 from apps.seguridad.access import describe_lock
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
+from apps.tenancy.estados import cambiar_estado, estados_posibles
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
 from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_propietario, unlock_owner
 
@@ -51,6 +52,15 @@ EMPTY = "—"
 NOT_READY_MESSAGE = "El negocio todavía no está listo: primero repara su alta."
 NO_OWNER_MESSAGE = "Este negocio no tiene propietario: repara su alta."
 NOT_LOCKED_MESSAGE = "El propietario no estaba bloqueado: no hubo cambios."
+NO_STATUS_CHANGE_MESSAGE = (
+    "Mientras se prepara, el negocio no cambia de estado: queda activo solo al terminar la preparación."
+)
+STATUS_DESCRIPTIONS = {
+    Negocio.Estado.ACTIVO: "Todos entran y trabajan con normalidad.",
+    Negocio.Estado.MOROSO: "El equipo sigue trabajando; propietario y encargado ven el aviso de pago y no entran a la administración.",
+    Negocio.Estado.PAUSADO: "Nadie entra: ven «Servicio suspendido».",
+    Negocio.Estado.CANCELADO: "Nadie entra; los datos se conservan y se puede reactivar.",
+}
 ALL = "all"
 DEFAULT_TIME_ZONE = "America/Santiago"
 TIME_ZONES = [
@@ -88,6 +98,7 @@ def business_actions(pk, status):
             {
                 "label": "Reparar alta",
                 "link": reverse("admin:tenancy_negocio_reparar", args=[pk]),
+                "in_list": True,
                 "icon": "build",
                 "description": "Vuelve a lanzar la preparación del negocio con el correo de acceso del titular.",
             }
@@ -113,11 +124,20 @@ def business_actions(pk, status):
         {
             "label": "Cambiar estado",
             "link": reverse("admin:tenancy_negocio_estado", args=[pk]),
+            "modal": True,
+            "in_list": True,
             "icon": "sync_alt",
             "description": "Activa, pausa, marca como moroso o cancela el negocio. Pide un motivo para el historial.",
         }
     )
     return actions
+
+
+def action_option(action):
+    option = {"label": action["label"], "link": action["link"], "icon": action["icon"]}
+    if action.get("modal"):
+        option.update({"bsModal": True, "className": "bs-modal"})
+    return option
 
 
 def has_errors(related_form):
@@ -254,6 +274,27 @@ class OwnerPasswordResetForm(BSModalForm):
 
 class OwnerUnlockForm(BSModalForm):
     pass
+
+
+class BusinessStatusForm(BSModalForm):
+    estado = forms.ChoiceField(
+        label="Nuevo estado",
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    motivo = NoteField(
+        label="Motivo",
+        help_text="Queda en el historial del negocio: por ejemplo, «dos meses sin pago». Hasta 250 caracteres.",
+        widget=forms.Textarea(
+            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Dos meses sin pago.", "rows": 3}
+        ),
+    )
+
+    def __init__(self, *args, business=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estado"].choices = [
+            ("", "Selecciona un estado"),
+            *((status.value, status.label) for status in estados_posibles(business)),
+        ]
 
 
 class BusinessAddressForm(AddressForm):
@@ -505,9 +546,9 @@ class BusinessListAjaxView(PanelListViewAjax):
                 )
             if is_superuser:
                 options += [
-                    {"label": action["label"], "link": action["link"]}
+                    action_option(action)
                     for action in business_actions(item["pk"], item["estado"])
-                    if not action.get("modal")
+                    if action.get("in_list")
                 ]
             item["options"] = options
         return data
@@ -698,6 +739,43 @@ class OwnerUnlockModalView(BusinessActionModalMixin, BSModalFormView):
             return JsonResponse({"message": NOT_LOCKED_MESSAGE}, status=HTTP_400_BAD_REQUEST)
         self.model_admin.log_change(self.request, business, "Propietario desbloqueado.")
         return JsonResponse({"message": "El propietario quedó desbloqueado.", "email": email})
+
+
+class BusinessStatusModalView(BusinessActionModalMixin, BSModalFormView):
+    template_name = "panel/businesses/business_status_modal.html"
+    form_class = BusinessStatusForm
+
+    def not_ready_reason(self):
+        return "" if estados_posibles(self.get_object()) else NO_STATUS_CHANGE_MESSAGE
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "business": self.get_object()}
+
+    def get_context_data(self, **kwargs):
+        business = self.get_object()
+        return {
+            **super().get_context_data(**kwargs),
+            "status_options": [
+                {"label": status.label, "description": STATUS_DESCRIPTIONS[status]}
+                for status in estados_posibles(business)
+            ],
+        }
+
+    def form_valid(self, form):
+        reason = self.not_ready_reason()
+        if reason:
+            return JsonResponse({"message": reason}, status=HTTP_400_BAD_REQUEST)
+        business = self.get_object()
+        cambiar_estado(business, form.cleaned_data["estado"], form.cleaned_data["motivo"], self.request.user)
+        status = business.get_estado_display()
+        self.model_admin.log_change(self.request, business, f"Estado cambiado a {status}: {form.cleaned_data['motivo']}")
+        return JsonResponse(
+            {
+                "message": f"«{business.nombre}» quedó {status.lower()}.",
+                "status": status,
+                "reason": form.cleaned_data["motivo"],
+            }
+        )
 
 
 # endregion

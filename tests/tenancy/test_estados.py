@@ -1,6 +1,7 @@
 from io import StringIO
 
 from django.conf import settings
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -136,23 +137,62 @@ class CambiarEstadoDesdeElPanelTests(TestCase):
         self.panel = Client(HTTP_HOST="admin.localhost")
         self.panel.force_login(self.admin)
 
-    def test_la_ficha_tiene_el_boton_y_el_cambio_queda_con_su_autor(self):
-        ficha = self.panel.get(url_panel("tenancy_negocio_change", self.negocio.pk))
-        self.assertContains(ficha, url_panel("tenancy_negocio_estado", self.negocio.pk))
-        respuesta = self.panel.post(
-            url_panel("tenancy_negocio_estado", self.negocio.pk), {"estado": "moroso", "motivo": "dos meses sin pago"}
-        )
-        self.assertRedirects(
-            respuesta, url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
+    def ajax(self, metodo, datos=None, navegador=None):
+        url = url_panel("tenancy_negocio_estado", self.negocio.pk)
+        return getattr(navegador or self.panel, metodo)(url, datos or {}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+    def test_el_modal_ofrece_solo_los_estados_permitidos(self):
+        modal = self.ajax("get")
+        self.assertTemplateUsed(modal, "panel/businesses/business_status_modal.html")
+        self.assertContains(modal, "status-current__badge--activo")
+        opciones = modal.context["form"].fields["estado"].choices
+        self.assertEqual([valor for valor, _ in opciones], ["", "moroso", "pausado", "cancelado"])
+        self.assertContains(modal, 'id="business_status_submit_btn"')
+        self.assertContains(modal, "ven «Servicio suspendido»")
+
+    def test_el_cambio_queda_con_su_motivo_y_su_autor(self):
+        respuesta = self.ajax("post", {"estado": "moroso", "motivo": "  dos meses sin pago "})
+        self.assertEqual(
+            respuesta.json(),
+            {"message": "«El Corte» quedó moroso.", "status": "Moroso", "reason": "dos meses sin pago"},
         )
         self.negocio.refresh_from_db()
         self.assertEqual(self.negocio.estado, Estado.MOROSO)
-        self.assertEqual(self.negocio.history.first().history_user, self.admin)
+        ultimo = self.negocio.history.first()
+        self.assertEqual((ultimo.history_user, ultimo.history_change_reason), (self.admin, "dos meses sin pago"))
+        registro = LogEntry.objects.filter(object_id=str(self.negocio.pk), content_type__model="negocio").latest("action_time")
+        self.assertEqual(registro.change_message, "Estado cambiado a Moroso: dos meses sin pago")
 
     def test_sin_motivo_o_con_un_estado_no_permitido_no_cambia(self):
-        url = url_panel("tenancy_negocio_estado", self.negocio.pk)
-        for datos in ({"estado": "moroso", "motivo": ""}, {"estado": "preparando", "motivo": "x"}):
-            with self.subTest(datos=datos):
-                self.assertEqual(self.panel.post(url, datos).status_code, 200)
+        casos = {
+            ("moroso", ""): "id_motivo",
+            ("preparando", "x"): "id_estado",
+            ("moroso", "x" * 251): "id_motivo",
+        }
+        for (estado, motivo), campo in casos.items():
+            with self.subTest(estado=estado, motivo=motivo):
+                respuesta = self.ajax("post", {"estado": estado, "motivo": motivo})
+                self.assertEqual(respuesta.status_code, 400)
+                self.assertIn(campo, [error["id_element"] for error in respuesta.json()["errors"]])
+        self.negocio.refresh_from_db()
+        self.assertEqual(self.negocio.estado, Estado.ACTIVO)
+
+    def test_un_negocio_en_preparacion_no_cambia_desde_el_modal(self):
+        Negocio.objects.filter(pk=self.negocio.pk).update(estado=Estado.PREPARANDO)
+        modal = self.ajax("get")
+        self.assertContains(modal, "Mientras se prepara, el negocio no cambia de estado")
+        self.assertNotContains(modal, 'id="business_status_submit_btn"')
+        self.assertEqual(self.ajax("post", {"estado": "activo", "motivo": "x"}).status_code, 400)
+
+    def test_sin_ajax_lleva_a_la_ficha_y_solo_un_superusuario_lo_usa(self):
+        self.assertRedirects(
+            self.panel.get(url_panel("tenancy_negocio_estado", self.negocio.pk)),
+            url_panel("tenancy_negocio_change", self.negocio.pk),
+            fetch_redirect_response=False,
+        )
+        staff = User.objects.create_user(username="staff", password="x", is_staff=True)
+        otro = Client(HTTP_HOST="admin.localhost")
+        otro.force_login(staff)
+        self.assertEqual(self.ajax("post", {"estado": "pausado", "motivo": "x"}, otro).status_code, 403)
         self.negocio.refresh_from_db()
         self.assertEqual(self.negocio.estado, Estado.ACTIVO)

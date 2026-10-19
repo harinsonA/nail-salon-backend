@@ -421,3 +421,68 @@
   margin-top: 0.75rem;
 }
 
+.status-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.status-current__label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-current__badge {
+  padding: 0.15rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.status-current__badge--activo {
+  color: var(--color-success-text);
+  background-color: var(--color-success-bg);
+  border-color: var(--color-success-border);
+}
+
+.status-current__badge--moroso {
+  color: var(--color-warning-text);
+  background-color: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+}
+
+.status-current__badge--cancelado {
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+}
+
+.status-current__badge--pausado,
+.status-current__badge--preparando {
+  color: var(--color-info-text);
+  background-color: var(--color-info-bg);
+  border-color: var(--color-info-border);
+}
+
+.status-current__since {
+  color: var(--text-muted);
+}
+
+.status-guide {
+  padding: 0.6rem 0.75rem 0.6rem 1.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  background-color: var(--bg-muted);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+
+.status-guide li + li {
+  margin-top: 0.25rem;
+}
+
