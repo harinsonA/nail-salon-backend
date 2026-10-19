@@ -13,9 +13,9 @@
 <div class="gentle-alert" role="alert">
   Entraste como {{ username }}, pero esa cuenta no tiene acceso al panel. Inicia sesión con otra.
 </div>
-{% elif closed_elsewhere %}
+{% elif session_closed %}
 <div class="gentle-alert" role="alert">
-  {{ closed_elsewhere }}
+  {{ session_closed }}
 </div>
 {% elif form.non_field_errors %}
 <div class="gentle-alert" role="alert">

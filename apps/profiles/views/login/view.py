@@ -5,7 +5,7 @@ from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import rol_de
 from apps.seguridad.forms import LockAwareAuthenticationMixin
-from apps.seguridad.sessions import CLOSED_ELSEWHERE_MESSAGE, pop_closed_elsewhere
+from apps.seguridad.sessions import pop_closure_message
 
 """========================================================================="""
 # region ........ Constants
@@ -51,8 +51,7 @@ class LoginView(DjangoLoginView):
     authentication_form = CorreoAuthenticationForm
 
     def get_context_data(self, **kwargs):
-        notice = CLOSED_ELSEWHERE_MESSAGE if pop_closed_elsewhere(self.request) else ""
-        return {**super().get_context_data(**kwargs), "closed_elsewhere": notice}
+        return {**super().get_context_data(**kwargs), "session_closed": pop_closure_message(self.request)}
 
 
 class LogoutView(DjangoLogoutView):

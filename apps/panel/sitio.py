@@ -7,7 +7,7 @@ from django.urls import path
 
 from apps.panel.forms import PanelAuthenticationForm
 from apps.panel.views.inicio.view import InicioPanelView
-from apps.seguridad.sessions import CLOSED_ELSEWHERE_MESSAGE, pop_closed_elsewhere
+from apps.seguridad.sessions import pop_closure_message
 from apps.tenancy.alta import url_en_dominio
 
 
@@ -26,8 +26,7 @@ class PanelAdminSite(admin.AdminSite):
         return [path("account/modal/", account_modal, name="account_modal"), *super().get_urls()]
 
     def login(self, request, extra_context=None):
-        notice = CLOSED_ELSEWHERE_MESSAGE if pop_closed_elsewhere(request) else ""
-        extra_context = {**(extra_context or {}), "closed_elsewhere": notice}
+        extra_context = {**(extra_context or {}), "session_closed": pop_closure_message(request)}
         return super().login(request, extra_context)
 
     def logout(self, request, extra_context=None):
