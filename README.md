@@ -454,11 +454,26 @@ Servicios que levanta `docker compose`:
 | Servicio | Para qué |
 |---|---|
 | `db` | PostgreSQL 15 |
+| `db-test` | PostgreSQL 15 en memoria y sin `fsync`, solo para la base de pruebas |
 | `redis` | Broker y result backend de Celery |
 | `web` | La aplicación Django |
 | `worker` | Worker de Celery que procesa las importaciones |
 
 > Nota: el PostgreSQL del contenedor se expone en el puerto `5433` del host para no chocar con una instalación nativa de PostgreSQL (5432). Redis se expone en el `6379` para poder usarlo también desde un `runserver` nativo.
+
+#### Pruebas
+
+```bash
+docker compose exec web python manage.py test
+```
+
+La suite corre en paralelo (un proceso por núcleo) y crea su base en `db-test`, sin tocar la de desarrollo. Opciones útiles:
+
+- `--parallel 1` la corre en un solo proceso; con `--pdb` pasa a un proceso sola.
+- `--keepdb` conserva la base entre corridas: sirve para repetir un archivo (`tests.panel.test_login`). Después de agregar una migración, corre una vez sin `--keepdb`.
+- `--timing` y `--durations 20` muestran cuánto tardó cada etapa y las pruebas más lentas.
+
+El runner de pruebas (`tests/runner.py`) solo cambia la configuración mientras corren las pruebas: hashea las claves con PBKDF2 de una iteración, migra una vez el esquema `plantilla_pruebas` y clona cada negocio de prueba desde él, y evita que WhiteNoise recorra los estáticos con cada `Client`.
 
 ### Opción B: Instalación nativa
 
@@ -581,7 +596,7 @@ Las migraciones corren en el Pre-Deploy Command, `python manage.py preparar_desp
 | `base` | `python:3.12.8-slim` + locale `es_CL` |
 | `deps` | Dependencias de `requirements.txt`, sin caché de pip |
 | `app` | Solo el código que la aplicación ejecuta + `collectstatic` |
-| `test` | `app` + `tests/`; la usa el CI para las pruebas |
+| `test` | `app` + `tests/` + `requirements-test.txt`; la usan el CI y el `web` de `docker compose` |
 | `prod` | `app`; última etapa, la que se publica y corre en Render |
 
 ### Configuración fuera del repositorio
