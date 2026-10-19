@@ -75,6 +75,7 @@ SHARED_APPS = [
     "django_filters",
     "bootstrap_modal_forms",
     "simple_history",
+    "apps.seguridad",
 ]
 
 TENANT_APPS = [
@@ -92,6 +93,7 @@ TENANT_APPS = [
     "apps.settings",
     "apps.profiles",
     "apps.tareas",
+    "apps.seguridad",
 ]
 
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
@@ -247,6 +249,11 @@ LOGOUT_REDIRECT_URL = "login"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 60 * 60 * 24
 SESSION_DAILY_CUTOFF_HOUR = config("SESSION_DAILY_CUTOFF_HOUR", default=4, cast=int)
+
+SECURITY_TEMPORARY_LOCK_FAILURES = config("SECURITY_TEMPORARY_LOCK_FAILURES", default=5, cast=int)
+SECURITY_TEMPORARY_LOCK_MINUTES = config("SECURITY_TEMPORARY_LOCK_MINUTES", default=15, cast=int)
+SECURITY_PERMANENT_LOCK_FAILURES = config("SECURITY_PERMANENT_LOCK_FAILURES", default=10, cast=int)
+SECURITY_SINGLE_SESSION = config("SECURITY_SINGLE_SESSION", default=True, cast=bool)
 
 # Celery / Redis (tareas en segundo plano)
 # REDIS_URL apunta a localhost en desarrollo nativo, a "redis" dentro de

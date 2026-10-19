@@ -555,6 +555,10 @@ Acceder a `http://localhost:8000/` → redirige a `/calendario/` tras iniciar se
 | `REDIS_URL` | `redis://localhost:6379/0` | Broker y result backend de Celery |
 | `CELERY_TASK_ALWAYS_EAGER` | `False` | `True` ejecuta las tareas de forma síncrona, sin worker ni Redis |
 | `SESSION_DAILY_CUTOFF_HOUR` | `4` | Hora del corte diario de sesión |
+| `SECURITY_TEMPORARY_LOCK_FAILURES` | `5` | Fallos seguidos que bloquean la cuenta por un rato |
+| `SECURITY_TEMPORARY_LOCK_MINUTES` | `15` | Minutos que dura ese bloqueo temporal |
+| `SECURITY_PERMANENT_LOCK_FAILURES` | `10` | Fallos seguidos que bloquean la cuenta hasta que alguien la desbloquee; debe ser mayor que el temporal |
+| `SECURITY_SINGLE_SESSION` | `True` | Una sola sesión abierta por cuenta |
 
 ## 🚀 Deployment
 
