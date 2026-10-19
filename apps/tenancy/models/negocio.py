@@ -10,6 +10,10 @@ from apps.common.historial import HistorialRecords
 from apps.common.utils.utils import CommonCleaner
 
 
+FAILED_STATUS_KEY = "fallido"
+FAILED_STATUS_LABEL = "Falló"
+
+
 def validar_zona_horaria(valor):
     resultado = CommonCleaner.clean_time_zone_field(valor)
     if resultado.is_err():
@@ -78,6 +82,18 @@ class Negocio(TenantMixin, TimeStampedModel):
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def preparation_failed(self):
+        return self.estado == self.Estado.PREPARANDO and bool(self.error_preparacion)
+
+    @property
+    def status_key(self):
+        return FAILED_STATUS_KEY if self.preparation_failed else self.estado
+
+    @property
+    def status_label(self):
+        return FAILED_STATUS_LABEL if self.preparation_failed else self.get_estado_display()
 
     def clean(self):
         super().clean()

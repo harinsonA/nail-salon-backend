@@ -4,7 +4,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Count, Exists, F, OuterRef, Q, Subquery, Value
+from django.db.models import Case, Count, Exists, F, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Concat, Trim
 from django.forms import BaseFormSet
 from django.http import Http404, JsonResponse
@@ -42,6 +42,8 @@ from apps.seguridad.access import describe_lock
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
 from apps.tenancy.estados import cambiar_estado, estados_posibles
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
+from apps.tenancy.models.negocio import FAILED_STATUS_KEY, FAILED_STATUS_LABEL
+from apps.tenancy.tasks import preparar_negocio
 from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_propietario, unlock_owner
 
 """========================================================================="""
@@ -49,9 +51,12 @@ from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_pr
 
 
 EMPTY = "—"
+FAILED_PREPARATION = Q(estado=Negocio.Estado.PREPARANDO, error_preparacion__gt="")
 NOT_READY_MESSAGE = "El negocio todavía no está listo: primero repara su alta."
 NO_OWNER_MESSAGE = "Este negocio no tiene propietario: repara su alta."
 NOT_LOCKED_MESSAGE = "El propietario no estaba bloqueado: no hubo cambios."
+NOT_PREPARING_MESSAGE = "Solo se reparan las altas que quedaron en «preparando»."
+NO_ACCESS_EMAIL_MESSAGE = "El titular no tiene correo: agrégale uno en su ficha antes de reparar."
 NO_STATUS_CHANGE_MESSAGE = (
     "Mientras se prepara, el negocio no cambia de estado: queda activo solo al terminar la preparación."
 )
@@ -92,12 +97,17 @@ def businesses():
     return Negocio.objects.exclude(schema_name=get_public_schema_name())
 
 
+def status_key_expression():
+    return Case(When(FAILED_PREPARATION, then=Value(FAILED_STATUS_KEY)), default=F("estado"))
+
+
 def business_actions(pk, status):
     if status == Negocio.Estado.PREPARANDO:
         actions = [
             {
                 "label": "Reparar alta",
                 "link": reverse("admin:tenancy_negocio_reparar", args=[pk]),
+                "modal": True,
                 "in_list": True,
                 "icon": "build",
                 "description": "Vuelve a lanzar la preparación del negocio con el correo de acceso del titular.",
@@ -239,7 +249,12 @@ class BusinessActionModalMixin(PanelAjaxView):
 
 class BusinessesFilterForm(forms.Form):
     status = forms.ChoiceField(
-        choices=[(ALL, "Todos"), *Negocio.Estado.choices],
+        choices=[
+            (ALL, "Todos"),
+            (Negocio.Estado.PREPARANDO, Negocio.Estado.PREPARANDO.label),
+            (FAILED_STATUS_KEY, FAILED_STATUS_LABEL),
+            *(choice for choice in Negocio.Estado.choices if choice[0] != Negocio.Estado.PREPARANDO),
+        ],
         label="Estado",
         initial=ALL,
         required=False,
@@ -257,7 +272,7 @@ class BusinessesFilterForm(forms.Form):
         cleaned_data = super().clean()
         filters = {}
         if cleaned_data.get("status") not in (None, "", ALL):
-            filters["estado"] = cleaned_data["status"]
+            filters["status_key"] = cleaned_data["status"]
         if cleaned_data.get("industry"):
             filters["rubro"] = cleaned_data["industry"]
         return filters
@@ -272,7 +287,7 @@ class OwnerPasswordResetForm(BSModalForm):
     )
 
 
-class OwnerUnlockForm(BSModalForm):
+class ConfirmActionForm(BSModalForm):
     pass
 
 
@@ -475,6 +490,7 @@ class BusinessListAjaxView(PanelListViewAjax):
         "nombre",
         "domain",
         "estado",
+        "status_key",
         "owner_name",
         "industry_name",
         "created",
@@ -500,6 +516,7 @@ class BusinessListAjaxView(PanelListViewAjax):
                     Concat("titular__nombres", Value(" "), "titular__apellidos")
                 ),
                 industry_name=F("rubro__nombre"),
+                status_key=status_key_expression(),
             )
             .filter(**self.get_filters())
         )
@@ -520,10 +537,10 @@ class BusinessListAjaxView(PanelListViewAjax):
         )
 
     def get_values(self, queryset):
-        labels = dict(Negocio.Estado.choices)
+        labels = {**dict(Negocio.Estado.choices), FAILED_STATUS_KEY: FAILED_STATUS_LABEL}
         values = super().get_values(queryset)
         for value in values:
-            value["status_label"] = labels.get(value["estado"], value["estado"])
+            value["status_label"] = labels.get(value["status_key"], value["status_key"])
             value["domain"] = value["domain"] or EMPTY
             value["industry_name"] = value["industry_name"] or EMPTY
             value["created"] = timezone.localtime(value["created"]).strftime("%d/%m/%Y")
@@ -559,9 +576,8 @@ class BusinessListAjaxView(PanelListViewAjax):
             total_businesses=Count("pk"),
             active_businesses=Count("pk", filter=Q(estado=Negocio.Estado.ACTIVO)),
             overdue_businesses=Count("pk", filter=Q(estado=Negocio.Estado.MOROSO)),
-            preparing_businesses=Count(
-                "pk", filter=Q(estado=Negocio.Estado.PREPARANDO)
-            ),
+            preparing_businesses=Count("pk", filter=Q(estado=Negocio.Estado.PREPARANDO) & ~FAILED_PREPARATION),
+            failed_businesses=Count("pk", filter=FAILED_PREPARATION),
         )
 
 
@@ -714,7 +730,7 @@ class OwnerPasswordResetModalView(BusinessActionModalMixin, BSModalFormView):
 
 class OwnerUnlockModalView(BusinessActionModalMixin, BSModalFormView):
     template_name = "panel/businesses/owner_unlock_modal.html"
-    form_class = OwnerUnlockForm
+    form_class = ConfirmActionForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -776,6 +792,35 @@ class BusinessStatusModalView(BusinessActionModalMixin, BSModalFormView):
                 "reason": form.cleaned_data["motivo"],
             }
         )
+
+
+class BusinessRepairModalView(BusinessActionModalMixin, BSModalFormView):
+    template_name = "panel/businesses/business_repair_modal.html"
+    form_class = ConfirmActionForm
+
+    def access_email(self):
+        titular = self.get_object().titular
+        return correo_de_acceso(titular) if titular else None
+
+    def not_ready_reason(self):
+        if self.get_object().estado != Negocio.Estado.PREPARANDO:
+            return NOT_PREPARING_MESSAGE
+        if self.access_email() is None:
+            return NO_ACCESS_EMAIL_MESSAGE
+        return ""
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), "access_email": self.access_email()}
+
+    def form_valid(self, form):
+        reason = self.not_ready_reason()
+        if reason:
+            return JsonResponse({"message": reason}, status=HTTP_400_BAD_REQUEST)
+        business = self.get_object()
+        email = self.access_email()
+        preparar_negocio.delay(business.pk, email, None)
+        self.model_admin.log_change(self.request, business, "Preparación encolada de nuevo.")
+        return JsonResponse({"message": "La preparación se volvió a encolar.", "email": email})
 
 
 # endregion

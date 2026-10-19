@@ -93,6 +93,28 @@ class BusinessesScreenTests(TestCase):
         self.assertEqual(self.names(self.superuser, status="preparando"), ["Uñas Lucía"])
         self.assertEqual(self.names(self.superuser, industry=self.barber.pk), ["El Corte"])
 
+    def test_a_failed_preparation_shows_its_own_status(self):
+        failed = Negocio.objects.create(
+            schema_name="fallo",
+            nombre="Fallo",
+            titular=Persona.objects.create(nombres="Ana"),
+            error_preparacion="OperationalError: sin espacio",
+        )
+        row = self.row(self.superuser, "Fallo")
+        self.assertEqual((row["status_key"], row["status_label"], row["estado"]), ("fallido", "Falló", "preparando"))
+        self.assertEqual([option["label"] for option in row["options"]], ["Editar", "Reparar alta", "Cambiar estado"])
+        self.assertEqual(self.row(self.superuser, "Uñas Lucía")["status_key"], "preparando")
+        self.assertEqual(self.names(self.superuser, status="fallido"), ["Fallo"])
+        self.assertEqual(self.names(self.superuser, status="preparando"), ["Uñas Lucía"])
+        payload = self.fetch(self.superuser).json()
+        self.assertEqual((payload["preparing_businesses"], payload["failed_businesses"]), (1, 1))
+        Negocio.objects.filter(pk=failed.pk).update(error_preparacion="")
+        self.assertEqual(self.row(self.superuser, "Fallo")["status_key"], "preparando")
+        page = self.browser(self.superuser).get(LIST_URL)
+        self.assertContains(page, '<option value="fallido">Falló</option>')
+        self.assertContains(page, "fallido: 'text-bg-danger'")
+        self.assertContains(page, 'id="failed_businesses_note"')
+
     def test_search_by_name_owner_or_domain(self):
         self.assertEqual(self.names(self.superuser, **{"search[value]": "uñas"}), ["Uñas Lucía"])
         self.assertEqual(self.names(self.superuser, **{"search[value]": "rojas"}), ["El Corte"])
@@ -103,6 +125,8 @@ class BusinessesScreenTests(TestCase):
         preparing = [option["label"] for option in self.row(self.superuser, "Uñas Lucía")["options"]]
         self.assertEqual(active, ["Editar", "Cambiar estado"])
         self.assertEqual(preparing, ["Editar", "Reparar alta", "Cambiar estado"])
+        repair = next(option for option in self.row(self.superuser, "Uñas Lucía")["options"] if option["label"] == "Reparar alta")
+        self.assertEqual((repair["bsModal"], repair["className"], repair["icon"]), (True, "bs-modal", "build"))
         options = {option["label"]: option for option in self.row(self.superuser, "El Corte")["options"]}
         status = options["Cambiar estado"]
         self.assertEqual(status["link"], f"/admin/tenancy/negocio/{self.cut.pk}/estado/")

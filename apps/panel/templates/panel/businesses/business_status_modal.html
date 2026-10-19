@@ -10,11 +10,7 @@
   <div class="modal-body">
     {% include 'panel/businesses/action_modal_business.html' %}
 
-    <div class="status-current">
-      <span class="status-current__label">Estado actual</span>
-      <span class="status-current__badge status-current__badge--{{ business.estado }}">{{ business.get_estado_display }}</span>
-      <span class="status-current__since">desde el {{ business.estado_desde|date:"d/m/Y H:i" }}</span>
-    </div>
+    {% include 'panel/businesses/action_modal_status.html' %}
 
     {% if blocked_reason %}
     <div class="delete-warning-container mb-0">

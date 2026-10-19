@@ -8,6 +8,7 @@ const iconImageMap = {
   delete: "/static/images/common/delete.svg",
   lock_open: "/static/images/common/lock_open.svg",
   sync_alt: "/static/images/common/sync_alt.svg",
+  build: "/static/images/common/build.svg",
 };
 
 const renderIcon = (icon) => {

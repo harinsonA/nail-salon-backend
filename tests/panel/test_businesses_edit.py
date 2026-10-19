@@ -197,6 +197,8 @@ class BusinessEditTests(TestCase):
         )
         self.assertContains(preparing, "La preparación falló")
         self.assertContains(preparing, "sin espacio en disco")
+        self.assertContains(preparing, "Falló desde el")
+        self.assertContains(self.browser().get(self.url()), "Activo desde el")
 
     def test_updates_industry_time_zone_and_notes(self):
         response = self.post(

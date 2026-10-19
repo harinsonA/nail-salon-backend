@@ -1,0 +1,5 @@
+<div class="status-current">
+  <span class="status-current__label">Estado actual</span>
+  <span class="status-current__badge status-current__badge--{{ business.status_key }}">{{ business.status_label }}</span>
+  <span class="status-current__since">desde el {{ business.estado_desde|date:"d/m/Y H:i" }}</span>
+</div>
