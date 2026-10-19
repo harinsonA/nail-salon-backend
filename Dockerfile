@@ -44,6 +44,9 @@ CMD ["sh", "-c", "exec gunicorn nail_salon_api.wsgi:application --bind 0.0.0.0:$
 
 FROM app AS test
 
+COPY requirements-test.txt .
+RUN pip install -r requirements-test.txt
+
 COPY tests/ tests/
 
 
