@@ -6,7 +6,10 @@ from django.urls import reverse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.base_list_view_ajax import AjaxListViewBase
-from apps.common.utils.utils import get_errors_to_response, get_related_errors_to_response
+from apps.common.utils.utils import (
+    get_errors_to_response,
+    get_related_errors_to_response,
+)
 from apps.common.views.base_views import SESSION_EXPIRED_MESSAGE
 
 """========================================================================="""
@@ -41,6 +44,16 @@ class PanelAccessMixin:
         return reverse("admin:login", current_app=self.admin_site.name)
 
 
+class PanelObjectMixin:
+    def get_object(self):
+        if not hasattr(self, "_object"):
+            obj = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
+            if obj is None:
+                raise Http404
+            self._object = obj
+        return self._object
+
+
 class PanelView(PanelAccessMixin):
     def handle_no_session(self):
         return redirect_to_login(self.request.get_full_path(), self.get_login_url())
@@ -49,12 +62,18 @@ class PanelView(PanelAccessMixin):
         raise PermissionDenied
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), **self.admin_site.each_context(self.request)}
+        return {
+            **super().get_context_data(**kwargs),
+            **self.admin_site.each_context(self.request),
+        }
 
 
 class PanelAjaxView(PanelAccessMixin):
     def handle_no_session(self):
-        return JsonResponse({"message": SESSION_EXPIRED_MESSAGE, "redirect": self.get_login_url()}, status=401)
+        return JsonResponse(
+            {"message": SESSION_EXPIRED_MESSAGE, "redirect": self.get_login_url()},
+            status=401,
+        )
 
     def handle_forbidden(self):
         return JsonResponse({"message": FORBIDDEN_MESSAGE}, status=403)
@@ -87,7 +106,10 @@ class RelatedFormsMixin:
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         related = list(self.related_forms().values())
-        results = [form.is_valid(), *(related_form.is_valid() for related_form in related)]
+        results = [
+            form.is_valid(),
+            *(related_form.is_valid() for related_form in related),
+        ]
         if all(results):
             return self.form_valid(form)
         errors = get_errors_to_response(form.errors)
@@ -109,7 +131,9 @@ class PanelCreateModalView(PanelAjaxView, BSModalFormView):
         raise NotImplementedError
 
     def form_invalid(self, form):
-        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
+        return JsonResponse(
+            {"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST
+        )
 
     def form_valid(self, form):
         obj = self.create_object(form)
@@ -117,31 +141,29 @@ class PanelCreateModalView(PanelAjaxView, BSModalFormView):
         return JsonResponse({"message": self.success_message % {"name": str(obj)}})
 
 
-class PanelUpdateModalView(PanelAjaxView, BSModalFormView):
+class PanelUpdateModalView(PanelObjectMixin, PanelAjaxView, BSModalFormView):
     success_message = "«%(name)s» actualizado exitosamente."
 
     def has_model_permission(self, request):
         return self.model_admin.has_change_permission(request, self.get_object())
 
-    def get_object(self):
-        if not hasattr(self, "_object"):
-            obj = self.model_admin.get_object(self.request, str(self.kwargs["pk"]))
-            if obj is None:
-                raise Http404
-            self._object = obj
-        return self._object
-
     def get_form_kwargs(self):
         return {**super().get_form_kwargs(), "instance": self.get_object()}
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), "modal_url": self.request.path, "object": self.get_object()}
+        return {
+            **super().get_context_data(**kwargs),
+            "modal_url": self.request.path,
+            "object": self.get_object(),
+        }
 
     def update_object(self, form):
         raise NotImplementedError
 
     def form_invalid(self, form):
-        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
+        return JsonResponse(
+            {"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST
+        )
 
     def get_changed_fields(self, form):
         return [str(form.fields[name].label) for name in form.changed_data]
@@ -149,7 +171,9 @@ class PanelUpdateModalView(PanelAjaxView, BSModalFormView):
     def form_valid(self, form):
         obj = self.update_object(form)
         changed = self.get_changed_fields(form)
-        self.model_admin.log_change(self.request, obj, [{"changed": {"fields": changed}}] if changed else [])
+        self.model_admin.log_change(
+            self.request, obj, [{"changed": {"fields": changed}}] if changed else []
+        )
         return JsonResponse({"message": self.success_message % {"name": str(obj)}})
 
 
@@ -197,10 +221,17 @@ class PanelDeleteModalView(PanelAjaxView, BSModalDeleteView):
         name = str(obj)
         blocked_reason = self.get_blocked_reason(obj)
         if blocked_reason:
-            return JsonResponse({"message": blocked_reason}, status=HTTP_400_BAD_REQUEST)
-        _, _, perms_needed, protected = self.model_admin.get_deleted_objects([obj], request)
+            return JsonResponse(
+                {"message": blocked_reason}, status=HTTP_400_BAD_REQUEST
+            )
+        _, _, perms_needed, protected = self.model_admin.get_deleted_objects(
+            [obj], request
+        )
         if perms_needed or protected:
-            return JsonResponse({"message": self.blocked_message % {"name": name}}, status=HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"message": self.blocked_message % {"name": name}},
+                status=HTTP_400_BAD_REQUEST,
+            )
         self.model_admin.log_deletions(request, [obj])
         self.model_admin.delete_model(request, obj)
         return JsonResponse({"message": self.success_message % {"name": name}})

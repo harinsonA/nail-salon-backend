@@ -1,0 +1,74 @@
+{% load static %}
+<form method="post" id="common-form-modal" action="{{ modal_url }}">
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center gap-2">
+      <span class="material-symbols-outlined icon--title" aria-hidden="true">lock_open</span>
+      <span class="pb-1">Desbloquear usuario · {{ object.username }}</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    {% if status.is_locked %}
+    <div class="lock-notice" role="status">
+      <img src="{% static 'images/common/lock.svg' %}" class="icon--notice" width="24" height="24" alt="">
+      <div>
+        <p class="lock-notice__title">
+          {% if is_temporary %}Bloqueado hasta las {{ until }}{% else %}Bloqueado hasta que alguien lo desbloquee{% endif %}
+        </p>
+        <p class="lock-notice__text">
+          {{ status.failures }} intento{{ status.failures|pluralize }} fallido{{ status.failures|pluralize }} seguido{{ status.failures|pluralize }}.
+          Último intento: {{ last_failure }}.
+        </p>
+      </div>
+    </div>
+
+    <div class="readonly-info readonly-info--grid">
+      <div class="readonly-info__item">
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">person</span>
+        <div>
+          <span class="readonly-info__label">Nombre</span>
+          <span class="readonly-info__value">{{ object.get_full_name|default:"—" }}</span>
+        </div>
+      </div>
+      <div class="readonly-info__item">
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">mail</span>
+        <div>
+          <span class="readonly-info__label">Correo</span>
+          <span class="readonly-info__value">{{ object.email|default:"—" }}</span>
+        </div>
+      </div>
+      <div class="readonly-info__item">
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">schedule</span>
+        <div>
+          <span class="readonly-info__label">Último acceso</span>
+          <span class="readonly-info__value">{{ last_login }}</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="lock-hint">
+      <span class="material-symbols-outlined icon--inline" aria-hidden="true">info</span>
+      <span>
+        Al desbloquearlo podrá entrar con su contraseña actual y el conteo de intentos vuelve a cero.
+        Si crees que alguien intentó adivinarla, mejor ponle una nueva desde «Editar».
+      </span>
+    </p>
+    {% else %}
+    <p class="lock-hint m-0">
+      <span class="material-symbols-outlined icon--inline" aria-hidden="true">info</span>
+      <span>Este usuario no está bloqueado.</span>
+    </p>
+    {% endif %}
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-secondary bg-gradient me-2" data-bs-dismiss="modal">
+      {% if status.is_locked %}Cancelar{% else %}Cerrar{% endif %}
+    </button>
+    {% if status.is_locked %}
+    <button id="unlock_submit_btn" type="button" class="btn btn-sm btn-primary bg-gradient">
+      Desbloquear
+    </button>
+    {% endif %}
+  </div>
+</form>

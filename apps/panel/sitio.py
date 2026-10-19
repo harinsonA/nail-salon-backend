@@ -5,6 +5,7 @@ from django.contrib.auth.views import LogoutView
 from django.shortcuts import redirect
 from django.urls import path
 
+from apps.panel.forms import PanelAuthenticationForm
 from apps.panel.views.inicio.view import InicioPanelView
 from apps.tenancy.alta import url_en_dominio
 
@@ -12,6 +13,7 @@ from apps.tenancy.alta import url_en_dominio
 class PanelAdminSite(admin.AdminSite):
     site_header = "Hi Agenda · Panel"
     site_title = "Hi Agenda · Panel"
+    login_form = PanelAuthenticationForm
 
     def each_context(self, request):
         return {**super().each_context(request), "site_url": url_en_dominio(request, settings.DOMINIO_BASE)}

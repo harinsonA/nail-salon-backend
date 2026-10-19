@@ -10,6 +10,7 @@ from apps.panel.views.users.view import (
     UserDeleteModalView,
     UserListAjaxView,
     UserListView,
+    UserUnlockModalView,
     UserUpdateModalView,
 )
 
@@ -25,11 +26,13 @@ class UserAdmin(CurrentSchemaDeletionMixin, DjangoUserAdmin):
         create_modal = UserCreateModalView.as_view(admin_site=self.admin_site, model_admin=self)
         change_modal = UserUpdateModalView.as_view(admin_site=self.admin_site, model_admin=self)
         delete_modal = UserDeleteModalView.as_view(admin_site=self.admin_site, model_admin=self)
+        unlock_modal = UserUnlockModalView.as_view(admin_site=self.admin_site, model_admin=self)
         return [
             path("list/", list_ajax, name="auth_user_list_ajax"),
             path("add/modal/", create_modal, name="auth_user_add_modal"),
             path("<int:pk>/change/modal/", change_modal, name="auth_user_change_modal"),
             path("<int:pk>/delete/modal/", delete_modal, name="auth_user_delete_modal"),
+            path("<int:pk>/unlock/modal/", unlock_modal, name="auth_user_unlock_modal"),
             *super().get_urls(),
         ]
 

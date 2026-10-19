@@ -6,6 +6,7 @@ const isBsModal = (link, bsModal) =>
 const iconImageMap = {
   edit_document: "/static/images/common/edit_document.svg",
   delete: "/static/images/common/delete.svg",
+  lock_open: "/static/images/common/lock_open.svg",
 };
 
 const renderIcon = (icon) => {
