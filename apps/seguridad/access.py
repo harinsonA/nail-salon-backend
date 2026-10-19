@@ -20,21 +20,35 @@ class LockStatus:
     state: LockState
     until: datetime | None = None
     failures: int = 0
+    last_failure: datetime | None = None
 
     @property
     def is_locked(self):
         return self.state is not LockState.FREE
+
+    @property
+    def remaining_attempts(self):
+        if self.is_locked:
+            return 0
+        if self.failures < settings.SECURITY_TEMPORARY_LOCK_FAILURES:
+            return settings.SECURITY_TEMPORARY_LOCK_FAILURES - self.failures
+        return settings.SECURITY_PERMANENT_LOCK_FAILURES - self.failures
+
+    @property
+    def next_lock_is_permanent(self):
+        return self.failures >= settings.SECURITY_TEMPORARY_LOCK_FAILURES
 
 
 def status_of(access, now=None):
     if access is None:
         return LockStatus(LockState.FREE)
     now = now or timezone.now()
+    details = {"failures": access.intentos_fallidos, "last_failure": access.ultimo_intento_fallido}
     if access.bloqueado:
-        return LockStatus(LockState.PERMANENT, failures=access.intentos_fallidos)
+        return LockStatus(LockState.PERMANENT, **details)
     if access.bloqueado_hasta and access.bloqueado_hasta > now:
-        return LockStatus(LockState.TEMPORARY, until=access.bloqueado_hasta, failures=access.intentos_fallidos)
-    return LockStatus(LockState.FREE, failures=access.intentos_fallidos)
+        return LockStatus(LockState.TEMPORARY, until=access.bloqueado_hasta, **details)
+    return LockStatus(LockState.FREE, **details)
 
 
 def lock_status(user, now=None):
