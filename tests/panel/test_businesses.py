@@ -103,14 +103,18 @@ class BusinessesScreenTests(TestCase):
         preparing = [option["label"] for option in self.row(self.superuser, "Uñas Lucía")["options"]]
         self.assertEqual(active, ["Editar", "Cambiar estado"])
         self.assertEqual(preparing, ["Editar", "Reparar alta", "Cambiar estado"])
-        links = {option["label"]: option["link"] for option in self.row(self.superuser, "El Corte")["options"]}
-        self.assertEqual(links["Cambiar estado"], f"/admin/tenancy/negocio/{self.cut.pk}/estado/")
+        options = {option["label"]: option for option in self.row(self.superuser, "El Corte")["options"]}
+        status = options["Cambiar estado"]
+        self.assertEqual(status["link"], f"/admin/tenancy/negocio/{self.cut.pk}/estado/")
+        self.assertEqual((status["bsModal"], status["className"], status["icon"]), (True, "bs-modal", "sync_alt"))
 
     def test_owner_modal_actions_are_only_in_the_edit_page(self):
         links = [option["link"] for option in self.row(self.superuser, "El Corte")["options"]]
         self.assertNotIn(f"/admin/tenancy/negocio/{self.cut.pk}/clave-propietario/", links)
         self.assertNotIn(f"/admin/tenancy/negocio/{self.cut.pk}/desbloquear-propietario/", links)
-        self.assertNotContains(self.browser(self.superuser).get(LIST_URL), "initializeBusinessActionModal")
+        page = self.browser(self.superuser).get(LIST_URL)
+        self.assertContains(page, 'id="modal"')
+        self.assertContains(page, "initializeBusinessActionModal('#modal', { onDone: () => table.draw(false) });")
 
     def test_there_is_no_delete_option(self):
         for row in self.fetch(self.superuser).json()["data"]:

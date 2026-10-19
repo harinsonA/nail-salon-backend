@@ -173,7 +173,11 @@ class BusinessEditTests(TestCase):
         self.assertContains(response, f'class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{url}"')
         self.assertNotContains(response, f'href="{url}"')
         self.assertContains(response, 'id="modal"')
-        self.assertContains(response, "initializeBusinessActionModal('#modal')")
+        self.assertContains(
+            response, "initializeBusinessActionModal('#modal', { onDone: () => window.location.reload() });"
+        )
+        status = f"/admin/tenancy/negocio/{self.business.pk}/estado/"
+        self.assertContains(response, f'class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{status}"')
         unlock = f"/admin/tenancy/negocio/{self.business.pk}/desbloquear-propietario/"
         self.assertContains(response, f'class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{unlock}"')
 
