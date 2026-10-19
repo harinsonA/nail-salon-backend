@@ -64,6 +64,12 @@ class LoginDelPanelTests(TestCase):
         )
         self.assertRedirects(entrada, "/admin/tenancy/negocio/", fetch_redirect_response=False)
 
+    def test_cerrar_sesion_vuelve_al_login_del_panel(self):
+        self.panel.force_login(self.admin)
+        salida = self.panel.post("/admin/logout/")
+        self.assertRedirects(salida, RUTA, fetch_redirect_response=False)
+        self.assertNotIn("_auth_user_id", self.panel.session)
+
     def test_credenciales_incorrectas_muestran_la_alerta_del_diseno(self):
         respuesta = self.panel.post(RUTA, {"username": "admin", "password": "otra", "next": "/admin/"})
         self.assertContains(respuesta, "gentle-alert")

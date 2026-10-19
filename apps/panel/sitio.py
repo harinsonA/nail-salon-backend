@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.views import LogoutView
 from django.shortcuts import redirect
 from django.urls import path
 
@@ -20,6 +21,10 @@ class PanelAdminSite(admin.AdminSite):
 
         account_modal = AccountModalView.as_view(admin_site=self, model_admin=self._registry[get_user_model()])
         return [path("account/modal/", account_modal, name="account_modal"), *super().get_urls()]
+
+    def logout(self, request, extra_context=None):
+        request.current_app = self.name
+        return LogoutView.as_view(next_page="admin:login")(request)
 
     def password_change(self, request, extra_context=None):
         return redirect("admin:index")
