@@ -23,7 +23,8 @@ jobs:
             -e POSTGRES_DB=manicuredb \
             -e POSTGRES_USER=postgres \
             -e POSTGRES_PASSWORD=postgres \
-            postgres:15
+            --tmpfs /var/lib/postgresql/data \
+            postgres:15 -c fsync=off -c synchronous_commit=off -c full_page_writes=off
           for i in $(seq 1 30); do
             docker exec db pg_isready -U postgres && exit 0
             sleep 1
@@ -85,7 +86,7 @@ jobs:
         run: docker exec web python manage.py makemigrations --check --dry-run
 
       - name: Pruebas automáticas
-        run: docker exec web python manage.py test --noinput
+        run: docker exec web python manage.py test --noinput --timing
 
       - name: Imagen de producción sin la carpeta tests
         run: |

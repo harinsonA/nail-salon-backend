@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
+from django_tenants.utils import get_public_schema_name
 
 from apps.profiles.models import Perfil, PerfilDireccion, PerfilTelefono
 from tests.base import NegocioTestCase
@@ -78,8 +79,9 @@ class PerfilTests(NegocioTestCase):
         )
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT table_name, table_schema FROM information_schema.tables WHERE table_name = ANY(%s)",
-                [list(tablas)],
+                "SELECT table_name, table_schema FROM information_schema.tables "
+                "WHERE table_name = ANY(%s) AND table_schema IN (%s, %s)",
+                [list(tablas), get_public_schema_name(), self.esquema],
             )
             encontradas = cursor.fetchall()
         self.assertCountEqual(encontradas, [(tabla, self.esquema) for tabla in tablas])
