@@ -231,7 +231,7 @@
   $(() => {
     initializeFormsets(document);
     initializeAllBSModals();
-    initializeOwnerPasswordModal('#modal');
+    initializeBusinessActionModal('#modal');
     const subdomain = document.getElementById('{{ form.subdominio.id_for_label }}');
     const schema = document.getElementById('{{ form.esquema.id_for_label }}');
     if (!subdomain || !schema) return;

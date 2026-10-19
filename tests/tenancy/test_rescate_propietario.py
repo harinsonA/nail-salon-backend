@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import Client
@@ -103,37 +104,67 @@ class RescateDelPropietarioTests(NegocioTestCase):
             self.assertEqual(acceso.history.first().history_change_reason, "Desbloqueado al restablecer la clave desde el panel")
             self.assertTrue(User.objects.get(pk=self.propietario.pk).check_password(clave))
 
-    def test_la_pantalla_muestra_el_bloqueo_y_desbloquea(self):
+    def ajax(self, metodo, url, navegador=None):
+        return getattr(navegador or self.panel, metodo)(url, {}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+    def test_el_modal_muestra_el_bloqueo_y_desbloquea(self):
         self.bloquear_propietario(definitivo=True)
         url = url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk)
-        pantalla = self.panel.get(url)
-        self.assertContains(pantalla, "Bloqueado hasta que alguien lo desbloquee")
-        self.assertContains(pantalla, "Desbloquear al propietario")
-        respuesta = self.panel.post(url, follow=True)
-        self.assertRedirects(respuesta, url_panel("tenancy_negocio_change", self.negocio.pk))
-        self.assertContains(respuesta, "El propietario (maria@correo.cl) quedó desbloqueado")
+        modal = self.ajax("get", url)
+        self.assertTemplateUsed(modal, "panel/businesses/owner_unlock_modal.html")
+        self.assertContains(modal, "Bloqueado hasta que alguien lo desbloquee")
+        self.assertContains(modal, "Intentos fallidos")
+        self.assertContains(modal, 'id="owner_unlock_submit_btn"')
+        self.assertContains(modal, f'action="{url}"')
+        respuesta = self.ajax("post", url)
+        self.assertEqual(respuesta.json(), {"message": "El propietario quedó desbloqueado.", "email": "maria@correo.cl"})
         self.assertFalse(self.estado_en_el_negocio().is_locked)
+        registro = LogEntry.objects.filter(object_id=str(self.negocio.pk), content_type__model="negocio").latest("action_time")
+        self.assertEqual(registro.change_message, "Propietario desbloqueado.")
+        self.assertEqual(self.negocio_fresco().history.first().history_change_reason, "Propietario desbloqueado")
 
-    def test_la_pantalla_avisa_si_no_esta_bloqueado(self):
+    def test_el_modal_avisa_si_no_esta_bloqueado(self):
         url = url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk)
-        self.assertContains(self.panel.get(url), "no está bloqueado")
-        respuesta = self.panel.post(url, follow=True)
-        self.assertContains(respuesta, "El propietario no estaba bloqueado: no hubo cambios.")
+        modal = self.ajax("get", url)
+        self.assertContains(modal, "El propietario no está bloqueado")
+        self.assertNotContains(modal, 'id="owner_unlock_submit_btn"')
+        self.assertContains(modal, "Cerrar")
+        respuesta = self.ajax("post", url)
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertEqual(respuesta.json()["message"], "El propietario no estaba bloqueado: no hubo cambios.")
+
+    def test_sin_ajax_lleva_a_la_ficha(self):
+        url = url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk)
+        self.assertRedirects(
+            self.panel.get(url), url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
+        )
 
     def test_solo_un_superusuario_puede_desbloquear(self):
         self.bloquear_propietario()
         otro = Client(HTTP_HOST="admin.localhost")
         otro.force_login(self.staff)
-        respuesta = otro.post(url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk))
-        self.assertEqual(respuesta.status_code, 403)
+        url = url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk)
+        self.assertEqual(self.ajax("get", url, otro).status_code, 403)
+        self.assertEqual(self.ajax("post", url, otro).status_code, 403)
         self.assertTrue(self.estado_en_el_negocio().is_locked)
 
     def test_no_se_desbloquea_un_alta_sin_terminar(self):
+        self.bloquear_propietario()
         Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.PREPARANDO)
-        respuesta = self.panel.post(url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk))
-        self.assertRedirects(
-            respuesta, url_panel("tenancy_negocio_change", self.negocio.pk), fetch_redirect_response=False
-        )
+        url = url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk)
+        modal = self.ajax("get", url)
+        self.assertContains(modal, "El negocio todavía no está listo: primero repara su alta.")
+        self.assertNotContains(modal, 'id="owner_unlock_submit_btn"')
+        respuesta = self.ajax("post", url)
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertTrue(self.estado_en_el_negocio().is_locked)
+
+    def test_sin_propietario_no_hay_nada_que_desbloquear(self):
+        with schema_context(self.esquema):
+            Perfil.objects.filter(user=self.propietario).update(rol=Perfil.Rol.ENCARGADO)
+        url = url_panel("tenancy_negocio_desbloquear_propietario", self.negocio.pk)
+        self.assertContains(self.ajax("get", url), "Este negocio no tiene propietario: repara su alta.")
+        self.assertEqual(self.ajax("post", url).json()["message"], "Este negocio no tiene propietario: repara su alta.")
 
     def test_la_ficha_muestra_el_acceso_del_propietario_y_la_accion(self):
         ficha = self.panel.get(url_panel("tenancy_negocio_change", self.negocio.pk))
