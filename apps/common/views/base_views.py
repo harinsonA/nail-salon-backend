@@ -2,6 +2,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.urls import reverse
 
+from apps.seguridad.sessions import CLOSED_ELSEWHERE_ATTRIBUTE, CLOSED_ELSEWHERE_MESSAGE
+
 UNAUTHORIZED_RESPONSE_AUTO = "auto"
 UNAUTHORIZED_RESPONSE_JSON = "json"
 UNAUTHORIZED_RESPONSE_REDIRECT = "redirect"
@@ -27,9 +29,10 @@ class ProtectedView(LoginRequiredMixin):
         return UNAUTHORIZED_RESPONSE_REDIRECT
 
     def unauthorized_json_response(self) -> JsonResponse:
+        closed_elsewhere = getattr(self.request, CLOSED_ELSEWHERE_ATTRIBUTE, False)
         return JsonResponse(
             {
-                "message": self.session_expired_message,
+                "message": CLOSED_ELSEWHERE_MESSAGE if closed_elsewhere else self.session_expired_message,
                 "redirect": reverse("login"),
             },
             status=401,

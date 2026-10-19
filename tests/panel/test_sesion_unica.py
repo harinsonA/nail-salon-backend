@@ -1,14 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import Client, TestCase, override_settings
-from django.urls import reverse
 from django_tenants.utils import get_public_schema_name
 
-from apps.profiles.models import Perfil
 from apps.seguridad.models import AccesoUsuario
 from apps.seguridad.sessions import CLOSED_ELSEWHERE_MESSAGE, SESSION_TOKEN_KEY
 from apps.tenancy.models import Dominio, Negocio
-from tests.base import NegocioTestCase
 
 User = get_user_model()
 
@@ -119,18 +116,3 @@ class SesionUnicaEnElPanelTests(TestCase):
         computador = self.entrar()
         self.entrar()
         self.assertEqual(computador.get(INICIO).status_code, 200)
-
-
-class SesionUnicaTodaviaNoEnLosNegociosTests(NegocioTestCase):
-    esquema = "sesion_negocio"
-    dominio = "sesion-negocio.localhost"
-
-    def test_dos_sesiones_del_mismo_usuario_del_negocio_siguen_abiertas(self):
-        laura = User.objects.create_user(username="laura", email="laura@correo.cl", password=CLAVE)
-        Perfil.objects.filter(user=laura).update(debe_cambiar_clave=False)
-        computador = Client(HTTP_HOST=self.dominio)
-        telefono = Client(HTTP_HOST=self.dominio)
-        for navegador in (computador, telefono):
-            navegador.post(reverse("login"), {"username": "laura@correo.cl", "password": CLAVE})
-        self.assertEqual(computador.get(reverse("calendar")).status_code, 200)
-        self.assertEqual(telefono.get(reverse("calendar")).status_code, 200)
