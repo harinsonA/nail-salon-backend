@@ -11,7 +11,7 @@ from apps.common.utils.utils import (
     get_related_errors_to_response,
 )
 from apps.common.views.base_views import SESSION_EXPIRED_MESSAGE
-from apps.seguridad.sessions import CLOSED_ELSEWHERE_ATTRIBUTE, CLOSED_ELSEWHERE_MESSAGE
+from apps.seguridad.sessions import closure_message
 
 """========================================================================="""
 # region ........ Constants
@@ -71,8 +71,7 @@ class PanelView(PanelAccessMixin):
 
 class PanelAjaxView(PanelAccessMixin):
     def handle_no_session(self):
-        closed_elsewhere = getattr(self.request, CLOSED_ELSEWHERE_ATTRIBUTE, False)
-        message = CLOSED_ELSEWHERE_MESSAGE if closed_elsewhere else SESSION_EXPIRED_MESSAGE
+        message = closure_message(self.request) or SESSION_EXPIRED_MESSAGE
         return JsonResponse(
             {"message": message, "redirect": self.get_login_url()},
             status=401,

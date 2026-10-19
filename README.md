@@ -27,6 +27,7 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 - Respuesta diferenciada ante una sesión vencida: redirección al login en navegación normal, `401` con JSON en peticiones AJAX
 - **Bloqueo por intentos fallidos** en el panel y en cada negocio: aviso cuando queda un intento, 15 minutos de bloqueo al 5.º fallo seguido y bloqueo sin vencimiento al 10.º (valores en `SECURITY_*`). El mensaje dice a quién pedir ayuda según el rol. Desbloquean: el panel (Usuarios y el propietario de cada negocio), el propietario o un encargado desde Equipo, o el comando `desbloquear_usuario`
 - **Sesión única** por cuenta, en el panel y en los negocios: entrar en otro dispositivo cierra la sesión anterior con un aviso. Se apaga con `SECURITY_SINGLE_SESSION=False`
+- **Una cuenta bloqueada sale de inmediato**: si una cuenta se bloquea con la sesión abierta, la siguiente petición cierra la sesión y el login explica el motivo. Se revisa siempre, aunque la sesión única esté apagada
 
 ### 📅 Calendario y Agenda
 
@@ -368,6 +369,7 @@ nail-salon-backend/
 
 - **ProtectedView / ProtectedAjaxView / ProtectedExportView**: bases de vistas protegidas. Una sola validación decide el tipo de respuesta ante una sesión no válida: redirección al login o `401` con JSON, según quién pregunte
 - **SessionExpiryMiddleware**: vencimiento de la sesión por inactividad y por corte diario
+- **SessionGuardMiddleware**: en cada petición con sesión, cierra la sesión de una cuenta bloqueada o reemplazada por otro dispositivo, y deja el motivo para el login y las respuestas `401`
 - **Preferencias**: registro de definiciones tipadas y servicio `get` / `get_preferences` / `set`, con lectura en lote en una sola consulta
 - **background_task**: decorador que convierte una función en tarea de Celery con seguimiento en `TareaEnProceso`
 - **BaseListViewAjax**: Vista base reutilizable para listados DataTables server-side con paginación, búsqueda, ordenamiento y filtros por formulario

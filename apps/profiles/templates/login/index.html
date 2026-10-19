@@ -15,9 +15,9 @@
       <div class="gentle-alert" role="alert">
         Correo o contraseña incorrectos.
       </div>
-      {% elif closed_elsewhere %}
+      {% elif session_closed %}
       <div class="gentle-alert" role="alert">
-        {{ closed_elsewhere }}
+        {{ session_closed }}
       </div>
       {% elif request.GET.expired %}
       <div class="gentle-alert" role="alert">
