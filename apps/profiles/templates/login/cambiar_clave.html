@@ -1,4 +1,5 @@
 {% extends "login/base_acceso.html" %}
+{% load static %}
 
 {% block titulo %}Cambiar clave · Hi Agenda{% endblock %}
 
@@ -21,6 +22,10 @@
       <input type="password" name="new_password1" id="id_new_password1" placeholder=" " required autofocus
         autocomplete="new-password">
       <label for="id_new_password1">Nueva clave</label>
+      <button type="button" class="gentle-toggle" aria-label="Mostrar u ocultar la clave" aria-pressed="false">
+        <img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="icon--field eye-open">
+        <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="20" height="20" class="icon--field eye-closed">
+      </button>
       <div class="field-accent"></div>
     </div>
   </div>
@@ -30,6 +35,10 @@
       <input type="password" name="new_password2" id="id_new_password2" placeholder=" " required
         autocomplete="new-password">
       <label for="id_new_password2">Repite la nueva clave</label>
+      <button type="button" class="gentle-toggle" aria-label="Mostrar u ocultar la clave" aria-pressed="false">
+        <img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="icon--field eye-open">
+        <img src="{% static 'images/common/visibility_off.svg' %}" alt="" width="20" height="20" class="icon--field eye-closed">
+      </button>
       <div class="field-accent"></div>
     </div>
   </div>

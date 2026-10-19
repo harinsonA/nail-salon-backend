@@ -45,7 +45,7 @@ class LoginDelPanelTests(TestCase):
         self.assertContains(respuesta, 'name="username"')
         self.assertContains(respuesta, ">Usuario<")
         self.assertContains(respuesta, 'name="password"')
-        self.assertContains(respuesta, 'id="passwordToggle"')
+        self.assertContains(respuesta, 'class="gentle-toggle"')
 
     def test_entrar_lleva_al_inicio_del_panel(self):
         respuesta = self.panel.get(RUTA)
