@@ -6,74 +6,141 @@ Equipo
 {% endblock %}
 
 {% block content %}
-<section class="d-flex flex-column gap-3">
-  {% if puede_crear %}
-  <div>
-    <a href="{% url 'equipo_crear' %}" class="btn btn-primary btn-sm">Agregar usuario</a>
-  </div>
+{% include 'common/bs_modal.html' %}
+<section>
+  {% if can_create %}
+  <section class="d-inline-flex align-items-center gap-2">
+    <a id="member-create-btn" data-form-url="{% url 'equipo_crear' %}"
+      class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+      Miembro
+      <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16" class="icon--small">
+    </a>
+  </section>
   {% endif %}
-
-  <div class="table-responsive">
-    <table class="table align-middle">
+  <section class="row justify-content-center">
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Total activos</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b id="active_members_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Total inactivos</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b id="inactive_members_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card rounded-4 agenda-card">
+        <div class="card-body">
+          <h6 class="card-subtitle d-flex text-body-secondary m-0">
+            <span>Bloqueados</span>
+          </h6>
+          <h4 class="card-title text-end text-primary m-0">
+            <b id="locked_members_id">0</b>
+          </h4>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="mt-3 d-flex flex-wrap gap-3">
+    {% for field in filter_form %}
+    <div>
+      <label class="form-check-label form-label--custom" for="{{ field.id_for_label }}">
+        {{ field.label }}
+      </label>
+      {{ field }}
+    </div>
+    {% endfor %}
+  </section>
+  <div class="profile-note mt-3 mb-0" role="note">
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <span>Los miembros no se borran: se desactivan, para que el historial conserve quién hizo cada cambio.</span>
+  </div>
+  <section class="table-container--custom">
+    <table id="team_table" class="table table-hover">
       <thead>
         <tr>
-          <th>Nombre</th>
-          <th>Correo</th>
-          <th>Rol</th>
-          <th>Estado</th>
-          <th class="text-center">Acceso</th>
-          <th class="text-end">Acciones</th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Correo</th>
+          <th scope="col">Rol</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Acceso</th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
-        {% for miembro, gestionable, acceso, acceso_texto in miembros %}
-        <tr{% if not miembro.is_active %} class="text-body-secondary"{% endif %}>
-          <td>{{ miembro.get_full_name|default:"—" }}</td>
-          <td>{{ miembro.email|default:"—" }}</td>
-          <td>{{ miembro.perfil.get_rol_display }}</td>
-          <td>{% if miembro.is_active %}Activo{% else %}Desactivado{% endif %}</td>
-          <td class="text-center">
-            {% if acceso.is_locked %}
-            <img src="{% static 'images/common/lock.svg' %}" class="icon--cell" width="20" height="20" alt="{{ acceso_texto }}" title="{{ acceso_texto }}">
-            {% else %}
-            <img src="{% static 'images/common/lock_open.svg' %}" class="icon--cell" width="20" height="20" alt="{{ acceso_texto }}" title="{{ acceso_texto }}">
-            {% endif %}
-          </td>
-          <td class="text-end">
-            {% if gestionable %}
-            <div class="d-inline-flex gap-2">
-              {% if acceso.is_locked %}
-              <form method="post" action="{% url 'equipo_desbloquear' miembro.pk %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1">
-                  <img src="{% static 'images/common/lock_open.svg' %}" class="icon--small" width="16" height="16" alt="">
-                  Desbloquear
-                </button>
-              </form>
-              {% endif %}
-              <form method="post" action="{% url 'equipo_restablecer_clave' miembro.pk %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-primary btn-sm"
-                  onclick="return confirm('Se generará una clave temporal nueva y la actual dejará de servir. ¿Continuar?')">
-                  Restablecer clave
-                </button>
-              </form>
-              <form method="post" action="{% url 'equipo_activar' miembro.pk %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-secondary btn-sm">
-                  {% if miembro.is_active %}Desactivar{% else %}Reactivar{% endif %}
-                </button>
-              </form>
-            </div>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
       </tbody>
     </table>
-  </div>
-  <p class="text-body-secondary small m-0">
-    Los usuarios no se borran: se desactivan, para que el historial conserve quién hizo cada cambio.
-  </p>
+  </section>
 </section>
+{% endblock %}
+{% block extra_js %}
+<script>
+  $(() => {
+    const statusColumn = (isActive) => isActive
+      ? `<img src="{% static 'images/common/check_circle.svg' %}" alt="Activo" title="Activo" width="20" height="20" class="icon--cell">`
+      : `<img src="{% static 'images/common/cancel.svg' %}" alt="Inactivo" title="Inactivo" width="20" height="20" class="icon--cell">`;
+
+    const lockColumn = (label) => label
+      ? `<img src="{% static 'images/common/lock.svg' %}" class="icon--cell" width="20" height="20" alt="${label}" title="${label}">`
+      : `<img src="{% static 'images/common/lock_open.svg' %}" class="icon--cell" width="20" height="20" alt="Sin bloqueo" title="Sin bloqueo">`;
+
+    const filterData = {
+      status: $('#{{ filter_form.status.id_for_label }}').val(),
+      role: $('#{{ filter_form.role.id_for_label }}').val(),
+    };
+    const table = renderDataTable({
+      tableID: '#team_table',
+      url: '{{ list_url }}',
+      requestData: filterData,
+      columns: [
+        { data: 'full_name', className: 'fs-7 w-auto text-nowrap' },
+        { data: 'email', className: 'fs-7 w-auto' },
+        { data: 'role_label', className: 'fs-7 w-auto text-nowrap' },
+        { data: ({ is_active }) => statusColumn(is_active), className: 'fs-7 w-auto text-center' },
+        { data: ({ lock_label }) => lockColumn(lock_label), className: 'fs-7 w-auto text-center' },
+        { data: ({ options }) => optionsColumn(options), className: 'all fs-7 w-auto text-center', orderable: false, searchable: false },
+      ],
+      extraConfig: {
+        ajax: {
+          dataSrc: (json) => {
+            $('#active_members_id').text(json.active_members);
+            $('#inactive_members_id').text(json.inactive_members);
+            $('#locked_members_id').text(json.locked_members);
+            return json.data;
+          },
+        },
+        drawCallback: () => {
+          initializeAllBSModals();
+        },
+      },
+    });
+
+    {% for field in filter_form %}
+    $('#{{ field.id_for_label }}').on('change', ({ target }) => {
+      filterData['{{ field.name }}'] = target.value;
+      table.draw();
+    });
+    {% endfor %}
+
+    if ($('#member-create-btn').length) {
+      initializeBSModals('#member-create-btn');
+    }
+
+    initializeActionModal('#modal', { onDone: () => table.draw(false) });
+  });
+</script>
 {% endblock %}

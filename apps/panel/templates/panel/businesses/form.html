@@ -232,7 +232,7 @@
     initializeFormsets(document);
     initializeAllBSModals();
     initializeAllBSXLModals();
-    initializeBusinessActionModal('#modal', { onDone: () => window.location.reload() });
+    initializeActionModal('#modal', { onDone: () => window.location.reload() });
     const subdomain = document.getElementById('{{ form.subdominio.id_for_label }}');
     const schema = document.getElementById('{{ form.esquema.id_for_label }}');
     if (!subdomain || !schema) return;

@@ -138,7 +138,7 @@ class BusinessesScreenTests(TestCase):
         self.assertNotIn(f"/admin/tenancy/negocio/{self.cut.pk}/desbloquear-propietario/", links)
         page = self.browser(self.superuser).get(LIST_URL)
         self.assertContains(page, 'id="modal"')
-        self.assertContains(page, "initializeBusinessActionModal('#modal', { onDone: () => table.draw(false) });")
+        self.assertContains(page, "initializeActionModal('#modal', { onDone: () => table.draw(false) });")
 
     def test_there_is_no_delete_option(self):
         for row in self.fetch(self.superuser).json()["data"]:

@@ -1,0 +1,76 @@
+<form id="member-form-modal" action="{{ modal_url }}" method="post" data-action-modal{% if not member %} data-sensitive{% endif %}>
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">{% if member %}manage_accounts{% else %}person_add{% endif %}</span>
+      <span class="pb-1">{% if member %}Editar miembro · {{ member_name }}{% else %}Nuevo miembro{% endif %}</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    <div class="action-modal__request">
+      <div class="row g-2">
+        <div class="col-12 col-md-6">
+          {% include 'common/form_field.html' with field=form.first_name %}
+        </div>
+        <div class="col-12 col-md-6">
+          {% include 'common/form_field.html' with field=form.last_name optional=True %}
+        </div>
+        <div class="col-12">
+          {% include 'common/form_field.html' with field=form.email %}
+        </div>
+        <div class="col-12">
+          {% include 'common/form_field.html' with field=form.rol %}
+        </div>
+      </div>
+      {% if not member %}
+      <p class="lock-hint">
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">info</span>
+        <span>Al crearlo verás una clave temporal para entregarle. Al entrar por primera vez tendrá que cambiarla.</span>
+      </p>
+      {% endif %}
+    </div>
+
+    {% if not member %}
+    <div class="action-modal__result d-none" aria-live="polite">
+      {% include 'common/action_modal_success.html' with title='Miembro creado' text='Entrégale estos datos: al entrar por primera vez tendrá que cambiar la clave.' %}
+      <div class="readonly-info">
+        <div class="readonly-info__item">
+          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+          <div>
+            <span class="readonly-info__label">Correo</span>
+            <span class="readonly-info__value" data-result="email"></span>
+          </div>
+        </div>
+        <div class="readonly-info__item">
+          <span class="material-symbols-outlined" aria-hidden="true">key</span>
+          <div>
+            <span class="readonly-info__label">Clave temporal</span>
+            <span class="d-inline-flex align-items-center gap-1">
+              <code class="temporary-password" data-result="password" data-copy-value></code>
+              <button type="button" class="icon-link-button copy-button" title="Copiar la clave"
+                aria-label="Copiar la clave">
+                <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="profile-note mt-3 mb-0">
+        <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+        <span>Cópiala ahora: no se guarda en ninguna parte y no se vuelve a mostrar.</span>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-secondary bg-gradient me-2 action-modal__close" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="member_submit_btn" type="button"
+      class="btn btn-sm btn-primary bg-gradient d-inline-flex align-items-center gap-1 action-modal__submit">
+      <span class="material-symbols-outlined icon--small" aria-hidden="true">{% if member %}save{% else %}person_add{% endif %}</span>
+      {% if member %}Guardar{% else %}Crear miembro{% endif %}
+    </button>
+  </div>
+</form>

@@ -1,141 +1,442 @@
+from bootstrap_modal_forms.forms import BSModalForm
+from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
-from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404, redirect
-from django.template.response import TemplateResponse
-from django.views import View
-from django.views.generic import FormView, TemplateView
+from django.db.models import Count, F, Q, TextChoices, Value
+from django.db.models.functions import Concat, Trim
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.utils import timezone
+from django.views.generic import TemplateView
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
+from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.claves import generar_clave_temporal
+from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.common.form_fields import AlphabeticField
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import puede_gestionar, roles_que_puede_crear
-from apps.seguridad.access import describe_lock, status_of, unlock
-from apps.seguridad.models import AccesoUsuario
+from apps.seguridad.access import (
+    LOCK_FREE,
+    describe_lock,
+    format_lock,
+    lock_status,
+    locked_users_filter,
+    unlock,
+    with_lock_level,
+)
+
+"""========================================================================="""
+# region ........ Constants
+
 
 User = get_user_model()
 
+ALL = "all"
+NAME_MAX_LENGTH = 150
+EMAIL_MAX_LENGTH = 254
 UNLOCK_REASON = "Desbloqueado desde Equipo"
 RESET_UNLOCK_REASON = "Desbloqueado al restablecer la clave desde Equipo"
+ROLE_LABELS = dict(Perfil.Rol.choices)
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Helpers
+
+
+def member_name(member):
+    return member.get_full_name() or member.email
+
+
+def assign_temporary_password(member):
+    password = generar_clave_temporal()
+    member.set_password(password)
+    member.save()
+    Perfil.objects.filter(user=member).update(debe_cambiar_clave=True)
+    unlock(member, RESET_UNLOCK_REASON)
+    return password
+
+
+def member_options(item):
+    options = [
+        {
+            "label": "Editar",
+            "link": reverse("equipo_editar", args=[item["pk"]]),
+            "bsModal": True,
+            "icon": "edit_document",
+            "className": "bs-modal",
+        }
+    ]
+    if item["lock"] != LOCK_FREE:
+        options.append(
+            {
+                "label": "Desbloquear",
+                "link": reverse("equipo_desbloquear", args=[item["pk"]]),
+                "bsModal": True,
+                "icon": "lock_open",
+                "className": "bs-modal",
+            }
+        )
+    options.extend(
+        [
+            {
+                "label": "Restablecer clave",
+                "link": reverse("equipo_restablecer_clave", args=[item["pk"]]),
+                "bsModal": True,
+                "icon": "key",
+                "className": "bs-modal",
+            },
+            {
+                "label": "Desactivar" if item["is_active"] else "Reactivar",
+                "link": reverse("equipo_activar", args=[item["pk"]]),
+                "bsModal": True,
+                "icon": "person_off" if item["is_active"] else "person_check",
+                "className": (
+                    "bs-modal text-color-destructive"
+                    if item["is_active"]
+                    else "bs-modal"
+                ),
+            },
+        ]
+    )
+    return options
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Mixins
+
+
+class ManagedMemberMixin:
+    def get_member(self):
+        if not hasattr(self, "_member"):
+            member = get_object_or_404(
+                User.objects.select_related("perfil"), pk=self.kwargs["pk"]
+            )
+            if not puede_gestionar(self.request.user, member):
+                raise PermissionDenied
+            self._member = member
+        return self._member
+
+
+# endregion
+"""========================================================================="""
 
 """========================================================================="""
 # region ........ Forms
 
 
-class MiembroForm(forms.Form):
-    first_name = forms.CharField(label="Nombre", max_length=150)
-    last_name = forms.CharField(label="Apellido", max_length=150, required=False)
-    email = forms.EmailField(label="Correo", help_text="Con este correo entra a la agenda.")
-    rol = forms.ChoiceField(label="Rol")
+class MemberForm(BSModalForm):
+    first_name = AlphabeticField(
+        label="Nombre",
+        max_length=NAME_MAX_LENGTH,
+        widget=forms.TextInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Ana"}),
+    )
+    last_name = AlphabeticField(
+        label="Apellido",
+        max_length=NAME_MAX_LENGTH,
+        required=False,
+        widget=forms.TextInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Rojas"}),
+    )
+    email = forms.EmailField(
+        label="Correo",
+        max_length=EMAIL_MAX_LENGTH,
+        help_text="Con este correo entra a la agenda.",
+        widget=forms.EmailInput(
+            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@correo.cl"}
+        ),
+    )
+    rol = forms.ChoiceField(
+        label="Rol",
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
 
-    def __init__(self, roles, *args, **kwargs):
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
         super().__init__(*args, **kwargs)
-        self.fields["rol"].choices = [(rol.value, rol.label) for rol in roles]
-        for campo in self.fields.values():
-            campo.widget.attrs["class"] = "form-select" if campo is self.fields["rol"] else "form-control"
+        self.fields["rol"].choices = [
+            (rol.value, rol.label) for rol in roles_que_puede_crear(self.request.user)
+        ]
+        if instance:
+            self.initial.update(
+                {
+                    "first_name": instance.first_name,
+                    "last_name": instance.last_name,
+                    "email": instance.email,
+                    "rol": instance.perfil.rol,
+                }
+            )
 
     def clean_email(self):
-        correo = self.cleaned_data["email"].strip().lower()
-        if User.objects.filter(email__iexact=correo).exists():
+        email = self.cleaned_data["email"].strip().lower()
+        others = User.objects.all()
+        if self.instance:
+            others = others.exclude(pk=self.instance.pk)
+        if others.filter(email__iexact=email).exists():
             raise forms.ValidationError("Ese correo ya lo usa otra persona de este negocio.")
-        return correo
+        return email
+
+    def save(self):
+        data = self.cleaned_data
+        member = self.instance or User()
+        member.username = data["email"][:NAME_MAX_LENGTH]
+        member.email = data["email"]
+        member.first_name = data["first_name"]
+        member.last_name = data["last_name"]
+        if not member.pk:
+            member.set_unusable_password()
+        member.save()
+        perfil = Perfil.objects.get(user=member)
+        if perfil.rol != data["rol"]:
+            perfil.rol = data["rol"]
+            perfil.save()
+        return member
+
+
+class TeamFilterForm(forms.Form):
+    class StatusChoices(TextChoices):
+        ALL = ALL, "Todos"
+        ACTIVE = "active", "Activos"
+        INACTIVE = "inactive", "Inactivos"
+        LOCKED = "locked", "Bloqueados"
+
+    status = forms.ChoiceField(
+        choices=StatusChoices.choices,
+        label="Estado",
+        initial=StatusChoices.ALL,
+        required=False,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    role = forms.ChoiceField(
+        choices=[(ALL, "Todos"), *Perfil.Rol.choices],
+        label="Rol",
+        initial=ALL,
+        required=False,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        filters = {}
+        status = cleaned_data.get("status")
+        if status == self.StatusChoices.ACTIVE:
+            filters["is_active"] = True
+        elif status == self.StatusChoices.INACTIVE:
+            filters["is_active"] = False
+        elif status == self.StatusChoices.LOCKED:
+            filters["lock__gt"] = LOCK_FREE
+        role = cleaned_data.get("role")
+        if role and role != ALL:
+            filters["perfil__rol"] = role
+        return filters
 
 
 # endregion
 """========================================================================="""
+
 """========================================================================="""
 # region ........ Views
 
 
-def respuesta_con_clave(request, usuario, clave, titulo):
-    respuesta = TemplateResponse(
-        request,
-        "equipo/clave.html",
-        {"titulo": titulo, "miembro": usuario, "clave": clave},
-    )
-    respuesta["Cache-Control"] = "no-store"
-    return respuesta
-
-
-def asignar_clave_temporal(usuario):
-    clave = generar_clave_temporal()
-    usuario.set_password(clave)
-    usuario.save()
-    Perfil.objects.filter(user=usuario).update(debe_cambiar_clave=True)
-    unlock(usuario, RESET_UNLOCK_REASON)
-    return clave
-
-
-class EquipoView(ProtectedView, TemplateView):
+class TeamView(ProtectedView, TemplateView):
     template_name = "equipo/lista.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        usuario = self.request.user
-        miembros = User.objects.select_related("perfil").order_by("-is_active", "first_name", "email")
-        accesos = {acceso.user_id: acceso for acceso in AccesoUsuario.objects.all()}
-        context["miembros"] = []
-        for miembro in miembros:
-            status = status_of(accesos.get(miembro.pk))
-            context["miembros"].append((miembro, puede_gestionar(usuario, miembro), status, describe_lock(status)))
-        context["puede_crear"] = bool(roles_que_puede_crear(usuario))
+        context.update(
+            {
+                "filter_form": TeamFilterForm(),
+                "list_url": reverse("equipo_lista"),
+                "can_create": bool(roles_que_puede_crear(self.request.user)),
+            }
+        )
         return context
 
 
-class CrearMiembroView(ProtectedView, FormView):
-    template_name = "equipo/crear.html"
+class TeamListView(BaseListViewAjax):
+    model = User
+    filter_form_class = TeamFilterForm
+    field_list = [
+        "pk",
+        "full_name",
+        "email",
+        "rol",
+        "is_active",
+        "lock",
+        "lock_until",
+    ]
+    ordering_fields = {
+        "0": "full_name",
+        "1": "email",
+        "2": "rol",
+        "3": "is_active",
+        "4": "lock",
+    }
 
-    def get_form(self, form_class=None):
-        return MiembroForm(roles_que_puede_crear(self.request.user), **self.get_form_kwargs())
+    def get_queryset(self):
+        members = User.objects.annotate(
+            full_name=Trim(Concat("first_name", Value(" "), "last_name")),
+            rol=F("perfil__rol"),
+        )
+        return with_lock_level(members, timezone.now()).filter(**self.get_filters())
+
+    def get_filter_by_search(self):
+        search_value = self.request.GET.get("search[value]", "")
+        if not search_value:
+            return Q()
+        return (
+            Q(first_name__icontains=search_value)
+            | Q(last_name__icontains=search_value)
+            | Q(email__icontains=search_value)
+        )
+
+    def get_values(self, queryset):
+        values = super().get_values(queryset)
+        for value in values:
+            value["full_name"] = value["full_name"] or "—"
+            value["role_label"] = ROLE_LABELS.get(value["rol"], "—")
+            value["lock_label"] = format_lock(value["lock"], value.pop("lock_until"))
+        return values
+
+    def add_options_column(self, data):
+        members = User.objects.select_related("perfil").in_bulk(
+            [item["pk"] for item in data]
+        )
+        for item in data:
+            item["options"] = (
+                member_options(item)
+                if puede_gestionar(self.request.user, members[item["pk"]])
+                else []
+            )
+        return data
+
+    @staticmethod
+    def additional_data(queryset):
+        return User.objects.aggregate(
+            active_members=Count("pk", filter=Q(is_active=True)),
+            inactive_members=Count("pk", filter=Q(is_active=False)),
+            locked_members=Count("pk", filter=locked_users_filter(timezone.now())),
+        )
+
+
+class MemberFormModalView(ProtectedView, BSModalFormView):
+    template_name = "equipo/member_modal.html"
+    form_class = MemberForm
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), "modal_url": self.request.path}
+
+    def form_invalid(self, form):
+        return JsonResponse(
+            {"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST
+        )
+
+
+class MemberCreateModalView(MemberFormModalView):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not roles_que_puede_crear(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        datos = form.cleaned_data
-        usuario = User.objects.create_user(
-            username=datos["email"][:150],
-            email=datos["email"],
-            first_name=datos["first_name"],
-            last_name=datos["last_name"],
+        member = form.save()
+        password = assign_temporary_password(member)
+        response = JsonResponse(
+            {
+                "message": f"{member_name(member)} quedó creado.",
+                "email": member.email,
+                "password": password,
+            }
         )
-        Perfil.objects.filter(user=usuario).update(rol=datos["rol"])
-        clave = asignar_clave_temporal(usuario)
-        return respuesta_con_clave(self.request, usuario, clave, "Usuario creado")
+        response["Cache-Control"] = "no-store"
+        return response
 
 
-class MiembroGestionadoMixin:
-    def obtener_miembro(self, pk):
-        miembro = get_object_or_404(User.objects.select_related("perfil"), pk=pk)
-        if not puede_gestionar(self.request.user, miembro):
-            raise PermissionDenied
-        return miembro
+class MemberUpdateModalView(ManagedMemberMixin, MemberFormModalView):
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "instance": self.get_member()}
+
+    def get_context_data(self, **kwargs):
+        member = self.get_member()
+        return {
+            **super().get_context_data(**kwargs),
+            "member": member,
+            "member_name": member_name(member),
+        }
+
+    def form_valid(self, form):
+        member = form.save()
+        return JsonResponse({"message": f"{member_name(member)} quedó actualizado."})
 
 
-class CambiarActivoView(ProtectedView, MiembroGestionadoMixin, View):
-    def post(self, request, pk):
-        miembro = self.obtener_miembro(pk)
-        miembro.is_active = not miembro.is_active
-        miembro.save(update_fields=["is_active"])
-        accion = "reactivado" if miembro.is_active else "desactivado"
-        messages.success(request, f"{miembro.get_full_name() or miembro.email} quedó {accion}.")
-        return redirect("equipo")
+class MemberActionModalView(ProtectedView, ManagedMemberMixin, TemplateView):
+    def get_context_data(self, **kwargs):
+        member = self.get_member()
+        return {
+            **super().get_context_data(**kwargs),
+            "modal_url": self.request.path,
+            "member": member,
+            "member_name": member_name(member),
+            "role_label": member.perfil.get_rol_display(),
+        }
 
 
-class UnlockMemberView(ProtectedView, MiembroGestionadoMixin, View):
-    def post(self, request, pk):
-        miembro = self.obtener_miembro(pk)
-        nombre = miembro.get_full_name() or miembro.email
-        if unlock(miembro, UNLOCK_REASON):
-            messages.success(request, f"{nombre} quedó desbloqueado: ya puede entrar con su clave actual.")
-        else:
-            messages.info(request, f"{nombre} no estaba bloqueado.")
-        return redirect("equipo")
+class MemberActiveModalView(MemberActionModalView):
+    template_name = "equipo/active_modal.html"
+
+    def post(self, request, *args, **kwargs):
+        member = self.get_member()
+        member.is_active = not member.is_active
+        member.save(update_fields=["is_active"])
+        action = "reactivado" if member.is_active else "desactivado"
+        return JsonResponse({"message": f"{member_name(member)} quedó {action}."})
 
 
-class RestablecerClaveView(ProtectedView, MiembroGestionadoMixin, View):
-    def post(self, request, pk):
-        miembro = self.obtener_miembro(pk)
-        clave = asignar_clave_temporal(miembro)
-        return respuesta_con_clave(request, miembro, clave, "Clave restablecida")
+class MemberUnlockModalView(MemberActionModalView):
+    template_name = "equipo/unlock_modal.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        status = lock_status(context["member"])
+        return {**context, "status": status, "lock_description": describe_lock(status)}
+
+    def post(self, request, *args, **kwargs):
+        member = self.get_member()
+        name = member_name(member)
+        if not unlock(member, UNLOCK_REASON):
+            return JsonResponse(
+                {"message": f"{name} no estaba bloqueado."},
+                status=HTTP_400_BAD_REQUEST,
+            )
+        return JsonResponse(
+            {"message": f"{name} quedó desbloqueado: ya puede entrar con su clave actual."}
+        )
+
+
+class MemberPasswordResetModalView(MemberActionModalView):
+    template_name = "equipo/password_modal.html"
+
+    def post(self, request, *args, **kwargs):
+        member = self.get_member()
+        password = assign_temporary_password(member)
+        response = JsonResponse(
+            {
+                "message": "Se generó una clave temporal nueva.",
+                "email": member.email,
+                "password": password,
+            }
+        )
+        response["Cache-Control"] = "no-store"
+        return response
 
 
 # endregion

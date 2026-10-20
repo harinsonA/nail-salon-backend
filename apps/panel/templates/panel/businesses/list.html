@@ -148,7 +148,7 @@ Negocios
       },
     });
 
-    initializeBusinessActionModal('#modal', { onDone: () => table.draw(false) });
+    initializeActionModal('#modal', { onDone: () => table.draw(false) });
 
     {% for field in filter_form %}
     $('#{{ field.id_for_label }}').on('change', ({ target }) => {

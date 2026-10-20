@@ -1,0 +1,31 @@
+<form id="member-active-form-modal" action="{{ modal_url }}" method="post" data-action-modal>
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">{% if member.is_active %}person_off{% else %}person_check{% endif %}</span>
+      <span class="pb-1">{% if member.is_active %}Desactivar{% else %}Reactivar{% endif %} miembro · {{ member_name }}</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    {% include 'equipo/member_info.html' %}
+    <p class="lock-hint">
+      <span class="material-symbols-outlined icon--inline" aria-hidden="true">info</span>
+      {% if member.is_active %}
+      <span>Ya no podrá entrar a la agenda. No se borra nada: su historial se conserva y puedes reactivarlo cuando quieras.</span>
+      {% else %}
+      <span>Podrá volver a entrar a la agenda con su clave actual.</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-secondary bg-gradient me-2 action-modal__close" data-bs-dismiss="modal">
+      Cancelar
+    </button>
+    <button id="member_active_submit_btn" type="button"
+      class="btn btn-sm {% if member.is_active %}btn-danger{% else %}btn-primary{% endif %} bg-gradient d-inline-flex align-items-center gap-1 action-modal__submit">
+      <span class="material-symbols-outlined icon--small" aria-hidden="true">{% if member.is_active %}person_off{% else %}person_check{% endif %}</span>
+      {% if member.is_active %}Desactivar{% else %}Reactivar{% endif %}
+    </button>
+  </div>
+</form>

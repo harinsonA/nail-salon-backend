@@ -4,9 +4,14 @@ from enum import Enum
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Case, F, IntegerField, Q, Value, When
 from django.utils import timezone
 
 from apps.seguridad.models import AccesoUsuario
+
+LOCK_FREE = 0
+LOCK_TEMPORARY = 1
+LOCK_PERMANENT = 2
 
 
 class LockState(Enum):
@@ -57,6 +62,30 @@ def describe_lock(status):
     if status.state is LockState.TEMPORARY:
         return f"Bloqueado hasta las {timezone.localtime(status.until).strftime('%H:%M')}"
     return "Sin bloqueo"
+
+
+def locked_users_filter(now):
+    return Q(acceso__bloqueado=True) | Q(acceso__bloqueado_hasta__gt=now)
+
+
+def with_lock_level(queryset, now):
+    return queryset.annotate(
+        lock=Case(
+            When(acceso__bloqueado=True, then=Value(LOCK_PERMANENT)),
+            When(acceso__bloqueado_hasta__gt=now, then=Value(LOCK_TEMPORARY)),
+            default=Value(LOCK_FREE),
+            output_field=IntegerField(),
+        ),
+        lock_until=F("acceso__bloqueado_hasta"),
+    )
+
+
+def format_lock(level, until):
+    if level == LOCK_PERMANENT:
+        return "Bloqueado hasta que alguien lo desbloquee"
+    if level == LOCK_TEMPORARY:
+        return f"Bloqueado hasta las {timezone.localtime(until).strftime('%H:%M')}"
+    return ""
 
 
 def lock_status(user, now=None):
