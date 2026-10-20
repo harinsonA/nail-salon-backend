@@ -1,5 +1,5 @@
-from apps.settings.preferences.constants import Category
-from apps.settings.preferences.types import ChoicePreference
+from apps.settings.preferences.constants import Category, Scope
+from apps.settings.preferences.types import BooleanPreference, ChoicePreference
 
 
 class PreferenceRegistry:
@@ -48,6 +48,17 @@ SESSION_IDLE_MINUTES = ChoicePreference(
 )
 
 
+CALENDAR_V2 = BooleanPreference(
+    key="calendario_v2",
+    label="Calendario versión 2",
+    help_text="Muestra la nueva vista de calendario en este negocio. Se activa solo desde la base de datos.",
+    default=False,
+    category=Category.FUNCIONES_NUEVAS,
+    scope=Scope.NEGOCIO,
+)
+
+
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
+    CALENDAR_V2,
 )

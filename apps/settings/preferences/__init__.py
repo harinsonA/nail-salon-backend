@@ -1,5 +1,9 @@
 from apps.settings.preferences.constants import Category, Scope
-from apps.settings.preferences.registry import PREFERENCES, SESSION_IDLE_MINUTES
+from apps.settings.preferences.registry import (
+    CALENDAR_V2,
+    PREFERENCES,
+    SESSION_IDLE_MINUTES,
+)
 from apps.settings.preferences.service import (
     get_category_preferences,
     get_preference,
@@ -8,10 +12,11 @@ from apps.settings.preferences.service import (
 )
 
 __all__ = [
-    "Category",
-    "Scope",
+    "CALENDAR_V2",
     "PREFERENCES",
     "SESSION_IDLE_MINUTES",
+    "Category",
+    "Scope",
     "get_category_preferences",
     "get_preference",
     "get_preferences",
