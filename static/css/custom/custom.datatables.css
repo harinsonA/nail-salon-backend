@@ -324,3 +324,28 @@ div.dt-container div.dt-processing>div:last-child {
 	font-size: 14px;
 	line-height: 1.4;
 }
+
+/* Viñeta de detalle (Responsive: columna dtr-control) */
+table.dataTable.dtr-column > tbody > tr > td.dtr-control {
+  width: 2rem;
+  text-align: center;
+}
+
+table.dataTable.dtr-column > tbody > tr > td.dtr-control:before {
+  border-left-color: var(--color-primary-hover);
+  transition: transform 0.15s ease;
+}
+
+table.dataTable.dtr-column > tbody > tr.dtr-expanded > td.dtr-control:before {
+  border-top-color: var(--color-primary-hover);
+}
+
+table.dataTable.dtr-column > tbody > tr.dtr-expanded > td {
+  background-color: var(--color-primary-soft);
+}
+
+table.dataTable > tbody > tr.child > td.child {
+  padding: 0.5rem 0.75rem 0.75rem 2.5rem;
+  background-color: var(--bg-muted);
+}
+

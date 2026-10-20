@@ -35,16 +35,26 @@ from apps.common.forms import (
     mark_invalid_fields,
 )
 from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
-from apps.common.widgets import text_input
 from apps.common.utils.utils import get_errors_to_response
-from apps.panel.views.base import PanelAjaxView, PanelListViewAjax, PanelView, RelatedFormsMixin
+from apps.common.widgets import text_input
+from apps.panel.views.base import (
+    PanelAjaxView,
+    PanelListViewAjax,
+    PanelView,
+    RelatedFormsMixin,
+)
+from apps.panel.views.history.view import HistoryListAjaxView
 from apps.seguridad.access import describe_lock
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
 from apps.tenancy.estados import cambiar_estado, estados_posibles
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
 from apps.tenancy.models.negocio import FAILED_STATUS_KEY, FAILED_STATUS_LABEL
+from apps.tenancy.propietario import (
+    owner_lock_status,
+    restablecer_clave_del_propietario,
+    unlock_owner,
+)
 from apps.tenancy.tasks import preparar_negocio
-from apps.tenancy.propietario import owner_lock_status, restablecer_clave_del_propietario, unlock_owner
 
 """========================================================================="""
 # region ........ Constants
@@ -56,10 +66,10 @@ NOT_READY_MESSAGE = "El negocio todavía no está listo: primero repara su alta.
 NO_OWNER_MESSAGE = "Este negocio no tiene propietario: repara su alta."
 NOT_LOCKED_MESSAGE = "El propietario no estaba bloqueado: no hubo cambios."
 NOT_PREPARING_MESSAGE = "Solo se reparan las altas que quedaron en «preparando»."
-NO_ACCESS_EMAIL_MESSAGE = "El titular no tiene correo: agrégale uno en su ficha antes de reparar."
-NO_STATUS_CHANGE_MESSAGE = (
-    "Mientras se prepara, el negocio no cambia de estado: queda activo solo al terminar la preparación."
+NO_ACCESS_EMAIL_MESSAGE = (
+    "El titular no tiene correo: agrégale uno en su ficha antes de reparar."
 )
+NO_STATUS_CHANGE_MESSAGE = "Mientras se prepara, el negocio no cambia de estado: queda activo solo al terminar la preparación."
 STATUS_DESCRIPTIONS = {
     Negocio.Estado.ACTIVO: "Todos entran y trabajan con normalidad.",
     Negocio.Estado.MOROSO: "El equipo sigue trabajando; propietario y encargado ven el aviso de pago y no entran a la administración.",
@@ -98,7 +108,9 @@ def businesses():
 
 
 def status_key_expression():
-    return Case(When(FAILED_PREPARATION, then=Value(FAILED_STATUS_KEY)), default=F("estado"))
+    return Case(
+        When(FAILED_PREPARATION, then=Value(FAILED_STATUS_KEY)), default=F("estado")
+    )
 
 
 def business_actions(pk, status):
@@ -124,7 +136,9 @@ def business_actions(pk, status):
             },
             {
                 "label": "Desbloquear propietario",
-                "link": reverse("admin:tenancy_negocio_desbloquear_propietario", args=[pk]),
+                "link": reverse(
+                    "admin:tenancy_negocio_desbloquear_propietario", args=[pk]
+                ),
                 "modal": True,
                 "icon": "lock_open",
                 "description": "Quita el bloqueo por intentos fallidos sin cambiarle la clave.",
@@ -202,7 +216,9 @@ class BusinessFormMixin(RelatedFormsMixin):
 
 class BusinessActionModalMixin(PanelAjaxView):
     def has_model_permission(self, request):
-        return request.user.is_superuser and self.model_admin.has_change_permission(request, self.get_object())
+        return request.user.is_superuser and self.model_admin.has_change_permission(
+            request, self.get_object()
+        )
 
     def get_object(self):
         if not hasattr(self, "_object"):
@@ -214,7 +230,9 @@ class BusinessActionModalMixin(PanelAjaxView):
 
     def not_ready_reason(self):
         business = self.get_object()
-        if business.estado == Negocio.Estado.PREPARANDO or not schema_exists(business.schema_name):
+        if business.estado == Negocio.Estado.PREPARANDO or not schema_exists(
+            business.schema_name
+        ):
             return NOT_READY_MESSAGE
         return ""
 
@@ -237,7 +255,9 @@ class BusinessActionModalMixin(PanelAjaxView):
         }
 
     def form_invalid(self, form):
-        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
+        return JsonResponse(
+            {"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST
+        )
 
 
 # endregion
@@ -253,7 +273,11 @@ class BusinessesFilterForm(forms.Form):
             (ALL, "Todos"),
             (Negocio.Estado.PREPARANDO, Negocio.Estado.PREPARANDO.label),
             (FAILED_STATUS_KEY, FAILED_STATUS_LABEL),
-            *(choice for choice in Negocio.Estado.choices if choice[0] != Negocio.Estado.PREPARANDO),
+            *(
+                choice
+                for choice in Negocio.Estado.choices
+                if choice[0] != Negocio.Estado.PREPARANDO
+            ),
         ],
         label="Estado",
         initial=ALL,
@@ -282,7 +306,9 @@ class OwnerPasswordResetForm(BSModalForm):
     identity_confirmed = forms.BooleanField(
         label="Confirmé la identidad del titular",
         help_text="Por ejemplo, llamándolo a su teléfono registrado antes de entregarle la clave.",
-        error_messages={"required": "Confirma la identidad del titular antes de generar la clave."},
+        error_messages={
+            "required": "Confirma la identidad del titular antes de generar la clave."
+        },
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
 
@@ -300,7 +326,11 @@ class BusinessStatusForm(BSModalForm):
         label="Motivo",
         help_text="Queda en el historial del negocio: por ejemplo, «dos meses sin pago». Hasta 250 caracteres.",
         widget=forms.Textarea(
-            attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Dos meses sin pago.", "rows": 3}
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "placeholder": "Dos meses sin pago.",
+                "rows": 3,
+            }
         ),
     )
 
@@ -537,7 +567,10 @@ class BusinessListAjaxView(PanelListViewAjax):
         )
 
     def get_values(self, queryset):
-        labels = {**dict(Negocio.Estado.choices), FAILED_STATUS_KEY: FAILED_STATUS_LABEL}
+        labels = {
+            **dict(Negocio.Estado.choices),
+            FAILED_STATUS_KEY: FAILED_STATUS_LABEL,
+        }
         values = super().get_values(queryset)
         for value in values:
             value["status_label"] = labels.get(value["status_key"], value["status_key"])
@@ -576,7 +609,9 @@ class BusinessListAjaxView(PanelListViewAjax):
             total_businesses=Count("pk"),
             active_businesses=Count("pk", filter=Q(estado=Negocio.Estado.ACTIVO)),
             overdue_businesses=Count("pk", filter=Q(estado=Negocio.Estado.MOROSO)),
-            preparing_businesses=Count("pk", filter=Q(estado=Negocio.Estado.PREPARANDO) & ~FAILED_PREPARATION),
+            preparing_businesses=Count(
+                "pk", filter=Q(estado=Negocio.Estado.PREPARANDO) & ~FAILED_PREPARATION
+            ),
             failed_businesses=Count("pk", filter=FAILED_PREPARATION),
         )
 
@@ -669,7 +704,9 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
             "title": f"Editar negocio · {business.nombre}",
             "business": business,
             "domain": domain.domain if domain else EMPTY,
-            "business_url": url_en_dominio(self.request, domain.domain) if domain else "",
+            "business_url": url_en_dominio(self.request, domain.domain)
+            if domain
+            else "",
             "access_email": correo_de_acceso(business.titular)
             if business.titular
             else None,
@@ -682,6 +719,8 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
                     "link": reverse(
                         "admin:tenancy_negocio_history", args=[business.pk]
                     ),
+                    "modal": True,
+                    "modal_size": "xl",
                     "icon": "history",
                     "description": "Todos los cambios del negocio, con quién los hizo y su motivo.",
                 },
@@ -718,11 +757,19 @@ class OwnerPasswordResetModalView(BusinessActionModalMixin, BSModalFormView):
         business = self.get_object()
         result = restablecer_clave_del_propietario(business, self.request.user)
         if result is None:
-            return JsonResponse({"message": NO_OWNER_MESSAGE}, status=HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"message": NO_OWNER_MESSAGE}, status=HTTP_400_BAD_REQUEST
+            )
         email, password = result
-        self.model_admin.log_change(self.request, business, "Clave del propietario restablecida.")
+        self.model_admin.log_change(
+            self.request, business, "Clave del propietario restablecida."
+        )
         response = JsonResponse(
-            {"message": "Se generó una clave temporal nueva.", "email": email, "password": password}
+            {
+                "message": "Se generó una clave temporal nueva.",
+                "email": email,
+                "password": password,
+            }
         )
         response["Cache-Control"] = "no-store"
         return response
@@ -749,12 +796,18 @@ class OwnerUnlockModalView(BusinessActionModalMixin, BSModalFormView):
         business = self.get_object()
         result = unlock_owner(business, self.request.user)
         if result is None:
-            return JsonResponse({"message": NO_OWNER_MESSAGE}, status=HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"message": NO_OWNER_MESSAGE}, status=HTTP_400_BAD_REQUEST
+            )
         email, unlocked = result
         if not unlocked:
-            return JsonResponse({"message": NOT_LOCKED_MESSAGE}, status=HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"message": NOT_LOCKED_MESSAGE}, status=HTTP_400_BAD_REQUEST
+            )
         self.model_admin.log_change(self.request, business, "Propietario desbloqueado.")
-        return JsonResponse({"message": "El propietario quedó desbloqueado.", "email": email})
+        return JsonResponse(
+            {"message": "El propietario quedó desbloqueado.", "email": email}
+        )
 
 
 class BusinessStatusModalView(BusinessActionModalMixin, BSModalFormView):
@@ -782,9 +835,18 @@ class BusinessStatusModalView(BusinessActionModalMixin, BSModalFormView):
         if reason:
             return JsonResponse({"message": reason}, status=HTTP_400_BAD_REQUEST)
         business = self.get_object()
-        cambiar_estado(business, form.cleaned_data["estado"], form.cleaned_data["motivo"], self.request.user)
+        cambiar_estado(
+            business,
+            form.cleaned_data["estado"],
+            form.cleaned_data["motivo"],
+            self.request.user,
+        )
         status = business.get_estado_display()
-        self.model_admin.log_change(self.request, business, f"Estado cambiado a {status}: {form.cleaned_data['motivo']}")
+        self.model_admin.log_change(
+            self.request,
+            business,
+            f"Estado cambiado a {status}: {form.cleaned_data['motivo']}",
+        )
         return JsonResponse(
             {
                 "message": f"«{business.nombre}» quedó {status.lower()}.",
@@ -810,7 +872,10 @@ class BusinessRepairModalView(BusinessActionModalMixin, BSModalFormView):
         return ""
 
     def get_context_data(self, **kwargs):
-        return {**super().get_context_data(**kwargs), "access_email": self.access_email()}
+        return {
+            **super().get_context_data(**kwargs),
+            "access_email": self.access_email(),
+        }
 
     def form_valid(self, form):
         reason = self.not_ready_reason()
@@ -819,8 +884,23 @@ class BusinessRepairModalView(BusinessActionModalMixin, BSModalFormView):
         business = self.get_object()
         email = self.access_email()
         preparar_negocio.delay(business.pk, email, None)
-        self.model_admin.log_change(self.request, business, "Preparación encolada de nuevo.")
-        return JsonResponse({"message": "La preparación se volvió a encolar.", "email": email})
+        self.model_admin.log_change(
+            self.request, business, "Preparación encolada de nuevo."
+        )
+        return JsonResponse(
+            {"message": "La preparación se volvió a encolar.", "email": email}
+        )
+
+
+class BusinessHistoryListAjaxView(HistoryListAjaxView):
+    ignored_fields = ("modified", "estado_desde")
+    field_labels = {
+        "schema_name": "Esquema",
+        "zona_horaria": "Zona horaria",
+        "error_preparacion": "Error de preparación",
+        "notas_internas": "Notas internas",
+        "creado_por": "Creado por",
+    }
 
 
 # endregion

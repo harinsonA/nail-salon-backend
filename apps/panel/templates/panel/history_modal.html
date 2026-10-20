@@ -1,0 +1,135 @@
+<form class="history-modal" action="{{ request.path }}" method="get">
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">history</span>
+      <span class="pb-1">Historial · {{ object }}</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    <section class="row g-3 mb-2">
+      <div class="col-12 col-md-4">
+        <div class="card rounded-4 agenda-card h-100">
+          <div class="card-body">
+            <h6 class="card-subtitle d-flex text-body-secondary m-0">
+              <span>Cambios registrados</span>
+            </h6>
+            <h4 class="card-title text-end text-primary m-0">
+              <b>{{ total }}</b>
+            </h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="card rounded-4 agenda-card h-100">
+          <div class="card-body">
+            <h6 class="card-subtitle d-flex text-body-secondary m-0">
+              <span>Creado</span>
+            </h6>
+            <p class="history-card__value">{{ created.date|default:"—" }}</p>
+            <p class="history-card__author">{{ created.author|default:"" }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="card rounded-4 agenda-card h-100">
+          <div class="card-body">
+            <h6 class="card-subtitle d-flex text-body-secondary m-0">
+              <span>Último cambio</span>
+            </h6>
+            <p class="history-card__value">{{ last_change.date|default:"—" }}</p>
+            <p class="history-card__author">{{ last_change.author|default:"" }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-container--custom">
+      <table id="history_table" class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col"><span class="visually-hidden">Detalle</span></th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Autor</th>
+            <th scope="col">Acción</th>
+            <th scope="col">Motivo</th>
+            <th scope="col">Cambios</th>
+            <th scope="col">Detalle de los cambios</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</form>
+<script>
+  $(() => {
+    const detailColumn = 6;
+
+    const changesSummary = (changes) => {
+      if (!changes.length) {
+        return '<span class="history-summary history-summary--empty">Sin cambios de campos</span>';
+      }
+      const label = changes.length === 1 ? '1 campo' : `${changes.length} campos`;
+      const fields = changes.map(({ field }) => escapeHtml(field)).join(', ');
+      return `<span class="history-summary"><b>${label}</b> · ${fields}</span>`;
+    };
+
+    const changesDetail = (changes) => {
+      if (!changes.length) {
+        return '<p class="history-detail__empty">Este registro no cambió ningún campo.</p>';
+      }
+      const rows = changes
+        .map(({ field, old, new: current }) => `<tr>
+          <th scope="row">${escapeHtml(field)}</th>
+          <td class="history-detail__old">${escapeHtml(old)}</td>
+          <td class="history-detail__new">${escapeHtml(current)}</td>
+        </tr>`)
+        .join('');
+      return `<table class="history-detail__table">
+        <thead><tr><th scope="col">Campo</th><th scope="col">Antes</th><th scope="col">Después</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    };
+
+    const detailRenderer = (api, rowIdx, columns) => {
+      const hidden = columns.filter((column) => column.hidden);
+      if (!hidden.length) return false;
+      const others = hidden
+        .filter((column) => column.columnIndex !== detailColumn)
+        .map(({ title, data }) => `<li><span class="history-detail__label">${title}</span><span>${data}</span></li>`)
+        .join('');
+      const detail = hidden.find((column) => column.columnIndex === detailColumn);
+      return `<div class="history-detail">
+        ${others ? `<ul class="history-detail__extra">${others}</ul>` : ''}
+        ${detail ? detail.data : ''}
+      </div>`;
+    };
+
+    const historyDataTableConfig = {
+      tableID: '#history_table',
+      url: '{{ list_url }}',
+      extraConfig: {
+        order: [[1, 'desc']],
+        pageLength: 8,
+        responsive: {
+          details: { type: 'column', target: 0, renderer: detailRenderer },
+        },
+      },
+      columns: [
+        { data: null, defaultContent: '', className: 'dtr-control', orderable: false, searchable: false },
+        { data: 'date', className: 'fs-7 text-nowrap' },
+        { data: 'author', className: 'fs-7 text-nowrap', render: $.fn.dataTable.render.text() },
+        {
+          data: ({ action_key, action }) => `<span class="history-action history-action--${action_key}">${escapeHtml(action)}</span>`,
+          className: 'fs-7 text-center',
+        },
+        { data: 'reason', className: 'fs-7', render: $.fn.dataTable.render.text() },
+        { data: ({ changes }) => changesSummary(changes), className: 'fs-7', orderable: false },
+        { data: ({ changes }) => changesDetail(changes), className: 'none', orderable: false },
+      ],
+    };
+    renderDataTable(historyDataTableConfig);
+  });
+</script>

@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-{% if business %}{% include 'common/bs_modal.html' %}{% endif %}
+{% if business %}{% include 'common/bs_modal.html' %}{% include 'common/bs_xl_modal.html' %}{% endif %}
 {% with active=sections_with_errors.0|default:'basic' %}
 <form id="business-form" method="post" novalidate>
   {% csrf_token %}
@@ -202,7 +202,7 @@
                 <span class="action-list__description">{{ action.description }}</span>
               </div>
               {% if action.modal %}
-              <button type="button" class="btn btn-sm btn-outline-primary bs-modal" data-form-url="{{ action.link }}">
+              <button type="button" class="btn btn-sm btn-outline-primary {% if action.modal_size == 'xl' %}bs-xl-modal{% else %}bs-modal{% endif %}" data-form-url="{{ action.link }}">
                 {{ action.label }}
               </button>
               {% else %}
@@ -231,6 +231,7 @@
   $(() => {
     initializeFormsets(document);
     initializeAllBSModals();
+    initializeAllBSXLModals();
     initializeBusinessActionModal('#modal', { onDone: () => window.location.reload() });
     const subdomain = document.getElementById('{{ form.subdominio.id_for_label }}');
     const schema = document.getElementById('{{ form.esquema.id_for_label }}');
