@@ -529,3 +529,128 @@
   color: var(--color-danger-text);
 }
 
+.history-card__value {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  text-align: right;
+}
+
+.history-card__author {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.history-action {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.history-action--created {
+  color: var(--color-success-text);
+  background-color: var(--color-success-bg);
+  border-color: var(--color-success-border);
+}
+
+.history-action--updated {
+  color: var(--color-info-text);
+  background-color: var(--color-info-bg);
+  border-color: var(--color-info-border);
+}
+
+.history-action--deleted {
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+}
+
+.history-summary {
+  color: var(--text-primary);
+}
+
+.history-summary b {
+  color: var(--text-strong);
+}
+
+.history-summary--empty {
+  color: var(--text-muted);
+}
+
+.history-detail__extra {
+  padding: 0;
+  margin: 0 0 0.6rem;
+  list-style: none;
+  font-size: 0.8rem;
+}
+
+.history-detail__extra li + li {
+  margin-top: 0.2rem;
+}
+
+.history-detail__label {
+  margin-right: 0.4rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.history-detail__table {
+  width: 100%;
+  font-size: 0.8rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+.history-detail__table th,
+.history-detail__table td {
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.history-detail__table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  background-color: var(--bg-muted);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.history-detail__table tbody th {
+  width: 25%;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.history-detail__table tbody tr + tr > * {
+  border-top: 1px solid var(--border-soft);
+}
+
+.history-detail__old {
+  color: var(--color-danger-text);
+  background-color: var(--color-danger-bg);
+}
+
+.history-detail__new {
+  color: var(--color-success-text);
+  background-color: var(--color-success-bg);
+}
+
+.history-detail__empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

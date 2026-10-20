@@ -6,14 +6,16 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from apps.panel.views.businesses.view import (
     BusinessCreateView,
+    BusinessHistoryListAjaxView,
     BusinessListAjaxView,
     BusinessListView,
     BusinessRepairModalView,
     BusinessStatusModalView,
+    BusinessUpdateView,
     OwnerPasswordResetModalView,
     OwnerUnlockModalView,
-    BusinessUpdateView,
 )
+from apps.panel.views.history.view import HistoryModalView
 from apps.tenancy.models import Dominio, Negocio, NegocioDireccion
 
 
@@ -87,28 +89,41 @@ class NegocioAdmin(SimpleHistoryAdmin):
         propias = [
             path("list/", list_ajax, name="tenancy_negocio_list_ajax"),
             path(
+                "<int:pk>/history/list/",
+                BusinessHistoryListAjaxView.as_view(admin_site=self.admin_site, model_admin=self),
+                name="tenancy_negocio_history_list",
+            ),
+            path(
                 "alta/",
                 self.admin_site.admin_view(self.alta_view),
                 name="tenancy_negocio_alta",
             ),
             path(
                 "<int:pk>/estado/",
-                BusinessStatusModalView.as_view(admin_site=self.admin_site, model_admin=self),
+                BusinessStatusModalView.as_view(
+                    admin_site=self.admin_site, model_admin=self
+                ),
                 name="tenancy_negocio_estado",
             ),
             path(
                 "<int:pk>/clave-propietario/",
-                OwnerPasswordResetModalView.as_view(admin_site=self.admin_site, model_admin=self),
+                OwnerPasswordResetModalView.as_view(
+                    admin_site=self.admin_site, model_admin=self
+                ),
                 name="tenancy_negocio_clave_propietario",
             ),
             path(
                 "<int:pk>/desbloquear-propietario/",
-                OwnerUnlockModalView.as_view(admin_site=self.admin_site, model_admin=self),
+                OwnerUnlockModalView.as_view(
+                    admin_site=self.admin_site, model_admin=self
+                ),
                 name="tenancy_negocio_desbloquear_propietario",
             ),
             path(
                 "<int:pk>/reparar/",
-                BusinessRepairModalView.as_view(admin_site=self.admin_site, model_admin=self),
+                BusinessRepairModalView.as_view(
+                    admin_site=self.admin_site, model_admin=self
+                ),
                 name="tenancy_negocio_reparar",
             ),
         ]
@@ -125,7 +140,15 @@ class NegocioAdmin(SimpleHistoryAdmin):
         )
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
-        return BusinessUpdateView.as_view(admin_site=self.admin_site, model_admin=self)(request, pk=object_id)
+        return BusinessUpdateView.as_view(admin_site=self.admin_site, model_admin=self)(
+            request, pk=object_id
+        )
+
+    def history_view(self, request, object_id, extra_context=None):
+        return HistoryModalView.as_view(admin_site=self.admin_site, model_admin=self)(request, pk=object_id)
+
+    def history_form_view(self, request, object_id, version_id, extra_context=None):
+        return redirect("admin:tenancy_negocio_change", object_id)
 
     def alta_view(self, request):
         return redirect("admin:tenancy_negocio_add")

@@ -68,6 +68,12 @@ const emptyStateTemplate = (
 const LOADER_HALVAN_PATH =
   "m 164,100 c 0,-35.346224 -28.65378,-64 -64,-64 -35.346224,0 -64,28.653776 -64,64 0,35.34622 28.653776,64 64,64 35.34622,0 64,-26.21502 64,-64 0,-37.784981 -26.92058,-64 -64,-64 -37.079421,0 -65.267479,26.922736 -64,64 1.267479,37.07726 26.703171,65.05317 64,64 37.29683,-1.05317 64,-64 64,-64";
 
+const escapeHtml = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
+  );
+
 const processingLoaderTemplate = (message = "Procesando…") => `
   <div class="dt-loader" role="status" aria-label="${message}">
     <svg class="dt-loader__gegga" aria-hidden="true">
