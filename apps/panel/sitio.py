@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import LogoutView
+from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import path
 
@@ -38,6 +39,9 @@ class PanelAdminSite(admin.AdminSite):
 
     def password_change_done(self, request, extra_context=None):
         return redirect("admin:index")
+
+    def app_index(self, request, app_label, extra_context=None):
+        raise Http404
 
     def index(self, request, extra_context=None):
         request.current_app = self.name
