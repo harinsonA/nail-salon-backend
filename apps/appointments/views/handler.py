@@ -1,7 +1,8 @@
 from datetime import date, time
 from decimal import Decimal
+
 from django.urls import reverse_lazy
-from result import Ok, Err, Result
+from result import Err, Ok, Result
 
 from apps.appointments.models.agenda import Cita
 from apps.appointments.models.detalle_cita import DetalleCita
@@ -10,9 +11,10 @@ from apps.services.models import Servicio
 
 
 class HandlerAgenda:
-    def __init__(self, clients_ids: list, services_ids: list):
+    def __init__(self, clients_ids: list, services_ids: list, user=None):
         self.clients = self.__get_clients(clients_ids)
         self.services = self.__get_services(services_ids)
+        self.user = user
 
     @staticmethod
     def __get_clients(clients_ids: list) -> list:
@@ -38,6 +40,8 @@ class HandlerAgenda:
             fecha_agenda=self.__parse_date(service),
             hora_agenda=self.__parse_time(service),
             estado=Cita.EstadoChoices.PENDIENTE,
+            creado_por=self.user,
+            asignado_a=self.user,
         )
 
     def __get_agenda_detail_instance(

@@ -1,28 +1,26 @@
 import json
-
 from datetime import date
+
 from django import forms
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.views.generic import TemplateView, FormView
-
+from django.views.generic import FormView, TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
+from apps.appointments.models.agenda import Cita
+from apps.appointments.views.handler import HandlerAgenda, HandlerAgendaList
+from apps.clients.models import Cliente
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import CustomDateField
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
     FORM_CONTROL_TEXTAREA_CLASS,
-    FORM_SELECT_CLASS,
     FORM_SELECT2_CLASS,
+    FORM_SELECT_CLASS,
 )
-from apps.common.views.base_views import ProtectedView, ProtectedAjaxView
-from apps.appointments.models.agenda import Cita
-from apps.appointments.views.handler import HandlerAgenda, HandlerAgendaList
-from apps.clients.models import Cliente
+from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
 from apps.services.models import Categoria, Servicio
-
 
 """========================================================================="""
 # region ........ Form
@@ -207,7 +205,7 @@ class AgendaCreateView(ProtectedView, FormView):
         agendas = json.loads(agendas)
         clients_ids = self.__get_clients_ids(agendas)
         services_ids = self.__get_service_ids(agendas)
-        handler = HandlerAgenda(clients_ids, services_ids)
+        handler = HandlerAgenda(clients_ids, services_ids, user=request.user)
         result = handler.create(agendas)
         if result.is_err():
             return JsonResponse(

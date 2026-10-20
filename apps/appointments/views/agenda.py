@@ -28,6 +28,7 @@ from apps.common.form_classes import (
 )
 from apps.common.utils.currency import format_currency
 from apps.common.utils.dates import format_full_date
+from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.payments.choices import EstadoPago, MetodoPago
@@ -822,6 +823,7 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
         client_full_name: str,
         full_payment: bool,
         details: dict,
+        user,
     ) -> Pago:
         total_amount = details.get("detail_totals", 0)
         discount_amount = details.get("discount_totals", 0)
@@ -834,6 +836,8 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
             cliente_nombre=client_full_name,
             fecha_cita=appointment_date_time,
             descuento_total=discount_amount,
+            atendido_por=user,
+            atendido_por_nombre=user_display_name(user),
         )
         if full_payment:
             payment_instance.estado_pago = EstadoPago.COMPLETADO
@@ -846,6 +850,7 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
         payment_instance: Pago,
         cleaned_data: dict,
         full_payment: bool,
+        user,
     ) -> None:
         down_payment = cleaned_data.get("down_payment", 0)
         if not full_payment and not down_payment:
@@ -863,6 +868,7 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
             monto_pago=amount_paid,
             metodo_pago=payment_method,
             notas_detalle=observation,
+            registrado_por=user,
         )
         if payment_method != MetodoPago.EFECTIVO:
             payment_reference = cleaned_data.get("payment_reference", "")
@@ -882,11 +888,13 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
             client_full_name=client_full_name,
             full_payment=full_payment,
             details=details,
+            user=self.request.user,
         )
         self.__save_payment_details(
             payment_instance=payment_instance,
             cleaned_data=cleaned_data,
             full_payment=full_payment,
+            user=self.request.user,
         )
         self.object.estado = Cita.EstadoChoices.COMPLETADA
         self.object.save()
