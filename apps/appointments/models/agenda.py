@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.db import models
-from model_utils.models import TimeStampedModel, SoftDeletableModel
+from model_utils.models import SoftDeletableModel, TimeStampedModel
 from simple_history.models import HistoricalRecords
 
 
@@ -26,6 +27,20 @@ class Cita(TimeStampedModel, SoftDeletableModel):
         db_index=True,
     )
     observaciones = models.TextField(blank=True, null=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="citas_creadas",
+    )
+    asignado_a = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="citas_asignadas",
+    )
 
     # Auditoría completa (crítico para cambios de estado)
     history = HistoricalRecords(inherit=True)

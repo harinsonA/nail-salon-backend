@@ -1,9 +1,12 @@
-from django.db import models
-from django.core.validators import MinValueValidator
 from decimal import Decimal
-from model_utils.models import TimeStampedModel, SoftDeletableModel
-from apps.payments.choices import EstadoPago
+
+from django.conf import settings
+from django.core.validators import MinValueValidator
+from django.db import models
+from model_utils.models import SoftDeletableModel, TimeStampedModel
 from simple_history.models import HistoricalRecords
+
+from apps.payments.choices import EstadoPago
 
 
 class PagoManager(models.Manager):
@@ -57,6 +60,14 @@ class Pago(TimeStampedModel, SoftDeletableModel):
         validators=[MinValueValidator(Decimal("0"))],
         help_text="Descuento total aplicado al pago",
     )
+    atendido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="pagos_atendidos",
+    )
+    atendido_por_nombre = models.CharField(max_length=150, blank=True, null=True)
 
     # Auditoría histórica
     history = HistoricalRecords(inherit=True)
