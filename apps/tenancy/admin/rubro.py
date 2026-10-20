@@ -1,7 +1,7 @@
 from django.contrib import admin
-from django.shortcuts import redirect
 from django.urls import path
 
+from apps.panel.admin.mixins import DjangoPagesRedirectMixin
 from apps.panel.views.industries.view import (
     IndustryCreateModalView,
     IndustryDeleteModalView,
@@ -13,7 +13,7 @@ from apps.tenancy.models import Rubro
 
 
 @admin.register(Rubro)
-class RubroAdmin(admin.ModelAdmin):
+class RubroAdmin(DjangoPagesRedirectMixin, admin.ModelAdmin):
     list_display = ("nombre", "codigo", "activo")
     list_editable = ("activo",)
     search_fields = ("nombre", "codigo")
@@ -33,12 +33,3 @@ class RubroAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         return IndustryListView.as_view(admin_site=self.admin_site, model_admin=self)(request)
-
-    def add_view(self, request, form_url="", extra_context=None):
-        return redirect("admin:tenancy_rubro_changelist")
-
-    def change_view(self, request, object_id, form_url="", extra_context=None):
-        return redirect("admin:tenancy_rubro_changelist")
-
-    def delete_view(self, request, object_id, extra_context=None):
-        return redirect("admin:tenancy_rubro_changelist")

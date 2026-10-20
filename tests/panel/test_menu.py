@@ -41,11 +41,13 @@ class MenuDelPanelTests(TestCase):
         respuesta = self.panel.get("/admin/")
         self.assertRedirects(respuesta, "/admin/login/?next=/admin/", fetch_redirect_response=False)
 
-    def test_la_pagina_de_cada_app_sigue_siendo_la_de_django(self):
+    def test_las_paginas_indice_de_cada_app_ya_no_existen(self):
         self.panel.force_login(self.admin)
-        respuesta = self.panel.get("/admin/tenancy/")
-        self.assertTemplateUsed(respuesta, "admin/app_index.html")
-        self.assertNotContains(respuesta, "menu__brand")
+        for ruta in ("/admin/auth/", "/admin/tenancy/"):
+            with self.subTest(ruta=ruta):
+                respuesta = self.panel.get(ruta)
+                self.assertContains(respuesta, "Esta página no existe", status_code=404)
+                self.assertTemplateNotUsed(respuesta, "admin/app_index.html")
 
     def test_el_menu_agrupa_los_modelos_por_aplicacion(self):
         respuesta = self.inicio()

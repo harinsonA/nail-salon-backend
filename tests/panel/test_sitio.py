@@ -1,13 +1,14 @@
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.db import connection
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django_tenants.routers import TenantSyncRouter
 from django_tenants.utils import get_public_schema_name
 
 from apps.panel.sitio import PanelAdminSite
-from apps.tenancy.models import Dominio, Negocio
+from apps.tenancy.models import Dominio, Negocio, Persona, Rubro
 
 User = get_user_model()
 
@@ -29,27 +30,49 @@ class RegistroDelSitioTests(SimpleTestCase):
 
 
 @override_settings(DOMINIO_BASE="localhost")
-class SitioDelPanelTests(TestCase):
+class CierreDeLasPaginasDeDjangoTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         connection.set_schema_to_public()
         publico = Negocio.objects.create(schema_name=get_public_schema_name(), nombre="Hi Agenda")
         Dominio.objects.create(domain=PANEL, tenant=publico, is_primary=True)
         cls.admin = User.objects.create_superuser(username="admin", password="x")
+        cls.grupo = Group.objects.create(name="Soporte")
+        cls.persona = Persona.objects.create(nombres="Carla")
+        cls.rubro = Rubro.objects.get(codigo="barberia")
 
-    def pagina_de_django(self, host=PANEL):
+    def setUp(self):
         connection.set_schema_to_public()
-        panel = Client(HTTP_HOST=host)
-        panel.force_login(self.admin)
-        return panel.get(f"/admin/auth/user/{self.admin.pk}/history/")
+        self.panel = Client(HTTP_HOST=PANEL)
+        self.panel.force_login(self.admin)
 
-    def test_los_titulos_vienen_del_sitio(self):
-        respuesta = self.pagina_de_django()
-        self.assertContains(respuesta, "| Hi Agenda · Panel</title>")
-        self.assertContains(respuesta, ">Hi Agenda · Panel</a>")
+    def test_la_raiz_lleva_al_inicio_del_panel(self):
+        self.assertRedirects(Client(HTTP_HOST=PANEL).get("/"), "/admin/", fetch_redirect_response=False)
+        self.assertRedirects(self.panel.get("/"), "/admin/")
 
-    def test_ver_el_sitio_lleva_a_la_pagina_publica(self):
-        self.assertContains(self.pagina_de_django(), '<a href="http://localhost/">Ver el sitio</a>')
+    def test_los_historiales_de_django_llevan_a_su_listado(self):
+        casos = {
+            f"/admin/auth/user/{self.admin.pk}/history/": "/admin/auth/user/",
+            f"/admin/auth/group/{self.grupo.pk}/history/": "/admin/auth/group/",
+            f"/admin/tenancy/persona/{self.persona.pk}/history/": "/admin/tenancy/persona/",
+            f"/admin/tenancy/rubro/{self.rubro.pk}/history/": "/admin/tenancy/rubro/",
+        }
+        for ruta, listado in casos.items():
+            with self.subTest(ruta=ruta):
+                self.assertRedirects(self.panel.get(ruta), listado, fetch_redirect_response=False)
+        version = self.persona.history.first()
+        self.assertRedirects(
+            self.panel.get(f"/admin/tenancy/persona/{self.persona.pk}/history/{version.history_id}/"),
+            "/admin/tenancy/persona/",
+            fetch_redirect_response=False,
+        )
 
-    def test_ver_el_sitio_respeta_el_puerto_del_navegador(self):
-        self.assertContains(self.pagina_de_django(f"{PANEL}:8000"), '<a href="http://localhost:8000/">Ver el sitio</a>')
+    def test_las_pantallas_viejas_siguen_llevando_a_su_listado(self):
+        for ruta, listado in {
+            "/admin/auth/group/add/": "/admin/auth/group/",
+            f"/admin/tenancy/persona/{self.persona.pk}/change/": "/admin/tenancy/persona/",
+            f"/admin/tenancy/rubro/{self.rubro.pk}/delete/": "/admin/tenancy/rubro/",
+            f"/admin/auth/user/{self.admin.pk}/password/": "/admin/auth/user/",
+        }.items():
+            with self.subTest(ruta=ruta):
+                self.assertRedirects(self.panel.get(ruta), listado, fetch_redirect_response=False)
