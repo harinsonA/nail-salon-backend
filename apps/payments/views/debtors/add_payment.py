@@ -1,25 +1,25 @@
-from django import forms
 from datetime import datetime
 from decimal import Decimal
 
+from bootstrap_modal_forms.forms import BSModalModelForm
+from bootstrap_modal_forms.generic import BSModalUpdateView
+from django import forms
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.utils import timezone
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
-from apps.common.utils.currency import format_currency
-from apps.common.utils.utils import get_errors_to_response
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+
 from apps.common.custom_time_fields import CustomDateField
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT_CLASS,
 )
+from apps.common.utils.currency import format_currency
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from apps.payments.models import Pago, DetallePago
-from apps.payments.choices import MetodoPago, EstadoPago
-from bootstrap_modal_forms.forms import BSModalModelForm
-from bootstrap_modal_forms.generic import BSModalUpdateView
-
+from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.models import DetallePago, Pago
 
 """========================================================================="""
 # region ........ Forms
@@ -229,6 +229,7 @@ class AddPaymentModalView(ProtectedView, BSModalUpdateView):
             monto_pago=amount_paid,
             metodo_pago=payment_method,
             notas_detalle=observation,
+            registrado_por=self.request.user,
         )
         if payment_method != MetodoPago.EFECTIVO:
             payment_detail.referencia_pago = cleaned_data.get("payment_reference", "")

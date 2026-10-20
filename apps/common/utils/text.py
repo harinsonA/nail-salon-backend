@@ -19,6 +19,10 @@ def join_name_parts(*parts):
     return " ".join(part for part in parts if part)
 
 
+def user_display_name(user):
+    return user.get_full_name() or user.email
+
+
 def split_name(full_name):
     first, _, rest = (full_name or "").strip().partition(" ")
     return first, rest.strip()

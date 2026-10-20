@@ -16,6 +16,7 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.claves import generar_clave_temporal
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.form_fields import AlphabeticField
+from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
@@ -49,10 +50,6 @@ ROLE_LABELS = dict(Perfil.Rol.choices)
 
 """========================================================================="""
 # region ........ Helpers
-
-
-def member_name(member):
-    return member.get_full_name() or member.email
 
 
 def assign_temporary_password(member):
@@ -352,7 +349,7 @@ class MemberCreateModalView(MemberFormModalView):
         password = assign_temporary_password(member)
         response = JsonResponse(
             {
-                "message": f"{member_name(member)} quedó creado.",
+                "message": f"{user_display_name(member)} quedó creado.",
                 "email": member.email,
                 "password": password,
             }
@@ -370,12 +367,12 @@ class MemberUpdateModalView(ManagedMemberMixin, MemberFormModalView):
         return {
             **super().get_context_data(**kwargs),
             "member": member,
-            "member_name": member_name(member),
+            "member_name": user_display_name(member),
         }
 
     def form_valid(self, form):
         member = form.save()
-        return JsonResponse({"message": f"{member_name(member)} quedó actualizado."})
+        return JsonResponse({"message": f"{user_display_name(member)} quedó actualizado."})
 
 
 class MemberActionModalView(ProtectedView, ManagedMemberMixin, TemplateView):
@@ -385,7 +382,7 @@ class MemberActionModalView(ProtectedView, ManagedMemberMixin, TemplateView):
             **super().get_context_data(**kwargs),
             "modal_url": self.request.path,
             "member": member,
-            "member_name": member_name(member),
+            "member_name": user_display_name(member),
             "role_label": member.perfil.get_rol_display(),
         }
 
@@ -398,7 +395,7 @@ class MemberActiveModalView(MemberActionModalView):
         member.is_active = not member.is_active
         member.save(update_fields=["is_active"])
         action = "reactivado" if member.is_active else "desactivado"
-        return JsonResponse({"message": f"{member_name(member)} quedó {action}."})
+        return JsonResponse({"message": f"{user_display_name(member)} quedó {action}."})
 
 
 class MemberUnlockModalView(MemberActionModalView):
@@ -411,7 +408,7 @@ class MemberUnlockModalView(MemberActionModalView):
 
     def post(self, request, *args, **kwargs):
         member = self.get_member()
-        name = member_name(member)
+        name = user_display_name(member)
         if not unlock(member, UNLOCK_REASON):
             return JsonResponse(
                 {"message": f"{name} no estaba bloqueado."},
