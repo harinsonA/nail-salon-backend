@@ -163,20 +163,39 @@ class DesbloquearDesdeEquipoTests(NegocioTestCase):
 
     def test_la_lista_muestra_el_candado_y_el_boton_solo_a_quien_puede(self):
         self.bloquear(self.laura)
-        lista = self.navegador_de(self.maria).get(reverse("equipo"))
+        datos = self.navegador_de(self.maria).get(reverse("equipo_lista")).json()
+        filas = {fila["email"]: fila for fila in datos["data"]}
         hora = timezone.localtime(lock_status(self.laura).until).strftime("%H:%M")
-        self.assertContains(lista, f'title="Bloqueado hasta las {hora}"')
-        self.assertContains(lista, 'title="Sin bloqueo"')
-        self.assertContains(lista, reverse("equipo_desbloquear", args=[self.laura.pk]))
-        self.assertNotContains(lista, reverse("equipo_desbloquear", args=[self.ana.pk]))
+        self.assertEqual(filas[self.laura.email]["lock_label"], f"Bloqueado hasta las {hora}")
+        self.assertEqual(filas[self.ana.email]["lock_label"], "")
+        self.assertEqual(datos["locked_members"], 1)
+        enlace = reverse("equipo_desbloquear", args=[self.laura.pk])
+        self.assertIn(enlace, [opcion["link"] for opcion in filas[self.laura.email]["options"]])
+        self.assertNotIn(
+            reverse("equipo_desbloquear", args=[self.ana.pk]),
+            [opcion["link"] for opcion in filas[self.ana.email]["options"]],
+        )
+
+    def test_la_lista_filtra_a_los_bloqueados(self):
+        self.bloquear(self.laura)
+        datos = self.navegador_de(self.maria).get(reverse("equipo_lista"), {"status": "locked"}).json()
+        self.assertEqual([fila["email"] for fila in datos["data"]], [self.laura.email])
+
+    def test_el_modal_de_desbloqueo_muestra_el_bloqueo(self):
+        self.bloquear(self.laura)
+        modal = self.navegador_de(self.maria).get(reverse("equipo_desbloquear", args=[self.laura.pk]))
+        hora = timezone.localtime(lock_status(self.laura).until).strftime("%H:%M")
+        self.assertContains(modal, f"Bloqueado hasta las {hora}")
+        self.assertContains(modal, "member_unlock_submit_btn")
 
     def test_la_encargada_desbloquea_a_la_colaboradora_y_queda_su_nombre(self):
         self.bloquear(self.laura)
         respuesta = self.navegador_de(self.ana).post(
-            reverse("equipo_desbloquear", args=[self.laura.pk]), follow=True
+            reverse("equipo_desbloquear", args=[self.laura.pk])
         )
-        self.assertContains(
-            respuesta, "quedó desbloqueado: ya puede entrar con su clave actual."
+        self.assertEqual(
+            respuesta.json()["message"],
+            "laura@correo.cl quedó desbloqueado: ya puede entrar con su clave actual.",
         )
         self.assertFalse(lock_status(self.laura).is_locked)
         ultimo = AccesoUsuario.objects.get(user=self.laura).history.first()
@@ -214,10 +233,13 @@ class DesbloquearDesdeEquipoTests(NegocioTestCase):
         self.assertEqual(respuesta.status_code, 403)
 
     def test_desbloquear_a_quien_no_esta_bloqueado_lo_dice(self):
-        respuesta = self.navegador_de(self.maria).post(
-            reverse("equipo_desbloquear", args=[self.laura.pk]), follow=True
-        )
-        self.assertContains(respuesta, "no estaba bloqueado.")
+        navegador = self.navegador_de(self.maria)
+        modal = navegador.get(reverse("equipo_desbloquear", args=[self.laura.pk]))
+        self.assertContains(modal, "No está bloqueado")
+        self.assertNotContains(modal, "member_unlock_submit_btn")
+        respuesta = navegador.post(reverse("equipo_desbloquear", args=[self.laura.pk]))
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertEqual(respuesta.json()["message"], "laura@correo.cl no estaba bloqueado.")
 
     def test_restablecer_la_clave_tambien_desbloquea(self):
         self.bloquear(self.laura)

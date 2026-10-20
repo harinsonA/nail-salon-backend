@@ -1,5 +1,3 @@
-import re
-
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
@@ -27,8 +25,17 @@ class EquipoTests(NegocioTestCase):
         navegador.force_login(usuario)
         return navegador
 
-    def clave_en(self, respuesta):
-        return re.search(r"<code[^>]*>([a-z2-9-]{14})</code>", respuesta.content.decode()).group(1)
+    def errores(self, respuesta):
+        self.assertEqual(respuesta.status_code, 400)
+        return {error["id_element"] for error in respuesta.json()["errors"]}
+
+    def filas(self, navegador, **filtros):
+        respuesta = navegador.get(reverse("equipo_lista"), filtros)
+        self.assertEqual(respuesta.status_code, 200)
+        return {fila["email"]: fila for fila in respuesta.json()["data"]}
+
+    def enlaces(self, fila):
+        return [opcion["link"] for opcion in fila["options"]]
 
     def test_quien_gestiona_a_quien(self):
         propietaria = self.crear(Rol.PROPIETARIO, "maria")
@@ -47,24 +54,68 @@ class EquipoTests(NegocioTestCase):
         encargada = self.crear(Rol.ENCARGADO, "ana")
         propietaria = self.crear(Rol.PROPIETARIO, "maria")
         colaboradora = self.crear(Rol.COLABORADOR, "laura")
-        lista = self.navegador_de(encargada).get(reverse("equipo"))
+        navegador = self.navegador_de(encargada)
+        lista = navegador.get(reverse("equipo"))
         self.assertEqual(lista.status_code, 200)
-        self.assertContains(lista, reverse("equipo_activar", args=[colaboradora.pk]))
-        self.assertNotContains(lista, reverse("equipo_activar", args=[propietaria.pk]))
-        self.assertNotContains(lista, reverse("equipo_activar", args=[encargada.pk]))
+        self.assertContains(lista, reverse("equipo_lista"))
+        filas = self.filas(navegador)
+        self.assertEqual(
+            self.enlaces(filas[colaboradora.email]),
+            [
+                reverse("equipo_editar", args=[colaboradora.pk]),
+                reverse("equipo_restablecer_clave", args=[colaboradora.pk]),
+                reverse("equipo_activar", args=[colaboradora.pk]),
+            ],
+        )
+        self.assertEqual(filas[propietaria.email]["options"], [])
+        self.assertEqual(filas[encargada.email]["options"], [])
+
+    def test_la_lista_trae_rol_estado_y_contadores(self):
+        propietaria = self.crear(Rol.PROPIETARIO, "maria")
+        colaboradora = self.crear(Rol.COLABORADOR, "laura")
+        User.objects.filter(pk=colaboradora.pk).update(is_active=False)
+        respuesta = self.navegador_de(propietaria).get(reverse("equipo_lista"))
+        datos = respuesta.json()
+        self.assertEqual((datos["active_members"], datos["inactive_members"], datos["locked_members"]), (1, 1, 0))
+        fila = {fila["email"]: fila for fila in datos["data"]}[colaboradora.email]
+        self.assertEqual(fila["role_label"], "Colaborador")
+        self.assertFalse(fila["is_active"])
+        self.assertEqual(fila["options"][-1]["label"], "Reactivar")
+
+    def test_la_lista_filtra_por_estado_y_rol(self):
+        propietaria = self.crear(Rol.PROPIETARIO, "maria")
+        encargada = self.crear(Rol.ENCARGADO, "ana")
+        colaboradora = self.crear(Rol.COLABORADOR, "laura")
+        User.objects.filter(pk=colaboradora.pk).update(is_active=False)
+        navegador = self.navegador_de(propietaria)
+        self.assertEqual(set(self.filas(navegador)), {propietaria.email, encargada.email, colaboradora.email})
+        self.assertEqual(set(self.filas(navegador, status="inactive")), {colaboradora.email})
+        self.assertEqual(set(self.filas(navegador, status="active", role=Rol.ENCARGADO)), {encargada.email})
+        self.assertEqual(set(self.filas(navegador, **{"search[value]": "lau"})), {colaboradora.email})
+
+    def test_la_lista_abre_el_modal_de_crear(self):
+        lista = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria")).get(reverse("equipo"))
+        self.assertContains(lista, f'data-form-url="{reverse("equipo_crear")}"')
+        self.assertContains(lista, "Los miembros no se borran")
 
     def test_la_propietaria_crea_un_encargado_con_clave_temporal(self):
         navegador = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria"))
+        modal = navegador.get(reverse("equipo_crear"))
+        self.assertContains(modal, "Nuevo miembro")
+        self.assertContains(modal, "data-sensitive")
         respuesta = navegador.post(
             reverse("equipo_crear"),
             {"first_name": "Ana", "last_name": "Pérez", "email": "Ana@Correo.cl", "rol": Rol.ENCARGADO},
         )
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn("no-store", respuesta["Cache-Control"])
+        datos = respuesta.json()
+        self.assertEqual(datos["email"], "ana@correo.cl")
         nueva = User.objects.get(email="ana@correo.cl")
+        self.assertEqual(nueva.username, "ana@correo.cl")
         self.assertEqual(nueva.perfil.rol, Rol.ENCARGADO)
         self.assertTrue(nueva.perfil.debe_cambiar_clave)
-        self.assertTrue(nueva.check_password(self.clave_en(respuesta)))
+        self.assertTrue(nueva.check_password(datos["password"]))
 
     def test_la_encargada_solo_crea_colaboradores(self):
         navegador = self.navegador_de(self.crear(Rol.ENCARGADO, "ana"))
@@ -74,7 +125,7 @@ class EquipoTests(NegocioTestCase):
             reverse("equipo_crear"),
             {"first_name": "Sofi", "email": "sofi@correo.cl", "rol": Rol.ENCARGADO},
         )
-        self.assertIn("rol", intento.context["form"].errors)
+        self.assertEqual(self.errores(intento), {"id_rol"})
         self.assertFalse(User.objects.filter(email="sofi@correo.cl").exists())
 
     def test_no_se_repite_un_correo(self):
@@ -84,16 +135,64 @@ class EquipoTests(NegocioTestCase):
             reverse("equipo_crear"),
             {"first_name": "Laura", "email": "LAURA@correo.cl", "rol": Rol.COLABORADOR},
         )
-        self.assertIn("email", respuesta.context["form"].errors)
+        self.assertEqual(self.errores(respuesta), {"id_email"})
+
+    def test_el_nombre_solo_acepta_letras(self):
+        navegador = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria"))
+        respuesta = navegador.post(
+            reverse("equipo_crear"),
+            {"first_name": "Ana123", "email": "ana@correo.cl", "rol": Rol.COLABORADOR},
+        )
+        self.assertEqual(self.errores(respuesta), {"id_first_name"})
+
+    def test_editar_usa_el_mismo_formulario_con_sus_datos(self):
+        colaboradora = self.crear(Rol.COLABORADOR, "laura")
+        User.objects.filter(pk=colaboradora.pk).update(first_name="Laura", last_name="Soto")
+        modal = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria")).get(
+            reverse("equipo_editar", args=[colaboradora.pk])
+        )
+        self.assertContains(modal, "Editar miembro · Laura Soto")
+        self.assertNotContains(modal, "data-sensitive")
+        self.assertEqual(
+            modal.context["form"].initial,
+            {"first_name": "Laura", "last_name": "Soto", "email": "laura@correo.cl", "rol": Rol.COLABORADOR},
+        )
+
+    def test_la_propietaria_edita_datos_y_rol(self):
+        colaboradora = self.crear(Rol.COLABORADOR, "laura")
+        respuesta = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria")).post(
+            reverse("equipo_editar", args=[colaboradora.pk]),
+            {"first_name": "Laura", "last_name": "Soto", "email": "Laura.Soto@correo.cl", "rol": Rol.ENCARGADO},
+        )
+        self.assertEqual(respuesta.json()["message"], "Laura Soto quedó actualizado.")
+        colaboradora.refresh_from_db()
+        colaboradora.perfil.refresh_from_db()
+        self.assertEqual(
+            (colaboradora.get_full_name(), colaboradora.email, colaboradora.username, colaboradora.perfil.rol),
+            ("Laura Soto", "laura.soto@correo.cl", "laura.soto@correo.cl", Rol.ENCARGADO),
+        )
+        self.assertTrue(colaboradora.check_password("x"))
+        self.assertEqual(colaboradora.perfil.history.first().rol, Rol.ENCARGADO)
+
+    def test_editar_conserva_su_propio_correo_y_rechaza_uno_ajeno(self):
+        self.crear(Rol.COLABORADOR, "sofi")
+        colaboradora = self.crear(Rol.COLABORADOR, "laura")
+        navegador = self.navegador_de(self.crear(Rol.ENCARGADO, "ana"))
+        ruta = reverse("equipo_editar", args=[colaboradora.pk])
+        mismo = navegador.post(ruta, {"first_name": "Laura", "email": "laura@correo.cl", "rol": Rol.COLABORADOR})
+        self.assertEqual(mismo.status_code, 200)
+        ajeno = navegador.post(ruta, {"first_name": "Laura", "email": "sofi@correo.cl", "rol": Rol.COLABORADOR})
+        self.assertEqual(self.errores(ajeno), {"id_email"})
+        ascenso = navegador.post(ruta, {"first_name": "Laura", "email": "laura@correo.cl", "rol": Rol.ENCARGADO})
+        self.assertEqual(self.errores(ascenso), {"id_rol"})
 
     def test_desactivar_y_reactivar(self):
         colaboradora = self.crear(Rol.COLABORADOR, "laura")
         navegador = self.navegador_de(self.crear(Rol.ENCARGADO, "ana"))
-        self.assertRedirects(
-            navegador.post(reverse("equipo_activar", args=[colaboradora.pk])),
-            reverse("equipo"),
-            fetch_redirect_response=False,
-        )
+        modal = navegador.get(reverse("equipo_activar", args=[colaboradora.pk]))
+        self.assertContains(modal, "Desactivar miembro")
+        respuesta = navegador.post(reverse("equipo_activar", args=[colaboradora.pk]))
+        self.assertEqual(respuesta.json()["message"], "laura@correo.cl quedó desactivado.")
         colaboradora.refresh_from_db()
         self.assertFalse(colaboradora.is_active)
         sesion_de_laura = self.navegador_de(colaboradora)
@@ -107,11 +206,15 @@ class EquipoTests(NegocioTestCase):
 
     def test_restablecer_la_clave_de_un_colaborador(self):
         colaboradora = self.crear(Rol.COLABORADOR, "laura")
-        respuesta = self.navegador_de(self.crear(Rol.ENCARGADO, "ana")).post(
-            reverse("equipo_restablecer_clave", args=[colaboradora.pk])
-        )
+        navegador = self.navegador_de(self.crear(Rol.ENCARGADO, "ana"))
+        modal = navegador.get(reverse("equipo_restablecer_clave", args=[colaboradora.pk]))
+        self.assertContains(modal, "data-sensitive")
+        respuesta = navegador.post(reverse("equipo_restablecer_clave", args=[colaboradora.pk]))
+        self.assertIn("no-store", respuesta["Cache-Control"])
+        datos = respuesta.json()
+        self.assertEqual(datos["email"], colaboradora.email)
         colaboradora.refresh_from_db()
-        self.assertTrue(colaboradora.check_password(self.clave_en(respuesta)))
+        self.assertTrue(colaboradora.check_password(datos["password"]))
         self.assertTrue(colaboradora.perfil.debe_cambiar_clave)
 
     def test_nadie_del_negocio_toca_a_la_propietaria_ni_la_encargada_a_otra(self):
@@ -119,8 +222,9 @@ class EquipoTests(NegocioTestCase):
         otra_encargada = self.crear(Rol.ENCARGADO, "sofi")
         encargada = self.navegador_de(self.crear(Rol.ENCARGADO, "ana"))
         for objetivo in (propietaria, otra_encargada):
-            for ruta in ("equipo_activar", "equipo_restablecer_clave"):
+            for ruta in ("equipo_editar", "equipo_activar", "equipo_restablecer_clave", "equipo_desbloquear"):
                 with self.subTest(objetivo=objetivo.username, ruta=ruta):
+                    self.assertEqual(encargada.get(reverse(ruta, args=[objetivo.pk])).status_code, 403)
                     self.assertEqual(encargada.post(reverse(ruta, args=[objetivo.pk])).status_code, 403)
         propia = self.navegador_de(propietaria)
         self.assertEqual(propia.post(reverse("equipo_activar", args=[propietaria.pk])).status_code, 403)
@@ -131,4 +235,6 @@ class EquipoTests(NegocioTestCase):
     def test_el_colaborador_no_entra_al_equipo(self):
         navegador = self.navegador_de(self.crear(Rol.COLABORADOR, "laura"))
         self.assertEqual(navegador.get(reverse("equipo")).status_code, 403)
+        self.assertEqual(navegador.get(reverse("equipo_lista")).status_code, 403)
+        self.assertEqual(navegador.get(reverse("equipo_crear")).status_code, 403)
         self.assertNotContains(navegador.get(reverse("calendar")), f'href="{reverse("equipo")}"')

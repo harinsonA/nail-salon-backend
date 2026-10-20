@@ -1,0 +1,47 @@
+{% load static %}
+<form id="member-unlock-form-modal" action="{{ modal_url }}" method="post" data-action-modal>
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">lock_open</span>
+      <span class="pb-1">Desbloquear miembro · {{ member_name }}</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    {% if status.is_locked %}
+    <div class="lock-notice mb-3" role="status">
+      <img src="{% static 'images/common/lock.svg' %}" class="icon--notice" width="24" height="24" alt="">
+      <div>
+        <p class="lock-notice__title">{{ lock_description }}</p>
+        <p class="lock-notice__text">
+          {{ status.failures }} intento{{ status.failures|pluralize }} fallido{{ status.failures|pluralize }} seguido{{ status.failures|pluralize }}.
+          Último intento: {{ status.last_failure|date:"d/m/Y H:i"|default:"—" }}.
+        </p>
+      </div>
+    </div>
+    {% include 'equipo/member_info.html' %}
+    <p class="lock-hint">
+      <span class="material-symbols-outlined icon--inline" aria-hidden="true">info</span>
+      <span>
+        Al desbloquearlo podrá entrar con su clave actual y el conteo de intentos vuelve a cero.
+        Si crees que alguien intentó adivinarla, mejor restablece su clave: eso también lo desbloquea.
+      </span>
+    </p>
+    {% else %}
+    {% include 'common/action_modal_success.html' with title='No está bloqueado' text='Puede entrar con su clave actual: no hay nada que desbloquear.' %}
+    {% endif %}
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-secondary bg-gradient me-2 action-modal__close" data-bs-dismiss="modal">
+      {% if status.is_locked %}Cancelar{% else %}Cerrar{% endif %}
+    </button>
+    {% if status.is_locked %}
+    <button id="member_unlock_submit_btn" type="button"
+      class="btn btn-sm btn-primary bg-gradient d-inline-flex align-items-center gap-1 action-modal__submit">
+      <span class="material-symbols-outlined icon--small" aria-hidden="true">lock_open</span>
+      Desbloquear
+    </button>
+    {% endif %}
+  </div>
+</form>

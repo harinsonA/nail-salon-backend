@@ -1,0 +1,23 @@
+<div class="readonly-info readonly-info--grid mt-0">
+  <div class="readonly-info__item">
+    <span class="material-symbols-outlined" aria-hidden="true">person</span>
+    <div>
+      <span class="readonly-info__label">Nombre</span>
+      <span class="readonly-info__value">{{ member.get_full_name|default:"—" }}</span>
+    </div>
+  </div>
+  <div class="readonly-info__item">
+    <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+    <div>
+      <span class="readonly-info__label">Correo</span>
+      <span class="readonly-info__value">{{ member.email|default:"—" }}</span>
+    </div>
+  </div>
+  <div class="readonly-info__item">
+    <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+    <div>
+      <span class="readonly-info__label">Rol</span>
+      <span class="readonly-info__value">{{ role_label }}</span>
+    </div>
+  </div>
+</div>
