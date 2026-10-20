@@ -12,9 +12,11 @@ class Category:
     SEGURIDAD = "seguridad"
     APARIENCIA = "apariencia"
     AGENDA = "agenda"
+    FUNCIONES_NUEVAS = "funciones_nuevas"
 
     CHOICES = (
         (SEGURIDAD, "Seguridad"),
         (APARIENCIA, "Apariencia"),
         (AGENDA, "Agenda"),
+        (FUNCIONES_NUEVAS, "Funciones nuevas"),
     )
