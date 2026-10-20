@@ -1,9 +1,12 @@
-from django.db import models
-from django.core.validators import MinValueValidator
 from decimal import Decimal
+
+from django.conf import settings
+from django.core.validators import MinValueValidator
+from django.db import models
 from model_utils.models import TimeStampedModel
-from apps.payments.choices import MetodoPago
 from simple_history.models import HistoricalRecords
+
+from apps.payments.choices import MetodoPago
 
 
 class DetallePago(TimeStampedModel):
@@ -38,6 +41,13 @@ class DetallePago(TimeStampedModel):
         help_text="Número de recibo, transacción, cheque, etc.",
     )
     notas_detalle = models.TextField(blank=True, null=True)
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="abonos_registrados",
+    )
 
     # Auditoría histórica
     history = HistoricalRecords(inherit=True)
