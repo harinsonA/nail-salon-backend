@@ -21,7 +21,7 @@
       </div>
     </div>
     {% elif not status.is_locked %}
-    {% include 'panel/businesses/action_modal_success.html' with title='El propietario no está bloqueado' text='Puede entrar con su clave actual: no hay nada que desbloquear.' %}
+    {% include 'common/action_modal_success.html' with title='El propietario no está bloqueado' text='Puede entrar con su clave actual: no hay nada que desbloquear.' %}
     {% else %}
     <div class="action-modal__request">
       <div class="lock-status">
@@ -54,7 +54,7 @@
     </div>
 
     <div class="action-modal__result d-none" aria-live="polite">
-      {% include 'panel/businesses/action_modal_success.html' with title='Propietario desbloqueado' text='Ya puede entrar a su negocio con su clave actual.' %}
+      {% include 'common/action_modal_success.html' with title='Propietario desbloqueado' text='Ya puede entrar a su negocio con su clave actual.' %}
       <div class="readonly-info">
         <div class="readonly-info__item">
           <span class="material-symbols-outlined" aria-hidden="true">mail</span>

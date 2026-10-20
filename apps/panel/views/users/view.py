@@ -2,7 +2,7 @@ from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.contrib.auth.models import Group, Permission
-from django.db.models import Case, Count, F, IntegerField, Q, TextChoices, Value, When
+from django.db.models import Count, Q, TextChoices, Value
 from django.db.models.functions import Concat, Trim
 from django.http import JsonResponse
 from django.urls import reverse
@@ -37,7 +37,15 @@ from apps.panel.views.base import (
     PanelUpdateModalView,
     PanelView,
 )
-from apps.seguridad.access import LockState, lock_status, unlock
+from apps.seguridad.access import (
+    LOCK_FREE,
+    LockState,
+    format_lock,
+    lock_status,
+    locked_users_filter,
+    unlock,
+    with_lock_level,
+)
 
 """========================================================================="""
 # region ........ Constants
@@ -50,9 +58,6 @@ NAME_PART_MAX_LENGTH = 50
 DATETIME_FORMAT = "%d/%m/%Y %H:%M"
 TIME_FORMAT = "%H:%M"
 
-LOCK_FREE = 0
-LOCK_TEMPORARY = 1
-LOCK_PERMANENT = 2
 UNLOCK_REASON = "Desbloqueado desde el panel"
 PASSWORD_UNLOCK_REASON = "Desbloqueado al cambiar la contraseña desde el panel"
 
@@ -70,30 +75,6 @@ def format_datetime(value):
 
 def format_last_login(value):
     return format_datetime(value)
-
-
-def locked_users_filter(now):
-    return Q(acceso__bloqueado=True) | Q(acceso__bloqueado_hasta__gt=now)
-
-
-def with_lock_level(queryset, now):
-    return queryset.annotate(
-        lock=Case(
-            When(acceso__bloqueado=True, then=Value(LOCK_PERMANENT)),
-            When(acceso__bloqueado_hasta__gt=now, then=Value(LOCK_TEMPORARY)),
-            default=Value(LOCK_FREE),
-            output_field=IntegerField(),
-        ),
-        lock_until=F("acceso__bloqueado_hasta"),
-    )
-
-
-def format_lock(level, until):
-    if level == LOCK_PERMANENT:
-        return "Bloqueado hasta que alguien lo desbloquee"
-    if level == LOCK_TEMPORARY:
-        return f"Bloqueado hasta las {timezone.localtime(until).strftime(TIME_FORMAT)}"
-    return ""
 
 
 def user_permission_rows(user):
