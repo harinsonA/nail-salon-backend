@@ -237,7 +237,11 @@ class AgendaConfirmationForm(BSModalModelForm):
         return self.instance
 
     def clean_down_payment(self):
-        down_payment = self.cleaned_data.get("down_payment", 0)
+        down_payment = self.cleaned_data.get("down_payment")
+        if self.cleaned_data.get("full_payment"):
+            return down_payment
+        if down_payment is None:
+            raise forms.ValidationError("El monto abonado es requerido.")
         if down_payment >= self.remaining_payment_value:
             raise forms.ValidationError(
                 "El monto abonado no puede ser mayor o igual al total de la cita."
