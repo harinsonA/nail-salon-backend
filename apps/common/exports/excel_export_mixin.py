@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from django.http import HttpResponse
+from django.utils import timezone
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 
@@ -61,7 +60,7 @@ class ExcelExportMixin:
 
     # --- Construcción del archivo ---
     def get_excel_filename(self) -> str:
-        stamp = datetime.now().strftime("%Y%m%d_%H%M")
+        stamp = timezone.localtime().strftime("%Y%m%d_%H%M")
         return f"{self.excel_filename}_{stamp}.xlsx"
 
     def build_excel_response(self, rows: list[dict]) -> HttpResponse:

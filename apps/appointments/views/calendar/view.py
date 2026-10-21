@@ -1,16 +1,18 @@
 import calendar
 from datetime import date
+
 from django import forms
 from django.db.models import Q
-from django.views.generic import TemplateView
 from django.urls import reverse_lazy
+from django.utils import timezone
+from django.views.generic import TemplateView
+
 from apps.appointments.models.agenda import Cita
 from apps.clients.models import Cliente
 from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.common.custom_time_fields import CustomMonthField, MONTH_NUMBER_TO_NAME
+from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthField
 from apps.common.views.base_views import ProtectedView
 from apps.services.models import Servicio
-
 
 """========================================================================="""
 # region ........ Constants
@@ -92,7 +94,7 @@ class CalendarView(ProtectedView, TemplateView):
         selected_month = self.request.session.get(KEY_MONTH_SELECTED)
         if selected_month:
             return selected_month
-        year, month = date.today().strftime("%Y-%m").split("-")
+        year, month = timezone.localdate().strftime("%Y-%m").split("-")
         return f"{MONTH_NUMBER_TO_NAME[int(month)]} {year}"
 
     @staticmethod
@@ -142,9 +144,7 @@ class CalendarListView(BaseListViewAjax):
 
     def get_queryset(self):
         _filters = self.get_filters()
-        queryset = Cita.objects.exclude(
-            estado=Cita.EstadoChoices.CANCELADA
-        ).filter(
+        queryset = Cita.objects.exclude(estado=Cita.EstadoChoices.CANCELADA).filter(
             fecha_agenda__gte=_filters.get("fecha_agenda__gte"),
             fecha_agenda__lte=_filters.get("fecha_agenda__lte"),
         )
@@ -178,7 +178,7 @@ class CalendarListView(BaseListViewAjax):
     @staticmethod
     def get_calendar_data(weeks: dict, appointments_by_date: dict) -> list:
         data = []
-        _today = date.today()
+        _today = timezone.localdate()
         for week_number, days in weeks.items():
             base_week = {"week_id": week_number}
             for day in days:
@@ -209,9 +209,7 @@ class CalendarListView(BaseListViewAjax):
 
     def get_context_data(self, **kwargs):
         _filters = self.get_filters()
-        appointments_by_date = self.get_aggregate_appointments_by_date(
-            self.object_list
-        )
+        appointments_by_date = self.get_aggregate_appointments_by_date(self.object_list)
         _date = _filters.get("fecha_agenda__gte")
         year = _date.year
         month = _date.month

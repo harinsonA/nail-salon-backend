@@ -1,17 +1,17 @@
-from datetime import date
-
 from django import forms
 from django.db.models import Sum
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
+from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthField
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.custom_time_fields import CustomMonthField, MONTH_NUMBER_TO_NAME
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
+
 from ...choices import EstadoPago
 
 """========================================================================="""
@@ -45,7 +45,7 @@ class PaymentsView(ProtectedView, TemplateView):
 
     @staticmethod
     def get_initial_month() -> str:
-        year, month = date.today().strftime("%Y-%m").split("-")
+        year, month = timezone.localdate().strftime("%Y-%m").split("-")
         return f"{MONTH_NUMBER_TO_NAME[int(month)]} {year}"
 
     def get_context_data(self, **kwargs):
@@ -138,7 +138,9 @@ class PaymentsExportView(ExcelExportMixin, PaymentsListView):
         ExcelColumn("Fecha cita", "fecha_cita_display", width=20, align="center"),
         ExcelColumn("Cliente", "cliente_nombre", width=30),
         ExcelColumn("Descuento", "descuento_total_formatted", width=16, align="right"),
-        ExcelColumn("Monto pagado", "monto_total_cita_formatted", width=16, align="right"),
+        ExcelColumn(
+            "Monto pagado", "monto_total_cita_formatted", width=16, align="right"
+        ),
         ExcelColumn(
             "Fecha pago completado",
             "fecha_pago_completado_display",

@@ -2,6 +2,7 @@ from functools import wraps
 
 from celery import shared_task
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django_tenants.utils import get_public_schema_name, schema_context
 from result import Err, Ok
 
@@ -61,8 +62,8 @@ def tracked_task(func, requires_user=True):
 
     @wraps(func)
     def wrapper(esquema, tarea_id, *args, **kwargs):
-        _validar_negocio(esquema)
-        with schema_context(esquema):
+        zona_horaria = _validar_negocio(esquema)
+        with schema_context(esquema), timezone.override(zona_horaria):
             tarea = TareaEnProceso.objects.get(pk=tarea_id)
             result = _get_user(tarea.user_id)
             if result.is_err() and requires_user:
@@ -81,9 +82,15 @@ def tracked_task(func, requires_user=True):
 def _validar_negocio(esquema):
     publico = get_public_schema_name()
     with schema_context(publico):
-        es_negocio = Negocio.objects.filter(schema_name=esquema).exclude(schema_name=publico).exists()
-    if not es_negocio:
+        zona_horaria = (
+            Negocio.objects.filter(schema_name=esquema)
+            .exclude(schema_name=publico)
+            .values_list("zona_horaria", flat=True)
+            .first()
+        )
+    if zona_horaria is None:
         raise ValueError(f"«{esquema}» no es el esquema de un negocio: la tarea no se ejecuta.")
+    return zona_horaria
 
 
 def background_task(func=None, *, requires_user=True, **opciones):
