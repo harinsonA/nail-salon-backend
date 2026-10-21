@@ -7,6 +7,8 @@ from apps.appointments.models import Cita
 
 
 MONTH_VISIBLE_PER_DAY = 3
+MIXED_STATUS = "mixto"
+OVERDUE_STATUS = "vencida"
 
 ACTIONS = {
     "detalle": ("Ver detalle", "visibility", "agenda_see_modal", "bs-xl-modal"),
@@ -58,6 +60,10 @@ class CalendarBuilder:
             ],
         }
 
+    @staticmethod
+    def visual_status(appointment):
+        return OVERDUE_STATUS if appointment["sin_cerrar"] else appointment["estado"]
+
     def by_day(self):
         days = {}
         for appointment in self.appointments:
@@ -82,6 +88,33 @@ class MonthBuilder(CalendarBuilder):
         }
 
 
+class WeekBuilder(CalendarBuilder):
+    def build(self):
+        return {
+            "dias": {
+                day: {"total": len(appointments), "bloques": self.blocks(appointments)}
+                for day, appointments in self.by_day().items()
+            }
+        }
+
+    def blocks(self, appointments):
+        hours = {}
+        for appointment in appointments:
+            hours.setdefault(appointment["hora"].hour, []).append(appointment)
+        return [
+            {
+                "hora": hour,
+                "estado": self.block_status(items),
+                "citas": [self.serialize(appointment) for appointment in items],
+            }
+            for hour, items in sorted(hours.items())
+        ]
+
+    def block_status(self, appointments):
+        statuses = {self.visual_status(appointment) for appointment in appointments}
+        return statuses.pop() if len(statuses) == 1 else MIXED_STATUS
+
+
 # endregion
 """========================================================================="""
 
@@ -89,7 +122,7 @@ class MonthBuilder(CalendarBuilder):
 # region ........ Registry
 
 
-BUILDERS = {"mes": MonthBuilder}
+BUILDERS = {"mes": MonthBuilder, "semana": WeekBuilder}
 
 
 # endregion

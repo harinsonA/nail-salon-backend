@@ -8,6 +8,8 @@ from apps.common.form_fields import AlphabeticField
 
 MAX_RANGE_DAYS = 42
 VIEW_MONTH = "mes"
+VIEW_WEEK = "semana"
+VIEW_CHOICES = [(VIEW_WEEK, "Semana"), (VIEW_MONTH, "Mes")]
 
 
 # endregion
@@ -18,7 +20,7 @@ VIEW_MONTH = "mes"
 
 
 class CalendarFilterForm(forms.Form):
-    vista = forms.ChoiceField(choices=[(VIEW_MONTH, "Mes")])
+    vista = forms.ChoiceField(choices=VIEW_CHOICES)
     desde = forms.DateField(input_formats=["%Y-%m-%d"])
     hasta = forms.DateField(input_formats=["%Y-%m-%d"])
     buscar = AlphabeticField(label="Búsqueda", required=False, max_length=100)

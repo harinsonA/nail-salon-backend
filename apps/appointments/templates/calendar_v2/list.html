@@ -17,11 +17,11 @@ Calendario
   <header class="cal2-toolbar">
     <div class="cal2-toolbar__group">
       <div class="cal2-period">
-        <button type="button" class="cal2-icon-btn" data-cal2-prev aria-label="Mes anterior">
+        <button type="button" class="cal2-icon-btn" data-cal2-prev aria-label="Anterior">
           <span class="material-symbols-outlined icon--field" aria-hidden="true">chevron_left</span>
         </button>
         <h4 class="cal2-period__label" data-cal2-title aria-live="polite"></h4>
-        <button type="button" class="cal2-icon-btn" data-cal2-next aria-label="Mes siguiente">
+        <button type="button" class="cal2-icon-btn" data-cal2-next aria-label="Siguiente">
           <span class="material-symbols-outlined icon--field" aria-hidden="true">chevron_right</span>
         </button>
       </div>
@@ -29,6 +29,13 @@ Calendario
         <span class="material-symbols-outlined icon--small" aria-hidden="true">today</span>
         Hoy
       </button>
+    </div>
+    <div class="cal2-toolbar__group cal2-toolbar__group--switch">
+      <div class="cal2-switch" role="group" aria-label="Cambiar vista">
+        {% for view in calendar_config.views %}
+        <button type="button" class="cal2-switch__btn" data-cal2-view="{{ view.key }}" aria-pressed="false">{{ view.label }}</button>
+        {% endfor %}
+      </div>
     </div>
     <div class="cal2-toolbar__group cal2-toolbar__group--end">
       <a href="{{ new_appointment_url }}" class="btn btn-primary cal2-new-btn" data-cal2-new aria-label="Nueva cita" title="Nueva cita">

@@ -2,9 +2,20 @@
   "use strict";
 
   const HiCalendar = (window.HiCalendar = window.HiCalendar || {});
-  const { dates, CalendarApi, MonthRenderer, AppointmentMenu, PeriodNavigator, TodayButton, SearchBox } = HiCalendar;
+  const {
+    dates,
+    CalendarApi,
+    MonthRenderer,
+    WeekRenderer,
+    AppointmentMenu,
+    PeriodNavigator,
+    TodayButton,
+    ViewSwitch,
+    SearchBox,
+  } = HiCalendar;
 
   const LOADER_DELAY = 150;
+  const RENDERERS = { mes: MonthRenderer, semana: WeekRenderer };
 
   class CalendarController {
     constructor(root, config) {
@@ -25,22 +36,27 @@
 
       this.api = new CalendarApi(config.dataUrl);
       this.menu = new AppointmentMenu({ onChange: () => this.refresh() });
-      this.renderer = new MonthRenderer({
-        container: root,
-        today: this.today,
-        dayUrl: config.dayUrl,
-        datePlaceholder: config.datePlaceholder,
-        onAppointment: (appointment, trigger) => this.menu.open(appointment, trigger),
+      this.renderers = {};
+      Object.entries(RENDERERS).forEach(([view, Renderer]) => {
+        this.renderers[view] = new Renderer({
+          container: root,
+          today: this.today,
+          hours: config.hours,
+          dayUrl: config.dayUrl,
+          datePlaceholder: config.datePlaceholder,
+          onAppointment: (appointment, trigger) => this.menu.open(appointment, trigger),
+        });
       });
       this.navigator = new PeriodNavigator({
         prevButton: find("prev"),
         nextButton: find("next"),
         title: find("title"),
-        onMove: (step) => this.go(dates.addMonths(this.cursor, step)),
+        onMove: (step) => this.go(this.renderer.move(this.cursor, step)),
       });
-      this.todayButton = new TodayButton({
-        button: find("today"),
-        onToday: () => this.go(new Date(this.today.getFullYear(), this.today.getMonth(), 1)),
+      this.todayButton = new TodayButton({ button: find("today"), onToday: () => this.go(this.today) });
+      this.viewSwitch = new ViewSwitch({
+        buttons: [...root.querySelectorAll("[data-cal2-view]")],
+        onChange: (view) => this.setView(view),
       });
       this.searchBox = new SearchBox({
         input: find("search"),
@@ -50,27 +66,42 @@
         },
       });
 
-      const requested = dates.fromMonthParam(new URLSearchParams(window.location.search).get("fecha"));
-      this.go(requested || new Date(this.today.getFullYear(), this.today.getMonth(), 1));
+      const query = new URLSearchParams(window.location.search);
+      this.view = RENDERERS[query.get("vista")] ? query.get("vista") : config.view;
+      this.viewSwitch.setActive(this.view);
+      this.go(dates.fromParam(query.get("fecha")) || this.today);
+    }
+
+    get renderer() {
+      return this.renderers[this.view];
     }
 
     params(cursor = this.cursor) {
       const { start, end } = this.renderer.range(cursor);
-      const params = { vista: this.config.view, desde: dates.toISO(start), hasta: dates.toISO(end) };
+      const params = { vista: this.view, desde: dates.toISO(start), hasta: dates.toISO(end) };
       if (this.search) {
         params.buscar = this.search;
       }
       return params;
     }
 
+    setView(view) {
+      if (view === this.view || !RENDERERS[view]) {
+        return;
+      }
+      this.view = view;
+      this.viewSwitch.setActive(view);
+      this.go(this.cursor);
+    }
+
     go(cursor) {
       this.cursor = cursor;
-      this.navigator.setTitle(dates.monthTitle(cursor));
+      this.navigator.setTitle(this.renderer.title(cursor));
       const url = new URL(window.location.href);
-      url.searchParams.set("fecha", dates.toMonthParam(cursor));
+      url.searchParams.set("vista", this.view);
+      url.searchParams.set("fecha", dates.toISO(cursor));
       window.history.replaceState(null, "", url);
-      const appointmentDate = dates.sameDayInMonth(this.today.getDate(), cursor);
-      this.newButton.href = this.config.newAppointmentUrl.replace(this.config.datePlaceholder, dates.toISO(appointmentDate));
+      this.newButton.href = this.config.newAppointmentUrl.replace(this.config.datePlaceholder, dates.toISO(cursor));
       this.renderer.renderSkeleton(cursor);
       this.load();
     }
@@ -108,13 +139,14 @@
       if (this.search) {
         return;
       }
-      [-1, 1].forEach((step) => this.api.prefetch(this.params(dates.addMonths(this.cursor, step))));
+      [-1, 1].forEach((step) => this.api.prefetch(this.params(this.renderer.move(this.cursor, step))));
     }
 
     setBusy(busy, cached = false) {
       this.root.setAttribute("aria-busy", String(busy));
       this.navigator.setDisabled(busy);
       this.todayButton.setDisabled(busy);
+      this.viewSwitch.setDisabled(busy);
       clearTimeout(this.loaderTimer);
       if (busy && !cached) {
         this.loaderTimer = setTimeout(() => {
