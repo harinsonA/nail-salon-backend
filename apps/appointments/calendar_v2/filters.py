@@ -7,9 +7,10 @@ from apps.common.form_fields import AlphabeticField
 
 
 MAX_RANGE_DAYS = 42
-VIEW_MONTH = "mes"
+VIEW_DAY = "dia"
 VIEW_WEEK = "semana"
-VIEW_CHOICES = [(VIEW_WEEK, "Semana"), (VIEW_MONTH, "Mes")]
+VIEW_MONTH = "mes"
+VIEW_CHOICES = [(VIEW_DAY, "Día"), (VIEW_WEEK, "Semana"), (VIEW_MONTH, "Mes")]
 
 
 # endregion

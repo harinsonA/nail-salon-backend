@@ -115,6 +115,27 @@ class WeekBuilder(CalendarBuilder):
         return statuses.pop() if len(statuses) == 1 else MIXED_STATUS
 
 
+class DayBuilder(WeekBuilder):
+    def build(self):
+        return {
+            "dias": {
+                day: {
+                    "total": len(appointments),
+                    "resumen": self.summary(appointments),
+                    "bloques": self.blocks(appointments),
+                }
+                for day, appointments in self.by_day().items()
+            }
+        }
+
+    @staticmethod
+    def summary(appointments):
+        counts = {status: 0 for status in Cita.EstadoChoices.values}
+        for appointment in appointments:
+            counts[appointment["estado"]] += 1
+        return counts
+
+
 # endregion
 """========================================================================="""
 
@@ -122,7 +143,7 @@ class WeekBuilder(CalendarBuilder):
 # region ........ Registry
 
 
-BUILDERS = {"mes": MonthBuilder, "semana": WeekBuilder}
+BUILDERS = {"dia": DayBuilder, "semana": WeekBuilder, "mes": MonthBuilder}
 
 
 # endregion
