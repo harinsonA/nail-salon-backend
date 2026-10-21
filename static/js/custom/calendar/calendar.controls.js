@@ -34,6 +34,27 @@
     }
   }
 
+  class ViewSwitch {
+    constructor({ buttons, onChange }) {
+      this.buttons = buttons;
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => onChange(button.dataset.cal2View));
+      });
+    }
+
+    setActive(view) {
+      this.buttons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.cal2View === view));
+      });
+    }
+
+    setDisabled(disabled) {
+      this.buttons.forEach((button) => {
+        button.disabled = disabled;
+      });
+    }
+  }
+
   class SearchBox {
     constructor({ input, onSearch, delay = 250 }) {
       this.input = input;
@@ -49,4 +70,5 @@
   HiCalendar.PeriodNavigator = PeriodNavigator;
   HiCalendar.TodayButton = TodayButton;
   HiCalendar.SearchBox = SearchBox;
+  HiCalendar.ViewSwitch = ViewSwitch;
 })(window);

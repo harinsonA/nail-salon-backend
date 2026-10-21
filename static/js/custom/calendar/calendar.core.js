@@ -22,6 +22,14 @@
     toMonthParam(date) {
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     },
+    fromParam(value) {
+      const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(value || "");
+      if (!match) {
+        return null;
+      }
+      const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3] || 1));
+      return date.getMonth() === Number(match[2]) - 1 ? date : null;
+    },
     fromMonthParam(value) {
       const match = /^(\d{4})-(\d{2})$/.exec(value || "");
       if (!match || Number(match[2]) < 1 || Number(match[2]) > 12) {
@@ -38,6 +46,18 @@
     },
     addMonths(date, months) {
       return new Date(date.getFullYear(), date.getMonth() + months, 1);
+    },
+    shiftMonths(date, months) {
+      return dates.sameDayInMonth(date.getDate(), dates.addMonths(date, months));
+    },
+    weekDays(date) {
+      const first = dates.startOfWeek(date);
+      return Array.from({ length: 7 }, (_, index) => dates.addDays(first, index));
+    },
+    weekTitle(days) {
+      const first = days[0];
+      const last = days[days.length - 1];
+      return dates.monthTitle(first.getMonth() === last.getMonth() ? first : last);
     },
     startOfWeek(date) {
       return dates.addDays(date, -((date.getDay() + 6) % 7));
