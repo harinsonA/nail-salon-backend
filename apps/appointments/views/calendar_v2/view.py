@@ -7,7 +7,7 @@ from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
 from apps.appointments.calendar_v2.builders import BUILDERS
-from apps.appointments.calendar_v2.filters import VIEW_MONTH, CalendarFilterForm
+from apps.appointments.calendar_v2.filters import VIEW_CHOICES, VIEW_WEEK, CalendarFilterForm
 from apps.appointments.calendar_v2.query import CalendarQuery
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
 from apps.settings.preferences import CALENDAR_V2
@@ -17,6 +17,7 @@ from apps.settings.preferences import CALENDAR_V2
 
 
 DATE_PLACEHOLDER = "__fecha__"
+GRID_HOURS = {"desde": 5, "hasta": 24}
 NOT_ENABLED_MESSAGE = "El calendario nuevo no está activo en este negocio."
 
 
@@ -45,7 +46,9 @@ class CalendarV2View(ProtectedView, TemplateView):
                 "dataUrl": reverse("calendar_v2_data"),
                 "today": today.isoformat(),
                 "timeZone": timezone.get_current_timezone_name(),
-                "view": VIEW_MONTH,
+                "view": VIEW_WEEK,
+                "views": [{"key": key, "label": label} for key, label in VIEW_CHOICES],
+                "hours": GRID_HOURS,
                 "dayUrl": reverse("calendar_appointments", args=[DATE_PLACEHOLDER]),
                 "newAppointmentUrl": reverse("create_appointment_from_calendar", args=[DATE_PLACEHOLDER]),
                 "datePlaceholder": DATE_PLACEHOLDER,
