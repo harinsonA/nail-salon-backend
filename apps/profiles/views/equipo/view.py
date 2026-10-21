@@ -16,6 +16,7 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.claves import generar_clave_temporal
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.form_fields import AlphabeticField
+from apps.common.utils.search import search_ignoring_accents
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
@@ -291,9 +292,7 @@ class TeamListView(BaseListViewAjax):
         if not search_value:
             return Q()
         return (
-            Q(first_name__icontains=search_value)
-            | Q(last_name__icontains=search_value)
-            | Q(email__icontains=search_value)
+            search_ignoring_accents(["first_name", "last_name", "email"], search_value)
         )
 
     def get_values(self, queryset):

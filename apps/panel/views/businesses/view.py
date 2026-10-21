@@ -35,6 +35,7 @@ from apps.common.forms import (
     mark_invalid_fields,
 )
 from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
+from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.widgets import text_input
 from apps.panel.views.base import (
@@ -556,13 +557,13 @@ class BusinessListAjaxView(PanelListViewAjax):
         if not search_value:
             return Q()
         domains = Dominio.objects.filter(
-            tenant=OuterRef("pk"), domain__icontains=search_value
+            contains_ignoring_accents("domain", search_value), tenant=OuterRef("pk")
         )
         return (
-            Q(nombre__icontains=search_value)
-            | Q(schema_name__icontains=search_value)
-            | Q(titular__nombres__icontains=search_value)
-            | Q(titular__apellidos__icontains=search_value)
+            search_ignoring_accents(
+                ["nombre", "schema_name", "titular__nombres", "titular__apellidos"],
+                search_value,
+            )
             | Q(Exists(domains))
         )
 

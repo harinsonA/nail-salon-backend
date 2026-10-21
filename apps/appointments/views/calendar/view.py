@@ -2,7 +2,6 @@ import calendar
 from datetime import date
 
 from django import forms
-from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -12,6 +11,7 @@ from apps.appointments.models.agenda import Cita
 from apps.clients.models import Cliente
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthField
+from apps.common.utils.search import search_ignoring_accents
 from apps.common.views.base_views import ProtectedView
 from apps.services.models import Servicio
 from apps.settings.preferences import CALENDAR_V2
@@ -158,8 +158,7 @@ class CalendarListView(BaseListViewAjax):
         search = _filters.get("search")
         if search:
             queryset = queryset.filter(
-                Q(cliente__nombre__icontains=search)
-                | Q(cliente__apellido__icontains=search)
+                search_ignoring_accents(["cliente__nombre", "cliente__apellido"], search)
             )
         return queryset.values_list("pk", "fecha_agenda", "estado")
 

@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.form_fields import AlphabeticField
+from apps.common.utils.search import search_ignoring_accents
 from apps.panel.permissions import (
     build_permission_rows,
     merge_panel_permissions,
@@ -178,7 +179,7 @@ class GroupListAjaxView(PanelListViewAjax):
 
     def get_filter_by_search(self):
         search_value = self.request.GET.get("search[value]", "")
-        return Q(name__icontains=search_value) if search_value else Q()
+        return search_ignoring_accents(["name"], search_value) if search_value else Q()
 
     def add_options_column(self, data):
         can_change = self.model_admin.has_change_permission(self.request)

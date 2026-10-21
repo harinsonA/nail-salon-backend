@@ -17,6 +17,7 @@ from apps.common.form_classes import (
 )
 from apps.common.form_fields import AlphabeticField
 from apps.common.utils.passwords import PasswordPolicyValidator
+from apps.common.utils.search import search_ignoring_accents
 from apps.common.utils.text import join_name_parts, split_name
 from apps.common.utils.utils import USERNAME_MAX_LENGTH, CommonCleaner
 from apps.common.widgets import password_input, switch_input, text_input
@@ -469,10 +470,7 @@ class UserListAjaxView(PanelListViewAjax):
         if not search_value:
             return Q()
         return (
-            Q(username__icontains=search_value)
-            | Q(first_name__icontains=search_value)
-            | Q(last_name__icontains=search_value)
-            | Q(email__icontains=search_value)
+            search_ignoring_accents(["username", "first_name", "last_name", "email"], search_value)
         )
 
     def get_values(self, queryset):

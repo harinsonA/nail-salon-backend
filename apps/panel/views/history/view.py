@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
 
+from apps.common.utils.search import search_ignoring_accents
 from apps.panel.views.base import PanelAjaxView, PanelListViewAjax
 
 """========================================================================="""
@@ -183,10 +184,15 @@ class HistoryListAjaxView(HistoryObjectMixin, PanelListViewAjax):
         if not search_value:
             return Q()
         return (
-            Q(history_change_reason__icontains=search_value)
-            | Q(history_user__username__icontains=search_value)
-            | Q(history_user__first_name__icontains=search_value)
-            | Q(history_user__last_name__icontains=search_value)
+            search_ignoring_accents(
+                [
+                    "history_change_reason",
+                    "history_user__username",
+                    "history_user__first_name",
+                    "history_user__last_name",
+                ],
+                search_value,
+            )
         )
 
     def get_values(self, queryset):

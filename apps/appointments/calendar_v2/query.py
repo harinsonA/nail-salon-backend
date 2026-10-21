@@ -1,7 +1,9 @@
-from django.db.models import Q
+from django.db.models import Value
+from django.db.models.functions import Concat
 from django.utils import timezone
 
 from apps.appointments.models import Cita
+from apps.common.utils.search import contains_ignoring_accents
 from apps.payments.choices import EstadoPago
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import rol_de
@@ -22,9 +24,8 @@ class CalendarQuery:
         if rol_de(self.user) == Perfil.Rol.COLABORADOR:
             queryset = queryset.filter(asignado_a=self.user)
         if self.search:
-            queryset = queryset.filter(
-                Q(cliente__nombre__icontains=self.search) | Q(cliente__apellido__icontains=self.search)
-            )
+            full_name = Concat("cliente__nombre", Value(" "), "cliente__apellido")
+            queryset = queryset.filter(contains_ignoring_accents(full_name, self.search))
         return queryset.order_by("fecha_agenda", "hora_agenda", "pk")
 
     def now(self):
