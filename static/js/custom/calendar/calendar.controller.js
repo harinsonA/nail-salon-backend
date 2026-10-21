@@ -7,6 +7,7 @@
     CalendarApi,
     MonthRenderer,
     WeekRenderer,
+    DayRenderer,
     AppointmentMenu,
     PeriodNavigator,
     TodayButton,
@@ -15,7 +16,8 @@
   } = HiCalendar;
 
   const LOADER_DELAY = 150;
-  const RENDERERS = { mes: MonthRenderer, semana: WeekRenderer };
+  const RENDERERS = { dia: DayRenderer, semana: WeekRenderer, mes: MonthRenderer };
+  const MOBILE_QUERY = "(max-width: 767.98px)";
 
   class CalendarController {
     constructor(root, config) {
@@ -42,8 +44,7 @@
           container: root,
           today: this.today,
           hours: config.hours,
-          dayUrl: config.dayUrl,
-          datePlaceholder: config.datePlaceholder,
+          onDay: (date) => this.openDay(date),
           onAppointment: (appointment, trigger) => this.menu.open(appointment, trigger),
         });
       });
@@ -67,9 +68,14 @@
       });
 
       const query = new URLSearchParams(window.location.search);
-      this.view = RENDERERS[query.get("vista")] ? query.get("vista") : config.view;
+      this.view = RENDERERS[query.get("vista")] ? query.get("vista") : this.initialView();
       this.viewSwitch.setActive(this.view);
       this.go(dates.fromParam(query.get("fecha")) || this.today);
+    }
+
+    initialView() {
+      const mobile = typeof window.matchMedia === "function" && window.matchMedia(MOBILE_QUERY).matches;
+      return mobile ? "dia" : this.config.view;
     }
 
     get renderer() {
@@ -92,6 +98,12 @@
       this.view = view;
       this.viewSwitch.setActive(view);
       this.go(this.cursor);
+    }
+
+    openDay(date) {
+      this.view = "dia";
+      this.viewSwitch.setActive(this.view);
+      this.go(date);
     }
 
     go(cursor) {
