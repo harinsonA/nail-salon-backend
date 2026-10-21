@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django_tenants.utils import get_public_schema_name
 
 from apps.profiles.permisos import SOLO_ADMINISTRACION, administra_el_negocio
@@ -62,6 +63,18 @@ class EstadoDelNegocioMiddleware:
         if es_ajax(request):
             return JsonResponse({"message": PAGO_PENDIENTE}, status=402)
         return render(request, "estado/pago_pendiente.html", {"mensaje": PAGO_PENDIENTE}, status=402)
+
+
+class BusinessTimeZoneMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        negocio = getattr(request, "tenant", None)
+        if negocio is None or negocio.schema_name == get_public_schema_name():
+            return self.get_response(request)
+        with timezone.override(negocio.zona_horaria):
+            return self.get_response(request)
 
 
 class PanelSoloEnSubdominioMiddleware:

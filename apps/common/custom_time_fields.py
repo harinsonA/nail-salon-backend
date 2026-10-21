@@ -1,9 +1,11 @@
-from datetime import timedelta, datetime, date
 from calendar import monthrange
+from datetime import date, datetime, timedelta
+
 from django import forms
 from django.db.models import TextChoices
+from django.utils import timezone
 
-from .widgets import MonthPickerWidget, DatePickerWidget
+from .widgets import DatePickerWidget, MonthPickerWidget
 
 
 class MonthChoiceField(TextChoices):
@@ -81,7 +83,7 @@ class CustomMonthField(forms.CharField):
 
     @staticmethod
     def __get_range_today():
-        today = datetime.today()
+        today = timezone.make_naive(timezone.now())
         first_day = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         last_day = today.replace(
             day=monthrange(today.year, today.month)[1],

@@ -107,6 +107,7 @@ DOMINIO_BASE = config("DOMINIO_BASE", default="localhost")
 MIDDLEWARE = [
     "django_tenants.middleware.main.TenantMainMiddleware",
     "apps.tenancy.middleware.PanelSoloEnSubdominioMiddleware",
+    "apps.tenancy.middleware.BusinessTimeZoneMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",

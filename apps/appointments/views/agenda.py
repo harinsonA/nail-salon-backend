@@ -256,13 +256,13 @@ class AppointmentsView(ProtectedView, TemplateView):
 
     @staticmethod
     def get_initial_month() -> str:
-        today = date.today()
+        today = timezone.localdate()
         return f"{today.strftime('%B %Y')}".capitalize()
 
     @staticmethod
     def get_date_instance(**kwargs) -> date:
         _date = kwargs.get("date", "")
-        _today = date.today()
+        _today = timezone.localdate()
         date_instance = datetime.strptime(_date, "%Y-%m-%d").date() if _date else _today
         return date_instance
 

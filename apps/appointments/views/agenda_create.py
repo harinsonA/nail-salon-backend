@@ -1,10 +1,10 @@
 import json
-from datetime import date
 
 from django import forms
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import FormView, TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
@@ -140,7 +140,9 @@ class AgendaCreateView(ProtectedView, FormView):
 
     def get_initial(self):
         initial = super().get_initial()
-        _date_selected = self.kwargs.get("date", date.today().strftime("%Y-%m-%d"))
+        _date_selected = self.kwargs.get(
+            "date", timezone.localdate().strftime("%Y-%m-%d")
+        )
         _year, _month, _day = _date_selected.split("-")
         initial.update(
             {
@@ -151,12 +153,14 @@ class AgendaCreateView(ProtectedView, FormView):
         return initial
 
     def get_success_url(self, **kwargs):
-        _date_selected = kwargs.get("date", date.today().strftime("%Y-%m-%d"))
+        _date_selected = kwargs.get("date", timezone.localdate().strftime("%Y-%m-%d"))
         return reverse_lazy("calendar_appointments", kwargs={"date": _date_selected})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        _date_selected = self.kwargs.get("date", date.today().strftime("%Y-%m-%d"))
+        _date_selected = self.kwargs.get(
+            "date", timezone.localdate().strftime("%Y-%m-%d")
+        )
         context.update(
             {
                 "cancel_url": reverse_lazy(

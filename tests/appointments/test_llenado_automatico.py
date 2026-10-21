@@ -117,7 +117,7 @@ class LlenadoAutomaticoTests(NegocioTestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
         self.assertEqual(respuesta.status_code, 200)
-        primero, segundo = pago.detalles_pago.order_by("fecha_pago")
+        primero, segundo = pago.detalles_pago.order_by("pk")
         self.assertEqual(primero.registrado_por, colaboradora)
         self.assertEqual(segundo.registrado_por, propietaria)
         pago.refresh_from_db()

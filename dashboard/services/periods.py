@@ -1,6 +1,8 @@
 from collections import namedtuple
 from datetime import date
 
+from django.utils import timezone
+
 # Periodo resuelto que consumen las funciones de metrics. Acota un intervalo
 # semiabierto [start_date, end_date) que comparten los 6 gráficos:
 #   - start_date: primer día del mes más antiguo del rango (límite inferior).
@@ -49,7 +51,7 @@ def _build(pairs):
 
 def last_n_months(months, today=None):
     """Pares (año, mes) de los últimos `months`, del más antiguo al actual."""
-    today = today or date.today()
+    today = today or timezone.localdate()
     pairs = []
     year, month = today.year, today.month
     for _ in range(months):
