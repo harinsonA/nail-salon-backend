@@ -1,9 +1,7 @@
-import operator
-from functools import reduce
-
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views.generic import ListView
+from apps.common.utils.search import search_ignoring_accents
 from apps.common.views.base_views import ProtectedAjaxView
 
 
@@ -35,10 +33,7 @@ class AjaxListViewBase(ListView):
         search_value = self.request.GET.get("search[value]", "")
         if not search_value:
             return Q()
-        return reduce(
-            operator.or_,
-            (Q(**{f"{field}__icontains": search_value}) for field in self.field_list),
-        )
+        return search_ignoring_accents(self.field_list, search_value)
 
     def get_filters(self):
         if not self.filter_form_class:

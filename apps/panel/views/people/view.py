@@ -20,6 +20,7 @@ from apps.common.forms import (
     main_item_formset,
 )
 from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
 from apps.common.utils.text import join_name_parts, split_name
 from apps.common.widgets import switch_input, text_input
 from apps.panel.views.base import (
@@ -332,14 +333,13 @@ class PersonListAjaxView(PanelListViewAjax):
         if not search_value:
             return Q()
         emails = PersonaCorreo.objects.filter(
-            persona=OuterRef("pk"), correo__icontains=search_value
+            contains_ignoring_accents("correo", search_value), persona=OuterRef("pk")
         )
         phones = PersonaTelefono.objects.filter(
-            persona=OuterRef("pk"), numero__icontains=search_value
+            contains_ignoring_accents("numero", search_value), persona=OuterRef("pk")
         )
         return (
-            Q(nombres__icontains=search_value)
-            | Q(apellidos__icontains=search_value)
+            search_ignoring_accents(["nombres", "apellidos"], search_value)
             | Q(Exists(emails))
             | Q(Exists(phones))
         )

@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.form_fields import AlphabeticField
+from apps.common.utils.search import search_ignoring_accents
 from apps.panel.views.base import (
     PanelCreateModalView,
     PanelDeleteModalView,
@@ -187,7 +188,7 @@ class IndustryListAjaxView(PanelListViewAjax):
         search_value = self.request.GET.get("search[value]", "")
         if not search_value:
             return Q()
-        return Q(nombre__icontains=search_value) | Q(codigo__icontains=search_value)
+        return search_ignoring_accents(["nombre", "codigo"], search_value)
 
     def add_options_column(self, data):
         can_change = self.model_admin.has_change_permission(self.request)

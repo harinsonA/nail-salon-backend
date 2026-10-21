@@ -81,6 +81,10 @@ class IndustriesScreenTests(TestCase):
         self.assertEqual(self.names(self.superuser, **{"search[value]": "barb"}), ["Barbería"])
         self.assertEqual(self.names(self.superuser, **{"search[value]": "spa"}), ["Spa"])
 
+    def test_search_ignores_accents(self):
+        Rubro.objects.create(codigo="pelu", nombre="Peluquería")
+        self.assertEqual(self.names(self.superuser, **{"search[value]": "peluqueria"}), ["Peluquería"])
+
     def test_order_by_business_count(self):
         self.assertEqual(self.names(self.superuser, **{"order[0][column]": "3", "order[0][dir]": "desc"}), ["Barbería", "Spa"])
 
