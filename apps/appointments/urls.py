@@ -1,27 +1,39 @@
 from django.urls import path
-from apps.appointments.views.calendar.view import CalendarView, CalendarListView
+
 from apps.appointments.views.agenda import (
-    AppointmentsView,
-    AgendaListView,
-    AgendaSeeModalView,
-    AgendaUpdateModalView,
     AgendaCancelModalView,
-    AgendaRestoreModalView,
     AgendaConfirmationModal,
     AgendaDeleteModalView,
+    AgendaListView,
+    AgendaRestoreModalView,
+    AgendaSeeModalView,
+    AgendaUpdateModalView,
+    AppointmentsView,
 )
 from apps.appointments.views.agenda_create import (
     AgendaCreateView,
-    ServiceDetailsAjax,
     AvailableHoursAjax,
+    ServiceDetailsAjax,
     ServicesByCategoryAjax,
 )
+from apps.appointments.views.calendar.view import CalendarListView, CalendarView
+from apps.appointments.views.calendar_v2.view import CalendarV2DataView, CalendarV2View
 
 urlpatterns = [
     path(
         "calendario/",
         CalendarView.as_view(),
         name="calendar",
+    ),
+    path(
+        "calendario/v2/",
+        CalendarV2View.as_view(),
+        name="calendar_v2",
+    ),
+    path(
+        "calendario/v2/datos/",
+        CalendarV2DataView.as_view(),
+        name="calendar_v2_data",
     ),
     path(
         "calendario/lista/ajax/",

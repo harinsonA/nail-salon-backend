@@ -1,0 +1,70 @@
+{% extends "negocio/base.html" %}
+{% load static %}
+
+{% block view_title %}
+Calendario
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/custom/custom.calendar-v2.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% include 'common/canvas_modal.html' %}
+{% include 'common/bs_modal.html' %}
+{% include 'common/bs_xl_modal.html' %}
+<section class="cal2" id="calendar_v2" aria-label="Calendario de citas">
+  <header class="cal2-toolbar">
+    <div class="cal2-toolbar__group">
+      <div class="cal2-period">
+        <button type="button" class="cal2-icon-btn" data-cal2-prev aria-label="Mes anterior">
+          <span class="material-symbols-outlined icon--field" aria-hidden="true">chevron_left</span>
+        </button>
+        <h4 class="cal2-period__label" data-cal2-title aria-live="polite"></h4>
+        <button type="button" class="cal2-icon-btn" data-cal2-next aria-label="Mes siguiente">
+          <span class="material-symbols-outlined icon--field" aria-hidden="true">chevron_right</span>
+        </button>
+      </div>
+      <button type="button" class="cal2-today-btn" data-cal2-today>
+        <span class="material-symbols-outlined icon--small" aria-hidden="true">today</span>
+        Hoy
+      </button>
+    </div>
+    <div class="cal2-toolbar__group cal2-toolbar__group--end">
+      <a href="{{ new_appointment_url }}" class="btn btn-primary cal2-new-btn" data-cal2-new aria-label="Nueva cita" title="Nueva cita">
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">add</span>
+        Cita
+      </a>
+      <label class="cal2-search">
+        <span class="visually-hidden">Buscar cita por cliente</span>
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">search</span>
+        <input type="search" data-cal2-search placeholder="Buscar cliente" autocomplete="off" maxlength="100">
+      </label>
+    </div>
+  </header>
+
+  <p class="cal2-status" data-cal2-status aria-live="polite" hidden></p>
+
+  <div class="cal2-body">
+    <div class="cal2-feedback" data-cal2-feedback></div>
+    <div data-cal2-board></div>
+    <div class="cal2-loader" data-cal2-loader hidden></div>
+  </div>
+</section>
+{{ calendar_config|json_script:"calendar-config" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/custom/calendar/calendar.core.js' %}"></script>
+<script src="{% static 'js/custom/calendar/calendar.api.js' %}"></script>
+<script src="{% static 'js/custom/calendar/calendar.controls.js' %}"></script>
+<script src="{% static 'js/custom/calendar/calendar.renderers.js' %}"></script>
+<script src="{% static 'js/custom/calendar/calendar.menu.js' %}"></script>
+<script src="{% static 'js/custom/calendar/calendar.controller.js' %}"></script>
+<script>
+  initCalendar(
+    document.getElementById("calendar_v2"),
+    JSON.parse(document.getElementById("calendar-config").textContent),
+  );
+</script>
+{% endblock %}

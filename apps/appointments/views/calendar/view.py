@@ -3,6 +3,7 @@ from datetime import date
 
 from django import forms
 from django.db.models import Q
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -13,6 +14,7 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthField
 from apps.common.views.base_views import ProtectedView
 from apps.services.models import Servicio
+from apps.settings.preferences import CALENDAR_V2
 
 """========================================================================="""
 # region ........ Constants
@@ -89,6 +91,11 @@ class CalendarFilterForm(forms.Form):
 
 class CalendarView(ProtectedView, TemplateView):
     template_name = "calendar/list.html"
+
+    def get(self, request, *args, **kwargs):
+        if CALENDAR_V2.is_enabled():
+            return redirect("calendar_v2")
+        return super().get(request, *args, **kwargs)
 
     def get_initial_month(self) -> str:
         selected_month = self.request.session.get(KEY_MONTH_SELECTED)
