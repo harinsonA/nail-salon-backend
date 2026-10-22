@@ -1,164 +1,122 @@
-<form id="add-payment-modal" action="{{ modal_url }}" method="post">
+<form id="add-payment-modal" class="cal2-new cal2-pay" action="{{ modal_url }}" method="post" novalidate>
   {% csrf_token %}
-  <div class="modal-header bg-primary bg-gradient">
-    <h5 class="modal-title">Abonar deuda</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="modal-header bg-success bg-gradient">
+    <h5 class="modal-title text-white d-inline-flex align-items-center">
+      <span class="material-symbols-outlined icon--title me-2" aria-hidden="true">payments</span>
+      <span>Registrar abono: {{ cliente_nombre }}</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
   <div class="modal-body">
-    <section class="row">
-      <div class="col-6">
-        <strong>Fecha Cita:</strong>
-        <p>{{ fecha_cita }}</p>
-      </div>
-      <div class="col-6">
-        <strong>Nombre Completo:</strong>
-        <p>{{ cliente_nombre }}</p>
-      </div>
-    </section>
-    <section class="row justify-content-center mb-3">
-      <div class="col-6">
-        <div class="card rounded-4 agenda-card">
-          <div class="card-body px-2">
-            <h6 class="card-subtitle d-flex text-body-secondary mb-2">
-              <span>Total servicio</span>
-            </h6>
-            <h4 class="card-title text-end m-0 text-primary">
-              <b>{{ monto_total_cita_formatted }}</b>
-            </h4>
+    <div class="cal2-new__layout">
+      <div class="cal2-new__main">
+        <section class="cal2-new__card" aria-labelledby="add-payment-amount">
+          <h6 class="cal2-new__card-title" id="add-payment-amount">
+            <span class="cal2-new__step">1</span> Monto del abono
+          </h6>
+          <label for="{{ form.down_payment.id_for_label }}" class="form-label form-label--custom">{{ form.down_payment.label }} <span class="text-danger">*</span></label>
+          <div class="cal2-pay__money">
+            <span aria-hidden="true">$</span>
+            {{ form.down_payment }}
           </div>
-        </div>
-      </div>
-      <div class="col-6">
-        <div class="card rounded-4 agenda-card">
-          <div class="card-body px-2">
-            <h6 class="card-subtitle d-flex text-body-secondary mb-2">
-              <span>Saldo pendiente</span>
-            </h6>
-            <h4 class="card-title text-end m-0">
-              <b>{{ saldo_pendiente_formatted }}</b>
-            </h4>
+          <div class="cal2-new__error {{ form.down_payment.id_for_label }}" aria-live="polite"></div>
+          <label class="form-check form-switch cal2-pay__full">
+            {{ form.full_payment }}
+            <span>{{ form.full_payment.label }}</span>
+          </label>
+        </section>
+
+        <section class="cal2-new__card" aria-labelledby="add-payment-method">
+          <h6 class="cal2-new__card-title" id="add-payment-method">
+            <span class="cal2-new__step">2</span> Método de pago
+          </h6>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="{{ form.payment_method.id_for_label }}" class="form-label form-label--custom">{{ form.payment_method.label }} <span class="text-danger">*</span></label>
+              {{ form.payment_method }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.payment_method.id_for_label }}"></div>
+            </div>
+            <div class="col-sm-6 cal2-pay__reference" data-reference hidden>
+              <label for="{{ form.payment_reference.id_for_label }}" class="form-label form-label--custom">{{ form.payment_reference.label }} <span class="text-danger">*</span></label>
+              {{ form.payment_reference }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.payment_reference.id_for_label }}"></div>
+            </div>
           </div>
+        </section>
+
+        <section class="cal2-new__card" aria-labelledby="add-payment-when">
+          <h6 class="cal2-new__card-title" id="add-payment-when">
+            <span class="cal2-new__step">3</span> Fecha y hora del pago
+          </h6>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="{{ form.payment_date.id_for_label }}" class="form-label form-label--custom">{{ form.payment_date.label }} <span class="text-danger">*</span></label>
+              {{ form.payment_date }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.payment_date.id_for_label }}"></div>
+            </div>
+            <div class="col-sm-6">
+              <label for="{{ form.payment_time.id_for_label }}" class="form-label form-label--custom">{{ form.payment_time.label }} <span class="text-danger">*</span></label>
+              {{ form.payment_time }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.payment_time.id_for_label }}"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="cal2-new__card" aria-labelledby="add-payment-notes">
+          <h6 class="cal2-new__card-title" id="add-payment-notes">
+            <span class="cal2-new__step">4</span> Observaciones
+            <span class="cal2-new__optional">(opcional)</span>
+          </h6>
+          <label for="{{ form.observations.id_for_label }}" class="visually-hidden">Observaciones del abono (opcional)</label>
+          {{ form.observations }}
+          <div class="invalid-feedback invalid-feedback--custom {{ form.observations.id_for_label }}"></div>
+          <p class="cal2-new__counter" data-notes-count>0/250 caracteres</p>
+        </section>
+      </div>
+
+      <aside class="cal2-new__summary" aria-labelledby="add-payment-summary">
+        <div class="cal2-pay__balance">
+          <span>Saldo pendiente</span>
+          <strong>{{ saldo }}</strong>
         </div>
-      </div>
-    </section>
-    <div class="row">
-      <div class="col-6">
-        <label for="{{ form.payment_method.id_for_label }}" class="form-label form-label--custom">
-          {{ form.payment_method.label }}
-        </label>
-        {{ form.payment_method }}
-        <span class="invalid-feedback invalid-feedback--custom {{ form.payment_method.id_for_label }}">
-          {{ form.payment_method.errors.0 }}
-        </span>
-      </div>
-      <div id="payment_reference_container" class="col-6 d-none">
-        <label for="{{ form.payment_reference.id_for_label }}" class="form-label form-label--custom">
-          {{ form.payment_reference.label }}
-        </label>
-        {{ form.payment_reference }}
-        <span class="invalid-feedback invalid-feedback--custom {{ form.payment_reference.id_for_label }}">
-          {{ form.payment_reference.errors.0 }}
-        </span>
-      </div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-6">
-        <label for="{{ form.payment_date.id_for_label }}" class="form-label form-label--custom">
-          {{ form.payment_date.label }}
-        </label>
-        {{ form.payment_date }}
-        <span class="invalid-feedback invalid-feedback--custom {{ form.payment_date.id_for_label }}">
-          {{ form.payment_date.errors.0 }}
-        </span>
-      </div>
-      <div class="col-6">
-        <label for="{{ form.payment_time.id_for_label }}" class="form-label form-label--custom">
-          {{ form.payment_time.label }}
-        </label>
-        {{ form.payment_time }}
-        <span class="invalid-feedback invalid-feedback--custom {{ form.payment_time.id_for_label }}">
-          {{ form.payment_time.errors.0 }}
-        </span>
-      </div>
-    </div>
-    <div class="form-check form-switch my-2">
-      <label class="form-check-label form-label--custom" for="{{ form.full_payment.id_for_label }}">
-        {{ form.full_payment.label }}
-      </label>
-      {{ form.full_payment }}
-    </div>
-    <div id="down_payment_container" class="row d-none">
-      <div class="col-6">
-        <label for="{{ form.down_payment.id_for_label }}" class="form-label form-label--custom">
-          {{ form.down_payment.label }}
-        </label>
-        <div class="input-group mb-3">
-          <span class="input-group-text">$</span>
-          {{ form.down_payment }}
-          <span class="invalid-feedback invalid-feedback--custom {{ form.down_payment.id_for_label }}">
-            {{ form.down_payment.errors.0 }}
-          </span>
+        <h6 class="cal2-new__summary-title" id="add-payment-summary">Resumen</h6>
+        <dl class="cal2-new__facts">
+          <div><dt>Cita</dt><dd>{{ fecha_cita }}</dd></div>
+          <div><dt>Atendió</dt><dd>{{ atendido_por }}</dd></div>
+        </dl>
+        <div class="cal2-pay__progress" aria-hidden="true">
+          <span class="cal2-pay__progress-paid" data-bar-paid></span>
+          <span class="cal2-pay__progress-now" data-bar-now></span>
         </div>
-      </div>
-      <div class="col-6">
-        <label for="{{ form.remaining_payment.id_for_label }}" class="form-label form-label--custom">
-          {{ form.remaining_payment.label }}
-        </label>
-        <div class="input-group mb-3">
-          <span class="input-group-text">$</span>
-          {{ form.remaining_payment }}
-        </div>
-        <span class="invalid-feedback invalid-feedback--custom {{ form.remaining_payment.id_for_label }}">
-          {{ form.remaining_payment.errors.0 }}
-        </span>
-      </div>
-    </div>
-    <div class="mt-2">
-      <label for="{{ form.observations.id_for_label }}" class="form-label form-label--custom">
-        {{ form.observations.label }}
-      </label>
-      {{ form.observations }}
-      <span class="invalid-feedback invalid-feedback--custom {{ form.observations.id_for_label }}">
-        {{ form.observations.errors.0 }}
-      </span>
+        <dl class="cal2-new__totals">
+          <div><dt>Total de la cita</dt><dd>{{ total }}</dd></div>
+          <div><dt>Pagado antes</dt><dd>{{ pagado }}</dd></div>
+          <div class="cal2-pay__this"><dt>Este abono</dt><dd data-now>—</dd></div>
+          <div class="is-total"><dt>Saldo después</dt><dd data-after>{{ saldo }}</dd></div>
+        </dl>
+        <h6 class="cal2-new__summary-sub">Abonos anteriores</h6>
+        <ul class="cal2-new__lines">
+          {% for abono in abonos %}
+          <li>
+            <span class="cal2-new__line-name">{{ abono.when }}<small>{{ abono.method }} · registró {{ abono.by }}</small></span>
+            <strong>{{ abono.amount }}</strong>
+          </li>
+          {% empty %}
+          <li class="is-empty">Todavía no hay abonos.</li>
+          {% endfor %}
+        </ul>
+      </aside>
     </div>
   </div>
   <div class="modal-footer modal-footer-soft">
-    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
-      Cerrar
-    </button>
-    <button id="add_payment_btn" type="button" class="btn btn-sm btn-success bg-gradient">
-      Abonar
-    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button id="add_payment_btn" type="button" class="btn btn-sm btn-success bg-gradient" disabled>Registrar abono</button>
   </div>
 </form>
-{% block extra_js %}
+{{ payment_config|json_script:"add-payment-config" }}
 <script>
-  $(() => {
-    initializeDatePickers();
-    $('#id_full_payment').on('change', function () {
-      $('#down_payment_container').toggleClass('d-none', this.checked);
-    });
-
-    $('#{{ form.payment_method.id_for_label }}').on('change', function () {
-      const isCash = this.value === 'EFECTIVO';
-      $('#payment_reference_container').toggleClass('d-none', isCash);
-    });
-
-    $('#{{ form.down_payment.id_for_label }}').on('change', ({ target }) => {
-      const totalAmount = parseInt('{{ saldo_pendiente }}') || 0;
-      if (target.value.startsWith('-')) {
-        $('#{{ form.remaining_payment.id_for_label }}').val(totalAmount);
-        return;
-      }
-      const downPayment = parseInt(target.value) || 0;
-      if (!downPayment || !totalAmount || downPayment >= totalAmount) {
-        $('#{{ form.remaining_payment.id_for_label }}').val(totalAmount);
-        return;
-      }
-      const remainingPayment = totalAmount - downPayment;
-      $('#{{ form.remaining_payment.id_for_label }}').val(remainingPayment);
-    });
-  });
+  initPaymentForm(
+    document.getElementById("add-payment-modal"),
+    JSON.parse(document.getElementById("add-payment-config").textContent),
+  );
 </script>
-{% endblock %}
