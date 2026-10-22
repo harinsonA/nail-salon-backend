@@ -11,6 +11,7 @@ from apps.appointments.views.agenda_modals.edit import AgendaUpdateModalView
 from apps.appointments.views.agenda_modals.payment import AgendaPaymentModalView
 from apps.appointments.views.agenda_modals.restore import AgendaRestoreModalView
 from apps.appointments.views.calendar.view import CalendarListView, CalendarView
+from apps.appointments.views.calendar_v2.preferences import CalendarPreferencesModalView
 from apps.appointments.views.calendar_v2.view import CalendarV2DataView, CalendarV2View
 
 urlpatterns = [
@@ -28,6 +29,11 @@ urlpatterns = [
         "calendario/v2/datos/",
         CalendarV2DataView.as_view(),
         name="calendar_v2_data",
+    ),
+    path(
+        "calendario/v2/preferencias/",
+        CalendarPreferencesModalView.as_view(),
+        name="calendar_v2_preferences",
     ),
     path(
         "calendario/lista/ajax/",

@@ -7,12 +7,9 @@ from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
 from apps.appointments.calendar_v2.builders import BUILDERS
-from apps.appointments.calendar_v2.filters import (
-    VIEW_CHOICES,
-    VIEW_WEEK,
-    CalendarFilterForm,
-)
+from apps.appointments.calendar_v2.filters import VIEW_CHOICES, CalendarFilterForm
 from apps.appointments.calendar_v2.query import CalendarQuery
+from apps.appointments.calendar_v2.settings import calendar_settings, visible_statuses
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
 from apps.settings.preferences import CALENDAR_V2
 
@@ -45,14 +42,19 @@ class CalendarV2View(ProtectedView, TemplateView):
         new_appointment_url = reverse(
             "create_appointment_from_calendar", args=[today.isoformat()]
         )
+        settings = calendar_settings(self.request.user)
         return {
             **super().get_context_data(**kwargs),
             "new_appointment_url": new_appointment_url,
+            "preferences_url": reverse("calendar_v2_preferences"),
+            "calendar_filtered": settings["filtered"],
             "calendar_config": {
                 "dataUrl": reverse("calendar_v2_data"),
                 "today": today.isoformat(),
                 "timeZone": timezone.get_current_timezone_name(),
-                "view": VIEW_WEEK,
+                "view": settings["view"],
+                "visible": settings["visible"],
+                "showDebt": settings["showDebt"],
                 "views": [{"key": key, "label": label} for key, label in VIEW_CHOICES],
                 "hours": GRID_HOURS,
                 "newAppointmentUrl": reverse(
@@ -82,7 +84,8 @@ class CalendarV2DataView(ProtectedAjaxView, View):
         query = CalendarQuery(
             request.user, data["desde"], data["hasta"], data["buscar"]
         )
-        builder = BUILDERS[data["vista"]](query.appointments())
+        statuses = visible_statuses(calendar_settings(request.user))
+        builder = BUILDERS[data["vista"]](query.appointments(), statuses=statuses)
         return JsonResponse(builder.build())
 
 

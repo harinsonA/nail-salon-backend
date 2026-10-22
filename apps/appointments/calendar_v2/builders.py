@@ -44,8 +44,13 @@ ACTIONS_BY_STATUS = {
 
 
 class CalendarBuilder:
-    def __init__(self, appointments):
-        self.appointments = appointments
+    def __init__(self, appointments, statuses=None):
+        self.all_appointments = appointments
+        self.appointments = [
+            appointment
+            for appointment in appointments
+            if statuses is None or appointment["estado"] in statuses
+        ]
 
     @staticmethod
     def action(key, appointment_id):
@@ -97,9 +102,9 @@ class CalendarBuilder:
     def visual_status(appointment):
         return OVERDUE_STATUS if appointment["sin_cerrar"] else appointment["estado"]
 
-    def by_day(self):
+    def by_day(self, appointments=None):
         days = {}
-        for appointment in self.appointments:
+        for appointment in self.appointments if appointments is None else appointments:
             days.setdefault(appointment["fecha"].isoformat(), []).append(appointment)
         return days
 
@@ -150,14 +155,15 @@ class WeekBuilder(CalendarBuilder):
 
 class DayBuilder(WeekBuilder):
     def build(self):
+        shown = self.by_day()
         return {
             "dias": {
                 day: {
-                    "total": len(appointments),
+                    "total": len(shown.get(day, [])),
                     "resumen": self.summary(appointments),
-                    "bloques": self.blocks(appointments),
+                    "bloques": self.blocks(shown.get(day, [])),
                 }
-                for day, appointments in self.by_day().items()
+                for day, appointments in self.by_day(self.all_appointments).items()
             }
         }
 
