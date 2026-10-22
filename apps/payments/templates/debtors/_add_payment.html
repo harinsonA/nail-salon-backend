@@ -1,4 +1,4 @@
-<form id="add-payment-modal" class="cal2-new cal2-pay" action="{{ modal_url }}" method="post" novalidate>
+<form id="add-payment-modal" class="calendar-new calendar-pay" action="{{ modal_url }}" method="post" novalidate>
   {% csrf_token %}
   <div class="modal-header bg-success bg-gradient">
     <h5 class="modal-title text-white d-inline-flex align-items-center">
@@ -8,27 +8,27 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
   <div class="modal-body">
-    <div class="cal2-new__layout">
-      <div class="cal2-new__main">
-        <section class="cal2-new__card" aria-labelledby="add-payment-amount">
-          <h6 class="cal2-new__card-title" id="add-payment-amount">
-            <span class="cal2-new__step">1</span> Monto del abono
+    <div class="calendar-new__layout">
+      <div class="calendar-new__main">
+        <section class="calendar-new__card" aria-labelledby="add-payment-amount">
+          <h6 class="calendar-new__card-title" id="add-payment-amount">
+            <span class="calendar-new__step">1</span> Monto del abono
           </h6>
           <label for="{{ form.down_payment.id_for_label }}" class="form-label form-label--custom">{{ form.down_payment.label }} <span class="text-danger">*</span></label>
-          <div class="cal2-pay__money">
+          <div class="calendar-pay__money">
             <span aria-hidden="true">$</span>
             {{ form.down_payment }}
           </div>
-          <div class="cal2-new__error {{ form.down_payment.id_for_label }}" aria-live="polite"></div>
-          <label class="form-check form-switch cal2-pay__full">
+          <div class="calendar-new__error {{ form.down_payment.id_for_label }}" aria-live="polite"></div>
+          <label class="form-check form-switch calendar-pay__full">
             {{ form.full_payment }}
             <span>{{ form.full_payment.label }}</span>
           </label>
         </section>
 
-        <section class="cal2-new__card" aria-labelledby="add-payment-method">
-          <h6 class="cal2-new__card-title" id="add-payment-method">
-            <span class="cal2-new__step">2</span> Método de pago
+        <section class="calendar-new__card" aria-labelledby="add-payment-method">
+          <h6 class="calendar-new__card-title" id="add-payment-method">
+            <span class="calendar-new__step">2</span> Método de pago
           </h6>
           <div class="row g-3">
             <div class="col-sm-6">
@@ -36,7 +36,7 @@
               {{ form.payment_method }}
               <div class="invalid-feedback invalid-feedback--custom {{ form.payment_method.id_for_label }}"></div>
             </div>
-            <div class="col-sm-6 cal2-pay__reference" data-reference hidden>
+            <div class="col-sm-6 calendar-pay__reference" data-reference hidden>
               <label for="{{ form.payment_reference.id_for_label }}" class="form-label form-label--custom">{{ form.payment_reference.label }}</label>
               {{ form.payment_reference }}
               <div class="invalid-feedback invalid-feedback--custom {{ form.payment_reference.id_for_label }}"></div>
@@ -44,9 +44,9 @@
           </div>
         </section>
 
-        <section class="cal2-new__card" aria-labelledby="add-payment-when">
-          <h6 class="cal2-new__card-title" id="add-payment-when">
-            <span class="cal2-new__step">3</span> Fecha y hora del pago
+        <section class="calendar-new__card" aria-labelledby="add-payment-when">
+          <h6 class="calendar-new__card-title" id="add-payment-when">
+            <span class="calendar-new__step">3</span> Fecha y hora del pago
           </h6>
           <div class="row g-3">
             <div class="col-sm-6">
@@ -62,43 +62,43 @@
           </div>
         </section>
 
-        <section class="cal2-new__card" aria-labelledby="add-payment-notes">
-          <h6 class="cal2-new__card-title" id="add-payment-notes">
-            <span class="cal2-new__step">4</span> Observaciones
-            <span class="cal2-new__optional">(opcional)</span>
+        <section class="calendar-new__card" aria-labelledby="add-payment-notes">
+          <h6 class="calendar-new__card-title" id="add-payment-notes">
+            <span class="calendar-new__step">4</span> Observaciones
+            <span class="calendar-new__optional">(opcional)</span>
           </h6>
           <label for="{{ form.observations.id_for_label }}" class="visually-hidden">Observaciones del abono (opcional)</label>
           {{ form.observations }}
           <div class="invalid-feedback invalid-feedback--custom {{ form.observations.id_for_label }}"></div>
-          <p class="cal2-new__counter" data-notes-count>0/250 caracteres</p>
+          <p class="calendar-new__counter" data-notes-count>0/250 caracteres</p>
         </section>
       </div>
 
-      <aside class="cal2-new__summary" aria-labelledby="add-payment-summary">
-        <div class="cal2-pay__balance">
+      <aside class="calendar-new__summary" aria-labelledby="add-payment-summary">
+        <div class="calendar-pay__balance">
           <span>Saldo pendiente</span>
           <strong>{{ saldo }}</strong>
         </div>
-        <h6 class="cal2-new__summary-title" id="add-payment-summary">Resumen</h6>
-        <dl class="cal2-new__facts">
+        <h6 class="calendar-new__summary-title" id="add-payment-summary">Resumen</h6>
+        <dl class="calendar-new__facts">
           <div><dt>Cita</dt><dd>{{ fecha_cita }}</dd></div>
           <div><dt>Atendió</dt><dd>{{ atendido_por }}</dd></div>
         </dl>
-        <div class="cal2-pay__progress" aria-hidden="true">
-          <span class="cal2-pay__progress-paid" data-bar-paid></span>
-          <span class="cal2-pay__progress-now" data-bar-now></span>
+        <div class="calendar-pay__progress" aria-hidden="true">
+          <span class="calendar-pay__progress-paid" data-bar-paid></span>
+          <span class="calendar-pay__progress-now" data-bar-now></span>
         </div>
-        <dl class="cal2-new__totals">
+        <dl class="calendar-new__totals">
           <div><dt>Total de la cita</dt><dd>{{ total }}</dd></div>
           <div><dt>Pagado antes</dt><dd>{{ pagado }}</dd></div>
-          <div class="cal2-pay__this"><dt>Este abono</dt><dd data-now>—</dd></div>
+          <div class="calendar-pay__this"><dt>Este abono</dt><dd data-now>—</dd></div>
           <div class="is-total"><dt>Saldo después</dt><dd data-after>{{ saldo }}</dd></div>
         </dl>
-        <h6 class="cal2-new__summary-sub">Abonos anteriores</h6>
-        <ul class="cal2-new__lines">
+        <h6 class="calendar-new__summary-sub">Abonos anteriores</h6>
+        <ul class="calendar-new__lines">
           {% for abono in abonos %}
           <li>
-            <span class="cal2-new__line-name">{{ abono.when }}<small>{{ abono.method }} · registró {{ abono.by }}</small></span>
+            <span class="calendar-new__line-name">{{ abono.when }}<small>{{ abono.method }} · registró {{ abono.by }}</small></span>
             <strong>{{ abono.amount }}</strong>
           </li>
           {% empty %}

@@ -4,11 +4,11 @@
   const HiCalendar = (window.HiCalendar = window.HiCalendar || {});
 
   const CHANGED_EVENT = "calendar:preferences";
-  const MODAL_CLASS = "cal2-config";
+  const MODAL_CLASS = "calendar-config";
 
   const initCalendarPreferences = (form) => {
     const modal = $(form).closest(".modal");
-    const help = form.querySelector(".cal2-settings__help");
+    const help = form.querySelector(".calendar-settings__help");
     const tooltip = help && window.bootstrap ? new window.bootstrap.Tooltip(help, { container: "body" }) : null;
     modal.addClass(MODAL_CLASS);
     modal.one("hidden.bs.modal", () => {

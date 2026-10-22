@@ -4,7 +4,7 @@
   const HiCalendar = (window.HiCalendar = window.HiCalendar || {});
   const { dom } = HiCalendar;
 
-  const MENU_ID = "cal2-actions";
+  const MENU_ID = "calendar-actions";
 
   class AppointmentMenu {
     constructor() {
@@ -22,13 +22,13 @@
         return;
       }
       this.trigger = trigger;
-      const menu = dom.el("div", "dropdown-menu cal2-actions");
+      const menu = dom.el("div", "dropdown-menu calendar-actions");
       menu.id = MENU_ID;
       menu.setAttribute("role", "menu");
       menu.setAttribute("aria-label", `Opciones de la cita de ${appointment.cliente}`);
-      const head = dom.el("div", "cal2-actions__head");
+      const head = dom.el("div", "calendar-actions__head");
       head.setAttribute("aria-hidden", "true");
-      head.append(dom.el("span", "cal2-actions__client", appointment.cliente), dom.el("span", "cal2-actions__when", appointment.hora));
+      head.append(dom.el("span", "calendar-actions__client", appointment.cliente), dom.el("span", "calendar-actions__when", appointment.hora));
       menu.append(head);
 
       appointment.acciones.forEach(({ label, icon, iconImage, link, className = "" }) => {

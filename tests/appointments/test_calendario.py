@@ -12,7 +12,7 @@ from tests.base import NegocioTestCase
 User = get_user_model()
 
 
-class CalendarioV2Tests(NegocioTestCase):
+class CalendarioTests(NegocioTestCase):
     esquema = "calendario"
     dominio = "calendario.localhost"
 
@@ -31,7 +31,7 @@ class CalendarioV2Tests(NegocioTestCase):
         return navegador
 
     def ir_a(self, nombre):
-        return f'href="{reverse(nombre)}" class="btn btn-sm btn-primary cal2-welcome__go"'
+        return f'href="{reverse(nombre)}" class="btn btn-sm btn-primary calendar-welcome__go"'
 
     def servicio(self):
         Servicio.objects.create(nombre="Manicure", precio=Decimal("10000"), categoria=Categoria.objects.create(nombre="Manos"))
@@ -39,7 +39,7 @@ class CalendarioV2Tests(NegocioTestCase):
     def test_todo_el_equipo_entra_al_calendario_sin_activar_nada(self):
         respuesta = self.navegador.get(reverse("calendar"))
         self.assertEqual(respuesta.status_code, 200)
-        self.assertTemplateUsed(respuesta, "calendar_v2/list.html")
+        self.assertTemplateUsed(respuesta, "calendar/list.html")
 
     def test_el_calendario_vive_en_su_direccion_de_siempre(self):
         self.assertEqual(reverse("calendar"), "/calendario/")
@@ -57,6 +57,16 @@ class CalendarioV2Tests(NegocioTestCase):
         self.assertContains(respuesta, self.ir_a("clients"))
         self.assertContains(respuesta, self.ir_a("services"))
         self.assertContains(respuesta, "Agenda tu primera cita")
+        self.assertContains(respuesta, "images/modals/welcome-calendar.svg")
+        self.assertContains(respuesta, "images/icons/icono-1.png")
+        self.assertContains(respuesta, '$(() => $("#calendar-welcome").modal("show"));')
+
+    def test_la_bienvenida_no_se_puede_cerrar(self):
+        html = self.encargada().get(reverse("calendar")).content.decode()
+        bienvenida = html.split('id="calendar-welcome"')[1].split("</main>")[0]
+        self.assertIn('data-bs-backdrop="static" data-bs-keyboard="false"', html)
+        self.assertNotIn("data-bs-dismiss", bienvenida)
+        self.assertNotIn("Ahora no", html)
 
     def test_la_colaboradora_no_recibe_el_enlace_a_servicios(self):
         respuesta = self.navegador.get(reverse("calendar"))
@@ -67,7 +77,7 @@ class CalendarioV2Tests(NegocioTestCase):
     def test_marca_como_listo_el_paso_que_ya_esta_hecho(self):
         Cliente.objects.create(nombre="Paula", apellido="Herrera")
         respuesta = self.encargada().get(reverse("calendar"))
-        self.assertContains(respuesta, "cal2-welcome__step is-done", count=1)
+        self.assertContains(respuesta, "calendar-welcome__step is-done", count=1)
         self.assertNotContains(respuesta, self.ir_a("clients"))
 
     def test_con_clientes_y_servicios_no_aparece(self):

@@ -13,7 +13,7 @@ User = get_user_model()
 Rol = Perfil.Rol
 
 
-class CalendarioV2WhatsappTests(NegocioTestCase):
+class CalendarioWhatsappTests(NegocioTestCase):
     esquema = "calendario_whatsapp"
     dominio = "calendario-whatsapp.localhost"
 

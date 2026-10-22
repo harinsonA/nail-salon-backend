@@ -1,0 +1,51 @@
+{% load static %}
+<div class="modal fade calendar-welcome" id="calendar-welcome" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  aria-labelledby="calendar-welcome-title" aria-describedby="calendar-welcome-text" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="calendar-welcome__hero">
+        {% now "F" as month_name %}
+        <div class="calendar-welcome__art" aria-hidden="true">
+          <img src="{% static 'images/modals/welcome-calendar.svg' %}" alt="" class="calendar-welcome__scene">
+          <img src="{% static 'images/icons/icono-1.png' %}" alt="" class="calendar-welcome__hourglass">
+          <span class="calendar-welcome__month">{{ month_name|upper }}</span>
+        </div>
+      </div>
+      <div class="modal-body calendar-welcome__body">
+        <p class="calendar-welcome__eyebrow">Primeros pasos</p>
+        <h5 class="calendar-welcome__title" id="calendar-welcome-title">Te damos la bienvenida a Hi Agenda</h5>
+        <p class="calendar-welcome__text" id="calendar-welcome-text">Para agendar tu primera cita necesitas al menos un cliente y un servicio. Déjalo listo en un par de minutos.</p>
+        <ol class="calendar-welcome__steps">
+          {% for step in welcome.steps %}
+          <li class="calendar-welcome__step{% if step.done %} is-done{% endif %}">
+            <span class="calendar-welcome__mark" aria-hidden="true">
+              <span class="material-symbols-outlined icon--inline">{% if step.done %}check{% else %}{{ step.icon }}{% endif %}</span>
+            </span>
+            <span class="calendar-welcome__step-text">
+              <strong>{{ step.title }}</strong>
+              <span>{% if step.done %}Listo, ya tienes este paso.{% elif step.url %}{{ step.text }}{% else %}{{ step.hint }}{% endif %}</span>
+            </span>
+            {% if step.done %}
+            <span class="calendar-welcome__badge">Listo</span>
+            {% elif step.url %}
+            <a href="{{ step.url }}" class="btn btn-sm btn-primary calendar-welcome__go">
+              {{ step.action }}
+              <span class="material-symbols-outlined icon--small" aria-hidden="true">arrow_forward</span>
+            </a>
+            {% endif %}
+          </li>
+          {% endfor %}
+          <li class="calendar-welcome__step is-locked">
+            <span class="calendar-welcome__mark" aria-hidden="true">
+              <span class="material-symbols-outlined icon--inline">event_available</span>
+            </span>
+            <span class="calendar-welcome__step-text">
+              <strong>Agenda tu primera cita</strong>
+              <span>Con lo anterior listo, usa el botón «+ Cita» del calendario.</span>
+            </span>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>

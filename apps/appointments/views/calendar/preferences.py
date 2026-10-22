@@ -4,7 +4,7 @@ from django import forms
 from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from apps.appointments.calendar_v2.settings import STATUS_PREFERENCES, calendar_settings
+from apps.appointments.calendar.settings import STATUS_PREFERENCES, calendar_settings
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.settings.preferences import (
@@ -56,7 +56,7 @@ class CalendarPreferencesForm(PreferenceFieldsMixin, BSModalForm):
 
 
 class CalendarPreferencesModalView(ProtectedView, BSModalFormView):
-    template_name = "calendar_v2/preferences_modal.html"
+    template_name = "calendar/preferences_modal.html"
     form_class = CalendarPreferencesForm
 
     def get_context_data(self, **kwargs):

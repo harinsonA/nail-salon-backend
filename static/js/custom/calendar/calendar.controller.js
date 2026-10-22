@@ -28,7 +28,7 @@
       this.requestId = 0;
       this.loaderTimer = null;
 
-      const find = (name) => root.querySelector(`[data-cal2-${name}]`);
+      const find = (name) => root.querySelector(`[data-calendar-${name}]`);
       this.status = find("status");
       this.newButton = find("new");
       const showDate = ({ detail }) => {
@@ -70,7 +70,7 @@
       });
       this.todayButton = new TodayButton({ button: find("today"), onToday: () => this.go(this.today) });
       this.viewSwitch = new ViewSwitch({
-        buttons: [...root.querySelectorAll("[data-cal2-view]")],
+        buttons: [...root.querySelectorAll("[data-calendar-view]")],
         onChange: (view) => this.setView(view),
       });
       this.searchBox = new SearchBox({

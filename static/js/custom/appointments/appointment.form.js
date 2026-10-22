@@ -184,7 +184,7 @@
       }
       this.lines.forEach((line, index) => {
         const item = el("li");
-        const name = el("span", "cal2-new__line-name", line.service.nombre);
+        const name = el("span", "calendar-new__line-name", line.service.nombre);
         const extra = [];
         if (line.quantity > 1) {
           extra.push(`x${line.quantity}`);
@@ -195,7 +195,7 @@
         if (extra.length) {
           name.append(el("small", "", extra.join(" · ")));
         }
-        const remove = el("button", "cal2-new__line-remove");
+        const remove = el("button", "calendar-new__line-remove");
         remove.type = "button";
         remove.setAttribute("aria-label", `Quitar ${line.service.nombre}`);
         remove.append(icon("close"));
@@ -256,7 +256,7 @@
       const staff = this.selectedText(this.fields.staff).replace(/ \(tú\)$/, "");
       hours.forEach(({ hora, total, de_asignada: mine }) => {
         const note = mine ? `${staff} ya tiene cita` : `${total === 1 ? "1 cita" : `${total} citas`}`;
-        const item = el("li", `cal2-new__busy-item${this.fields.time.value === hora ? " is-selected" : ""}`, hora);
+        const item = el("li", `calendar-new__busy-item${this.fields.time.value === hora ? " is-selected" : ""}`, hora);
         item.title = note;
         item.setAttribute("aria-label", `${hora}, ${note}`);
         list.append(item);

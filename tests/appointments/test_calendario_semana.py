@@ -6,7 +6,7 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.appointments.calendar_v2.query import CalendarQuery
+from apps.appointments.calendar.query import CalendarQuery
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
@@ -18,7 +18,7 @@ AHORA = datetime(2026, 10, 21, 12, 0)
 SEMANA = {"vista": "semana", "desde": "2026-10-19", "hasta": "2026-10-25"}
 
 
-class CalendarioV2SemanaTests(NegocioTestCase):
+class CalendarioSemanaTests(NegocioTestCase):
     esquema = "calendario_semana"
     dominio = "calendario-semana.localhost"
 
@@ -81,5 +81,5 @@ class CalendarioV2SemanaTests(NegocioTestCase):
         self.assertEqual(configuracion["view"], "mes")
         self.assertEqual([vista["key"] for vista in configuracion["views"]], ["dia", "semana", "mes"])
         self.assertEqual(configuracion["hours"], {"desde": 5, "hasta": 24})
-        self.assertContains(respuesta, 'data-cal2-view="semana"')
-        self.assertContains(respuesta, 'data-cal2-view="mes"')
+        self.assertContains(respuesta, 'data-calendar-view="semana"')
+        self.assertContains(respuesta, 'data-calendar-view="mes"')

@@ -1,5 +1,5 @@
 {% load static %}
-<form id="appointment-complete" class="cal2-new cal2-pay cal2-done" action="{{ modal_url }}" method="post" novalidate>
+<form id="appointment-complete" class="calendar-new calendar-pay calendar-done" action="{{ modal_url }}" method="post" novalidate>
   {% csrf_token %}
   <div class="modal-header bg-success bg-gradient">
     <h5 class="modal-title text-white d-inline-flex align-items-center">
@@ -9,30 +9,30 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
   <div class="modal-body">
-    <div class="cal2-new__layout">
-      <div class="cal2-new__main">
-        <section class="cal2-new__card" aria-labelledby="appointment-complete-amount">
-          <h6 class="cal2-new__card-title" id="appointment-complete-amount">
-            <span class="cal2-new__step">1</span> Pago de hoy
+    <div class="calendar-new__layout">
+      <div class="calendar-new__main">
+        <section class="calendar-new__card" aria-labelledby="appointment-complete-amount">
+          <h6 class="calendar-new__card-title" id="appointment-complete-amount">
+            <span class="calendar-new__step">1</span> Pago de hoy
           </h6>
-          <label class="form-check form-switch cal2-pay__full cal2-done__full">
+          <label class="form-check form-switch calendar-pay__full calendar-done__full">
             {{ form.full_payment }}
             <span>{{ form.full_payment.label }}</span>
           </label>
-          <div class="cal2-done__partial" data-partial hidden>
+          <div class="calendar-done__partial" data-partial hidden>
             <label for="{{ form.down_payment.id_for_label }}" class="form-label form-label--custom">{{ form.down_payment.label }}</label>
-            <div class="cal2-pay__money">
+            <div class="calendar-pay__money">
               <span aria-hidden="true">$</span>
               {{ form.down_payment }}
             </div>
-            <p class="cal2-config__hint mt-1 mb-0">Deja $0 si no paga nada hoy: la cita queda completada con todo el saldo pendiente.</p>
-            <div class="cal2-new__error {{ form.down_payment.id_for_label }}" aria-live="polite"></div>
+            <p class="calendar-config__hint mt-1 mb-0">Deja $0 si no paga nada hoy: la cita queda completada con todo el saldo pendiente.</p>
+            <div class="calendar-new__error {{ form.down_payment.id_for_label }}" aria-live="polite"></div>
           </div>
         </section>
 
-        <section class="cal2-new__card cal2-done__method" aria-labelledby="appointment-complete-method" data-method-card>
-          <h6 class="cal2-new__card-title" id="appointment-complete-method">
-            <span class="cal2-new__step">2</span> Método de pago
+        <section class="calendar-new__card calendar-done__method" aria-labelledby="appointment-complete-method" data-method-card>
+          <h6 class="calendar-new__card-title" id="appointment-complete-method">
+            <span class="calendar-new__step">2</span> Método de pago
           </h6>
           <div class="row g-3">
             <div class="col-sm-6">
@@ -40,7 +40,7 @@
               {{ form.payment_method }}
               <div class="invalid-feedback invalid-feedback--custom {{ form.payment_method.id_for_label }}"></div>
             </div>
-            <div class="col-sm-6 cal2-pay__reference" data-reference hidden>
+            <div class="col-sm-6 calendar-pay__reference" data-reference hidden>
               <label for="{{ form.payment_reference.id_for_label }}" class="form-label form-label--custom">{{ form.payment_reference.label }}</label>
               {{ form.payment_reference }}
               <div class="invalid-feedback invalid-feedback--custom {{ form.payment_reference.id_for_label }}"></div>
@@ -48,49 +48,49 @@
           </div>
         </section>
 
-        <section class="cal2-new__card" aria-labelledby="appointment-complete-notes">
-          <h6 class="cal2-new__card-title" id="appointment-complete-notes">
-            <span class="cal2-new__step" data-notes-step>3</span> Observaciones
-            <span class="cal2-new__optional">(opcional)</span>
+        <section class="calendar-new__card" aria-labelledby="appointment-complete-notes">
+          <h6 class="calendar-new__card-title" id="appointment-complete-notes">
+            <span class="calendar-new__step" data-notes-step>3</span> Observaciones
+            <span class="calendar-new__optional">(opcional)</span>
           </h6>
           <label for="{{ form.observations.id_for_label }}" class="visually-hidden">Observaciones del pago (opcional)</label>
           {{ form.observations }}
           <div class="invalid-feedback invalid-feedback--custom {{ form.observations.id_for_label }}"></div>
-          <p class="cal2-new__counter" data-notes-count>0/250 caracteres</p>
+          <p class="calendar-new__counter" data-notes-count>0/250 caracteres</p>
         </section>
       </div>
 
-      <aside class="cal2-new__summary" aria-labelledby="appointment-complete-summary">
-        <div class="cal2-pay__balance cal2-done__total">
+      <aside class="calendar-new__summary" aria-labelledby="appointment-complete-summary">
+        <div class="calendar-pay__balance calendar-done__total">
           <span>Total a pagar</span>
           <strong>{{ total }}</strong>
         </div>
-        <h6 class="cal2-new__summary-title" id="appointment-complete-summary">Resumen</h6>
-        <dl class="cal2-new__facts">
+        <h6 class="calendar-new__summary-title" id="appointment-complete-summary">Resumen</h6>
+        <dl class="calendar-new__facts">
           <div><dt>Cita</dt><dd>{{ date_formatted }}, {{ time_formatted }}</dd></div>
           <div><dt>Atendió</dt><dd>{{ attended_by }}</dd></div>
         </dl>
-        <h6 class="cal2-new__summary-sub">Servicios</h6>
-        <ul class="cal2-new__lines">
+        <h6 class="calendar-new__summary-sub">Servicios</h6>
+        <ul class="calendar-new__lines">
           {% for service in services %}
           <li>
-            <span class="cal2-new__line-name">{{ service.name }}{% if service.quantity > 1 or service.discount %}<small>{% if service.quantity > 1 %}x{{ service.quantity }}{% endif %}{% if service.quantity > 1 and service.discount %} · {% endif %}{{ service.discount }}</small>{% endif %}</span>
+            <span class="calendar-new__line-name">{{ service.name }}{% if service.quantity > 1 or service.discount %}<small>{% if service.quantity > 1 %}x{{ service.quantity }}{% endif %}{% if service.quantity > 1 and service.discount %} · {% endif %}{{ service.discount }}</small>{% endif %}</span>
             <strong>{{ service.total }}</strong>
           </li>
           {% empty %}
           <li class="is-empty">Sin servicios.</li>
           {% endfor %}
         </ul>
-        <dl class="cal2-new__totals">
+        <dl class="calendar-new__totals">
           <div><dt>Subtotal</dt><dd>{{ subtotal }}</dd></div>
           <div><dt>Descuentos</dt><dd>{{ discounts }}</dd></div>
           <div><dt>Total</dt><dd>{{ total }}</dd></div>
         </dl>
-        <div class="cal2-pay__progress" aria-hidden="true">
-          <span class="cal2-pay__progress-paid" data-bar></span>
+        <div class="calendar-pay__progress" aria-hidden="true">
+          <span class="calendar-pay__progress-paid" data-bar></span>
         </div>
-        <dl class="cal2-new__totals">
-          <div class="cal2-pay__this"><dt>Paga ahora</dt><dd data-now></dd></div>
+        <dl class="calendar-new__totals">
+          <div class="calendar-pay__this"><dt>Paga ahora</dt><dd data-now></dd></div>
           <div class="is-total"><dt>Queda debiendo</dt><dd data-after></dd></div>
         </dl>
       </aside>

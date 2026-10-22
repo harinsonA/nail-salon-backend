@@ -82,7 +82,7 @@ class PanelCitaTests(NegocioTestCase):
     def test_una_pendiente_que_ya_paso_queda_sin_cerrar(self):
         respuesta = self.abrir("agenda_see_modal", self.cita(dia=date(2020, 1, 6)))
         self.assertContains(respuesta, "Pendiente sin cerrar")
-        self.assertContains(respuesta, "cal2-event--vencida")
+        self.assertContains(respuesta, "calendar-event--vencida")
 
     def test_la_completada_muestra_sus_abonos_y_el_saldo(self):
         cita = self.cita(estado=Cita.EstadoChoices.COMPLETADA)
