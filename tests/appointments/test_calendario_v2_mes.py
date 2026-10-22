@@ -154,7 +154,6 @@ class CalendarioV2MesTests(NegocioTestCase):
         configuracion = respuesta.context["calendar_config"]
         self.assertEqual(configuracion["dataUrl"], reverse("calendar_v2_data"))
         self.assertEqual(configuracion["today"], timezone.localdate().isoformat())
-        self.assertEqual(configuracion["dayUrl"], reverse("calendar_appointments", args=["__fecha__"]))
         self.assertEqual(
             configuracion["newAppointmentUrl"], reverse("create_appointment_from_calendar", args=["__fecha__"])
         )

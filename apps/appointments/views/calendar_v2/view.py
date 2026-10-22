@@ -49,7 +49,6 @@ class CalendarV2View(ProtectedView, TemplateView):
                 "view": VIEW_WEEK,
                 "views": [{"key": key, "label": label} for key, label in VIEW_CHOICES],
                 "hours": GRID_HOURS,
-                "dayUrl": reverse("calendar_appointments", args=[DATE_PLACEHOLDER]),
                 "newAppointmentUrl": reverse("create_appointment_from_calendar", args=[DATE_PLACEHOLDER]),
                 "datePlaceholder": DATE_PLACEHOLDER,
             },

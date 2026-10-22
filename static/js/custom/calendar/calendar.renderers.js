@@ -5,14 +5,20 @@
   const { dates, dom } = HiCalendar;
 
   const STATUS_LABEL = { pendiente: "Pendiente", completada: "Completada", cancelada: "Cancelada" };
+  const SUMMARY = [
+    ["pendiente", "pendiente", "pendientes"],
+    ["completada", "completada", "completadas"],
+    ["cancelada", "cancelada", "canceladas"],
+  ];
+
+  const plural = (count, one, many) => (count === 1 ? one : many);
 
   class CalendarRenderer {
-    constructor({ container, today, hours, dayUrl, datePlaceholder, onAppointment }) {
+    constructor({ container, today, hours, onDay, onAppointment }) {
       this.container = container;
       this.hours = hours;
       this.today = today;
-      this.dayUrl = dayUrl;
-      this.datePlaceholder = datePlaceholder;
+      this.onDay = onDay;
       this.onAppointment = onAppointment;
     }
 
@@ -24,8 +30,21 @@
       return appointment.sin_cerrar ? "Pendiente sin cerrar" : STATUS_LABEL[appointment.estado];
     }
 
-    dayLink(date) {
-      return this.dayUrl.replace(this.datePlaceholder, dates.toISO(date));
+    dayName(date) {
+      const name = dom.el("span", "cal2-dname");
+      name.append(
+        dom.el("span", "cal2-dname__full", dates.weekdayName(date)),
+        dom.el("span", "cal2-dname__short", dates.weekdayShort(date)),
+      );
+      return name;
+    }
+
+    dayButton(className, text, label, date) {
+      const button = dom.el("button", className, text);
+      button.type = "button";
+      button.setAttribute("aria-label", label);
+      button.addEventListener("click", () => this.onDay(date));
+      return button;
     }
 
     name(appointment, className) {
@@ -97,19 +116,14 @@
       const grid = dom.el("div", "cal2-month");
       days.slice(0, 7).forEach((date) => {
         const head = dom.el("div", "cal2-month__dow");
-        head.append(
-          dom.el("span", "cal2-dname__full", dates.weekdayName(date)),
-          dom.el("span", "cal2-dname__short", dates.weekdayShort(date)),
-        );
+        head.append(this.dayName(date));
         grid.append(head);
       });
       this.cells = new Map();
       days.forEach((date) => {
         const inMonth = date.getMonth() === cursor.getMonth();
         const cell = dom.el("div", `cal2-month__cell${inMonth ? "" : " is-out"}${dates.sameDay(date, this.today) ? " is-today" : ""}`);
-        const number = dom.el("a", "cal2-month__num", String(date.getDate()));
-        number.href = this.dayLink(date);
-        number.setAttribute("aria-label", `Ver el ${dates.weekdayName(date)} ${date.getDate()}`);
+        const number = this.dayButton("cal2-month__num", String(date.getDate()), `Ver el ${dates.longDate(date)}`, date);
         const events = dom.el("div", "cal2-month__events");
         cell.append(number, events);
         grid.append(cell);
@@ -132,10 +146,8 @@
         }
         day.citas.forEach((appointment) => events.append(this.chip(appointment)));
         if (day.mas) {
-          const link = dom.el("a", "cal2-more", `+${day.mas} más`);
-          link.href = this.dayLink(date);
-          link.setAttribute("aria-label", `Ver las ${day.total} citas del ${dates.weekdayName(date)} ${date.getDate()}`);
-          cell.append(link);
+          const label = `Ver las ${day.total} citas del ${dates.longDate(date)}`;
+          cell.append(this.dayButton("cal2-more", `+${day.mas} más`, label, date));
         }
       });
     }
@@ -173,22 +185,28 @@
 
     renderSkeleton(cursor) {
       const { days } = this.range(cursor);
+      const scroll = this.timeGrid(days, { header: true });
+      this.board().replaceChildren(scroll);
+      this.scrollToFocus(scroll, days);
+    }
+
+    timeGrid(days, { header, day }) {
       const hour = this.hourHeight();
       const scroll = dom.el("div", "cal2-scroll");
       const grid = dom.el("div", "cal2-grid");
       grid.style.setProperty("--cal2-cols", days.length);
       grid.style.setProperty("--cal2-hours", this.hours.hasta - this.hours.desde);
-      grid.append(dom.el("div", "cal2-grid__corner"));
-      days.forEach((date) => {
-        const head = dom.el("div", `cal2-grid__head${dates.sameDay(date, this.today) ? " is-today" : ""}`);
-        const name = dom.el("span", "cal2-dname");
-        name.append(
-          dom.el("span", "cal2-dname__full", dates.weekdayName(date)),
-          dom.el("span", "cal2-dname__short", dates.weekdayShort(date)),
-        );
-        head.append(name, dom.el("span", "cal2-grid__head-num", String(date.getDate())));
-        grid.append(head);
-      });
+      if (day) {
+        grid.style.setProperty("--cal2-col-min", "240px");
+      }
+      if (header) {
+        grid.append(dom.el("div", "cal2-grid__corner"));
+        days.forEach((date) => {
+          const head = dom.el("div", `cal2-grid__head${dates.sameDay(date, this.today) ? " is-today" : ""}`);
+          head.append(this.dayName(date), dom.el("span", "cal2-grid__head-num", String(date.getDate())));
+          grid.append(head);
+        });
+      }
       const gutter = dom.el("div", "cal2-gutter");
       for (let h = this.hours.desde + 1; h < this.hours.hasta; h += 1) {
         const label = dom.el("span", "cal2-gutter__label", `${String(h).padStart(2, "0")}:00`);
@@ -199,7 +217,7 @@
       this.columns = new Map();
       days.forEach((date) => {
         const isToday = dates.sameDay(date, this.today);
-        const column = dom.el("div", `cal2-col${isToday ? " is-today" : ""}`);
+        const column = dom.el("div", `cal2-col${day ? " cal2-col--day" : ""}${isToday ? " is-today" : ""}`);
         if (isToday) {
           column.append(this.nowLine(hour));
         }
@@ -207,7 +225,11 @@
         this.columns.set(dates.toISO(date), column);
       });
       scroll.append(grid);
-      this.board().replaceChildren(scroll);
+      return scroll;
+    }
+
+    scrollToFocus(scroll, days) {
+      const hour = this.hourHeight();
       const containsToday = days.some((date) => dates.sameDay(date, this.today));
       const focusHour = containsToday ? new Date().getHours() - 1 : 9;
       const clamped = Math.min(Math.max(focusHour, this.hours.desde), this.hours.hasta);
@@ -264,7 +286,75 @@
     }
   }
 
+  class DayRenderer extends WeekRenderer {
+    title(cursor) {
+      return dates.monthTitle(cursor);
+    }
+
+    move(cursor, step) {
+      return dates.addDays(cursor, step);
+    }
+
+    renderSkeleton(cursor) {
+      const { days } = this.range(cursor);
+      this.cursor = cursor;
+      const strip = dom.el("div", "cal2-days");
+      strip.setAttribute("role", "group");
+      strip.setAttribute("aria-label", "Días de la semana");
+      this.stripButtons = new Map();
+      days.forEach((date) => {
+        const button = dom.el("button", `cal2-days__btn${dates.sameDay(date, this.today) ? " is-today" : ""}`);
+        button.type = "button";
+        button.setAttribute("aria-pressed", String(dates.sameDay(date, cursor)));
+        button.setAttribute("aria-label", dates.longDate(date));
+        button.append(this.dayName(date), dom.el("span", "cal2-days__num", String(date.getDate())));
+        button.addEventListener("click", () => this.onDay(date));
+        strip.append(button);
+        this.stripButtons.set(dates.toISO(date), { button, date });
+      });
+      this.summary = dom.el("div", "cal2-summary");
+      this.summary.hidden = true;
+      const scroll = this.timeGrid([cursor], { header: false, day: true });
+      this.board().replaceChildren(strip, this.summary, scroll);
+      this.scrollToFocus(scroll, [cursor]);
+    }
+
+    renderContent(data) {
+      super.renderContent(data);
+      const days = data.dias || {};
+      this.stripButtons.forEach(({ button, date }, key) => {
+        const count = (days[key] || {}).total || 0;
+        button.setAttribute("aria-label", `${dates.longDate(date)}, ${count} ${plural(count, "cita", "citas")}`);
+      });
+      this.renderSummary(days[dates.toISO(this.cursor)]);
+    }
+
+    renderSummary(day) {
+      const total = day ? day.total : 0;
+      const counts = day ? day.resumen : {};
+      const totalItem = dom.el("span", "cal2-summary__item");
+      totalItem.append(
+        dom.icon("event", "icon--small"),
+        dom.el("strong", "", String(total)),
+        dom.el("span", "", plural(total, "cita", "citas")),
+      );
+      const items = SUMMARY.map(([status, one, many]) => {
+        const count = counts[status] || 0;
+        const item = dom.el("span", "cal2-summary__item");
+        item.append(
+          dom.el("span", `cal2-dot cal2-dot--${status}`),
+          dom.el("strong", "", String(count)),
+          dom.el("span", "", plural(count, one, many)),
+        );
+        return item;
+      });
+      this.summary.replaceChildren(totalItem, ...items);
+      this.summary.hidden = false;
+    }
+  }
+
   HiCalendar.CalendarRenderer = CalendarRenderer;
   HiCalendar.MonthRenderer = MonthRenderer;
   HiCalendar.WeekRenderer = WeekRenderer;
+  HiCalendar.DayRenderer = DayRenderer;
 })(window);

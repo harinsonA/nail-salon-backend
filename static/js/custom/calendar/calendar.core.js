@@ -80,6 +80,9 @@
     weekdayShort(date) {
       return fmtWeekdayShort.format(date).replace(".", "");
     },
+    longDate(date) {
+      return `${fmtWeekday.format(date)} ${date.getDate()} ${fmtMonth.format(date)} ${date.getFullYear()}`;
+    },
   };
 
   const dom = {

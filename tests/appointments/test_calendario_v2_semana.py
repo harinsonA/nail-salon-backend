@@ -76,13 +76,13 @@ class CalendarioV2SemanaTests(NegocioTestCase):
         acciones = self.datos().json()["dias"]["2026-10-24"]["bloques"][0]["citas"][0]["acciones"]
         self.assertEqual(acciones[0]["link"], reverse("agenda_see_modal", args=[cita.pk]))
 
-    def test_la_pagina_abre_en_semana_y_ofrece_semana_y_mes_en_orden(self):
+    def test_la_pagina_abre_en_semana_y_ofrece_dia_semana_y_mes_en_orden(self):
         navegador = Client(HTTP_HOST=self.dominio)
         navegador.force_login(self.encargada)
         respuesta = navegador.get(reverse("calendar_v2"))
         configuracion = respuesta.context["calendar_config"]
         self.assertEqual(configuracion["view"], "semana")
-        self.assertEqual([vista["key"] for vista in configuracion["views"]], ["semana", "mes"])
+        self.assertEqual([vista["key"] for vista in configuracion["views"]], ["dia", "semana", "mes"])
         self.assertEqual(configuracion["hours"], {"desde": 5, "hasta": 24})
         self.assertContains(respuesta, 'data-cal2-view="semana"')
         self.assertContains(respuesta, 'data-cal2-view="mes"')
