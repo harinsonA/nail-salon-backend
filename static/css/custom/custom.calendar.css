@@ -1122,12 +1122,6 @@ form.calendar-config-form {
     linear-gradient(160deg, var(--sand-100) 0%, var(--cream-200) 55%, var(--cream-50) 100%);
 }
 
-.calendar-welcome__close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-}
-
 .calendar-welcome__art {
   position: relative;
   width: min(100%, 340px);

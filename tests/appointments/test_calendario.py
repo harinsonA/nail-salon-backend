@@ -61,6 +61,13 @@ class CalendarioTests(NegocioTestCase):
         self.assertContains(respuesta, "images/icons/icono-1.png")
         self.assertContains(respuesta, '$(() => $("#calendar-welcome").modal("show"));')
 
+    def test_la_bienvenida_no_se_puede_cerrar(self):
+        html = self.encargada().get(reverse("calendar")).content.decode()
+        bienvenida = html.split('id="calendar-welcome"')[1].split("</main>")[0]
+        self.assertIn('data-bs-backdrop="static" data-bs-keyboard="false"', html)
+        self.assertNotIn("data-bs-dismiss", bienvenida)
+        self.assertNotIn("Ahora no", html)
+
     def test_la_colaboradora_no_recibe_el_enlace_a_servicios(self):
         respuesta = self.navegador.get(reverse("calendar"))
         self.assertContains(respuesta, self.ir_a("clients"))

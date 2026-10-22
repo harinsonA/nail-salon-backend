@@ -1,10 +1,9 @@
 {% load static %}
-<div class="modal fade calendar-welcome" id="calendar-welcome" data-bs-backdrop="static" tabindex="-1"
+<div class="modal fade calendar-welcome" id="calendar-welcome" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
   aria-labelledby="calendar-welcome-title" aria-describedby="calendar-welcome-text" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="calendar-welcome__hero">
-        <button type="button" class="btn-close calendar-welcome__close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         {% now "F" as month_name %}
         <div class="calendar-welcome__art" aria-hidden="true">
           <img src="{% static 'images/modals/welcome-calendar.svg' %}" alt="" class="calendar-welcome__scene">
@@ -46,9 +45,6 @@
             </span>
           </li>
         </ol>
-      </div>
-      <div class="modal-footer modal-footer-soft">
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Ahora no</button>
       </div>
     </div>
   </div>
