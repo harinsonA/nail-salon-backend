@@ -29,7 +29,6 @@ from apps.payments.models import DetallePago, Pago
 
 AMOUNT_REQUIRED = "El monto abonado es requerido."
 AMOUNT_TOO_HIGH = 'Si paga {total} o más, activa "Paga el total ahora".'
-REFERENCE_REQUIRED = "Ingresa la referencia del pago."
 
 
 # endregion
@@ -118,18 +117,6 @@ class AgendaConfirmationForm(BSModalModelForm):
             total = format_money(self.remaining_payment_value)
             raise forms.ValidationError(AMOUNT_TOO_HIGH.format(total=total))
         return down_payment
-
-    def clean(self):
-        cleaned_data = super().clean()
-        full_payment = cleaned_data.get("full_payment")
-        amount = self.remaining_payment_value if full_payment else cleaned_data.get(
-            "down_payment"
-        )
-        method = cleaned_data.get("payment_method")
-        reference = (cleaned_data.get("payment_reference") or "").strip()
-        if amount and method and method != MetodoPago.EFECTIVO and not reference:
-            self.add_error("payment_reference", REFERENCE_REQUIRED)
-        return cleaned_data
 
 
 # endregion
@@ -232,7 +219,7 @@ class AgendaConfirmationModal(
             registrado_por=user,
         )
         if payment_method != MetodoPago.EFECTIVO:
-            payment_reference = cleaned_data.get("payment_reference", "")
+            payment_reference = cleaned_data.get("payment_reference") or None
             payment_detail_instance.referencia_pago = payment_reference
         payment_detail_instance.save()
 

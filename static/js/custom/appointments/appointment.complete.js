@@ -19,7 +19,6 @@
         full: form.querySelector("#id_full_payment"),
         amount: form.querySelector("#id_down_payment"),
         method: form.querySelector("#id_payment_method"),
-        reference: form.querySelector("#id_payment_reference"),
         notes: form.querySelector("#id_observations"),
       };
       this.ui = {
@@ -83,8 +82,7 @@
       const paying = amount > 0;
       ui.methodCard.hidden = !paying;
       ui.notesStep.textContent = paying ? "3" : "2";
-      const needsReference = paying && fields.method.value !== CASH;
-      ui.referenceWrap.hidden = !needsReference;
+      ui.referenceWrap.hidden = !paying || fields.method.value === CASH;
 
       const counted = error ? 0 : amount;
       const debt = this.total - counted;
@@ -93,8 +91,7 @@
       ui.after.classList.toggle("has-debt", debt > 0);
       ui.bar.style.width = `${this.total ? (counted / this.total) * 100 : 0}%`;
 
-      const missingReference = needsReference && !fields.reference.value.trim();
-      ui.save.disabled = Boolean(error) || missingReference;
+      ui.save.disabled = Boolean(error);
     }
 
     updateNotesCounter() {
@@ -118,7 +115,7 @@
       const { fields, ui } = this;
       fields.full.addEventListener("change", () => this.render());
       fields.method.addEventListener("change", () => this.render());
-      [fields.amount, fields.reference].forEach((input) => input.addEventListener("input", () => this.render()));
+      fields.amount.addEventListener("input", () => this.render());
       fields.notes.addEventListener("input", () => this.updateNotesCounter());
       ui.save.addEventListener("click", () => this.save());
     }

@@ -21,7 +21,6 @@
         full: form.querySelector("#id_full_payment"),
         amount: form.querySelector("#id_down_payment"),
         method: form.querySelector("#id_payment_method"),
-        reference: form.querySelector("#id_payment_reference"),
         date: form.querySelector("#id_payment_date"),
         time: form.querySelector("#id_payment_time"),
         notes: form.querySelector("#id_observations"),
@@ -79,8 +78,7 @@
       ui.amountError.textContent = error;
       fields.amount.classList.toggle("is-invalid", Boolean(error));
 
-      const needsReference = fields.method.value !== CASH;
-      ui.referenceWrap.hidden = !needsReference;
+      ui.referenceWrap.hidden = fields.method.value === CASH;
 
       const counted = error ? 0 : amount;
       const after = this.balance - counted;
@@ -90,8 +88,7 @@
       ui.barPaid.style.width = `${this.total ? (this.paid / this.total) * 100 : 0}%`;
       ui.barNow.style.width = `${this.total ? (counted / this.total) * 100 : 0}%`;
 
-      const reference = fields.reference.value.trim();
-      const ready = counted > 0 && (!needsReference || reference) && fields.date.value && fields.time.value;
+      const ready = counted > 0 && fields.date.value && fields.time.value;
       ui.save.disabled = !ready;
     }
 
@@ -104,7 +101,7 @@
     bind() {
       const { fields } = this;
       [fields.full, fields.method].forEach((input) => input.addEventListener("change", () => this.render()));
-      [fields.amount, fields.reference, fields.date, fields.time].forEach((input) =>
+      [fields.amount, fields.date, fields.time].forEach((input) =>
         input.addEventListener("input", () => this.render()),
       );
       fields.notes.addEventListener("input", () => this.updateNotesCounter());
