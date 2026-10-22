@@ -7,68 +7,44 @@ from django.http import JsonResponse
 from django.utils import timezone
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
+from apps.appointments.access import AppointmentAccessMixin
 from apps.appointments.models import Cita
+from apps.appointments.panel import AppointmentPanel, person_name
 from apps.appointments.views.agenda_modals.common import AgendaBaseModalView
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT_CLASS,
 )
+from apps.common.form_fields import NoteField
+from apps.common.utils.currency import format_money
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
 
 """========================================================================="""
+# region ........ Constants
+
+
+AMOUNT_REQUIRED = "El monto abonado es requerido."
+AMOUNT_TOO_HIGH = 'Si paga {total} o más, activa "Paga el total ahora".'
+REFERENCE_REQUIRED = "Ingresa la referencia del pago."
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
 # region ........ Forms
 
 
 class AgendaConfirmationForm(BSModalModelForm):
-    payment_method = forms.ChoiceField(
-        label="Método de pago",
-        choices=MetodoPago.CHOICES,
-        required=False,
-        initial=MetodoPago.EFECTIVO,
-        widget=forms.Select(
-            attrs={
-                "class": FORM_SELECT_CLASS,
-            }
-        ),
-    )
-    payment_reference = forms.CharField(
-        label="Referencia de pago",
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Nro. de recibo, transacción, etc.",
-            }
-        ),
-    )
     full_payment = forms.BooleanField(
-        label="Pago completo",
+        label="Paga el total ahora",
         required=False,
         initial=True,
-        widget=forms.CheckboxInput(
-            attrs={
-                "class": "form-check-input",
-            }
-        ),
-    )
-    remaining_payment = forms.IntegerField(
-        label="Restante",
-        initial=0,
-        min_value=0,
-        required=False,
-        widget=forms.NumberInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "min": "0",
-                "placeholder": "0",
-                "readonly": "readonly",
-            }
-        ),
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"}),
     )
     down_payment = forms.IntegerField(
         label="Monto abonado",
@@ -79,18 +55,36 @@ class AgendaConfirmationForm(BSModalModelForm):
             attrs={
                 "class": FORM_CONTROL_CLASS,
                 "min": "0",
-                "placeholder": "0",
+                "step": "500",
+                "inputmode": "numeric",
             }
         ),
     )
-
-    observations = forms.CharField(
+    payment_method = forms.ChoiceField(
+        label="Método",
+        choices=MetodoPago.CHOICES,
+        initial=MetodoPago.EFECTIVO,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
+    payment_reference = forms.CharField(
+        label="Referencia",
+        max_length=100,
         required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "placeholder": "N° de comprobante o transferencia",
+            }
+        ),
+    )
+    observations = NoteField(
         label="Observaciones",
+        required=False,
         widget=forms.Textarea(
             attrs={
-                "rows": 3,
+                "rows": 2,
                 "class": FORM_CONTROL_TEXTAREA_CLASS,
+                "placeholder": "Ej.: pagará el resto la próxima semana",
             }
         ),
     )
@@ -98,7 +92,6 @@ class AgendaConfirmationForm(BSModalModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.remaining_payment_value = self.__get_initial_remaining_payment()
-        self.fields["remaining_payment"].initial = self.remaining_payment_value
 
     def __get_initial_remaining_payment(self) -> int:
         total_amount = 0
@@ -120,12 +113,23 @@ class AgendaConfirmationForm(BSModalModelForm):
         if self.cleaned_data.get("full_payment"):
             return down_payment
         if down_payment is None:
-            raise forms.ValidationError("El monto abonado es requerido.")
+            raise forms.ValidationError(AMOUNT_REQUIRED)
         if down_payment >= self.remaining_payment_value:
-            raise forms.ValidationError(
-                "El monto abonado no puede ser mayor o igual al total de la cita."
-            )
+            total = format_money(self.remaining_payment_value)
+            raise forms.ValidationError(AMOUNT_TOO_HIGH.format(total=total))
         return down_payment
+
+    def clean(self):
+        cleaned_data = super().clean()
+        full_payment = cleaned_data.get("full_payment")
+        amount = self.remaining_payment_value if full_payment else cleaned_data.get(
+            "down_payment"
+        )
+        method = cleaned_data.get("payment_method")
+        reference = (cleaned_data.get("payment_reference") or "").strip()
+        if amount and method and method != MetodoPago.EFECTIVO and not reference:
+            self.add_error("payment_reference", REFERENCE_REQUIRED)
+        return cleaned_data
 
 
 # endregion
@@ -135,10 +139,34 @@ class AgendaConfirmationForm(BSModalModelForm):
 # region ........ Views
 
 
-class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
+class AgendaConfirmationModal(
+    AppointmentAccessMixin, AgendaBaseModalView, BSModalUpdateView
+):
     template_name = "appointments/agenda_confirmation_modal.html"
     model = Cita
     form_class = AgendaConfirmationForm
+
+    def get_queryset(self):
+        return super().get_queryset().filter(estado=Cita.EstadoChoices.PENDIENTE)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        services, subtotal, discounts = AppointmentPanel(
+            self.object, self.request.user
+        ).services()
+        total = context["form"].remaining_payment_value
+        context.update(
+            {
+                "modal_url": self.request.path,
+                "services": services,
+                "subtotal": format_money(subtotal),
+                "discounts": format_money(-discounts) if discounts else format_money(0),
+                "total": format_money(total),
+                "total_value": int(total),
+                "attended_by": person_name(self.request.user, self.request.user),
+            }
+        )
+        return context
 
     def __get_message_success(self) -> str:
         return (
@@ -209,9 +237,6 @@ class AgendaConfirmationModal(AgendaBaseModalView, BSModalUpdateView):
         payment_detail_instance.save()
 
     def form_valid(self, form):
-        if self.object.estado == Cita.EstadoChoices.COMPLETADA:
-            message = self.__get_message_success()
-            return JsonResponse({"message": message}, status=200)
         cleaned_data = form.cleaned_data
         details = self._get_details(self.object)
         client_full_name = self._get_client_full_name(self.object)

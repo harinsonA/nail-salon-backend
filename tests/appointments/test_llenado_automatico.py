@@ -82,25 +82,27 @@ class LlenadoAutomaticoTests(NegocioTestCase):
         self.assertEqual(cita.asignado_a, colaboradora)
 
     def test_completar_cita_registra_a_quien_la_completa_en_el_pago_y_el_abono(self):
-        encargada = self.crear(Rol.ENCARGADO, "ana")
+        encargada = self.crear(Rol.ENCARGADO, "ana", "Pérez")
         colaboradora = self.crear(Rol.COLABORADOR, "camila", "Rojas")
-        cita = self.crear_cita_con_servicio(encargada)
-        pago = self.completar(self.navegador_de(colaboradora), cita, full_payment="on")
-        self.assertEqual(pago.atendido_por, colaboradora)
-        self.assertEqual(pago.atendido_por_nombre, "Camila Rojas")
-        self.assertEqual(pago.detalles_pago.get().registrado_por, colaboradora)
-        self.assertEqual(cita.asignado_a, encargada)
+        cita = self.crear_cita_con_servicio(colaboradora)
+        pago = self.completar(self.navegador_de(encargada), cita, full_payment="on")
+        self.assertEqual(pago.atendido_por, encargada)
+        self.assertEqual(pago.atendido_por_nombre, "Ana Pérez")
+        self.assertEqual(pago.detalles_pago.get().registrado_por, encargada)
+        self.assertEqual(cita.asignado_a, colaboradora)
 
     def test_sin_nombre_se_guarda_el_correo_de_quien_atendio(self):
         colaboradora = User.objects.create_user(username="sin_nombre", email="sin.nombre@correo.cl", password="x")
         Perfil.objects.filter(user=colaboradora).update(debe_cambiar_clave=False)
-        pago = self.completar(self.navegador_de(colaboradora), self.crear_cita_con_servicio(), full_payment="on")
+        cita = self.crear_cita_con_servicio(colaboradora)
+        pago = self.completar(self.navegador_de(colaboradora), cita, full_payment="on")
         self.assertEqual(pago.atendido_por_nombre, "sin.nombre@correo.cl")
 
     def test_cada_abono_registra_a_quien_lo_recibe(self):
         colaboradora = self.crear(Rol.COLABORADOR, "camila")
         propietaria = self.crear(Rol.PROPIETARIO, "maria")
-        pago = self.completar(self.navegador_de(colaboradora), self.crear_cita_con_servicio(), down_payment="4000")
+        cita = self.crear_cita_con_servicio(colaboradora)
+        pago = self.completar(self.navegador_de(colaboradora), cita, down_payment="4000")
         respuesta = self.navegador_de(propietaria).post(
             reverse("add_payment_modal", args=[pago.pk]),
             {
