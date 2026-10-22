@@ -1,0 +1,139 @@
+{% load static %}
+<form id="appointment-form" class="cal2-new" action="{{ modal_url }}" method="post" novalidate>
+  {% csrf_token %}
+  <div class="modal-header bg-primary bg-gradient">
+    <h5 class="modal-title d-inline-flex align-items-center">
+      <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="24" height="24" class="icon--title me-2">
+      <span>Nueva cita</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    <div class="cal2-new__layout">
+      <div class="cal2-new__main">
+        <section class="cal2-new__card" aria-labelledby="appointment-who">
+          <h6 class="cal2-new__card-title" id="appointment-who">
+            <span class="cal2-new__step">1</span> Cliente y persona asignada
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label for="{{ form.client.id_for_label }}" class="form-label form-label--custom">{{ form.client.label }} <span class="text-danger">*</span></label>
+              {{ form.client }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.client.id_for_label }}"></div>
+            </div>
+            <div class="col-md-5">
+              <label for="{{ form.assigned_to.id_for_label }}" class="form-label form-label--custom">{{ form.assigned_to.label }} <span class="text-danger">*</span></label>
+              {{ form.assigned_to }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.assigned_to.id_for_label }}"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="cal2-new__card" aria-labelledby="appointment-when">
+          <h6 class="cal2-new__card-title" id="appointment-when">
+            <span class="cal2-new__step">2</span> Fecha y hora
+          </h6>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="{{ form.date.id_for_label }}" class="form-label form-label--custom">{{ form.date.label }} <span class="text-danger">*</span></label>
+              {{ form.date }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.date.id_for_label }}"></div>
+            </div>
+            <div class="col-sm-6">
+              <label for="{{ form.time.id_for_label }}" class="form-label form-label--custom">{{ form.time.label }} <span class="text-danger">*</span></label>
+              {{ form.time }}
+              <div class="invalid-feedback invalid-feedback--custom {{ form.time.id_for_label }}"></div>
+            </div>
+          </div>
+          <div class="cal2-new__busy" aria-live="polite">
+            <p class="cal2-new__busy-title" data-busy-title></p>
+            <ul class="cal2-new__busy-list" data-busy-list></ul>
+          </div>
+        </section>
+
+        <section class="cal2-new__card" aria-labelledby="appointment-what">
+          <h6 class="cal2-new__card-title" id="appointment-what">
+            <span class="cal2-new__step">3</span> Servicios
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label for="appointment-category" class="form-label form-label--custom">Categoría</label>
+              <select id="appointment-category" class="form-select form-select--custom form-select-2--custom" data-category></select>
+            </div>
+            <div class="col-md-7">
+              <label for="appointment-service" class="form-label form-label--custom">Servicio <span class="text-danger">*</span></label>
+              <select id="appointment-service" class="form-select form-select--custom form-select-2--custom" data-service></select>
+              <p class="cal2-new__error {{ form.services.id_for_label }}" aria-live="polite"></p>
+            </div>
+          </div>
+          <div class="cal2-new__editor" data-editor hidden>
+            <div class="cal2-new__editor-info">
+              <strong data-editor-name></strong>
+              <span data-editor-meta></span>
+            </div>
+            <label class="cal2-new__field">
+              <span>Cantidad</span>
+              <input type="number" min="1" value="1" class="form-control form-control--custom" data-quantity>
+            </label>
+            <label class="cal2-new__field">
+              <span>Descuento</span>
+              <span class="cal2-new__money">
+                <span aria-hidden="true">-$</span>
+                <input type="number" min="0" step="500" value="0" class="form-control form-control--custom" data-discount>
+              </span>
+            </label>
+            <div class="cal2-new__field cal2-new__field--total">
+              <span>Total</span>
+              <strong data-line-total></strong>
+            </div>
+            <button type="button" class="btn btn-sm btn-success bg-gradient" data-add>
+              <span class="material-symbols-outlined icon--small" aria-hidden="true">add_circle</span>
+              Añadir
+            </button>
+          </div>
+          <p class="cal2-new__error" data-discount-error hidden>El descuento no puede superar el precio.</p>
+        </section>
+
+        <section class="cal2-new__card" aria-labelledby="appointment-notes">
+          <h6 class="cal2-new__card-title" id="appointment-notes">
+            <span class="cal2-new__step">4</span> Observaciones
+            <span class="cal2-new__optional">(opcional)</span>
+          </h6>
+          <label for="{{ form.observations.id_for_label }}" class="visually-hidden">Observaciones de la cita (opcional)</label>
+          {{ form.observations }}
+          <div class="invalid-feedback invalid-feedback--custom {{ form.observations.id_for_label }}"></div>
+          <p class="cal2-new__counter" data-notes-count>0/250 caracteres</p>
+        </section>
+      </div>
+
+      <aside class="cal2-new__summary" aria-labelledby="appointment-summary">
+        <h6 class="cal2-new__summary-title" id="appointment-summary">Resumen</h6>
+        <dl class="cal2-new__facts">
+          <div><dt>Cliente</dt><dd data-sum-client>—</dd></div>
+          <div><dt>Asignada a</dt><dd data-sum-staff>—</dd></div>
+          <div><dt>Fecha</dt><dd data-sum-date>—</dd></div>
+          <div><dt>Hora</dt><dd data-sum-time>—</dd></div>
+        </dl>
+        <h6 class="cal2-new__summary-sub">Servicios</h6>
+        <ul class="cal2-new__lines" data-lines></ul>
+        <dl class="cal2-new__totals">
+          <div><dt>Subtotal</dt><dd data-subtotal>$0</dd></div>
+          <div><dt>Descuentos</dt><dd data-discounts>$0</dd></div>
+          <div class="is-total"><dt>Total</dt><dd data-total>$0</dd></div>
+        </dl>
+      </aside>
+    </div>
+    {{ form.services }}
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button type="button" class="btn btn-sm btn-primary bg-gradient" data-save disabled>Agendar cita</button>
+  </div>
+</form>
+{{ appointment_form_config|json_script:"appointment-form-config" }}
+<script>
+  initAppointmentForm(
+    document.getElementById("appointment-form"),
+    JSON.parse(document.getElementById("appointment-form-config").textContent),
+  );
+</script>
