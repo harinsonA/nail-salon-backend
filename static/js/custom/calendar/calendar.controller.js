@@ -47,7 +47,7 @@
       }
 
       this.api = new CalendarApi(config.dataUrl);
-      this.menu = new AppointmentMenu({ onChange: () => this.refresh() });
+      this.menu = new AppointmentMenu();
       this.renderers = {};
       Object.entries(RENDERERS).forEach(([view, Renderer]) => {
         this.renderers[view] = new Renderer({
