@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME
 
 
@@ -25,3 +27,16 @@ def format_full_date(date_obj) -> str:
     year = date_obj.year
 
     return f"{day_name} {day} de {month_name} del {year}"
+
+
+def format_plain_date(date_obj) -> str:
+    return f"{date_obj.day} {MONTH_NUMBER_TO_NAME[date_obj.month].lower()} {date_obj.year}"
+
+
+def format_long_date(date_obj) -> str:
+    return f"{DAY_OF_WEEK_TO_NAME[date_obj.weekday()]} {format_plain_date(date_obj)}"
+
+
+def format_date_time(datetime_obj) -> str:
+    local = timezone.localtime(datetime_obj)
+    return f"{format_plain_date(local)}, {local.strftime('%H:%M')}"

@@ -1,0 +1,135 @@
+{% load static %}
+<form id="appointment-panel" class="cal2-detail-form" action="{{ modal_url }}" method="post" data-mode="{{ mode.key }}">
+  {% csrf_token %}
+  <div class="modal-header bg-{{ mode.variant }} bg-gradient{% if mode.variant != 'primary' %} text-white{% endif %}">
+    <div class="cal2-detail__head">
+      <h5 class="modal-title d-inline-flex align-items-center" id="appointment-panel-title">
+        <img src="{% static 'images/common/' %}{{ mode.icon }}" alt="" width="24" height="24" class="icon--title me-2">
+        <span>{{ mode.title }}: {{ client_name }}</span>
+      </h5>
+      <div class="cal2-detail__when">
+        <strong>{{ date_label }}</strong>
+        <span>{{ time_label }} hrs</span>
+        <span class="cal2-status cal2-event--{{ status.key }}">
+          <span class="cal2-dot cal2-dot--{{ status.key }}"></span>
+          <span>{{ status.label }}</span>
+        </span>
+      </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar detalle"></button>
+  </div>
+
+  <div class="modal-body">
+    <section class="cal2-new__card">
+      <h6 class="cal2-new__card-title">
+        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">person</span>
+        <span>Cliente</span>
+      </h6>
+      <dl class="cal2-new__facts">
+        <div><dt>Nombre</dt><dd>{{ client_name }}</dd></div>
+        <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="cal2-new__card">
+      <h6 class="cal2-new__card-title">
+        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">group</span>
+        <span>Equipo</span>
+      </h6>
+      <dl class="cal2-new__facts">
+        <div><dt>{{ team.label }}</dt><dd><span class="cal2-detail__person"><span>{{ team.name }}</span></span></dd></div>
+      </dl>
+    </section>
+
+    <section class="cal2-new__card">
+      <h6 class="cal2-new__card-title">
+        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">content_cut</span>
+        <span>Servicios</span>
+      </h6>
+      <table class="cal2-detail__services">
+        <thead>
+          <tr><th>Servicio</th><th>Cant.</th><th>Precio</th><th>Desc.</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          {% for service in services %}
+          <tr>
+            <td>{{ service.name }}</td>
+            <td>{{ service.quantity }}</td>
+            <td>{{ service.price }}</td>
+            <td{% if service.discount %} class="is-discount"{% endif %}>{{ service.discount|default:"—" }}</td>
+            <td>{{ service.total }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5">Sin servicios.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <dl class="cal2-new__totals">
+        <div><dt>Subtotal</dt><dd>{{ subtotal }}</dd></div>
+        <div><dt>Descuentos</dt><dd>{{ discounts }}</dd></div>
+        <div class="is-total"><dt>Total</dt><dd>{{ total }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="cal2-new__card">
+      <h6 class="cal2-new__card-title">
+        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">payments</span>
+        <span>Pago</span>
+      </h6>
+      <dl class="cal2-new__facts">
+        {% if payment.badge %}
+        <div><dt>Estado</dt><dd><span class="cal2-detail__badge {% if payment.badge.debt %}is-debt{% else %}is-paid{% endif %}">{{ payment.badge.label }}</span></dd></div>
+        {% endif %}
+        {% for row in payment.rows %}
+        <div{% if row.debt %} class="is-debt"{% endif %}><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>
+        {% endfor %}
+        {% if payment.first %}
+        <div>
+          <dt>Primer pago registrado por</dt>
+          <dd><span class="cal2-detail__person"><span>{{ payment.first.name }}</span><small>{{ payment.first.when }}</small></span></dd>
+        </div>
+        {% endif %}
+      </dl>
+      {% if payment.badge %}
+      <h6 class="cal2-new__summary-sub">Abonos</h6>
+      {% if payment.installments %}
+      <table class="cal2-detail__services cal2-detail__payments">
+        <thead>
+          <tr><th>Abono</th><th>Método</th><th>Registró</th><th>Monto</th></tr>
+        </thead>
+        <tbody>
+          {% for item in payment.installments %}
+          <tr><td>{{ item.when }}</td><td>{{ item.method }}</td><td>{{ item.by }}</td><td>{{ item.amount }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="cal2-detail__notes">Sin abonos registrados.</p>
+      {% endif %}
+      {% endif %}
+    </section>
+
+    <section class="cal2-new__card">
+      <h6 class="cal2-new__card-title">
+        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">sticky_note_2</span>
+        <span>Observaciones</span>
+      </h6>
+      <p class="cal2-detail__notes">{{ notes|default:"Sin observaciones." }}</p>
+    </section>
+  </div>
+
+  {% if mode.confirm_label %}
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">Volver</button>
+    <button type="button" class="btn btn-sm btn-{{ mode.variant }} bg-gradient" data-panel-confirm>{{ mode.confirm_label }}</button>
+  </div>
+  {% else %}
+  <div class="modal-footer modal-footer-soft cal2-detail__footer">
+    <span>Cita creada por <strong>{{ created_by|default:"—" }}</strong></span>
+    <span class="cal2-detail__created-at">Fecha de creación: <strong>{{ created_at }}</strong></span>
+  </div>
+  {% endif %}
+</form>
+<script>
+  initAppointmentPanel(document.getElementById("appointment-panel"));
+</script>
