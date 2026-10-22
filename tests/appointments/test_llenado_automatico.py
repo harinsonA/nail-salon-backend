@@ -66,17 +66,14 @@ class LlenadoAutomaticoTests(NegocioTestCase):
 
     def test_crear_cita_la_deja_creada_y_asignada_a_quien_la_agenda(self):
         colaboradora = self.crear(Rol.COLABORADOR, "camila")
-        agenda = [
-            {
-                "idCliente": self.cliente.pk,
-                "servicios": [
-                    {"id": self.servicio.pk, "fecha": "20/10/2026", "hora": "10:00", "total": 10000, "cantidad": 1},
-                ],
-            }
-        ]
         respuesta = self.navegador_de(colaboradora).post(
             reverse("create_appointment_from_calendar", args=["2026-10-20"]),
-            {"agenda": json.dumps(agenda)},
+            {
+                "client": self.cliente.pk,
+                "date": "2026-10-20",
+                "time": "10:00",
+                "services": json.dumps([{"id": self.servicio.pk, "cantidad": 1, "descuento": 0}]),
+            },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
         self.assertEqual(respuesta.status_code, 200)

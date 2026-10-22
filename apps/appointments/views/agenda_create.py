@@ -1,223 +1,267 @@
 import json
+from datetime import date
 
 from django import forms
-from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.http import JsonResponse
-from django.urls import reverse_lazy
+from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils import timezone
+from django.views import View
 from django.views.generic import FormView, TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.appointments.models.agenda import Cita
-from apps.appointments.views.handler import HandlerAgenda, HandlerAgendaList
+from apps.appointments.models.detalle_cita import DetalleCita
 from apps.clients.models import Cliente
-from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.common.custom_time_fields import CustomDateField
+from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT2_CLASS,
-    FORM_SELECT_CLASS,
 )
+from apps.common.form_fields import NoteField
+from apps.common.utils.dates import DAY_OF_WEEK_TO_NAME
+from apps.common.utils.text import user_display_name
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
+from apps.profiles.models import Perfil
+from apps.profiles.permisos import rol_de
 from apps.services.models import Categoria, Servicio
 
+User = get_user_model()
+
 """========================================================================="""
-# region ........ Form
+# region ........ Constants
 
 
-class AgendaForm(forms.Form):
-    """Formulario normal (no modal) para crear citas de agenda"""
-
-    client = forms.ModelChoiceField(
-        queryset=Cliente.activos.all(),
-        required=True,
-        label="Cliente",
-        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
-    )
-    category = forms.ModelChoiceField(
-        queryset=Categoria.activos.all(),
-        required=False,
-        label="Categoría",
-        empty_label="Sin definir",
-        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
-    )
-    service = forms.ModelChoiceField(
-        queryset=Servicio.objects.none(),
-        required=True,
-        label="Servicio",
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    date_agenda = CustomDateField(
-        required=True,
-        label="Fecha de la cita",
-    )
-    time_agenda = forms.TimeField(
-        required=True,
-        label="Hora de la cita",
-        widget=forms.TimeInput(
-            attrs={
-                "type": "time",
-                "class": FORM_CONTROL_CLASS,
-                "format": "%H:%M",
-            }
-        ),
-    )
-    observations = forms.CharField(
-        required=False,
-        label="Observaciones",
-        widget=forms.Textarea(
-            attrs={
-                "rows": 3,
-                "class": FORM_CONTROL_TEXTAREA_CLASS,
-            }
-        ),
-    )
-    quantity = forms.IntegerField(
-        label="Cantidad",
-        initial=1,
-        min_value=1,
-        required=True,
-        widget=forms.NumberInput(
-            attrs={
-                "class": "pricing-receipt-input",
-                "min": "1",
-                "placeholder": "1",
-            }
-        ),
-    )
-    discount_amount = forms.IntegerField(
-        label="Descuento",
-        initial=0,
-        required=False,
-        widget=forms.NumberInput(
-            attrs={
-                "class": "pricing-receipt-input",
-                "min": "0",
-                "placeholder": "1000",
-            }
-        ),
-    )
-
-
-class AvailableHoursFilterForm(forms.Form):
-    date_agenda = CustomDateField(
-        required=True,
-        label="Fecha de la cita",
-    )
-    time_agenda = forms.TimeField(
-        required=True,
-        label="Hora de la cita",
-        widget=forms.TimeInput(
-            attrs={
-                "type": "time",
-                "class": FORM_CONTROL_CLASS,
-                "format": "%H:%M",
-            }
-        ),
-    )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        date_agenda = cleaned_data.get("date_agenda", None)
-        if not date_agenda:
-            return {}
-        # CustomDateField.to_python() ya convirtió el string a objeto date
-        return {
-            "fecha_agenda": date_agenda,
-        }
+DATE_FORMAT = "%Y-%m-%d"
+TIME_FORMAT = "%H:%M"
+MAX_QUANTITY = 99
+SERVICES_REQUIRED = "Agrega al menos un servicio."
+SERVICES_INVALID = "Los servicios enviados no son válidos."
+SERVICE_UNAVAILABLE = "Uno de los servicios ya no está disponible."
+SERVICE_REPEATED = "Un servicio no puede repetirse en la misma cita."
+QUANTITY_INVALID = "La cantidad de «{name}» debe estar entre 1 y {max}."
+DISCOUNT_INVALID = "El descuento de «{name}» no puede ser negativo ni superar su precio."
 
 
 # endregion
 """========================================================================="""
+
+"""========================================================================="""
+# region ........ Helpers
+
+
+def long_date(value):
+    weekday = DAY_OF_WEEK_TO_NAME[value.weekday()].lower()
+    month = MONTH_NUMBER_TO_NAME[value.month].lower()
+    return f"{weekday} {value.day} {month} {value.year}"
+
+
+def is_collaborator(user):
+    return rol_de(user) == Perfil.Rol.COLABORADOR
+
+
+def assignable_users(user):
+    users = User.objects.filter(is_active=True, perfil__isnull=False).order_by("first_name", "last_name", "email")
+    return users.filter(pk=user.pk) if is_collaborator(user) else users
+
+
+class StaffChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return user_display_name(obj)
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Forms
+
+
+class AppointmentCreateForm(forms.Form):
+    client = forms.ModelChoiceField(
+        queryset=Cliente.activos.order_by("nombre", "apellido"),
+        label="Cliente",
+        empty_label="Selecciona un cliente",
+        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
+    )
+    assigned_to = StaffChoiceField(
+        queryset=User.objects.none(),
+        label="Asignada a",
+        empty_label=None,
+        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
+    )
+    date = forms.DateField(
+        label="Fecha",
+        input_formats=[DATE_FORMAT],
+        widget=forms.DateInput(format=DATE_FORMAT, attrs={"type": "date", "class": FORM_CONTROL_CLASS}),
+    )
+    time = forms.TimeField(
+        label="Hora",
+        input_formats=[TIME_FORMAT],
+        widget=forms.TimeInput(format=TIME_FORMAT, attrs={"type": "time", "step": "60", "class": FORM_CONTROL_CLASS}),
+    )
+    observations = NoteField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 2,
+                "class": FORM_CONTROL_TEXTAREA_CLASS,
+                "placeholder": "Alergias, preferencias, diseño que quiere…",
+            }
+        ),
+    )
+    services = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.fields["assigned_to"].queryset = assignable_users(user)
+        if is_collaborator(user):
+            self.fields["assigned_to"].disabled = True
+            self.fields["assigned_to"].initial = user
+
+    def clean_services(self):
+        try:
+            lines = json.loads(self.cleaned_data.get("services") or "[]")
+        except json.JSONDecodeError as error:
+            raise forms.ValidationError(SERVICES_INVALID) from error
+        if not isinstance(lines, list) or not all(isinstance(line, dict) for line in lines):
+            raise forms.ValidationError(SERVICES_INVALID)
+        if not lines:
+            raise forms.ValidationError(SERVICES_REQUIRED)
+        try:
+            ids = [int(line.get("id")) for line in lines]
+        except (TypeError, ValueError) as error:
+            raise forms.ValidationError(SERVICES_INVALID) from error
+        if len(set(ids)) != len(ids):
+            raise forms.ValidationError(SERVICE_REPEATED)
+        services = Servicio.activos.in_bulk(ids)
+        if len(services) != len(ids):
+            raise forms.ValidationError(SERVICE_UNAVAILABLE)
+        return [self.clean_line(services[service_id], line) for service_id, line in zip(ids, lines)]
+
+    @staticmethod
+    def clean_line(service, line):
+        try:
+            quantity = int(line.get("cantidad", 1))
+            discount = int(line.get("descuento", 0))
+        except (TypeError, ValueError) as error:
+            raise forms.ValidationError(SERVICES_INVALID) from error
+        if not 1 <= quantity <= MAX_QUANTITY:
+            raise forms.ValidationError(QUANTITY_INVALID.format(name=service.nombre, max=MAX_QUANTITY))
+        subtotal = service.precio * quantity
+        if not 0 <= discount <= subtotal:
+            raise forms.ValidationError(DISCOUNT_INVALID.format(name=service.nombre))
+        return {"service": service, "quantity": quantity, "discount": discount, "total": subtotal - discount}
+
+    def clean_assigned_to(self):
+        return self.user if is_collaborator(self.user) else self.cleaned_data["assigned_to"]
+
+
+class BusyHoursFilterForm(forms.Form):
+    fecha = forms.DateField(input_formats=[DATE_FORMAT])
+    asignada = forms.IntegerField(required=False)
+
+
+# endregion
+"""========================================================================="""
+
 """========================================================================="""
 # region ........ Views
 
 
 class AgendaCreateView(ProtectedView, FormView):
-    template_name = "appointments/agenda_create.html"
-    form_class = AgendaForm
+    template_name = "appointments/agenda_create_modal.html"
+    form_class = AppointmentCreateForm
+
+    def get(self, request, *args, **kwargs):
+        if request.headers.get("x-requested-with") != "XMLHttpRequest":
+            return redirect("calendar")
+        return super().get(request, *args, **kwargs)
+
+    def selected_date(self):
+        today = timezone.localdate()
+        try:
+            selected = date.fromisoformat(self.kwargs.get("date", ""))
+        except ValueError:
+            return today
+        return max(selected, today)
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "user": self.request.user}
 
     def get_initial(self):
-        initial = super().get_initial()
-        _date_selected = self.kwargs.get(
-            "date", timezone.localdate().strftime("%Y-%m-%d")
-        )
-        _year, _month, _day = _date_selected.split("-")
-        initial.update(
-            {
-                "date_agenda": f"{_day}/{_month}/{_year}",
-                "time_agenda": "09:00",
-            }
-        )
-        return initial
+        return {**super().get_initial(), "date": self.selected_date(), "assigned_to": self.request.user}
 
-    def get_success_url(self, **kwargs):
-        _date_selected = kwargs.get("date", timezone.localdate().strftime("%Y-%m-%d"))
-        return reverse_lazy("calendar_appointments", kwargs={"date": _date_selected})
+    @staticmethod
+    def services_data():
+        services = Servicio.activos.select_related("categoria").order_by("nombre")
+        return [
+            {
+                "id": service.pk,
+                "nombre": service.nombre,
+                "precio": int(service.precio),
+                "categoria": service.categoria_id,
+                "categoriaNombre": service.categoria.nombre if service.categoria else "Sin categoría",
+            }
+            for service in services
+        ]
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        _date_selected = self.kwargs.get(
-            "date", timezone.localdate().strftime("%Y-%m-%d")
+        categories = Categoria.activos.order_by("nombre").values("pk", "nombre")
+        return {
+            **super().get_context_data(**kwargs),
+            "modal_url": self.request.path,
+            "appointment_form_config": {
+                "services": self.services_data(),
+                "categories": [{"id": category["pk"], "nombre": category["nombre"]} for category in categories],
+                "busyUrl": reverse("available_hours_ajax"),
+                "currentUser": self.request.user.pk,
+                "maxQuantity": MAX_QUANTITY,
+            },
+        }
+
+    @transaction.atomic
+    def create_appointment(self, data):
+        appointment = Cita.objects.create(
+            cliente=data["client"],
+            fecha_agenda=data["date"],
+            hora_agenda=data["time"],
+            estado=Cita.EstadoChoices.PENDIENTE,
+            observaciones=data["observations"] or None,
+            creado_por=self.request.user,
+            asignado_a=data["assigned_to"],
         )
-        context.update(
-            {
-                "cancel_url": reverse_lazy(
-                    "calendar_appointments", kwargs={"date": _date_selected}
-                ),
-                "agenda_create_url": reverse_lazy(
-                    "create_appointment_from_calendar", kwargs={"date": _date_selected}
-                ),
-                "service_details_url": reverse_lazy("service_details_ajax"),
-                "available_hours_url": reverse_lazy("available_hours_ajax"),
-            }
+        DetalleCita.objects.bulk_create(
+            DetalleCita(
+                cita=appointment,
+                servicio=line["service"],
+                nombre_servicio=line["service"].nombre,
+                precio_servicio=line["service"].precio,
+                duracion_estimada_servicio=line["service"].duracion_estimada,
+                precio_acordado=line["total"],
+                cantidad_servicios=line["quantity"],
+                descuento=line["discount"],
+            )
+            for line in data["services"]
         )
-        return context
+        return appointment
 
-    @staticmethod
-    def __get_clients_ids(agendas_data: list) -> list:
-        clients_ids = set()
-        for agenda in agendas_data:
-            client_id = agenda.get("idCliente")
-            if not client_id or client_id in clients_ids:
-                continue
-            clients_ids.add(client_id)
-        return list(clients_ids)
+    def form_valid(self, form):
+        appointment = self.create_appointment(form.cleaned_data)
+        client = f"{appointment.cliente.nombre} {appointment.cliente.apellido or ''}".strip()
+        when = f"{long_date(appointment.fecha_agenda)}, {appointment.hora_agenda.strftime(TIME_FORMAT)}"
+        return JsonResponse(
+            {"message": f"Cita agendada: {client}, {when}.", "fecha": appointment.fecha_agenda.isoformat()}
+        )
 
-    @staticmethod
-    def __get_service_ids(agendas_data: list) -> list:
-        services_ids = set()
-        for agenda in agendas_data:
-            _services = agenda.get("servicios")
-            if not _services:
-                continue
-            for service in _services:
-                service_id = service.get("id")
-                if not service_id or service_id in services_ids:
-                    continue
-                services_ids.add(service_id)
-        return list(services_ids)
-
-    def post(self, request, *args, **kwargs):
-        agendas = request.POST.get("agenda", None)
-        if not agendas:
-            return JsonResponse(
-                {"message": "No se recibieron datos de agenda."},
-                status=HTTP_400_BAD_REQUEST,
-            )
-        agendas = json.loads(agendas)
-        clients_ids = self.__get_clients_ids(agendas)
-        services_ids = self.__get_service_ids(agendas)
-        handler = HandlerAgenda(clients_ids, services_ids, user=request.user)
-        result = handler.create(agendas)
-        if result.is_err():
-            return JsonResponse(
-                {"message": result.err()},
-                status=HTTP_400_BAD_REQUEST,
-            )
-        messages.success(request, result.ok())
-        return JsonResponse({"success_url": self.get_success_url(**kwargs)})
+    def form_invalid(self, form):
+        return JsonResponse({"errors": get_errors_to_response(form.errors)}, status=HTTP_400_BAD_REQUEST)
 
 
 class ServiceDetailsAjax(ProtectedAjaxView, TemplateView):
@@ -243,27 +287,24 @@ class ServiceDetailsAjax(ProtectedAjaxView, TemplateView):
         return JsonResponse(data)
 
 
-class AvailableHoursAjax(BaseListViewAjax):
-    model = Cita
-    filter_form_class = AvailableHoursFilterForm
-    _filters = {"estado": Cita.EstadoChoices.PENDIENTE}
-
-    field_list = [
-        "pk",
-        "hora_agenda",
-        "cliente__nombre",
-        "cliente__apellido",
-    ]
-    ordering_fields = {
-        "0": "hora_agenda",
-    }
-
-    def get_values(self, queryset):
-        values = super().get_values(queryset)
-        for value in values:
-            value["hora_agenda"] = value["hora_agenda"].strftime("%H:%M")
-            value["client_full_name"] = HandlerAgendaList.get_client_full_name(**value)
-        return values
+class AvailableHoursAjax(ProtectedAjaxView, View):
+    def get(self, request, *args, **kwargs):
+        form = BusyHoursFilterForm(request.GET)
+        if not form.is_valid():
+            return JsonResponse({"horas": []})
+        appointments = Cita.objects.filter(fecha_agenda=form.cleaned_data["fecha"]).exclude(
+            estado=Cita.EstadoChoices.CANCELADA
+        )
+        if is_collaborator(request.user):
+            appointments = appointments.filter(asignado_a=request.user)
+        assigned = form.cleaned_data["asignada"]
+        hours = {}
+        for hour, assigned_id in appointments.order_by("hora_agenda").values_list("hora_agenda", "asignado_a_id"):
+            key = hour.strftime(TIME_FORMAT)
+            item = hours.setdefault(key, {"hora": key, "total": 0, "de_asignada": False})
+            item["total"] += 1
+            item["de_asignada"] = item["de_asignada"] or (assigned is not None and assigned_id == assigned)
+        return JsonResponse({"horas": list(hours.values())})
 
 
 class ServicesByCategoryAjax(ProtectedAjaxView, TemplateView):
