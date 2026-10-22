@@ -1,5 +1,5 @@
 {% load static %}
-<div id="client-whatsapp-modal" class="cal2-new">
+<div id="client-whatsapp-modal" class="calendar-new">
   <div class="modal-header bg-primary bg-gradient">
     <h5 class="modal-title d-inline-flex align-items-center">
       <img src="{% static 'images/common/whatsapp.svg' %}" alt="" width="24" height="24" class="icon--title me-2">
@@ -8,26 +8,26 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
   <div class="modal-body">
-    <div class="cal2-new__main">
-      <section class="cal2-new__card" aria-labelledby="whatsapp-to">
-        <h6 class="cal2-new__card-title" id="whatsapp-to">
-          <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">person</span>
+    <div class="calendar-new__main">
+      <section class="calendar-new__card" aria-labelledby="whatsapp-to">
+        <h6 class="calendar-new__card-title" id="whatsapp-to">
+          <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">person</span>
           <span>Para</span>
         </h6>
-        <dl class="cal2-new__facts">
+        <dl class="calendar-new__facts">
           <div><dt>Cliente</dt><dd>{{ client_full_name }}</dd></div>
           <div><dt>Teléfono</dt><dd>{{ client_phone }}</dd></div>
         </dl>
       </section>
 
-      <section class="cal2-new__card" aria-labelledby="whatsapp-message">
-        <h6 class="cal2-new__card-title" id="whatsapp-message">
-          <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">chat</span>
+      <section class="calendar-new__card" aria-labelledby="whatsapp-message">
+        <h6 class="calendar-new__card-title" id="whatsapp-message">
+          <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">chat</span>
           <span>{{ form.message.label }}</span>
         </h6>
         <label for="{{ form.message.id_for_label }}" class="visually-hidden">Mensaje para {{ client_full_name }}</label>
         {{ form.message }}
-        <p class="cal2-config__hint mt-2 mb-0">Se abrirá WhatsApp con este mensaje; ahí puedes revisarlo antes de enviarlo.</p>
+        <p class="calendar-config__hint mt-2 mb-0">Se abrirá WhatsApp con este mensaje; ahí puedes revisarlo antes de enviarlo.</p>
       </section>
     </div>
   </div>

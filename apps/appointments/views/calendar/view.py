@@ -5,10 +5,10 @@ from django.views import View
 from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from apps.appointments.calendar_v2.builders import BUILDERS
-from apps.appointments.calendar_v2.filters import VIEW_CHOICES, CalendarFilterForm
-from apps.appointments.calendar_v2.query import CalendarQuery
-from apps.appointments.calendar_v2.settings import calendar_settings, visible_statuses
+from apps.appointments.calendar.builders import BUILDERS
+from apps.appointments.calendar.filters import VIEW_CHOICES, CalendarFilterForm
+from apps.appointments.calendar.query import CalendarQuery
+from apps.appointments.calendar.settings import calendar_settings, visible_statuses
 from apps.clients.models import Cliente
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
 from apps.profiles.permisos import administra_el_negocio
@@ -29,8 +29,8 @@ GRID_HOURS = {"desde": 5, "hasta": 24}
 # region ........ Views
 
 
-class CalendarV2View(ProtectedView, TemplateView):
-    template_name = "calendar_v2/list.html"
+class CalendarView(ProtectedView, TemplateView):
+    template_name = "calendar/list.html"
 
     def welcome(self):
         has_clients = Cliente.activos.exists()
@@ -89,7 +89,7 @@ class CalendarV2View(ProtectedView, TemplateView):
         }
 
 
-class CalendarV2DataView(ProtectedAjaxView, View):
+class CalendarDataView(ProtectedAjaxView, View):
     def get(self, request, *args, **kwargs):
         form = CalendarFilterForm(request.GET)
         if not form.is_valid():

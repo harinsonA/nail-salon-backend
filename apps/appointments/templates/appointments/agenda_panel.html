@@ -1,17 +1,17 @@
 {% load static %}
-<form id="appointment-panel" class="cal2-detail-form" action="{{ modal_url }}" method="post" data-mode="{{ mode.key }}">
+<form id="appointment-panel" class="calendar-detail-form" action="{{ modal_url }}" method="post" data-mode="{{ mode.key }}">
   {% csrf_token %}
   <div class="modal-header bg-{{ mode.variant }} bg-gradient{% if mode.light %} text-white{% endif %}">
-    <div class="cal2-detail__head">
+    <div class="calendar-detail__head">
       <h5 class="modal-title d-inline-flex align-items-center" id="appointment-panel-title">
         <img src="{% static 'images/common/' %}{{ mode.icon }}" alt="" width="24" height="24" class="icon--title me-2">
         <span{% if mode.title_class %} class="{{ mode.title_class }}"{% endif %}>{{ mode.title }}: {{ client_name }}</span>
       </h5>
-      <div class="cal2-detail__when">
+      <div class="calendar-detail__when">
         <strong>{{ date_label }}</strong>
         <span>{{ time_label }} hrs</span>
-        <span class="cal2-status cal2-event--{{ status.key }}">
-          <span class="cal2-dot cal2-dot--{{ status.key }}"></span>
+        <span class="calendar-status calendar-event--{{ status.key }}">
+          <span class="calendar-dot calendar-dot--{{ status.key }}"></span>
           <span>{{ status.label }}</span>
         </span>
       </div>
@@ -20,33 +20,33 @@
   </div>
 
   <div class="modal-body">
-    <section class="cal2-new__card">
-      <h6 class="cal2-new__card-title">
-        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">person</span>
+    <section class="calendar-new__card">
+      <h6 class="calendar-new__card-title">
+        <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">person</span>
         <span>Cliente</span>
       </h6>
-      <dl class="cal2-new__facts">
+      <dl class="calendar-new__facts">
         <div><dt>Nombre</dt><dd>{{ client_name }}</dd></div>
         <div><dt>Teléfono</dt><dd>{{ phone }}</dd></div>
       </dl>
     </section>
 
-    <section class="cal2-new__card">
-      <h6 class="cal2-new__card-title">
-        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">group</span>
+    <section class="calendar-new__card">
+      <h6 class="calendar-new__card-title">
+        <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">group</span>
         <span>Equipo</span>
       </h6>
-      <dl class="cal2-new__facts">
-        <div><dt>{{ team.label }}</dt><dd><span class="cal2-detail__person"><span>{{ team.name }}</span></span></dd></div>
+      <dl class="calendar-new__facts">
+        <div><dt>{{ team.label }}</dt><dd><span class="calendar-detail__person"><span>{{ team.name }}</span></span></dd></div>
       </dl>
     </section>
 
-    <section class="cal2-new__card">
-      <h6 class="cal2-new__card-title">
-        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">content_cut</span>
+    <section class="calendar-new__card">
+      <h6 class="calendar-new__card-title">
+        <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">content_cut</span>
         <span>Servicios</span>
       </h6>
-      <table class="cal2-detail__services">
+      <table class="calendar-detail__services">
         <thead>
           <tr><th>Servicio</th><th>Cant.</th><th>Precio</th><th>Desc.</th><th>Total</th></tr>
         </thead>
@@ -64,21 +64,21 @@
           {% endfor %}
         </tbody>
       </table>
-      <dl class="cal2-new__totals">
+      <dl class="calendar-new__totals">
         <div><dt>Subtotal</dt><dd>{{ subtotal }}</dd></div>
         <div><dt>Descuentos</dt><dd>{{ discounts }}</dd></div>
         <div class="is-total"><dt>Total</dt><dd>{{ total }}</dd></div>
       </dl>
     </section>
 
-    <section class="cal2-new__card">
-      <h6 class="cal2-new__card-title">
-        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">payments</span>
+    <section class="calendar-new__card">
+      <h6 class="calendar-new__card-title">
+        <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">payments</span>
         <span>Pago</span>
       </h6>
-      <dl class="cal2-new__facts">
+      <dl class="calendar-new__facts">
         {% if payment.badge %}
-        <div><dt>Estado</dt><dd><span class="cal2-detail__badge {% if payment.badge.debt %}is-debt{% else %}is-paid{% endif %}">{{ payment.badge.label }}</span></dd></div>
+        <div><dt>Estado</dt><dd><span class="calendar-detail__badge {% if payment.badge.debt %}is-debt{% else %}is-paid{% endif %}">{{ payment.badge.label }}</span></dd></div>
         {% endif %}
         {% for row in payment.rows %}
         <div{% if row.debt %} class="is-debt"{% endif %}><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>
@@ -86,14 +86,14 @@
         {% if payment.first %}
         <div>
           <dt>Primer pago registrado por</dt>
-          <dd><span class="cal2-detail__person"><span>{{ payment.first.name }}</span><small>{{ payment.first.when }}</small></span></dd>
+          <dd><span class="calendar-detail__person"><span>{{ payment.first.name }}</span><small>{{ payment.first.when }}</small></span></dd>
         </div>
         {% endif %}
       </dl>
       {% if payment.badge %}
-      <h6 class="cal2-new__summary-sub">Abonos</h6>
+      <h6 class="calendar-new__summary-sub">Abonos</h6>
       {% if payment.installments %}
-      <table class="cal2-detail__services cal2-detail__payments">
+      <table class="calendar-detail__services calendar-detail__payments">
         <thead>
           <tr><th>Abono</th><th>Método</th><th>Registró</th><th>Monto</th></tr>
         </thead>
@@ -104,10 +104,10 @@
         </tbody>
       </table>
       {% else %}
-      <p class="cal2-detail__notes">Sin abonos registrados.</p>
+      <p class="calendar-detail__notes">Sin abonos registrados.</p>
       {% endif %}
       {% if payment.pay_url %}
-      <button type="button" class="btn btn-sm btn-success bg-gradient cal2-detail__pay-btn" data-panel-payment="{{ payment.pay_url }}">
+      <button type="button" class="btn btn-sm btn-success bg-gradient calendar-detail__pay-btn" data-panel-payment="{{ payment.pay_url }}">
         <span class="material-symbols-outlined icon--small" aria-hidden="true">payments</span>
         <span>Registrar abono</span>
       </button>
@@ -115,12 +115,12 @@
       {% endif %}
     </section>
 
-    <section class="cal2-new__card">
-      <h6 class="cal2-new__card-title">
-        <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">sticky_note_2</span>
+    <section class="calendar-new__card">
+      <h6 class="calendar-new__card-title">
+        <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">sticky_note_2</span>
         <span>Observaciones</span>
       </h6>
-      <p class="cal2-detail__notes">{{ notes|default:"Sin observaciones." }}</p>
+      <p class="calendar-detail__notes">{{ notes|default:"Sin observaciones." }}</p>
     </section>
   </div>
 
@@ -130,9 +130,9 @@
     <button type="button" class="btn btn-sm btn-{{ mode.button|default:mode.variant }} bg-gradient" data-panel-confirm>{{ mode.confirm_label }}</button>
   </div>
   {% else %}
-  <div class="modal-footer modal-footer-soft cal2-detail__footer">
+  <div class="modal-footer modal-footer-soft calendar-detail__footer">
     <span>Cita creada por <strong>{{ created_by|default:"—" }}</strong></span>
-    <span class="cal2-detail__created-at">Fecha de creación: <strong>{{ created_at }}</strong></span>
+    <span class="calendar-detail__created-at">Fecha de creación: <strong>{{ created_at }}</strong></span>
   </div>
   {% endif %}
 </form>

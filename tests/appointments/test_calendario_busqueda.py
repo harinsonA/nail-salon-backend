@@ -2,7 +2,7 @@ from datetime import date, time
 
 from django.contrib.auth import get_user_model
 
-from apps.appointments.calendar_v2.query import CalendarQuery
+from apps.appointments.calendar.query import CalendarQuery
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
@@ -11,7 +11,7 @@ from tests.base import NegocioTestCase
 User = get_user_model()
 
 
-class CalendarioV2BusquedaTests(NegocioTestCase):
+class CalendarioBusquedaTests(NegocioTestCase):
     esquema = "calendario_busqueda"
     dominio = "calendario-busqueda.localhost"
 

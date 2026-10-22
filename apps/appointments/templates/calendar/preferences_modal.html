@@ -1,9 +1,9 @@
-<form id="calendar-preferences" class="cal2-config-form" action="{{ modal_url }}" method="post" novalidate>
+<form id="calendar-preferences" class="calendar-config-form" action="{{ modal_url }}" method="post" novalidate>
   {% csrf_token %}
   <div class="modal-header">
     <div class="d-flex align-items-center gap-2">
       <h5 class="modal-title" id="calendar-preferences-title">Configuración</h5>
-      <button type="button" class="cal2-settings__help" aria-label="Configura cómo quieres ver el calendario"
+      <button type="button" class="calendar-settings__help" aria-label="Configura cómo quieres ver el calendario"
         data-bs-title="Configura cómo quieres ver el calendario" data-bs-placement="bottom">
         <span class="material-symbols-outlined icon--small" aria-hidden="true">info</span>
       </button>
@@ -11,7 +11,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
   <div class="modal-body">
-    <ul class="nav cal2-config__tabs" role="tablist" aria-orientation="vertical">
+    <ul class="nav calendar-config__tabs" role="tablist" aria-orientation="vertical">
       <li class="nav-item" role="presentation">
         <button class="nav-link active" id="calendar-tab-visibility" data-bs-toggle="tab"
           data-bs-target="#calendar-pane-visibility" type="button" role="tab" aria-controls="calendar-pane-visibility"
@@ -22,34 +22,34 @@
           type="button" role="tab" aria-controls="calendar-pane-view" aria-selected="false">Vista al ingresar</button>
       </li>
     </ul>
-    <div class="tab-content cal2-config__content">
-      <section class="tab-pane fade show active cal2-config__pane" id="calendar-pane-visibility" role="tabpanel"
+    <div class="tab-content calendar-config__content">
+      <section class="tab-pane fade show active calendar-config__pane" id="calendar-pane-visibility" role="tabpanel"
         aria-labelledby="calendar-tab-visibility" tabindex="0">
-        <p class="cal2-config__hint">Elige qué citas se muestran en el calendario.</p>
-        <div class="cal2-config__row" role="group" aria-label="Estados que se muestran">
+        <p class="calendar-config__hint">Elige qué citas se muestran en el calendario.</p>
+        <div class="calendar-config__row" role="group" aria-label="Estados que se muestran">
           {% for status, field in form.status_fields %}
-          <label class="form-check form-switch cal2-config__choice">
+          <label class="form-check form-switch calendar-config__choice">
             {{ field }}
-            <span class="cal2-dot cal2-dot--{{ status }}"></span>
+            <span class="calendar-dot calendar-dot--{{ status }}"></span>
             <span>{{ field.label }}</span>
           </label>
           {% endfor %}
         </div>
-        <p class="cal2-config__hint cal2-config__hint--section">Avisos en las citas.</p>
-        <div class="cal2-config__row" role="group" aria-label="Avisos en las citas">
-          <label class="form-check form-switch cal2-config__choice">
+        <p class="calendar-config__hint calendar-config__hint--section">Avisos en las citas.</p>
+        <div class="calendar-config__row" role="group" aria-label="Avisos en las citas">
+          <label class="form-check form-switch calendar-config__choice">
             {{ form.debt_field }}
-            <span class="material-symbols-outlined cal2-debt" aria-hidden="true">info</span>
+            <span class="material-symbols-outlined calendar-debt" aria-hidden="true">info</span>
             <span>{{ form.debt_field.label }}</span>
           </label>
         </div>
       </section>
-      <section class="tab-pane fade cal2-config__pane" id="calendar-pane-view" role="tabpanel"
+      <section class="tab-pane fade calendar-config__pane" id="calendar-pane-view" role="tabpanel"
         aria-labelledby="calendar-tab-view" tabindex="0">
-        <p class="cal2-config__hint">{{ form.view_field.help_text }}</p>
-        <div class="cal2-config__row" role="radiogroup" aria-label="{{ form.view_field.label }}">
+        <p class="calendar-config__hint">{{ form.view_field.help_text }}</p>
+        <div class="calendar-config__row" role="radiogroup" aria-label="{{ form.view_field.label }}">
           {% for radio in form.view_field %}
-          <label class="form-check cal2-config__choice">
+          <label class="form-check calendar-config__choice">
             {{ radio.tag }}
             <span>{{ radio.choice_label }}</span>
           </label>

@@ -6,7 +6,7 @@ Calendario
 {% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'css/custom/custom.calendar-v2.css' %}" rel="stylesheet">
+<link href="{% static 'css/custom/custom.calendar.css' %}" rel="stylesheet">
 <link href="{% static 'css/custom/custom.appointment-modals.css' %}" rel="stylesheet">
 {% endblock %}
 
@@ -14,41 +14,41 @@ Calendario
 {% include 'common/canvas_modal.html' %}
 {% include 'common/bs_modal.html' %}
 {% include 'common/bs_xl_modal.html' %}
-<section class="cal2" id="calendar_v2" aria-label="Calendario de citas">
-  <header class="cal2-toolbar">
-    <div class="cal2-toolbar__group">
-      <div class="cal2-period">
-        <button type="button" class="cal2-icon-btn" data-cal2-prev aria-label="Anterior">
+<section class="calendar" id="calendar" aria-label="Calendario de citas">
+  <header class="calendar-toolbar">
+    <div class="calendar-toolbar__group">
+      <div class="calendar-period">
+        <button type="button" class="calendar-icon-btn" data-calendar-prev aria-label="Anterior">
           <span class="material-symbols-outlined icon--field" aria-hidden="true">chevron_left</span>
         </button>
-        <h4 class="cal2-period__label" data-cal2-title aria-live="polite"></h4>
-        <button type="button" class="cal2-icon-btn" data-cal2-next aria-label="Siguiente">
+        <h4 class="calendar-period__label" data-calendar-title aria-live="polite"></h4>
+        <button type="button" class="calendar-icon-btn" data-calendar-next aria-label="Siguiente">
           <span class="material-symbols-outlined icon--field" aria-hidden="true">chevron_right</span>
         </button>
       </div>
-      <button type="button" class="cal2-today-btn" data-cal2-today>
+      <button type="button" class="calendar-today-btn" data-calendar-today>
         <span class="material-symbols-outlined icon--small" aria-hidden="true">today</span>
         Hoy
       </button>
     </div>
-    <div class="cal2-toolbar__group cal2-toolbar__group--switch">
-      <div class="cal2-switch" role="group" aria-label="Cambiar vista">
+    <div class="calendar-toolbar__group calendar-toolbar__group--switch">
+      <div class="calendar-switch" role="group" aria-label="Cambiar vista">
         {% for view in calendar_config.views %}
-        <button type="button" class="cal2-switch__btn" data-cal2-view="{{ view.key }}" aria-pressed="false">{{ view.label }}</button>
+        <button type="button" class="calendar-switch__btn" data-calendar-view="{{ view.key }}" aria-pressed="false">{{ view.label }}</button>
         {% endfor %}
       </div>
     </div>
-    <div class="cal2-toolbar__group cal2-toolbar__group--end">
-      <button type="button" class="btn btn-primary cal2-new-btn bs-xl-modal" data-cal2-new data-form-url="{{ new_appointment_url }}" aria-label="Nueva cita" title="Nueva cita">
+    <div class="calendar-toolbar__group calendar-toolbar__group--end">
+      <button type="button" class="btn btn-primary calendar-new-btn bs-xl-modal" data-calendar-new data-form-url="{{ new_appointment_url }}" aria-label="Nueva cita" title="Nueva cita">
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">add</span>
         Cita
       </button>
-      <label class="cal2-search">
+      <label class="calendar-search">
         <span class="visually-hidden">Buscar cita por cliente</span>
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">search</span>
-        <input type="search" data-cal2-search placeholder="Buscar cliente" autocomplete="off" maxlength="100">
+        <input type="search" data-calendar-search placeholder="Buscar cliente" autocomplete="off" maxlength="100">
       </label>
-      <button type="button" class="cal2-settings-btn canvas-modal{% if calendar_filtered %} is-filtered{% endif %}" data-cal2-settings
+      <button type="button" class="calendar-settings-btn canvas-modal{% if calendar_filtered %} is-filtered{% endif %}" data-calendar-settings
         data-form-url="{{ preferences_url }}" title="Configurar el calendario" aria-haspopup="dialog"
         aria-label="{% if calendar_filtered %}Configurar el calendario (hay estados ocultos){% else %}Configurar el calendario{% endif %}">
         <span class="material-symbols-outlined icon--field" aria-hidden="true">settings</span>
@@ -56,17 +56,17 @@ Calendario
     </div>
   </header>
 
-  <p class="cal2-status" data-cal2-status aria-live="polite" hidden></p>
+  <p class="calendar-status" data-calendar-status aria-live="polite" hidden></p>
 
-  <div class="cal2-body">
-    <div class="cal2-feedback" data-cal2-feedback></div>
-    <div data-cal2-board></div>
-    <div class="cal2-loader" data-cal2-loader hidden></div>
+  <div class="calendar-body">
+    <div class="calendar-feedback" data-calendar-feedback></div>
+    <div data-calendar-board></div>
+    <div class="calendar-loader" data-calendar-loader hidden></div>
   </div>
 </section>
 {{ calendar_config|json_script:"calendar-config" }}
 {% if welcome %}
-{% include "calendar_v2/_welcome_modal.html" %}
+{% include "calendar/_welcome_modal.html" %}
 {% endif %}
 {% endblock %}
 
@@ -85,7 +85,7 @@ Calendario
 <script src="{% static 'js/custom/appointments/appointment.payment.js' %}"></script>
 <script>
   initCalendar(
-    document.getElementById("calendar_v2"),
+    document.getElementById("calendar"),
     JSON.parse(document.getElementById("calendar-config").textContent),
   );
 </script>

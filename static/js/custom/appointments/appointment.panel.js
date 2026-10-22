@@ -1,7 +1,7 @@
 (function (window, $) {
   "use strict";
 
-  const PANEL_CLASS = "cal2-detail";
+  const PANEL_CLASS = "calendar-detail";
 
   const initAppointmentPanel = (form) => {
     const modal = $(form).closest(".modal");

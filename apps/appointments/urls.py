@@ -9,18 +9,18 @@ from apps.appointments.views.agenda_modals.detail import AgendaSeeModalView
 from apps.appointments.views.agenda_modals.edit import AgendaUpdateModalView
 from apps.appointments.views.agenda_modals.payment import AgendaPaymentModalView
 from apps.appointments.views.agenda_modals.restore import AgendaRestoreModalView
-from apps.appointments.views.calendar_v2.preferences import CalendarPreferencesModalView
-from apps.appointments.views.calendar_v2.view import CalendarV2DataView, CalendarV2View
+from apps.appointments.views.calendar.preferences import CalendarPreferencesModalView
+from apps.appointments.views.calendar.view import CalendarDataView, CalendarView
 
 urlpatterns = [
     path(
         "calendario/",
-        CalendarV2View.as_view(),
+        CalendarView.as_view(),
         name="calendar",
     ),
     path(
         "calendario/datos/",
-        CalendarV2DataView.as_view(),
+        CalendarDataView.as_view(),
         name="calendar_data",
     ),
     path(

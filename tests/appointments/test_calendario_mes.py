@@ -7,7 +7,7 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.appointments.calendar_v2.query import CalendarQuery
+from apps.appointments.calendar.query import CalendarQuery
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.payments.choices import EstadoPago
@@ -22,7 +22,7 @@ AHORA = datetime(2026, 10, 21, 12, 0)
 OCTUBRE = {"vista": "mes", "desde": "2026-09-28", "hasta": "2026-11-01"}
 
 
-class CalendarioV2MesTests(NegocioTestCase):
+class CalendarioMesTests(NegocioTestCase):
     esquema = "calendario_mes"
     dominio = "calendario-mes.localhost"
 

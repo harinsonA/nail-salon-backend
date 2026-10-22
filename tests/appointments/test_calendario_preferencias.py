@@ -6,7 +6,7 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.appointments.calendar_v2.query import CalendarQuery
+from apps.appointments.calendar.query import CalendarQuery
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
@@ -24,7 +24,7 @@ AHORA = datetime(2026, 10, 21, 12, 0)
 SEMANA = {"desde": "2026-10-19", "hasta": "2026-10-25"}
 
 
-class CalendarioV2PreferenciasTests(NegocioTestCase):
+class CalendarioPreferenciasTests(NegocioTestCase):
     esquema = "calendario_preferencias"
     dominio = "calendario-preferencias.localhost"
 
@@ -94,7 +94,7 @@ class CalendarioV2PreferenciasTests(NegocioTestCase):
         respuesta = self.navegador().get(
             reverse("calendar_preferences"), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
         )
-        self.assertTemplateUsed(respuesta, "calendar_v2/preferences_modal.html")
+        self.assertTemplateUsed(respuesta, "calendar/preferences_modal.html")
         self.assertContains(respuesta, "Visibilidad")
         self.assertContains(respuesta, "Vista al ingresar")
         self.assertContains(respuesta, 'value="mes" class="form-check-input"', html=False)

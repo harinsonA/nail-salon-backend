@@ -32,10 +32,10 @@
     }
 
     dayName(date) {
-      const name = dom.el("span", "cal2-dname");
+      const name = dom.el("span", "calendar-dname");
       name.append(
-        dom.el("span", "cal2-dname__full", dates.weekdayName(date)),
-        dom.el("span", "cal2-dname__short", dates.weekdayShort(date)),
+        dom.el("span", "calendar-dname__full", dates.weekdayName(date)),
+        dom.el("span", "calendar-dname__short", dates.weekdayShort(date)),
       );
       return name;
     }
@@ -49,10 +49,10 @@
     }
 
     name(appointment, className) {
-      const wrap = dom.el("span", `${className} cal2-name`);
-      wrap.append(dom.el("span", "cal2-name__text", appointment.cliente));
+      const wrap = dom.el("span", `${className} calendar-name`);
+      wrap.append(dom.el("span", "calendar-name__text", appointment.cliente));
       if (appointment.con_saldo && this.settings.showDebt) {
-        const icon = dom.icon("info", "cal2-debt");
+        const icon = dom.icon("info", "calendar-debt");
         icon.title = "Tiene saldo pendiente";
         wrap.append(icon);
       }
@@ -65,7 +65,7 @@
     }
 
     board() {
-      return this.container.querySelector("[data-cal2-board]");
+      return this.container.querySelector("[data-calendar-board]");
     }
 
     appointmentButton(appointment, className) {
@@ -79,18 +79,18 @@
     }
 
     renderError(message, onRetry) {
-      const box = dom.el("div", "cal2-feedback cal2-feedback--error");
+      const box = dom.el("div", "calendar-feedback calendar-feedback--error");
       box.setAttribute("role", "alert");
       box.append(dom.icon("error", "icon--action"), dom.el("p", "", message));
       const retry = dom.el("button", "btn btn-sm btn-outline-secondary", "Reintentar");
       retry.type = "button";
       retry.addEventListener("click", onRetry);
       box.append(retry);
-      this.container.querySelector("[data-cal2-feedback]").replaceChildren(box);
+      this.container.querySelector("[data-calendar-feedback]").replaceChildren(box);
     }
 
     clearFeedback() {
-      this.container.querySelector("[data-cal2-feedback]").replaceChildren();
+      this.container.querySelector("[data-calendar-feedback]").replaceChildren();
     }
   }
 
@@ -114,18 +114,18 @@
 
     renderSkeleton(cursor) {
       const { days } = this.range(cursor);
-      const grid = dom.el("div", "cal2-month");
+      const grid = dom.el("div", "calendar-month");
       days.slice(0, 7).forEach((date) => {
-        const head = dom.el("div", "cal2-month__dow");
+        const head = dom.el("div", "calendar-month__dow");
         head.append(this.dayName(date));
         grid.append(head);
       });
       this.cells = new Map();
       days.forEach((date) => {
         const inMonth = date.getMonth() === cursor.getMonth();
-        const cell = dom.el("div", `cal2-month__cell${inMonth ? "" : " is-out"}${dates.sameDay(date, this.today) ? " is-today" : ""}`);
-        const number = this.dayButton("cal2-month__num", String(date.getDate()), `Ver el ${dates.longDate(date)}`, date);
-        const events = dom.el("div", "cal2-month__events");
+        const cell = dom.el("div", `calendar-month__cell${inMonth ? "" : " is-out"}${dates.sameDay(date, this.today) ? " is-today" : ""}`);
+        const number = this.dayButton("calendar-month__num", String(date.getDate()), `Ver el ${dates.longDate(date)}`, date);
+        const events = dom.el("div", "calendar-month__events");
         cell.append(number, events);
         grid.append(cell);
         this.cells.set(dates.toISO(date), { cell, events, date });
@@ -137,7 +137,7 @@
       this.clearFeedback();
       this.cells.forEach(({ cell, events, date }, key) => {
         events.replaceChildren();
-        const more = cell.querySelector(".cal2-more");
+        const more = cell.querySelector(".calendar-more");
         if (more) {
           more.remove();
         }
@@ -148,18 +148,18 @@
         day.citas.forEach((appointment) => events.append(this.chip(appointment)));
         if (day.mas) {
           const label = `Ver las ${day.total} citas del ${dates.longDate(date)}`;
-          cell.append(this.dayButton("cal2-more", `+${day.mas} más`, label, date));
+          cell.append(this.dayButton("calendar-more", `+${day.mas} más`, label, date));
         }
       });
     }
 
     chip(appointment) {
       const status = this.visualStatus(appointment);
-      const chip = this.appointmentButton(appointment, `cal2-chip is-${status}`);
+      const chip = this.appointmentButton(appointment, `calendar-chip is-${status}`);
       chip.append(
-        dom.el("span", `cal2-dot cal2-dot--${status}`),
-        dom.el("span", "cal2-chip__time", appointment.hora),
-        this.name(appointment, "cal2-chip__label"),
+        dom.el("span", `calendar-dot calendar-dot--${status}`),
+        dom.el("span", "calendar-chip__time", appointment.hora),
+        this.name(appointment, "calendar-chip__label"),
       );
       return chip;
     }
@@ -180,7 +180,7 @@
     }
 
     hourHeight() {
-      const value = parseFloat(window.getComputedStyle(this.container).getPropertyValue("--cal2-hour"));
+      const value = parseFloat(window.getComputedStyle(this.container).getPropertyValue("--calendar-hour"));
       return value || 76;
     }
 
@@ -193,24 +193,24 @@
 
     timeGrid(days, { header, day }) {
       const hour = this.hourHeight();
-      const scroll = dom.el("div", "cal2-scroll");
-      const grid = dom.el("div", "cal2-grid");
-      grid.style.setProperty("--cal2-cols", days.length);
-      grid.style.setProperty("--cal2-hours", this.hours.hasta - this.hours.desde);
+      const scroll = dom.el("div", "calendar-scroll");
+      const grid = dom.el("div", "calendar-grid");
+      grid.style.setProperty("--calendar-cols", days.length);
+      grid.style.setProperty("--calendar-hours", this.hours.hasta - this.hours.desde);
       if (day) {
-        grid.style.setProperty("--cal2-col-min", "240px");
+        grid.style.setProperty("--calendar-col-min", "240px");
       }
       if (header) {
-        grid.append(dom.el("div", "cal2-grid__corner"));
+        grid.append(dom.el("div", "calendar-grid__corner"));
         days.forEach((date) => {
-          const head = dom.el("div", `cal2-grid__head${dates.sameDay(date, this.today) ? " is-today" : ""}`);
-          head.append(this.dayName(date), dom.el("span", "cal2-grid__head-num", String(date.getDate())));
+          const head = dom.el("div", `calendar-grid__head${dates.sameDay(date, this.today) ? " is-today" : ""}`);
+          head.append(this.dayName(date), dom.el("span", "calendar-grid__head-num", String(date.getDate())));
           grid.append(head);
         });
       }
-      const gutter = dom.el("div", "cal2-gutter");
+      const gutter = dom.el("div", "calendar-gutter");
       for (let h = this.hours.desde + 1; h < this.hours.hasta; h += 1) {
-        const label = dom.el("span", "cal2-gutter__label", `${String(h).padStart(2, "0")}:00`);
+        const label = dom.el("span", "calendar-gutter__label", `${String(h).padStart(2, "0")}:00`);
         label.style.top = `${(h - this.hours.desde) * hour}px`;
         gutter.append(label);
       }
@@ -218,7 +218,7 @@
       this.columns = new Map();
       days.forEach((date) => {
         const isToday = dates.sameDay(date, this.today);
-        const column = dom.el("div", `cal2-col${day ? " cal2-col--day" : ""}${isToday ? " is-today" : ""}`);
+        const column = dom.el("div", `calendar-col${day ? " calendar-col--day" : ""}${isToday ? " is-today" : ""}`);
         if (isToday) {
           column.append(this.nowLine(hour));
         }
@@ -238,7 +238,7 @@
     }
 
     nowLine(hour) {
-      const line = dom.el("div", "cal2-now");
+      const line = dom.el("div", "calendar-now");
       line.setAttribute("aria-hidden", "true");
       const now = new Date();
       const minutes = now.getHours() * 60 + now.getMinutes();
@@ -250,7 +250,7 @@
       this.clearFeedback();
       const hour = this.hourHeight();
       this.columns.forEach((column, key) => {
-        column.querySelectorAll(".cal2-event").forEach((block) => block.remove());
+        column.querySelectorAll(".calendar-event").forEach((block) => block.remove());
         const day = (data.dias || {})[key];
         if (!day) {
           return;
@@ -264,23 +264,23 @@
     block(block, hour) {
       const single = block.citas.length === 1;
       const element = single
-        ? this.appointmentButton(block.citas[0], `cal2-event cal2-event--${block.estado}`)
-        : dom.el("div", `cal2-event cal2-event--${block.estado} cal2-event--group`);
+        ? this.appointmentButton(block.citas[0], `calendar-event calendar-event--${block.estado}`)
+        : dom.el("div", `calendar-event calendar-event--${block.estado} calendar-event--group`);
       element.style.top = `${(block.hora - this.hours.desde) * hour + 1}px`;
       element.style.height = `${hour - 3}px`;
       if (single) {
         const [appointment] = block.citas;
-        element.append(dom.el("span", "cal2-event__time", appointment.hora), this.name(appointment, "cal2-event__client"));
+        element.append(dom.el("span", "calendar-event__time", appointment.hora), this.name(appointment, "calendar-event__client"));
         return element;
       }
       element.setAttribute("role", "group");
       element.setAttribute("aria-label", `${block.citas.length} citas a las ${String(block.hora).padStart(2, "0")}:00`);
       block.citas.forEach((appointment) => {
         const status = this.visualStatus(appointment);
-        const entry = this.appointmentButton(appointment, `cal2-entry is-${status}`);
-        const text = dom.el("span", "cal2-entry__text");
-        text.append(dom.el("span", "cal2-entry__time", appointment.hora), this.name(appointment, "cal2-entry__client"));
-        entry.append(dom.el("span", `cal2-dot cal2-dot--${status}`), text);
+        const entry = this.appointmentButton(appointment, `calendar-entry is-${status}`);
+        const text = dom.el("span", "calendar-entry__text");
+        text.append(dom.el("span", "calendar-entry__time", appointment.hora), this.name(appointment, "calendar-entry__client"));
+        entry.append(dom.el("span", `calendar-dot calendar-dot--${status}`), text);
         element.append(entry);
       });
       return element;
@@ -299,21 +299,21 @@
     renderSkeleton(cursor) {
       const { days } = this.range(cursor);
       this.cursor = cursor;
-      const strip = dom.el("div", "cal2-days");
+      const strip = dom.el("div", "calendar-days");
       strip.setAttribute("role", "group");
       strip.setAttribute("aria-label", "Días de la semana");
       this.stripButtons = new Map();
       days.forEach((date) => {
-        const button = dom.el("button", `cal2-days__btn${dates.sameDay(date, this.today) ? " is-today" : ""}`);
+        const button = dom.el("button", `calendar-days__btn${dates.sameDay(date, this.today) ? " is-today" : ""}`);
         button.type = "button";
         button.setAttribute("aria-pressed", String(dates.sameDay(date, cursor)));
         button.setAttribute("aria-label", dates.longDate(date));
-        button.append(this.dayName(date), dom.el("span", "cal2-days__num", String(date.getDate())));
+        button.append(this.dayName(date), dom.el("span", "calendar-days__num", String(date.getDate())));
         button.addEventListener("click", () => this.onDay(date));
         strip.append(button);
         this.stripButtons.set(dates.toISO(date), { button, date });
       });
-      this.summary = dom.el("div", "cal2-summary");
+      this.summary = dom.el("div", "calendar-summary");
       this.summary.hidden = true;
       const scroll = this.timeGrid([cursor], { header: false, day: true });
       this.board().replaceChildren(strip, this.summary, scroll);
@@ -333,7 +333,7 @@
     renderSummary(day) {
       const total = day ? day.total : 0;
       const counts = day ? day.resumen : {};
-      const totalItem = dom.el("span", "cal2-summary__item");
+      const totalItem = dom.el("span", "calendar-summary__item");
       totalItem.append(
         dom.icon("event", "icon--small"),
         dom.el("strong", "", String(total)),
@@ -341,9 +341,9 @@
       );
       const items = SUMMARY.map(([status, one, many]) => {
         const count = counts[status] || 0;
-        const item = dom.el("span", "cal2-summary__item");
+        const item = dom.el("span", "calendar-summary__item");
         item.append(
-          dom.el("span", `cal2-dot cal2-dot--${status}`),
+          dom.el("span", `calendar-dot calendar-dot--${status}`),
           dom.el("strong", "", String(count)),
           dom.el("span", "", plural(count, one, many)),
         );

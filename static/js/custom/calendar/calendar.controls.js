@@ -38,13 +38,13 @@
     constructor({ buttons, onChange }) {
       this.buttons = buttons;
       buttons.forEach((button) => {
-        button.addEventListener("click", () => onChange(button.dataset.cal2View));
+        button.addEventListener("click", () => onChange(button.dataset.calendarView));
       });
     }
 
     setActive(view) {
       this.buttons.forEach((button) => {
-        button.setAttribute("aria-pressed", String(button.dataset.cal2View === view));
+        button.setAttribute("aria-pressed", String(button.dataset.calendarView === view));
       });
     }
 
