@@ -60,12 +60,18 @@ Lista de servicios
       </div>
     </div>
   </section>
-  <section class="mt-3 d-inline-block">
+  <section class="mt-3 d-flex flex-wrap gap-3">
     <div>
       <label class="form-check-label form-label--custom" for="{{ filter_form.status.id_for_label }}">
         {{ filter_form.status.label }}
       </label>
       {{ filter_form.status }}
+    </div>
+    <div class="filter-field--search">
+      <label class="form-check-label form-label--custom" for="{{ filter_form.category.id_for_label }}">
+        {{ filter_form.category.label }}
+      </label>
+      {{ filter_form.category }}
     </div>
   </section>
   <section class="table-container--custom">
@@ -102,6 +108,7 @@ Lista de servicios
 
     const filterData = {
       status: $('#{{ filter_form.status.id_for_label }}').val(),
+      category: $('#{{ filter_form.category.id_for_label }}').val(),
     };
     const dataTableConfig = {
       tableID: '#service_table',
@@ -130,7 +137,7 @@ Lista de servicios
         initComplete: function () {
           const api = this.api();
           bindExportButton({
-            fields: ['#{{ filter_form.status.id_for_label }}'],
+            fields: ['#{{ filter_form.status.id_for_label }}', '#{{ filter_form.category.id_for_label }}'],
             getSearchValue: () => api.search(),
           });
         },
@@ -138,10 +145,12 @@ Lista de servicios
     };
 
     const table = renderDataTable(dataTableConfig);
-    $('#{{ filter_form.status.id_for_label }}').on('change', ({ target }) => {
-      filterData.status = target.value;
-      table.draw()
+    {% for field in filter_form %}
+    $('#{{ field.id_for_label }}').on('change', ({ target }) => {
+      filterData['{{ field.name }}'] = target.value;
+      table.draw();
     });
+    {% endfor %}
 
     initializeBSModals('#service-create-btn');
     $('#modal').on('show.bs.modal', ({ target }) => {

@@ -12,7 +12,11 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import DurationInMinutesField
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
+from apps.common.form_classes import (
+    FORM_CONTROL_CLASS,
+    FORM_SELECT2_CLASS,
+    FORM_SELECT_CLASS,
+)
 from apps.common.form_fields import AlphabeticField, NoteField
 from apps.common.utils.currency import format_currency
 from apps.common.utils.utils import get_errors_to_response
@@ -20,6 +24,15 @@ from apps.common.views.base_views import ProtectedView
 
 from ..models.categoria import Categoria
 from ..models.servicio import Servicio
+
+"""========================================================================="""
+# region ........ Constants
+
+CATEGORY_ALL = "all"
+CATEGORY_UNDEFINED = "undefined"
+
+# endregion
+"""========================================================================="""
 
 """========================================================================="""
 # region ........ Form
@@ -38,18 +51,33 @@ class ServicesFilterForm(BSModalForm):
         required=False,
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
+    category = forms.ChoiceField(
+        label="Categoria",
+        initial=CATEGORY_ALL,
+        required=False,
+        widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        categories = Categoria.objects.values_list("pk", "nombre")
+        self.fields["category"].choices = [
+            (CATEGORY_ALL, "Todas"),
+            (CATEGORY_UNDEFINED, "Sin definir"),
+            *((str(pk), nombre) for pk, nombre in categories),
+        ]
 
     def clean(self):
         cleaned_data = super().clean()
-        is_data_valid = all(cleaned_data.values())
-        if not is_data_valid:
-            return {}
-
         data_to_filter = {}
-        status = cleaned_data.get("status", "activo")
-        if status == self.StatusChoices.ALL:
-            return data_to_filter
-        data_to_filter["estado"] = status
+        status = cleaned_data.get("status")
+        if status and status != self.StatusChoices.ALL:
+            data_to_filter["estado"] = status
+        category = cleaned_data.get("category")
+        if category == CATEGORY_UNDEFINED:
+            data_to_filter["categoria__isnull"] = True
+        elif category and category != CATEGORY_ALL:
+            data_to_filter["categoria_id"] = category
         return data_to_filter
 
 
