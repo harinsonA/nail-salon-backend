@@ -15,14 +15,13 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from apps.appointments.models.agenda import Cita
 from apps.appointments.models.detalle_cita import DetalleCita
 from apps.clients.models import Cliente
-from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT2_CLASS,
 )
 from apps.common.form_fields import NoteField
-from apps.common.utils.dates import DAY_OF_WEEK_TO_NAME
+from apps.common.utils.dates import format_long_date
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
@@ -52,12 +51,6 @@ DISCOUNT_INVALID = "El descuento de «{name}» no puede ser negativo ni superar 
 
 """========================================================================="""
 # region ........ Helpers
-
-
-def long_date(value):
-    weekday = DAY_OF_WEEK_TO_NAME[value.weekday()].lower()
-    month = MONTH_NUMBER_TO_NAME[value.month].lower()
-    return f"{weekday} {value.day} {month} {value.year}"
 
 
 def is_collaborator(user):
@@ -255,7 +248,7 @@ class AgendaCreateView(ProtectedView, FormView):
     def form_valid(self, form):
         appointment = self.create_appointment(form.cleaned_data)
         client = f"{appointment.cliente.nombre} {appointment.cliente.apellido or ''}".strip()
-        when = f"{long_date(appointment.fecha_agenda)}, {appointment.hora_agenda.strftime(TIME_FORMAT)}"
+        when = f"{format_long_date(appointment.fecha_agenda).lower()}, {appointment.hora_agenda.strftime(TIME_FORMAT)}"
         return JsonResponse(
             {"message": f"Cita agendada: {client}, {when}.", "fecha": appointment.fecha_agenda.isoformat()}
         )

@@ -14,6 +14,10 @@
     --sidebar-transition: transform 0.3s ease-out;
 }
 
+.modal.modal-sidebar {
+    --bs-modal-inner-border-radius: 0;
+}
+
 .modal-sidebar .modal-dialog {
     position: fixed;
     top: 0;

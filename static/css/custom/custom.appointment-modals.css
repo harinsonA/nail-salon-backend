@@ -326,3 +326,193 @@ form.cal2-new {
 .cal2-new .invalid-feedback:not(:empty) {
   display: block;
 }
+
+form.cal2-detail-form {
+  display: contents;
+}
+
+.cal2-detail {
+  --sidebar-width: 520px;
+}
+
+.cal2-detail .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--cream-50);
+}
+
+.cal2-detail__head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cal2-detail__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: .8rem;
+  color: var(--cocoa-700);
+}
+
+.cal2-detail__when strong {
+  font-size: .85rem;
+}
+
+.cal2-detail .modal-header {
+  align-items: flex-start;
+}
+
+.cal2-detail .modal-header.text-white .cal2-detail__when {
+  color: inherit;
+}
+
+.cal2-detail__icon {
+  color: var(--sand-700);
+}
+
+.cal2-detail__person {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cal2-detail__person small {
+  flex-basis: 100%;
+  text-align: right;
+  font-size: .7rem;
+  color: var(--text-muted);
+}
+
+.cal2-detail__services {
+  width: 100%;
+  margin-bottom: 8px;
+  border-collapse: collapse;
+  font-size: .78rem;
+}
+
+.cal2-detail__services th {
+  padding: 0 0 6px;
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.cal2-detail__services td {
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--border-soft);
+  color: var(--text-strong);
+}
+
+.cal2-detail__services th:not(:first-child),
+.cal2-detail__services td:not(:first-child) {
+  padding-left: 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cal2-detail__footer {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+.cal2-detail__footer > * {
+  margin: 0;
+}
+
+.cal2-detail__footer strong {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.cal2-detail__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.cal2-detail__badge.is-paid {
+  background: var(--cal2-completada-bg);
+  color: var(--cal2-completada-text);
+}
+
+.cal2-detail__badge.is-debt {
+  background: var(--cal2-pendiente-bg);
+  color: var(--cal2-pendiente-text);
+}
+
+.cal2-new__facts .is-debt dt,
+.cal2-new__facts .is-debt dd {
+  font-weight: 700;
+  color: var(--color-danger-text);
+}
+
+.cal2-detail__services td.is-discount {
+  color: var(--color-danger-text);
+}
+
+.cal2-detail__payments {
+  margin-bottom: 0;
+}
+
+.cal2-detail__notes {
+  margin: 0;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+.cal2-detail__sub {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+.cal2-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 600;
+  background: var(--ev-bg);
+  color: var(--ev-text);
+}
+
+.cal2-detail .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cal2-detail .modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cal2-detail .modal-body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--cal2-scroll-thumb);
+}
+
+.cal2-detail .modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--cal2-scroll-thumb-hover);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .cal2-detail .modal-body {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cal2-scroll-thumb) transparent;
+  }
+}

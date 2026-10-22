@@ -14,6 +14,7 @@ from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.appointments.models import Cita, DetalleCita
+from apps.appointments.panel import AppointmentPanel
 from apps.appointments.views.handler import HandlerAgendaList
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import (
@@ -26,13 +27,14 @@ from apps.common.form_classes import (
     FORM_SELECT2_CLASS,
     FORM_SELECT_CLASS,
 )
-from apps.common.utils.currency import format_currency
-from apps.common.utils.dates import format_full_date
+from apps.common.utils.dates import format_full_date, format_plain_date
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
+from apps.profiles.models import Perfil
+from apps.profiles.permisos import rol_de
 from apps.services.models import Categoria, Servicio
 
 """========================================================================="""
@@ -247,6 +249,29 @@ class AgendaConfirmationForm(BSModalModelForm):
                 "El monto abonado no puede ser mayor o igual al total de la cita."
             )
         return down_payment
+
+
+# endregion
+"""========================================================================="""
+"""========================================================================="""
+# region ........ Mixins
+
+
+class AppointmentAccessMixin:
+    def get_queryset(self):
+        queryset = Cita.objects.select_related("cliente", "creado_por", "asignado_a")
+        if rol_de(self.request.user) == Perfil.Rol.COLABORADOR:
+            queryset = queryset.filter(asignado_a=self.request.user)
+        return queryset
+
+
+class AppointmentPanelMixin:
+    template_name = "appointments/agenda_panel.html"
+    panel_mode = "detail"
+
+    def get_context_data(self, **kwargs):
+        panel = AppointmentPanel(self.object, self.request.user, self.panel_mode)
+        return {**super().get_context_data(**kwargs), **panel.context(), "modal_url": self.request.path}
 
 
 # endregion
@@ -529,87 +554,8 @@ class AgendaUpdateModalView(ProtectedView, BSModalUpdateView):
         )
 
 
-class AgendaSeeModalView(ProtectedView, BSModalReadView):
-    template_name = "appointments/agenda_see_modal.html"
+class AgendaSeeModalView(AppointmentAccessMixin, AppointmentPanelMixin, ProtectedView, BSModalReadView):
     model = Cita
-
-    @staticmethod
-    def get_categories_name(service_ids: list) -> dict:
-        categories = (
-            Servicio.objects.select_related(
-                "categoria",
-            )
-            .filter(
-                id__in=service_ids,
-            )
-            .values_list("pk", "categoria__nombre")
-        )
-        return {category_id: category_name for category_id, category_name in categories}
-
-    def get_services_data(self, object_base):
-        appointment_details = object_base.detalles.all().values_list(
-            "pk",
-            "nombre_servicio",
-            "cantidad_servicios",
-            "precio_servicio",
-            "precio_acordado",
-            "descuento",
-            "servicio_id",
-        )
-        services_data = []
-        total_amount = 0
-        total_discount = 0
-        total_to_pay = 0
-        service_ids = [detail[-1] for detail in appointment_details]
-        categories_name = self.get_categories_name(service_ids=service_ids)
-        for detail in appointment_details:
-            (
-                detail_id,
-                service_name,
-                quantity_services,
-                service_price,
-                price_acorded,
-                discount,
-                service_id,
-            ) = detail
-            total = service_price * quantity_services
-            total_amount += total
-            total_discount += discount
-            total_to_pay += price_acorded
-            services_data.append(
-                {
-                    "detail_id": detail_id,
-                    "name": service_name,
-                    "category_name": categories_name.get(service_id) or "Sin definir",
-                    "quantity": quantity_services,
-                    "price": format_currency(service_price),
-                    "total": format_currency(total),
-                    "discount": format_currency(discount),
-                    "price_acorded": format_currency(price_acorded),
-                }
-            )
-        return (
-            services_data,
-            format_currency(total_amount),
-            format_currency(total_discount),
-            format_currency(total_to_pay),
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        object_base = context["object"]
-        (services_data, total_amount, total_discount, total_to_pay) = (
-            self.get_services_data(object_base)
-        )
-        context.update(
-            {
-                "services": services_data,
-                "total_amount": total_amount,
-                "total_discount": total_discount,
-                "total_to_pay": total_to_pay,
-            }
-        )
-        return context
 
 
 class AgendaBaseModalView(ProtectedView):
@@ -623,10 +569,7 @@ class AgendaBaseModalView(ProtectedView):
 
     @staticmethod
     def _get_date_formatted(object_base) -> str:
-        day = object_base.fecha_agenda.day
-        month = MONTH_NUMBER_TO_NAME[object_base.fecha_agenda.month]
-        year = object_base.fecha_agenda.year
-        return f"{day} de {month} del {year}"
+        return format_plain_date(object_base.fecha_agenda)
 
     @staticmethod
     def _get_time_formatted(object_base) -> str:
@@ -677,9 +620,9 @@ class AgendaBaseModalView(ProtectedView):
         return context
 
 
-class AgendaCancelModalView(AgendaBaseModalView, BSModalReadView):
-    template_name = "appointments/agenda_cancel_modal.html"
+class AgendaCancelModalView(AppointmentAccessMixin, AppointmentPanelMixin, AgendaBaseModalView, BSModalReadView):
     model = Cita
+    panel_mode = "cancel"
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -704,9 +647,9 @@ class AgendaCancelModalView(AgendaBaseModalView, BSModalReadView):
         )
 
 
-class AgendaRestoreModalView(AgendaBaseModalView, BSModalReadView):
-    template_name = "appointments/agenda_restore_modal.html"
+class AgendaRestoreModalView(AppointmentAccessMixin, AppointmentPanelMixin, AgendaBaseModalView, BSModalReadView):
     model = Cita
+    panel_mode = "restore"
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()

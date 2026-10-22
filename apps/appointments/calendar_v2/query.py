@@ -3,6 +3,7 @@ from django.db.models.functions import Concat
 from django.utils import timezone
 
 from apps.appointments.models import Cita
+from apps.appointments.panel import is_unclosed
 from apps.common.utils.search import contains_ignoring_accents
 from apps.payments.choices import EstadoPago
 from apps.profiles.models import Perfil
@@ -33,8 +34,6 @@ class CalendarQuery:
 
     def appointments(self):
         now = self.now()
-        today = now.date()
-        current_time = now.time()
         rows = self.queryset().values(
             "pk",
             "fecha_agenda",
@@ -47,7 +46,6 @@ class CalendarQuery:
         )
         result = []
         for row in rows:
-            is_pending = row["estado"] == Cita.EstadoChoices.PENDIENTE
             result.append(
                 {
                     "id": row["pk"],
@@ -55,11 +53,7 @@ class CalendarQuery:
                     "hora": row["hora_agenda"],
                     "estado": row["estado"],
                     "cliente": f"{row['cliente__nombre']} {row['cliente__apellido']}".strip(),
-                    "sin_cerrar": is_pending
-                    and (
-                        row["fecha_agenda"] < today
-                        or (row["fecha_agenda"] == today and row["hora_agenda"] < current_time)
-                    ),
+                    "sin_cerrar": is_unclosed(row["estado"], row["fecha_agenda"], row["hora_agenda"], now),
                     "con_saldo": row["estado"] == Cita.EstadoChoices.COMPLETADA
                     and row["pago__estado_pago"] == EstadoPago.PENDIENTE
                     and not row["pago__is_removed"],
