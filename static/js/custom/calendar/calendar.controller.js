@@ -31,12 +31,16 @@
       const find = (name) => root.querySelector(`[data-cal2-${name}]`);
       this.status = find("status");
       this.newButton = find("new");
-      this.newButton.addEventListener("click", () => openBSModal(this.newButton.dataset.formUrl, { modalID: "#xl_modal" }));
-      document.addEventListener(window.APPOINTMENT_CHANGED_EVENT, () => this.refresh());
-      document.addEventListener(window.APPOINTMENT_CREATED_EVENT, ({ detail }) => {
+      const showDate = ({ detail }) => {
         this.api.clear();
-        this.go(dates.parse(detail.fecha));
-      });
+        if (detail && detail.fecha) {
+          this.go(dates.parse(detail.fecha));
+        } else {
+          this.load();
+        }
+      };
+      document.addEventListener(window.APPOINTMENT_CHANGED_EVENT, showDate);
+      document.addEventListener(window.APPOINTMENT_CREATED_EVENT, showDate);
       this.loader = find("loader");
       if (typeof processingLoaderTemplate === "function") {
         this.loader.innerHTML = processingLoaderTemplate("Cargando citas…");
@@ -119,9 +123,15 @@
       url.searchParams.set("vista", this.view);
       url.searchParams.set("fecha", dates.toISO(cursor));
       window.history.replaceState(null, "", url);
-      this.newButton.dataset.formUrl = this.config.newAppointmentUrl.replace(this.config.datePlaceholder, dates.toISO(cursor));
+      this.setNewAppointmentUrl(this.config.newAppointmentUrl.replace(this.config.datePlaceholder, dates.toISO(cursor)));
       this.renderer.renderSkeleton(cursor);
       this.load();
+    }
+
+    setNewAppointmentUrl(url) {
+      this.newButton.dataset.formUrl = url;
+      window.jQuery(this.newButton).off("click");
+      initializeBSXLModals(this.newButton, { formURL: url });
     }
 
     load() {

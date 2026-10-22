@@ -114,22 +114,6 @@ const initializeAllCanvasBSModals = (
   });
 };
 
-const openBSModal = (url, { modalID = "#modal" } = {}) => {
-  $(modalID)
-    .find(".modal-content")
-    .load(url, (response, status, xhr) => {
-      if (status === "error") {
-        if (xhr.status === 401 && typeof redirectToLogin === "function") {
-          redirectToLogin(xhr.responseJSON?.redirect);
-          return;
-        }
-        notifyAlert({ message: "No se pudo abrir el formulario." }, xhr.status || 500);
-        return;
-      }
-      $(modalID).modal("show");
-    });
-};
-
 const showErrorsInBSModal = (form, errors) => {
   errors.forEach(({ id_element, error }) => {
     const element = form.querySelector(`#${id_element}`);

@@ -134,7 +134,6 @@
           finish(status);
         });
       });
-      $("#canvasModal").on("hidden.bs.modal", onChange);
     }
   }
 

@@ -4,7 +4,7 @@
   <div class="modal-header bg-primary bg-gradient">
     <h5 class="modal-title d-inline-flex align-items-center">
       <img src="{% static 'images/common/calendar_month.svg' %}" alt="" width="24" height="24" class="icon--title me-2">
-      <span>Nueva cita</span>
+      <span>{{ form_title }}</span>
     </h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
@@ -127,7 +127,7 @@
   </div>
   <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-    <button type="button" class="btn btn-sm btn-primary bg-gradient" data-save disabled>Agendar cita</button>
+    <button type="button" class="btn btn-sm btn-primary bg-gradient" data-save disabled>{{ save_label }}</button>
   </div>
 </form>
 {{ appointment_form_config|json_script:"appointment-form-config" }}

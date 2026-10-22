@@ -1,7 +1,6 @@
 (function (window, $) {
   "use strict";
 
-  const CHANGED_EVENT = "appointment:changed";
   const PANEL_CLASS = "cal2-detail";
 
   const initAppointmentPanel = (form) => {
@@ -27,13 +26,12 @@
       notifyAlert(response, status);
       if (status === 200) {
         modal.modal("hide");
-        document.dispatchEvent(new CustomEvent(CHANGED_EVENT));
+        document.dispatchEvent(new CustomEvent(window.APPOINTMENT_CHANGED_EVENT));
         return;
       }
       confirm.disabled = false;
     });
   };
 
-  window.APPOINTMENT_CHANGED_EVENT = CHANGED_EVENT;
   window.initAppointmentPanel = initAppointmentPanel;
 })(window, jQuery);
