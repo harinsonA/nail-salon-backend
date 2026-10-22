@@ -7,7 +7,11 @@ from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
 from apps.appointments.calendar_v2.builders import BUILDERS
-from apps.appointments.calendar_v2.filters import VIEW_CHOICES, VIEW_WEEK, CalendarFilterForm
+from apps.appointments.calendar_v2.filters import (
+    VIEW_CHOICES,
+    VIEW_WEEK,
+    CalendarFilterForm,
+)
 from apps.appointments.calendar_v2.query import CalendarQuery
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
 from apps.settings.preferences import CALENDAR_V2
@@ -38,7 +42,9 @@ class CalendarV2View(ProtectedView, TemplateView):
 
     def get_context_data(self, **kwargs):
         today = timezone.localdate()
-        new_appointment_url = reverse("create_appointment_from_calendar", args=[today.isoformat()])
+        new_appointment_url = reverse(
+            "create_appointment_from_calendar", args=[today.isoformat()]
+        )
         return {
             **super().get_context_data(**kwargs),
             "new_appointment_url": new_appointment_url,
@@ -49,7 +55,9 @@ class CalendarV2View(ProtectedView, TemplateView):
                 "view": VIEW_WEEK,
                 "views": [{"key": key, "label": label} for key, label in VIEW_CHOICES],
                 "hours": GRID_HOURS,
-                "newAppointmentUrl": reverse("create_appointment_from_calendar", args=[DATE_PLACEHOLDER]),
+                "newAppointmentUrl": reverse(
+                    "create_appointment_from_calendar", args=[DATE_PLACEHOLDER]
+                ),
                 "datePlaceholder": DATE_PLACEHOLDER,
             },
         }
@@ -58,13 +66,22 @@ class CalendarV2View(ProtectedView, TemplateView):
 class CalendarV2DataView(ProtectedAjaxView, View):
     def get(self, request, *args, **kwargs):
         if not CALENDAR_V2.is_enabled():
-            return JsonResponse({"message": NOT_ENABLED_MESSAGE}, status=HTTP_404_NOT_FOUND)
+            return JsonResponse(
+                {"message": NOT_ENABLED_MESSAGE}, status=HTTP_404_NOT_FOUND
+            )
         form = CalendarFilterForm(request.GET)
         if not form.is_valid():
-            errors = [error for field_errors in form.errors.values() for error in field_errors]
-            return JsonResponse({"message": errors[0], "errors": form.errors}, status=HTTP_400_BAD_REQUEST)
+            errors = [
+                error for field_errors in form.errors.values() for error in field_errors
+            ]
+            return JsonResponse(
+                {"message": errors[0], "errors": form.errors},
+                status=HTTP_400_BAD_REQUEST,
+            )
         data = form.cleaned_data
-        query = CalendarQuery(request.user, data["desde"], data["hasta"], data["buscar"])
+        query = CalendarQuery(
+            request.user, data["desde"], data["hasta"], data["buscar"]
+        )
         builder = BUILDERS[data["vista"]](query.appointments())
         return JsonResponse(builder.build())
 
