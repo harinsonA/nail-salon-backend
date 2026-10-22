@@ -179,6 +179,7 @@ class ClientWhatsappForm(forms.Form):
             attrs={
                 "class": FORM_CONTROL_TEXTAREA_CLASS,
                 "rows": 4,
+                "placeholder": "Escribe el mensaje para la clienta",
             }
         ),
     )

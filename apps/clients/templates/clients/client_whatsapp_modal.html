@@ -1,39 +1,42 @@
 {% load static %}
-<div id="client-whatsapp-modal">
+<div id="client-whatsapp-modal" class="cal2-new">
   <div class="modal-header bg-primary bg-gradient">
     <h5 class="modal-title d-inline-flex align-items-center">
       <img src="{% static 'images/common/whatsapp.svg' %}" alt="" width="24" height="24" class="icon--title me-2">
-      <span class="pb-1">
-        Enviar WhatsApp
-      </span>
+      <span>Enviar WhatsApp: {{ client_full_name }}</span>
     </h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
   <div class="modal-body">
-    <div class="delete-information-container">
-      <p class="m-0 py-1 border-bottom d-flex justify-content-between fs-6">
-        <b>Cliente</b>
-        <span>{{ client_full_name }}</span>
-      </p>
-      <p class="m-0 py-1 d-flex justify-content-between fs-6">
-        <b>Teléfono</b>
-        <span>{{ client_phone }}</span>
-      </p>
-    </div>
-    <div class="mb-2">
-      <label for="{{ form.message.id_for_label }}" class="form-label form-label--custom">
-        {{ form.message.label }}
-      </label>
-      {{ form.message }}
+    <div class="cal2-new__main">
+      <section class="cal2-new__card" aria-labelledby="whatsapp-to">
+        <h6 class="cal2-new__card-title" id="whatsapp-to">
+          <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">person</span>
+          <span>Para</span>
+        </h6>
+        <dl class="cal2-new__facts">
+          <div><dt>Cliente</dt><dd>{{ client_full_name }}</dd></div>
+          <div><dt>Teléfono</dt><dd>{{ client_phone }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="cal2-new__card" aria-labelledby="whatsapp-message">
+        <h6 class="cal2-new__card-title" id="whatsapp-message">
+          <span class="material-symbols-outlined icon--inline cal2-detail__icon" aria-hidden="true">chat</span>
+          <span>{{ form.message.label }}</span>
+        </h6>
+        <label for="{{ form.message.id_for_label }}" class="visually-hidden">Mensaje para {{ client_full_name }}</label>
+        {{ form.message }}
+        <p class="cal2-config__hint mt-2 mb-0">Se abrirá WhatsApp con este mensaje; ahí puedes revisarlo antes de enviarlo.</p>
+      </section>
     </div>
   </div>
   <div class="modal-footer modal-footer-soft">
-    <button type="button" class="btn btn-sm btn-danger bg-gradient me-2" data-bs-dismiss="modal">
-      Cancelar
-    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
     <a id="client_whatsapp_btn" href="{{ whatsapp_url }}" data-web-url="{{ whatsapp_web_url }}"
       data-app-url="{{ whatsapp_app_url }}" target="_blank" rel="noopener noreferrer" role="button"
-      class="btn btn-sm btn-primary bg-gradient d-inline-flex align-items-center gap-2">
+      class="btn btn-sm btn-success bg-gradient d-inline-flex align-items-center gap-1">
+      <span class="material-symbols-outlined icon--small" aria-hidden="true">open_in_new</span>
       Abrir WhatsApp
     </a>
   </div>
