@@ -59,6 +59,7 @@ class CalendarioTests(NegocioTestCase):
         self.assertContains(respuesta, "Agenda tu primera cita")
         self.assertContains(respuesta, "images/modals/welcome-calendar.svg")
         self.assertContains(respuesta, "images/icons/icono-1.png")
+        self.assertContains(respuesta, '$(() => $("#calendar-welcome").modal("show"));')
 
     def test_la_colaboradora_no_recibe_el_enlace_a_servicios(self):
         respuesta = self.navegador.get(reverse("calendar"))
