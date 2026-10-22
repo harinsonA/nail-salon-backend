@@ -48,6 +48,11 @@ Calendario
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">search</span>
         <input type="search" data-cal2-search placeholder="Buscar cliente" autocomplete="off" maxlength="100">
       </label>
+      <button type="button" class="cal2-settings-btn canvas-modal{% if calendar_filtered %} is-filtered{% endif %}" data-cal2-settings
+        data-form-url="{{ preferences_url }}" title="Configurar el calendario" aria-haspopup="dialog"
+        aria-label="{% if calendar_filtered %}Configurar el calendario (hay estados ocultos){% else %}Configurar el calendario{% endif %}">
+        <span class="material-symbols-outlined icon--field" aria-hidden="true">settings</span>
+      </button>
     </div>
   </header>
 
@@ -68,6 +73,7 @@ Calendario
 <script src="{% static 'js/custom/calendar/calendar.controls.js' %}"></script>
 <script src="{% static 'js/custom/calendar/calendar.renderers.js' %}"></script>
 <script src="{% static 'js/custom/calendar/calendar.menu.js' %}"></script>
+<script src="{% static 'js/custom/calendar/calendar.preferences.js' %}"></script>
 <script src="{% static 'js/custom/calendar/calendar.controller.js' %}"></script>
 <script src="{% static 'js/custom/appointments/appointment.form.js' %}"></script>
 <script src="{% static 'js/custom/appointments/appointment.panel.js' %}"></script>

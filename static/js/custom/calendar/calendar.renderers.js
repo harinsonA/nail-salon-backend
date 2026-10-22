@@ -14,10 +14,11 @@
   const plural = (count, one, many) => (count === 1 ? one : many);
 
   class CalendarRenderer {
-    constructor({ container, today, hours, onDay, onAppointment }) {
+    constructor({ container, today, hours, settings, onDay, onAppointment }) {
       this.container = container;
       this.hours = hours;
       this.today = today;
+      this.settings = settings;
       this.onDay = onDay;
       this.onAppointment = onAppointment;
     }
@@ -50,7 +51,7 @@
     name(appointment, className) {
       const wrap = dom.el("span", `${className} cal2-name`);
       wrap.append(dom.el("span", "cal2-name__text", appointment.cliente));
-      if (appointment.con_saldo) {
+      if (appointment.con_saldo && this.settings.showDebt) {
         const icon = dom.icon("info", "cal2-debt");
         icon.title = "Tiene saldo pendiente";
         wrap.append(icon);

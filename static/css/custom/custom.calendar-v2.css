@@ -905,3 +905,198 @@ button.cal2-event:hover {
     transition: none !important;
   }
 }
+
+.cal2-settings-btn {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-medium);
+  border-radius: 50%;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.cal2-settings-btn:hover {
+  background: var(--color-primary-soft);
+  color: var(--text-strong);
+}
+
+.cal2-settings-btn.is-filtered::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cal2-today);
+  box-shadow: 0 0 0 2px var(--bg-surface);
+}
+
+.cal2-config {
+  --sidebar-width: 560px;
+}
+
+form.cal2-config-form {
+  display: contents;
+}
+
+.cal2-config .modal-header {
+  padding: 12px 16px;
+}
+
+.cal2-config .modal-title {
+  font-size: 1rem;
+}
+
+.cal2-config .modal-body {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.cal2-config .modal-footer {
+  padding: 8px 16px;
+}
+
+.cal2-config__tabs {
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 12px;
+  border-right: 1px solid var(--border-soft);
+}
+
+.cal2-config__tabs .nav-link {
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: .8rem;
+  font-weight: 500;
+  text-align: left;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.cal2-config__tabs .nav-link:hover {
+  background: var(--color-primary-soft);
+  color: var(--text-strong);
+}
+
+.cal2-config__tabs .nav-link.active {
+  background: var(--color-primary-soft-hover);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.cal2-config__pane {
+  padding-top: 2px;
+}
+
+.cal2-config__hint--section {
+  margin-top: 18px;
+}
+
+.cal2-config__row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.cal2-config__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  margin: 0;
+  padding: 3px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  font-size: .78rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+
+.cal2-config__choice:hover {
+  background: var(--color-primary-soft);
+}
+
+.cal2-config__choice:has(.form-check-input:checked) {
+  border-color: var(--border-medium);
+  background: var(--color-primary-soft);
+  color: var(--text-strong);
+}
+
+.cal2-config__choice .form-check-input,
+.cal2-config__choice.form-switch .form-check-input {
+  float: none;
+  margin: 0;
+  font-size: .85rem;
+  cursor: pointer;
+}
+
+.cal2-config__choice .cal2-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.cal2-settings__help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.cal2-settings__help:hover,
+.cal2-settings__help:focus-visible {
+  background: var(--color-primary-soft);
+  color: var(--text-strong);
+}
+
+@media (max-width: 767.98px) {
+  .cal2-settings-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cal2-config__choice {
+    min-height: 40px;
+  }
+
+  .cal2-config .modal-body {
+    grid-template-columns: 1fr;
+  }
+
+  .cal2-config__tabs {
+    flex-direction: row;
+    padding: 0 0 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .cal2-config__tabs .nav-item {
+    flex: 1;
+  }
+
+  .cal2-config__tabs .nav-link {
+    text-align: center;
+  }
+}

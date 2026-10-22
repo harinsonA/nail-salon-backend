@@ -17,13 +17,13 @@
 
   const LOADER_DELAY = 150;
   const RENDERERS = { dia: DayRenderer, semana: WeekRenderer, mes: MonthRenderer };
-  const MOBILE_QUERY = "(max-width: 767.98px)";
 
   class CalendarController {
     constructor(root, config) {
       this.root = root;
       this.config = config;
       this.today = dates.parse(config.today);
+      this.settings = { visible: config.visible, showDebt: config.showDebt };
       this.search = "";
       this.requestId = 0;
       this.loaderTimer = null;
@@ -41,6 +41,9 @@
       };
       document.addEventListener(window.APPOINTMENT_CHANGED_EVENT, showDate);
       document.addEventListener(window.APPOINTMENT_CREATED_EVENT, showDate);
+      this.settingsButton = find("settings");
+      initializeCanvasBSModals(this.settingsButton);
+      document.addEventListener(HiCalendar.PREFERENCES_EVENT, ({ detail }) => this.applySettings(detail));
       this.loader = find("loader");
       if (typeof processingLoaderTemplate === "function") {
         this.loader.innerHTML = processingLoaderTemplate("Cargando citas…");
@@ -54,6 +57,7 @@
           container: root,
           today: this.today,
           hours: config.hours,
+          settings: this.settings,
           onDay: (date) => this.openDay(date),
           onAppointment: (appointment, trigger) => this.menu.open(appointment, trigger),
         });
@@ -78,14 +82,24 @@
       });
 
       const query = new URLSearchParams(window.location.search);
-      this.view = RENDERERS[query.get("vista")] ? query.get("vista") : this.initialView();
+      this.view = RENDERERS[query.get("vista")] ? query.get("vista") : config.view;
       this.viewSwitch.setActive(this.view);
       this.go(dates.fromParam(query.get("fecha")) || this.today);
     }
 
-    initialView() {
-      const mobile = typeof window.matchMedia === "function" && window.matchMedia(MOBILE_QUERY).matches;
-      return mobile ? "dia" : this.config.view;
+    applySettings({ view, visible, showDebt, filtered }) {
+      Object.assign(this.settings, { visible, showDebt });
+      this.settingsButton.classList.toggle("is-filtered", filtered);
+      this.settingsButton.setAttribute(
+        "aria-label",
+        filtered ? "Configurar el calendario (hay estados ocultos)" : "Configurar el calendario",
+      );
+      this.api.clear();
+      if (view !== this.view && RENDERERS[view]) {
+        this.setView(view);
+        return;
+      }
+      this.load();
     }
 
     get renderer() {
