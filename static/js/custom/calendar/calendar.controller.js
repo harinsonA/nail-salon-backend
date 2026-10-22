@@ -31,6 +31,11 @@
       const find = (name) => root.querySelector(`[data-cal2-${name}]`);
       this.status = find("status");
       this.newButton = find("new");
+      this.newButton.addEventListener("click", () => openBSModal(this.newButton.dataset.formUrl, { modalID: "#xl_modal" }));
+      document.addEventListener(window.APPOINTMENT_CREATED_EVENT, ({ detail }) => {
+        this.api.clear();
+        this.go(dates.parse(detail.fecha));
+      });
       this.loader = find("loader");
       if (typeof processingLoaderTemplate === "function") {
         this.loader.innerHTML = processingLoaderTemplate("Cargando citas…");
@@ -113,7 +118,7 @@
       url.searchParams.set("vista", this.view);
       url.searchParams.set("fecha", dates.toISO(cursor));
       window.history.replaceState(null, "", url);
-      this.newButton.href = this.config.newAppointmentUrl.replace(this.config.datePlaceholder, dates.toISO(cursor));
+      this.newButton.dataset.formUrl = this.config.newAppointmentUrl.replace(this.config.datePlaceholder, dates.toISO(cursor));
       this.renderer.renderSkeleton(cursor);
       this.load();
     }

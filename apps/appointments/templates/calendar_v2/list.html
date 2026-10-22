@@ -7,6 +7,7 @@ Calendario
 
 {% block extra_css %}
 <link href="{% static 'css/custom/custom.calendar-v2.css' %}" rel="stylesheet">
+<link href="{% static 'css/custom/custom.appointment-form.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -38,10 +39,10 @@ Calendario
       </div>
     </div>
     <div class="cal2-toolbar__group cal2-toolbar__group--end">
-      <a href="{{ new_appointment_url }}" class="btn btn-primary cal2-new-btn" data-cal2-new aria-label="Nueva cita" title="Nueva cita">
+      <button type="button" class="btn btn-primary cal2-new-btn" data-cal2-new data-form-url="{{ new_appointment_url }}" aria-label="Nueva cita" title="Nueva cita">
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">add</span>
         Cita
-      </a>
+      </button>
       <label class="cal2-search">
         <span class="visually-hidden">Buscar cita por cliente</span>
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">search</span>
@@ -68,6 +69,7 @@ Calendario
 <script src="{% static 'js/custom/calendar/calendar.renderers.js' %}"></script>
 <script src="{% static 'js/custom/calendar/calendar.menu.js' %}"></script>
 <script src="{% static 'js/custom/calendar/calendar.controller.js' %}"></script>
+<script src="{% static 'js/custom/appointments/appointment.form.js' %}"></script>
 <script>
   initCalendar(
     document.getElementById("calendar_v2"),
