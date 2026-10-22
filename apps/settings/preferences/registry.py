@@ -58,7 +58,58 @@ CALENDAR_V2 = BooleanPreference(
 )
 
 
+CALENDAR_DEFAULT_VIEW = ChoicePreference(
+    key="calendario_vista_inicial",
+    label="Vista al ingresar",
+    help_text="El calendario se abre en esta vista cada vez que entras.",
+    default="mes",
+    choices=(
+        ("dia", "Día"),
+        ("semana", "Semana"),
+        ("mes", "Mes"),
+    ),
+    category=Category.AGENDA,
+)
+
+
+CALENDAR_SHOW_PENDING = BooleanPreference(
+    key="calendario_ver_pendientes",
+    label="Pendientes",
+    default=True,
+    category=Category.AGENDA,
+)
+
+
+CALENDAR_SHOW_COMPLETED = BooleanPreference(
+    key="calendario_ver_completadas",
+    label="Completadas",
+    default=True,
+    category=Category.AGENDA,
+)
+
+
+CALENDAR_SHOW_CANCELLED = BooleanPreference(
+    key="calendario_ver_canceladas",
+    label="Canceladas",
+    default=True,
+    category=Category.AGENDA,
+)
+
+
+CALENDAR_SHOW_DEBT = BooleanPreference(
+    key="calendario_aviso_saldo",
+    label="Mostrar saldo pendiente",
+    default=True,
+    category=Category.AGENDA,
+)
+
+
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
     CALENDAR_V2,
+    CALENDAR_DEFAULT_VIEW,
+    CALENDAR_SHOW_PENDING,
+    CALENDAR_SHOW_COMPLETED,
+    CALENDAR_SHOW_CANCELLED,
+    CALENDAR_SHOW_DEBT,
 )

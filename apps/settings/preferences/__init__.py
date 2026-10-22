@@ -1,5 +1,10 @@
 from apps.settings.preferences.constants import Category, Scope
 from apps.settings.preferences.registry import (
+    CALENDAR_DEFAULT_VIEW,
+    CALENDAR_SHOW_CANCELLED,
+    CALENDAR_SHOW_COMPLETED,
+    CALENDAR_SHOW_DEBT,
+    CALENDAR_SHOW_PENDING,
     CALENDAR_V2,
     PREFERENCES,
     SESSION_IDLE_MINUTES,
@@ -12,6 +17,11 @@ from apps.settings.preferences.service import (
 )
 
 __all__ = [
+    "CALENDAR_DEFAULT_VIEW",
+    "CALENDAR_SHOW_CANCELLED",
+    "CALENDAR_SHOW_COMPLETED",
+    "CALENDAR_SHOW_DEBT",
+    "CALENDAR_SHOW_PENDING",
     "CALENDAR_V2",
     "PREFERENCES",
     "SESSION_IDLE_MINUTES",

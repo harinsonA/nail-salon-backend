@@ -58,6 +58,7 @@ PARA_TODO_EL_EQUIPO = {
     "calendar_list",
     "calendar_v2",
     "calendar_v2_data",
+    "calendar_v2_preferences",
     "calendar_appointments",
     "create_appointment_from_calendar",
     "agenda_list",
