@@ -1,7 +1,7 @@
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.appointments.calendar_v2.settings import STATUS_PREFERENCES, calendar_settings
@@ -10,7 +10,6 @@ from apps.common.views.base_views import ProtectedView
 from apps.settings.preferences import (
     CALENDAR_DEFAULT_VIEW,
     CALENDAR_SHOW_DEBT,
-    CALENDAR_V2,
     Category,
 )
 from apps.settings.preferences.forms import PreferenceFieldsMixin
@@ -59,11 +58,6 @@ class CalendarPreferencesForm(PreferenceFieldsMixin, BSModalForm):
 class CalendarPreferencesModalView(ProtectedView, BSModalFormView):
     template_name = "calendar_v2/preferences_modal.html"
     form_class = CalendarPreferencesForm
-
-    def dispatch(self, request, *args, **kwargs):
-        if not CALENDAR_V2.is_enabled():
-            raise Http404
-        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         return {**super().get_context_data(**kwargs), "modal_url": self.request.path}

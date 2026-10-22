@@ -55,13 +55,9 @@ SOLO_ADMINISTRACION = {
 
 PARA_TODO_EL_EQUIPO = {
     "calendar",
-    "calendar_list",
-    "calendar_v2",
-    "calendar_v2_data",
-    "calendar_v2_preferences",
-    "calendar_appointments",
+    "calendar_data",
+    "calendar_preferences",
     "create_appointment_from_calendar",
-    "agenda_list",
     "agenda_update_modal",
     "agenda_see_modal",
     "agenda_confirmation_modal",

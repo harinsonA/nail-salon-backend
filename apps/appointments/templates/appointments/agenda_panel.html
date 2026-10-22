@@ -1,11 +1,11 @@
 {% load static %}
 <form id="appointment-panel" class="cal2-detail-form" action="{{ modal_url }}" method="post" data-mode="{{ mode.key }}">
   {% csrf_token %}
-  <div class="modal-header bg-{{ mode.variant }} bg-gradient{% if mode.variant != 'primary' %} text-white{% endif %}">
+  <div class="modal-header bg-{{ mode.variant }} bg-gradient{% if mode.light %} text-white{% endif %}">
     <div class="cal2-detail__head">
       <h5 class="modal-title d-inline-flex align-items-center" id="appointment-panel-title">
         <img src="{% static 'images/common/' %}{{ mode.icon }}" alt="" width="24" height="24" class="icon--title me-2">
-        <span>{{ mode.title }}: {{ client_name }}</span>
+        <span{% if mode.title_class %} class="{{ mode.title_class }}"{% endif %}>{{ mode.title }}: {{ client_name }}</span>
       </h5>
       <div class="cal2-detail__when">
         <strong>{{ date_label }}</strong>
@@ -127,7 +127,7 @@
   {% if mode.confirm_label %}
   <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">Volver</button>
-    <button type="button" class="btn btn-sm btn-{{ mode.variant }} bg-gradient" data-panel-confirm>{{ mode.confirm_label }}</button>
+    <button type="button" class="btn btn-sm btn-{{ mode.button|default:mode.variant }} bg-gradient" data-panel-confirm>{{ mode.confirm_label }}</button>
   </div>
   {% else %}
   <div class="modal-footer modal-footer-soft cal2-detail__footer">

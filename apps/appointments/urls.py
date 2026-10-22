@@ -1,6 +1,5 @@
 from django.urls import path
 
-from apps.appointments.views.agenda import AgendaListView, AppointmentsView
 from apps.appointments.views.agenda_modals.available_hours import AvailableHoursAjax
 from apps.appointments.views.agenda_modals.cancel import AgendaCancelModalView
 from apps.appointments.views.agenda_modals.complete import AgendaConfirmationModal
@@ -10,50 +9,29 @@ from apps.appointments.views.agenda_modals.detail import AgendaSeeModalView
 from apps.appointments.views.agenda_modals.edit import AgendaUpdateModalView
 from apps.appointments.views.agenda_modals.payment import AgendaPaymentModalView
 from apps.appointments.views.agenda_modals.restore import AgendaRestoreModalView
-from apps.appointments.views.calendar.view import CalendarListView, CalendarView
 from apps.appointments.views.calendar_v2.preferences import CalendarPreferencesModalView
 from apps.appointments.views.calendar_v2.view import CalendarV2DataView, CalendarV2View
 
 urlpatterns = [
     path(
         "calendario/",
-        CalendarView.as_view(),
+        CalendarV2View.as_view(),
         name="calendar",
     ),
     path(
-        "calendario/v2/",
-        CalendarV2View.as_view(),
-        name="calendar_v2",
-    ),
-    path(
-        "calendario/v2/datos/",
+        "calendario/datos/",
         CalendarV2DataView.as_view(),
-        name="calendar_v2_data",
+        name="calendar_data",
     ),
     path(
-        "calendario/v2/preferencias/",
+        "calendario/preferencias/",
         CalendarPreferencesModalView.as_view(),
-        name="calendar_v2_preferences",
-    ),
-    path(
-        "calendario/lista/ajax/",
-        CalendarListView.as_view(),
-        name="calendar_list",
-    ),
-    path(
-        "calendario/agenda/<str:date>/",
-        AppointmentsView.as_view(),
-        name="calendar_appointments",
+        name="calendar_preferences",
     ),
     path(
         "calendario/agenda/<str:date>/crear/",
         AgendaCreateView.as_view(),
         name="create_appointment_from_calendar",
-    ),
-    path(
-        "agenda/lista/ajax/",
-        AgendaListView.as_view(),
-        name="agenda_list",
     ),
     path(
         "agenda/detalle/<str:pk>/editar/modal/",

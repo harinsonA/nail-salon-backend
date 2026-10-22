@@ -31,12 +31,13 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 
 ### 📅 Calendario y Agenda
 
-- **Vista mensual**: Calendario interactivo que muestra la cantidad de citas pendientes y completadas por día
-- **Vista diaria (Agenda)**: Listado de citas del día seleccionado con acciones contextuales según el estado de cada cita
-- **Creación de citas**: Formulario de página completa que permite crear múltiples citas en lote, cada una con un cliente y varios servicios
+- **Vistas Día, Semana y Mes**: el calendario muestra cada cita con su estado, marca las pendientes sin cerrar y las completadas con saldo, y abre un menú de acciones al tocarla
+- **Preferencias por persona**: desde el engranaje, cada integrante elige qué estados ver, si se avisa el saldo pendiente y la vista con que abre el calendario
+- **Bienvenida**: un negocio sin clientes o sin servicios ve los primeros pasos para dejarlo listo
+- **Creación y edición de citas**: modal con cliente, persona asignada, fecha, hora y varios servicios con cantidad y descuento
 - **Selección de servicios por categoría**: consulta AJAX que filtra el catálogo al elegir una categoría
 - **Validación de horarios**: Consulta AJAX de horas ocupadas para evitar solapamientos
-- **Contacto por WhatsApp**: acceso directo para escribirle a la clienta desde la agenda del día
+- **Contacto por WhatsApp**: acceso directo para escribirle a la clienta desde el menú de la cita
 - **Flujo de estados**: Pendiente → Completada / Cancelada, con opción de restaurar citas canceladas
 
 ### 👥 Gestión de Clientes
@@ -133,10 +134,10 @@ Sistema web para la gestión integral de un salón de uñas, desarrollado con Dj
 ```
 nail-salon-backend/
 ├── apps/
-│   ├── appointments/          # Calendario, agenda diaria y citas
+│   ├── appointments/          # Calendario y citas
 │   │   ├── models/            # Cita, DetalleCita (snapshot de servicios)
-│   │   ├── views/             # Calendar, Agenda CRUD, Handler de creación en lote
-│   │   └── templates/         # Calendario mensual, modales de citas
+│   │   ├── views/             # Calendario y modales de citas (agenda_modals)
+│   │   └── templates/         # Calendario, modales de citas
 │   ├── clients/               # Gestión de clientes
 │   │   ├── models/            # Cliente (soft delete + historial)
 │   │   ├── views/             # CRUD con modales, listado AJAX, WhatsApp, import CSV
@@ -209,19 +210,17 @@ nail-salon-backend/
 
 | Ruta | Descripción |
 |---|---|
-| `/calendario/` | Vista mensual del calendario (página principal) |
-| `/calendario/lista/ajax/` | Datos del calendario (JSON) |
-| `/calendario/agenda/{fecha}/` | Agenda diaria de una fecha |
-| `/calendario/agenda/{fecha}/crear/` | Crear citas para una fecha |
-| `/agenda/lista/ajax/` | Listado AJAX de citas del día |
+| `/calendario/` | Calendario con vistas Día, Semana y Mes (página principal) |
+| `/calendario/datos/` | Citas del rango pedido (JSON) |
+| `/calendario/preferencias/` | Preferencias del calendario de cada persona |
+| `/calendario/agenda/{fecha}/crear/` | Crear una cita |
 | `/agenda/detalle/{id}/editar/modal/` | Editar cita |
 | `/agenda/detalle/{id}/ver/modal/` | Ver detalle de cita |
 | `/agenda/detalle/{id}/confirmar/modal/` | Completar cita y generar pago |
 | `/agenda/detalle/{id}/cancelar/modal/` | Cancelar cita |
 | `/agenda/detalle/{id}/restaurar/modal/` | Restaurar cita cancelada |
+| `/agenda/pago/{id}/abonar/modal/` | Registrar abono de una cita completada |
 | `/agenda/detalle/{id}/eliminar/modal/` | Eliminar cita |
-| `/agenda/servicio/detalles/ajax/` | Info de servicio (precio, duración) |
-| `/agenda/servicios/por-categoria/ajax/` | Servicios de una categoría |
 | `/agenda/horas/disponibles/ajax/` | Horas ocupadas de una fecha |
 
 ### 👥 Clientes
@@ -381,7 +380,7 @@ nail-salon-backend/
 - **DurationInMinutesField**: Campo personalizado para duraciones en minutos
 - **CustomDateField / CustomMonthField**: Campos de fecha en formato DD/MM/YYYY y selector de mes
 - **format_currency()**: Formateo de moneda chilena (CLP: `$ X.XXX`)
-- **format_full_date()**: Fecha en español (ej: "Lunes 5 de Marzo del 2022")
+- **format_long_date()**: Fecha en español (ej: "Lunes 5 marzo 2022")
 
 ## 🧪 Comandos de Gestión
 

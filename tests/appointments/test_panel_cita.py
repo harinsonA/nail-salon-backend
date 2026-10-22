@@ -140,3 +140,19 @@ class PanelCitaTests(NegocioTestCase):
         propia = self.cita()
         self.assertEqual(self.abrir("agenda_see_modal", propia, self.colaboradora).status_code, 200)
         self.assertEqual(self.confirmar("agenda_cancel_modal", propia, self.colaboradora).status_code, 200)
+
+    def test_eliminar_muestra_el_panel_con_su_boton_y_elimina(self):
+        cita = self.cita()
+        respuesta = self.abrir("agenda_delete_modal", cita)
+        self.assertContains(respuesta, "Eliminar cita: Paula Herrera")
+        self.assertContains(respuesta, "btn-danger")
+        confirmacion = self.confirmar("agenda_delete_modal", cita)
+        self.assertEqual(confirmacion.status_code, 200)
+        self.assertIn("fue eliminada", confirmacion.json()["message"])
+        self.assertFalse(Cita.objects.filter(pk=cita.pk).exists())
+
+    def test_la_colaboradora_no_elimina_citas_ajenas(self):
+        ajena = self.cita(asignada=self.encargada)
+        self.assertEqual(self.abrir("agenda_delete_modal", ajena, self.colaboradora).status_code, 404)
+        self.assertEqual(self.confirmar("agenda_delete_modal", ajena, self.colaboradora).status_code, 404)
+        self.assertTrue(Cita.objects.filter(pk=ajena.pk).exists())

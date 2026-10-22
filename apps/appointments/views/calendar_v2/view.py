@@ -1,17 +1,18 @@
 from django.http import JsonResponse
-from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.appointments.calendar_v2.builders import BUILDERS
 from apps.appointments.calendar_v2.filters import VIEW_CHOICES, CalendarFilterForm
 from apps.appointments.calendar_v2.query import CalendarQuery
 from apps.appointments.calendar_v2.settings import calendar_settings, visible_statuses
+from apps.clients.models import Cliente
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
-from apps.settings.preferences import CALENDAR_V2
+from apps.profiles.permisos import administra_el_negocio
+from apps.services.models import Servicio
 
 """========================================================================="""
 # region ........ Constants
@@ -19,7 +20,6 @@ from apps.settings.preferences import CALENDAR_V2
 
 DATE_PLACEHOLDER = "__fecha__"
 GRID_HOURS = {"desde": 5, "hasta": 24}
-NOT_ENABLED_MESSAGE = "El calendario nuevo no está activo en este negocio."
 
 
 # endregion
@@ -32,10 +32,33 @@ NOT_ENABLED_MESSAGE = "El calendario nuevo no está activo en este negocio."
 class CalendarV2View(ProtectedView, TemplateView):
     template_name = "calendar_v2/list.html"
 
-    def get(self, request, *args, **kwargs):
-        if not CALENDAR_V2.is_enabled():
-            return redirect("calendar")
-        return super().get(request, *args, **kwargs)
+    def welcome(self):
+        has_clients = Cliente.activos.exists()
+        has_services = Servicio.activos.exists()
+        if has_clients and has_services:
+            return None
+        manages = administra_el_negocio(self.request.user)
+        return {
+            "steps": [
+                {
+                    "icon": "group",
+                    "title": "Registra a tus clientes",
+                    "text": "Agrégalos uno a uno o impórtalos desde un Excel.",
+                    "done": has_clients,
+                    "url": reverse("clients"),
+                    "action": "Ir a Clientes",
+                },
+                {
+                    "icon": "spa",
+                    "title": "Crea tus servicios",
+                    "text": "Lo que ofreces, con su precio y duración.",
+                    "done": has_services,
+                    "url": reverse("services") if manages else "",
+                    "action": "Ir a Servicios",
+                    "hint": "Pídeselos a quien administra el negocio.",
+                },
+            ],
+        }
 
     def get_context_data(self, **kwargs):
         today = timezone.localdate()
@@ -46,10 +69,11 @@ class CalendarV2View(ProtectedView, TemplateView):
         return {
             **super().get_context_data(**kwargs),
             "new_appointment_url": new_appointment_url,
-            "preferences_url": reverse("calendar_v2_preferences"),
+            "preferences_url": reverse("calendar_preferences"),
             "calendar_filtered": settings["filtered"],
+            "welcome": self.welcome(),
             "calendar_config": {
-                "dataUrl": reverse("calendar_v2_data"),
+                "dataUrl": reverse("calendar_data"),
                 "today": today.isoformat(),
                 "timeZone": timezone.get_current_timezone_name(),
                 "view": settings["view"],
@@ -67,10 +91,6 @@ class CalendarV2View(ProtectedView, TemplateView):
 
 class CalendarV2DataView(ProtectedAjaxView, View):
     def get(self, request, *args, **kwargs):
-        if not CALENDAR_V2.is_enabled():
-            return JsonResponse(
-                {"message": NOT_ENABLED_MESSAGE}, status=HTTP_404_NOT_FOUND
-            )
         form = CalendarFilterForm(request.GET)
         if not form.is_valid():
             errors = [

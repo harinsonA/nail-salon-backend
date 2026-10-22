@@ -5,12 +5,13 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import connection
-from django.test import RequestFactory
+from django.test import Client, RequestFactory
+from django.urls import reverse
 from django.utils import timezone
 from django_tenants.utils import get_tenant_model, schema_context
 
-from apps.appointments.views.calendar.view import CalendarView
-from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthField
+from apps.common.custom_time_fields import CustomMonthField
+from apps.profiles.models import Perfil
 from apps.tareas.decorators import background_task
 from apps.tareas.models import TareaEnProceso
 from apps.tenancy.middleware import BusinessTimeZoneMiddleware
@@ -60,21 +61,19 @@ class ZonaHorariaDelNegocioTests(NegocioTestCase):
         publico = get_tenant_model()(schema_name="public", zona_horaria="Asia/Tokyo")
         self.assertEqual(self.zona_dentro_del_middleware(publico), settings.TIME_ZONE)
 
-    def test_el_calendario_abre_en_el_mes_del_negocio(self):
-        meses = {}
+    def test_el_calendario_abre_en_el_dia_del_negocio(self):
+        usuario = User.objects.create_user(username="zoe", email="zoe@correo.cl", password="x")
+        Perfil.objects.filter(user=usuario).update(debe_cambiar_clave=False)
+        dias = {}
         for zona in ("America/Santiago", "Asia/Tokyo"):
             self.cambiar_zona(zona)
-            vista = CalendarView()
-            vista.request = RequestFactory().get("/")
-            vista.request.session = {}
-            with mock.patch(
-                "django.utils.timezone.now", return_value=FIN_DE_OCTUBRE_UTC
-            ):
-                meses[zona] = BusinessTimeZoneMiddleware(
-                    lambda request: vista.get_initial_month()
-                )(self.peticion_del_negocio())
-        self.assertEqual(meses["America/Santiago"], f"{MONTH_NUMBER_TO_NAME[10]} 2026")
-        self.assertEqual(meses["Asia/Tokyo"], f"{MONTH_NUMBER_TO_NAME[11]} 2026")
+            navegador = Client(HTTP_HOST=self.dominio)
+            with mock.patch("django.utils.timezone.now", return_value=FIN_DE_OCTUBRE_UTC):
+                navegador.force_login(usuario)
+                respuesta = navegador.get(reverse("calendar"))
+            dias[zona] = respuesta.context["calendar_config"]["today"]
+        self.assertEqual(dias["America/Santiago"], "2026-10-31")
+        self.assertEqual(dias["Asia/Tokyo"], "2026-11-01")
 
     def test_el_mes_por_defecto_de_los_filtros_sigue_la_zona_activa(self):
         with mock.patch("django.utils.timezone.now", return_value=FIN_DE_OCTUBRE_UTC):

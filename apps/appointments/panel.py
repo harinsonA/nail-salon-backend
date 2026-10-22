@@ -25,15 +25,25 @@ PANEL_MODES = {
     "detail": {"variant": "primary", "icon": "calendar_month.svg", "title": "Detalle de cita"},
     "cancel": {
         "variant": "secondary",
+        "light": True,
         "icon": "cancel.svg",
         "title": "Cancelar cita",
         "confirm_label": "Cancelar cita",
     },
     "restore": {
         "variant": "success",
+        "light": True,
         "icon": "refresh.svg",
         "title": "Restaurar cita",
         "confirm_label": "Restaurar cita",
+    },
+    "delete": {
+        "variant": "danger-subtle",
+        "icon": "warning-text-danger.svg",
+        "title": "Eliminar cita",
+        "title_class": "text-color-destructive",
+        "confirm_label": "Eliminar cita",
+        "button": "danger",
     },
 }
 
