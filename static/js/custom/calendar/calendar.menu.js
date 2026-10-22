@@ -128,12 +128,6 @@
             onChange();
           }
         };
-        $("#agenda_cancel_btn, #agenda_restore_btn").off("click").on("click", async () => {
-          const url = $(currentTarget).find("form").attr("action");
-          const [response = {}, status] = await getResponseToRequest(url);
-          notifyAlert(response, status);
-          finish(status);
-        });
         $("#agenda_confirmation_btn").off("click").on("click", async () => {
           const form = $(currentTarget).find("form");
           const [, status] = await submitRequestBSModal(form[0]);

@@ -32,6 +32,7 @@
       this.status = find("status");
       this.newButton = find("new");
       this.newButton.addEventListener("click", () => openBSModal(this.newButton.dataset.formUrl, { modalID: "#xl_modal" }));
+      document.addEventListener(window.APPOINTMENT_CHANGED_EVENT, () => this.refresh());
       document.addEventListener(window.APPOINTMENT_CREATED_EVENT, ({ detail }) => {
         this.api.clear();
         this.go(dates.parse(detail.fecha));

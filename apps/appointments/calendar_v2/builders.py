@@ -11,11 +11,11 @@ MIXED_STATUS = "mixto"
 OVERDUE_STATUS = "vencida"
 
 ACTIONS = {
-    "detalle": ("Ver detalle", "visibility", "agenda_see_modal", "bs-xl-modal"),
+    "detalle": ("Ver detalle", "visibility", "agenda_see_modal", "canvas-modal"),
     "editar": ("Editar cita", "edit_document", "agenda_update_modal", "canvas-modal"),
     "completar": ("Completar cita", "check_circle", "agenda_confirmation_modal", "bs-modal"),
-    "cancelar": ("Cancelar cita", "cancel", "agenda_cancel_modal", "bs-modal is-danger"),
-    "restaurar": ("Restaurar cita", "restore", "agenda_restore_modal", "bs-modal"),
+    "cancelar": ("Cancelar cita", "cancel", "agenda_cancel_modal", "canvas-modal is-danger"),
+    "restaurar": ("Restaurar cita", "restore", "agenda_restore_modal", "canvas-modal"),
 }
 
 ACTIONS_BY_STATUS = {

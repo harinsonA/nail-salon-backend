@@ -7,7 +7,7 @@ Calendario
 
 {% block extra_css %}
 <link href="{% static 'css/custom/custom.calendar-v2.css' %}" rel="stylesheet">
-<link href="{% static 'css/custom/custom.appointment-form.css' %}" rel="stylesheet">
+<link href="{% static 'css/custom/custom.appointment-modals.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -70,6 +70,7 @@ Calendario
 <script src="{% static 'js/custom/calendar/calendar.menu.js' %}"></script>
 <script src="{% static 'js/custom/calendar/calendar.controller.js' %}"></script>
 <script src="{% static 'js/custom/appointments/appointment.form.js' %}"></script>
+<script src="{% static 'js/custom/appointments/appointment.panel.js' %}"></script>
 <script>
   initCalendar(
     document.getElementById("calendar_v2"),

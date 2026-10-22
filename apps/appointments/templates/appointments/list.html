@@ -10,7 +10,8 @@ Citas: {{ full_date }}
 {% endblock %}
 
 {% block extra_css %}
-<link href="{% static 'css/custom/custom.appointment-form.css' %}" rel="stylesheet">
+<link href="{% static 'css/custom/custom.calendar-v2.css' %}" rel="stylesheet">
+<link href="{% static 'css/custom/custom.appointment-modals.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -87,6 +88,7 @@ Citas: {{ full_date }}
 {% endblock %}
 {% block extra_js %}
 <script src="{% static 'js/custom/appointments/appointment.form.js' %}"></script>
+<script src="{% static 'js/custom/appointments/appointment.panel.js' %}"></script>
 <script>
   const agendaStatusIcon = {
     pendiente: {
@@ -127,7 +129,7 @@ Citas: {{ full_date }}
         </a>
       </li>
       <li>
-        <a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_cancel_modal_url}">
+        <a class="dropdown-item canvas-modal fs-6" data-form-url="${agenda_cancel_modal_url}">
           <img src="{% static 'images/common/content_paste_off.svg' %}" alt="" width="18" height="18" class="icon--menu">
           Cancelar
         </a>
@@ -147,7 +149,7 @@ Citas: {{ full_date }}
       </li>`);
 
     const canceledOptions = ({ agenda_restore_modal_url, agenda_delete_modal_url }) => (`<li>
-        <a class="dropdown-item bs-modal fs-6" data-form-url="${agenda_restore_modal_url}">
+        <a class="dropdown-item canvas-modal fs-6" data-form-url="${agenda_restore_modal_url}">
           <span class="material-symbols-outlined icon--menu text-success">restore</span>
           Restaurar
         </a>
@@ -191,7 +193,7 @@ Citas: {{ full_date }}
       <b class="me-2">
         ${cantidad_servicios}
       </b>
-      <a class="bs-xl-modal fs-6" data-form-url="${agenda_see_modal_url}">
+      <a class="canvas-modal fs-6" data-form-url="${agenda_see_modal_url}">
         <img src="{% static 'images/common/visibility.svg' %}" alt="" width="20" height="20" class="icon--cell">
       </a>`;
     }
@@ -243,6 +245,7 @@ Citas: {{ full_date }}
       openBSModal(currentTarget.dataset.formUrl, { modalID: '#xl_modal' });
     });
     document.addEventListener(APPOINTMENT_CREATED_EVENT, () => table.draw());
+    document.addEventListener(APPOINTMENT_CHANGED_EVENT, () => table.draw());
 
     $('#{{ filter_form.date_selected.id_for_label }}, #{{ filter_form.status.id_for_label }}').on('change', ({ target }) => {
       filterData[target.name] = target.value;
@@ -260,7 +263,7 @@ Citas: {{ full_date }}
           table.draw();
         }
       };
-      $('#agenda_cancel_btn, #agenda_restore_btn, #delete_submit_btn').off('click').on('click', handleSimpleModalAction);
+      $('#delete_submit_btn').off('click').on('click', handleSimpleModalAction);
       $('#agenda_confirmation_btn').off('click').on('click', async () => {
         const form = $(currentTarget).find('form');
         const [response = {}, status] = await submitRequestBSModal(form[0]);
