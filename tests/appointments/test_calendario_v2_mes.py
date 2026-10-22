@@ -13,8 +13,6 @@ from apps.clients.models import Cliente
 from apps.payments.choices import EstadoPago
 from apps.payments.models import Pago
 from apps.profiles.models import Perfil
-from apps.settings.models import Preference
-from apps.settings.preferences import Scope
 from tests.base import NegocioTestCase
 
 User = get_user_model()
@@ -30,7 +28,6 @@ class CalendarioV2MesTests(NegocioTestCase):
 
     def setUp(self):
         super().setUp()
-        Preference.objects.create(scope=Scope.NEGOCIO, scope_id="", key="calendario_v2", value=True)
         self.encargada = self.crear_usuario("ana", Rol.ENCARGADO)
         self.colaboradora = self.crear_usuario("camila", Rol.COLABORADOR)
         self.paula = Cliente.objects.create(nombre="Paula", apellido="Herrera")
@@ -54,7 +51,7 @@ class CalendarioV2MesTests(NegocioTestCase):
         navegador = Client(HTTP_HOST=self.dominio)
         navegador.force_login(usuario or self.encargada)
         with mock.patch.object(CalendarQuery, "now", return_value=timezone.make_aware(AHORA)):
-            return navegador.get(reverse("calendar_v2_data"), {**OCTUBRE, **filtros}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            return navegador.get(reverse("calendar_data"), {**OCTUBRE, **filtros}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
 
     def test_agrupa_por_dia_con_tres_citas_y_el_resto_como_mas(self):
         for hora in [(9, 0), (10, 30), (12, 0), (15, 0), (17, 30)]:
@@ -143,16 +140,12 @@ class CalendarioV2MesTests(NegocioTestCase):
         self.assertEqual(muy_largo.status_code, 400)
         self.assertIn("42", muy_largo.json()["message"])
 
-    def test_sin_la_preferencia_no_entrega_datos(self):
-        Preference.objects.filter(key="calendario_v2").delete()
-        self.assertEqual(self.datos().status_code, 404)
-
     def test_la_pagina_trae_la_configuracion_del_calendario(self):
         navegador = Client(HTTP_HOST=self.dominio)
         navegador.force_login(self.encargada)
-        respuesta = navegador.get(reverse("calendar_v2"))
+        respuesta = navegador.get(reverse("calendar"))
         configuracion = respuesta.context["calendar_config"]
-        self.assertEqual(configuracion["dataUrl"], reverse("calendar_v2_data"))
+        self.assertEqual(configuracion["dataUrl"], reverse("calendar_data"))
         self.assertEqual(configuracion["today"], timezone.localdate().isoformat())
         self.assertEqual(
             configuracion["newAppointmentUrl"], reverse("create_appointment_from_calendar", args=["__fecha__"])

@@ -10,8 +10,6 @@ from apps.appointments.calendar_v2.query import CalendarQuery
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
-from apps.settings.models import Preference
-from apps.settings.preferences import Scope
 from tests.base import NegocioTestCase
 
 User = get_user_model()
@@ -26,7 +24,6 @@ class CalendarioV2SemanaTests(NegocioTestCase):
 
     def setUp(self):
         super().setUp()
-        Preference.objects.create(scope=Scope.NEGOCIO, scope_id="", key="calendario_v2", value=True)
         self.encargada = User.objects.create_user(username="ana", email="ana@correo.cl", password="x")
         Perfil.objects.filter(user=self.encargada).update(rol=Perfil.Rol.ENCARGADO, debe_cambiar_clave=False)
         self.cliente = Cliente.objects.create(nombre="Paula", apellido="Herrera")
@@ -44,7 +41,7 @@ class CalendarioV2SemanaTests(NegocioTestCase):
         navegador = Client(HTTP_HOST=self.dominio)
         navegador.force_login(self.encargada)
         with mock.patch.object(CalendarQuery, "now", return_value=timezone.make_aware(AHORA)):
-            return navegador.get(reverse("calendar_v2_data"), {**SEMANA, **filtros}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            return navegador.get(reverse("calendar_data"), {**SEMANA, **filtros}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
 
     def test_agrupa_las_citas_en_bloques_de_la_hora_en_que_empiezan(self):
         self.cita(22, (10, 0))
@@ -79,7 +76,7 @@ class CalendarioV2SemanaTests(NegocioTestCase):
     def test_la_pagina_abre_en_mes_y_ofrece_dia_semana_y_mes_en_orden(self):
         navegador = Client(HTTP_HOST=self.dominio)
         navegador.force_login(self.encargada)
-        respuesta = navegador.get(reverse("calendar_v2"))
+        respuesta = navegador.get(reverse("calendar"))
         configuracion = respuesta.context["calendar_config"]
         self.assertEqual(configuracion["view"], "mes")
         self.assertEqual([vista["key"] for vista in configuracion["views"]], ["dia", "semana", "mes"])

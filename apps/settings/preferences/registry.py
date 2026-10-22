@@ -1,4 +1,4 @@
-from apps.settings.preferences.constants import Category, Scope
+from apps.settings.preferences.constants import Category
 from apps.settings.preferences.types import BooleanPreference, ChoicePreference
 
 
@@ -45,16 +45,6 @@ SESSION_IDLE_MINUTES = ChoicePreference(
         (0, "No cerrar por inactividad"),
     ),
     category=Category.SEGURIDAD,
-)
-
-
-CALENDAR_V2 = BooleanPreference(
-    key="calendario_v2",
-    label="Calendario versión 2",
-    help_text="Muestra la nueva vista de calendario en este negocio. Se activa solo desde la base de datos.",
-    default=False,
-    category=Category.FUNCIONES_NUEVAS,
-    scope=Scope.NEGOCIO,
 )
 
 
@@ -106,7 +96,6 @@ CALENDAR_SHOW_DEBT = BooleanPreference(
 
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
-    CALENDAR_V2,
     CALENDAR_DEFAULT_VIEW,
     CALENDAR_SHOW_PENDING,
     CALENDAR_SHOW_COMPLETED,

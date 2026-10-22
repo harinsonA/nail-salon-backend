@@ -5,7 +5,6 @@ from apps.settings.preferences.registry import (
     CALENDAR_SHOW_COMPLETED,
     CALENDAR_SHOW_DEBT,
     CALENDAR_SHOW_PENDING,
-    CALENDAR_V2,
     PREFERENCES,
     SESSION_IDLE_MINUTES,
 )
@@ -22,7 +21,6 @@ __all__ = [
     "CALENDAR_SHOW_COMPLETED",
     "CALENDAR_SHOW_DEBT",
     "CALENDAR_SHOW_PENDING",
-    "CALENDAR_V2",
     "PREFERENCES",
     "SESSION_IDLE_MINUTES",
     "Category",

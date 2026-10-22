@@ -3,7 +3,7 @@ FROM python:3.12.8-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Locale en español, requerido por format_full_date() (apps/common/utils/dates.py)
+# Locale en español, requerido por strftime('%B') (fecha de registro en clientes, servicios y categorías)
 RUN apt-get update && apt-get install -y --no-install-recommends locales \
     && localedef -i es_CL -f UTF-8 es_CL.UTF-8 \
     && rm -rf /var/lib/apt/lists/*

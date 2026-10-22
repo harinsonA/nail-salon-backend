@@ -7,8 +7,6 @@ from django.urls import reverse
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
-from apps.settings.models import Preference
-from apps.settings.preferences import Scope
 from tests.base import NegocioTestCase
 
 User = get_user_model()
@@ -21,7 +19,6 @@ class CalendarioV2WhatsappTests(NegocioTestCase):
 
     def setUp(self):
         super().setUp()
-        Preference.objects.create(scope=Scope.NEGOCIO, scope_id="", key="calendario_v2", value=True)
         self.encargada = self.miembro(Rol.ENCARGADO, "ana")
         self.colaboradora = self.miembro(Rol.COLABORADOR, "camila")
         self.con_telefono = Cliente.objects.create(nombre="Paula", apellido="Herrera", telefono="+56911112222")
@@ -45,7 +42,7 @@ class CalendarioV2WhatsappTests(NegocioTestCase):
         navegador = Client(HTTP_HOST=self.dominio)
         navegador.force_login(usuario or self.encargada)
         respuesta = navegador.get(
-            reverse("calendar_v2_data"),
+            reverse("calendar_data"),
             {"vista": "mes", "desde": "2026-09-28", "hasta": "2026-11-01"},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )

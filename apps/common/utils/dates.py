@@ -14,21 +14,6 @@ DAY_OF_WEEK_TO_NAME = {
 }
 
 
-def format_full_date(date_obj) -> str:
-    """
-    Formatea una fecha en español, ejemplo: Lunes 5 de Marzo del 2022
-    """
-    if not date_obj:
-        return ""
-
-    day_name = DAY_OF_WEEK_TO_NAME[date_obj.weekday()]
-    day = date_obj.day
-    month_name = MONTH_NUMBER_TO_NAME[date_obj.month]
-    year = date_obj.year
-
-    return f"{day_name} {day} de {month_name} del {year}"
-
-
 def format_plain_date(date_obj) -> str:
     return f"{date_obj.day} {MONTH_NUMBER_TO_NAME[date_obj.month].lower()} {date_obj.year}"
 

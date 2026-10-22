@@ -10,12 +10,10 @@ from apps.appointments.calendar_v2.query import CalendarQuery
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
-from apps.settings.models import Preference
 from apps.settings.preferences import (
     CALENDAR_DEFAULT_VIEW,
     CALENDAR_SHOW_CANCELLED,
     CALENDAR_SHOW_DEBT,
-    Scope,
 )
 from tests.base import NegocioTestCase
 
@@ -32,7 +30,6 @@ class CalendarioV2PreferenciasTests(NegocioTestCase):
 
     def setUp(self):
         super().setUp()
-        Preference.objects.create(scope=Scope.NEGOCIO, scope_id="", key="calendario_v2", value=True)
         self.encargada = self.miembro(Rol.ENCARGADO, "ana")
         self.colaboradora = self.miembro(Rol.COLABORADOR, "camila")
         cliente = Cliente.objects.create(nombre="Paula", apellido="Herrera")
@@ -60,12 +57,12 @@ class CalendarioV2PreferenciasTests(NegocioTestCase):
         return navegador
 
     def configuracion(self, usuario=None):
-        return self.navegador(usuario).get(reverse("calendar_v2")).context["calendar_config"]
+        return self.navegador(usuario).get(reverse("calendar")).context["calendar_config"]
 
     def datos(self, vista, usuario=None):
         with mock.patch.object(CalendarQuery, "now", return_value=timezone.make_aware(AHORA)):
             return self.navegador(usuario).get(
-                reverse("calendar_v2_data"),
+                reverse("calendar_data"),
                 {"vista": vista, **SEMANA},
                 HTTP_X_REQUESTED_WITH="XMLHttpRequest",
             ).json()
@@ -81,7 +78,7 @@ class CalendarioV2PreferenciasTests(NegocioTestCase):
         }
         datos = {clave: valor for clave, valor in datos.items() if valor is not None}
         return self.navegador(usuario).post(
-            reverse("calendar_v2_preferences"), datos, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            reverse("calendar_preferences"), datos, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
         )
 
     def test_por_defecto_abre_en_mes_y_muestra_todo(self):
@@ -91,11 +88,11 @@ class CalendarioV2PreferenciasTests(NegocioTestCase):
             configuracion["visible"], {"pendiente": True, "completada": True, "cancelada": True}
         )
         self.assertTrue(configuracion["showDebt"])
-        self.assertNotContains(self.navegador().get(reverse("calendar_v2")), "is-filtered")
+        self.assertNotContains(self.navegador().get(reverse("calendar")), "is-filtered")
 
     def test_el_modal_muestra_las_dos_pestanas(self):
         respuesta = self.navegador().get(
-            reverse("calendar_v2_preferences"), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            reverse("calendar_preferences"), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
         )
         self.assertTemplateUsed(respuesta, "calendar_v2/preferences_modal.html")
         self.assertContains(respuesta, "Visibilidad")
@@ -114,7 +111,7 @@ class CalendarioV2PreferenciasTests(NegocioTestCase):
         self.assertFalse(CALENDAR_SHOW_CANCELLED.get(self.encargada))
         self.assertEqual(CALENDAR_DEFAULT_VIEW.get(self.colaboradora), "mes")
         self.assertTrue(CALENDAR_SHOW_CANCELLED.get(self.colaboradora))
-        self.assertContains(self.navegador().get(reverse("calendar_v2")), "is-filtered")
+        self.assertContains(self.navegador().get(reverse("calendar")), "is-filtered")
 
     def test_el_aviso_de_saldo_se_puede_apagar(self):
         self.guardar(calendario_aviso_saldo=None)
@@ -139,10 +136,3 @@ class CalendarioV2PreferenciasTests(NegocioTestCase):
         dia = self.datos("dia")["dias"]["2026-10-22"]
         self.assertEqual(dia["total"], 2)
         self.assertEqual(dia["resumen"], {"pendiente": 1, "completada": 1, "cancelada": 1})
-
-    def test_sin_el_calendario_nuevo_no_hay_preferencias(self):
-        Preference.objects.filter(key="calendario_v2").delete()
-        respuesta = self.navegador().get(
-            reverse("calendar_v2_preferences"), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
-        self.assertEqual(respuesta.status_code, 404)

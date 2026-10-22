@@ -3,8 +3,6 @@ from django.test import Client
 from django.urls import reverse
 
 from apps.profiles.models import Perfil
-from apps.settings.models import Preference
-from apps.settings.preferences import Scope
 from tests.base import NegocioTestCase
 
 User = get_user_model()
@@ -21,31 +19,18 @@ class CalendarioV2Tests(NegocioTestCase):
         self.navegador = Client(HTTP_HOST=self.dominio)
         self.navegador.force_login(self.colaboradora)
 
-    def activar(self):
-        Preference.objects.create(scope=Scope.NEGOCIO, scope_id="", key="calendario_v2", value=True)
-
-    def test_apagada_el_menu_sigue_en_el_calendario_actual(self):
+    def test_todo_el_equipo_entra_al_calendario_sin_activar_nada(self):
         respuesta = self.navegador.get(reverse("calendar"))
-        self.assertEqual(respuesta.status_code, 200)
-        self.assertTemplateUsed(respuesta, "calendar/list.html")
-
-    def test_apagada_la_v2_devuelve_al_calendario_actual(self):
-        respuesta = self.navegador.get(reverse("calendar_v2"))
-        self.assertRedirects(respuesta, reverse("calendar"), fetch_redirect_response=False)
-
-    def test_activa_el_menu_lleva_a_la_v2(self):
-        self.activar()
-        respuesta = self.navegador.get(reverse("calendar"))
-        self.assertRedirects(respuesta, reverse("calendar_v2"), fetch_redirect_response=False)
-
-    def test_activa_todo_el_equipo_ve_la_v2(self):
-        self.activar()
-        respuesta = self.navegador.get(reverse("calendar_v2"))
         self.assertEqual(respuesta.status_code, 200)
         self.assertTemplateUsed(respuesta, "calendar_v2/list.html")
 
+    def test_el_calendario_vive_en_su_direccion_de_siempre(self):
+        self.assertEqual(reverse("calendar"), "/calendario/")
+        self.assertEqual(reverse("calendar_data"), "/calendario/datos/")
+        self.assertEqual(reverse("calendar_preferences"), "/calendario/preferencias/")
+
     def test_sin_sesion_pide_entrar(self):
-        self.activar()
-        respuesta = Client(HTTP_HOST=self.dominio).get(reverse("calendar_v2"))
+        respuesta = Client(HTTP_HOST=self.dominio).get(reverse("calendar"))
         self.assertEqual(respuesta.status_code, 302)
-        self.assertNotEqual(respuesta["Location"], reverse("calendar_v2"))
+        self.assertNotEqual(respuesta["Location"], reverse("calendar"))
+

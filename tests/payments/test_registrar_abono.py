@@ -11,8 +11,6 @@ from apps.clients.models import Cliente
 from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
 from apps.profiles.models import Perfil
-from apps.settings.models import Preference
-from apps.settings.preferences import Scope
 from tests.base import NegocioTestCase
 
 User = get_user_model()
@@ -25,7 +23,6 @@ class RegistrarAbonoTests(NegocioTestCase):
 
     def setUp(self):
         super().setUp()
-        Preference.objects.create(scope=Scope.NEGOCIO, scope_id="", key="calendario_v2", value=True)
         self.encargada = self.miembro(Rol.ENCARGADO, "ana", "Ana", "Pérez")
         self.colaboradora = self.miembro(Rol.COLABORADOR, "camila", "Camila", "Rojas")
         self.cliente = Cliente.objects.create(nombre="Paula", apellido="Herrera")
@@ -169,7 +166,7 @@ class RegistrarAbonoTests(NegocioTestCase):
 
     def acciones_del_dia(self, dia):
         respuesta = self.navegador().get(
-            reverse("calendar_v2_data"),
+            reverse("calendar_data"),
             {"vista": "mes", "desde": "2026-09-28", "hasta": "2026-11-01"},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
