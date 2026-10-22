@@ -64,6 +64,7 @@ PARA_TODO_EL_EQUIPO = {
     "agenda_update_modal",
     "agenda_see_modal",
     "agenda_confirmation_modal",
+    "agenda_payment_modal",
     "agenda_cancel_modal",
     "agenda_restore_modal",
     "agenda_delete_modal",

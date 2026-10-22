@@ -11,6 +11,20 @@
       modal.find(".modal-content").empty();
     });
 
+    const payButton = form.querySelector("[data-panel-payment]");
+    if (payButton) {
+      payButton.addEventListener("click", () => {
+        const url = payButton.dataset.panelPayment;
+        modal.one("hidden.bs.modal", () => {
+          const trigger = $("<a>").attr("data-form-url", url).appendTo(document.body);
+          initializeBSModals(trigger, { formURL: url });
+          trigger.trigger("click");
+          trigger.remove();
+        });
+        modal.modal("hide");
+      });
+    }
+
     const confirm = form.querySelector("[data-panel-confirm]");
     if (!confirm) {
       return;

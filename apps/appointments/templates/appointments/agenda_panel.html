@@ -106,6 +106,12 @@
       {% else %}
       <p class="cal2-detail__notes">Sin abonos registrados.</p>
       {% endif %}
+      {% if payment.pay_url %}
+      <button type="button" class="btn btn-sm btn-success bg-gradient cal2-detail__pay-btn" data-panel-payment="{{ payment.pay_url }}">
+        <span class="material-symbols-outlined icon--small" aria-hidden="true">payments</span>
+        <span>Registrar abono</span>
+      </button>
+      {% endif %}
       {% endif %}
     </section>
 
