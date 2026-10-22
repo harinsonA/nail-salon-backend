@@ -108,9 +108,7 @@ class LlenadoAutomaticoTests(NegocioTestCase):
             {
                 "payment_method": "EFECTIVO",
                 "full_payment": "on",
-                "down_payment": "0",
-                "remaining_payment": "6000",
-                "payment_date": "21/10/2026",
+                "payment_date": "2026-10-21",
                 "payment_time": "11:00",
             },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",

@@ -1,7 +1,13 @@
 {% extends 'negocio/base.html' %}
+{% load static %}
 
 {% block view_title %}
 Lista de deudores
+{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/custom/custom.calendar-v2.css' %}" rel="stylesheet">
+<link href="{% static 'css/custom/custom.appointment-modals.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
@@ -56,6 +62,7 @@ Lista de deudores
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/custom/payments/payment.form.js' %}"></script>
 <script>
   $(() => {
     const debtDetailColumn = ({ fecha_cita_display: fechaCitaDisplay, debt_detail_url: debtDetailUrl }) => `
