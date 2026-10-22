@@ -1,6 +1,10 @@
 {% extends 'negocio/base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<link href="{% static 'css/custom/custom.appointment-modals.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block view_title %}
 Lista de clientes
 {% endblock %}

@@ -31,7 +31,7 @@
       head.append(dom.el("span", "cal2-actions__client", appointment.cliente), dom.el("span", "cal2-actions__when", appointment.hora));
       menu.append(head);
 
-      appointment.acciones.forEach(({ label, icon, link, className = "" }) => {
+      appointment.acciones.forEach(({ label, icon, iconImage, link, className = "" }) => {
         if (className.includes("is-danger")) {
           const divider = dom.el("hr", "dropdown-divider");
           divider.setAttribute("role", "separator");
@@ -41,7 +41,7 @@
         item.href = "#";
         item.dataset.formUrl = link;
         item.setAttribute("role", "menuitem");
-        item.append(dom.icon(icon, "icon--menu"), dom.el("span", "", label));
+        item.append(iconImage ? this.image(iconImage) : dom.icon(icon, "icon--menu"), dom.el("span", "", label));
         menu.append(item);
       });
 
@@ -61,6 +61,15 @@
       window.addEventListener("resize", this.onViewport);
       document.addEventListener("scroll", this.onViewport, true);
       menu.querySelector("[role='menuitem']").focus();
+    }
+
+    image(src) {
+      const image = dom.el("img", "icon--menu");
+      image.src = src;
+      image.alt = "";
+      image.width = 18;
+      image.height = 18;
+      return image;
     }
 
     position(menu, trigger) {

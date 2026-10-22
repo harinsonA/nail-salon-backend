@@ -1,3 +1,4 @@
+from django.templatetags.static import static
 from django.urls import reverse
 
 from apps.appointments.models import Cita
@@ -20,6 +21,13 @@ ACTIONS = {
 }
 
 PAYMENT_ACTION = "abonar"
+
+WHATSAPP_ACTION = {
+    "label": "Enviar WhatsApp",
+    "iconImage": "images/common/whatsapp.svg",
+    "url_name": "client_whatsapp_modal",
+    "className": "bs-modal",
+}
 
 ACTIONS_BY_STATUS = {
     Cita.EstadoChoices.PENDIENTE: ["detalle", "editar", "completar", "cancelar"],
@@ -50,6 +58,21 @@ class CalendarBuilder:
             "className": class_name,
         }
 
+    @staticmethod
+    def whatsapp_action(appointment):
+        return {
+            "label": WHATSAPP_ACTION["label"],
+            "iconImage": static(WHATSAPP_ACTION["iconImage"]),
+            "link": reverse(WHATSAPP_ACTION["url_name"], args=[appointment["cliente_id"]]),
+            "bsModal": True,
+            "className": WHATSAPP_ACTION["className"],
+        }
+
+    def with_contact(self, appointment, actions):
+        if appointment.get("telefono") and appointment.get("cliente_id"):
+            actions.insert(1, self.whatsapp_action(appointment))
+        return actions
+
     def serialize(self, appointment):
         return {
             "id": appointment["id"],
@@ -58,7 +81,7 @@ class CalendarBuilder:
             "estado": appointment["estado"],
             "sin_cerrar": appointment["sin_cerrar"],
             "con_saldo": appointment["con_saldo"],
-            "acciones": self.actions(appointment),
+            "acciones": self.with_contact(appointment, self.actions(appointment)),
         }
 
     def actions(self, appointment):
