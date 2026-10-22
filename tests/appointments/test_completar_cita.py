@@ -93,13 +93,13 @@ class CompletarCitaTests(NegocioTestCase):
         self.assertNoSeCompleta(respuesta)
         self.assertIn('activa \\"Paga el total ahora\\"', respuesta.content.decode())
 
-    def test_con_tarjeta_o_transferencia_la_referencia_es_obligatoria(self):
+    def test_con_tarjeta_o_transferencia_la_referencia_es_opcional(self):
         respuesta = self.completar(full_payment="on", payment_method="TARJETA")
-        self.assertEqual(respuesta.status_code, 400)
-        errores = {error["id_element"]: error["error"] for error in respuesta.json()["errors"]}
-        self.assertEqual(errores["id_payment_reference"], "Ingresa la referencia del pago.")
+        self.assertEqual(respuesta.status_code, 200)
         self.cita.refresh_from_db()
-        self.assertEqual(self.cita.estado, Cita.EstadoChoices.PENDIENTE)
+        self.assertEqual(self.cita.estado, Cita.EstadoChoices.COMPLETADA)
+        abono = self.cita.pago.detalles_pago.get()
+        self.assertEqual((abono.metodo_pago, abono.referencia_pago), ("TARJETA", None))
 
     def test_sin_pago_hoy_no_pide_referencia(self):
         respuesta = self.completar(down_payment="0", payment_method="TRANSFERENCIA")

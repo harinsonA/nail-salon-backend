@@ -29,7 +29,6 @@ DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M"
 AMOUNT_REQUIRED = "El monto debe ser mayor a $0."
 AMOUNT_TOO_HIGH = "No puede superar el saldo pendiente ({balance})."
-REFERENCE_REQUIRED = "Ingresa la referencia del pago."
 NO_BALANCE = "Este pago ya no tiene saldo pendiente."
 METHOD_LABELS = dict(MetodoPago.CHOICES)
 
@@ -132,13 +131,6 @@ class AddPaymentForm(BSModalModelForm):
             raise forms.ValidationError(AMOUNT_TOO_HIGH.format(balance=balance))
         return down_payment
 
-    def clean_payment_reference(self):
-        reference = (self.cleaned_data.get("payment_reference") or "").strip()
-        method = self.cleaned_data.get("payment_method")
-        if method and method != MetodoPago.EFECTIVO and not reference:
-            raise forms.ValidationError(REFERENCE_REQUIRED)
-        return reference
-
 
 # endregion
 """========================================================================="""
@@ -221,7 +213,7 @@ class PaymentInstallmentMixin:
             fecha_pago=payment_date,
             monto_pago=data["down_payment"],
             metodo_pago=method,
-            referencia_pago=data["payment_reference"]
+            referencia_pago=data["payment_reference"] or None
             if method != MetodoPago.EFECTIVO
             else None,
             notas_detalle=data["observations"],

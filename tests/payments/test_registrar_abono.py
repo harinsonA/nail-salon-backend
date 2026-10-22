@@ -131,9 +131,16 @@ class RegistrarAbonoTests(NegocioTestCase):
         self.assertIn("$13.000", self.errores(self.abonar(down_payment="13001"))["id_down_payment"])
         self.assertIn("id_down_payment", self.errores(self.abonar(down_payment="0")))
 
-    def test_sin_efectivo_la_referencia_es_obligatoria(self):
-        errores = self.errores(self.abonar(down_payment="3000", payment_method="TRANSFERENCIA"))
-        self.assertEqual(errores["id_payment_reference"], "Ingresa la referencia del pago.")
+    def test_sin_efectivo_la_referencia_es_opcional(self):
+        respuesta = self.abonar(down_payment="3000", payment_method="TRANSFERENCIA")
+        self.assertEqual(respuesta.status_code, 200)
+        abono = self.pago.detalles_pago.order_by("-pk").first()
+        self.assertEqual((abono.metodo_pago, abono.referencia_pago), ("TRANSFERENCIA", None))
+
+    def test_guarda_la_referencia_cuando_la_ingresan(self):
+        respuesta = self.abonar(down_payment="3000", payment_method="TARJETA", payment_reference="  TRX-9  ")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(self.pago.detalles_pago.order_by("-pk").first().referencia_pago, "TRX-9")
 
     def test_un_pago_ya_saldado_no_acepta_otro_abono_en_deudores(self):
         DetallePago.objects.create(
