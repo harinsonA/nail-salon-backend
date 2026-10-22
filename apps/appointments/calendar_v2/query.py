@@ -36,6 +36,8 @@ class CalendarQuery:
             "fecha_agenda",
             "hora_agenda",
             "estado",
+            "cliente_id",
+            "cliente__telefono",
             "cliente__nombre",
             "cliente__apellido",
             "pago__estado_pago",
@@ -49,6 +51,8 @@ class CalendarQuery:
                     "fecha": row["fecha_agenda"],
                     "hora": row["hora_agenda"],
                     "estado": row["estado"],
+                    "cliente_id": row["cliente_id"],
+                    "telefono": row["cliente__telefono"],
                     "cliente": f"{row['cliente__nombre']} {row['cliente__apellido']}".strip(),
                     "sin_cerrar": is_unclosed(row["estado"], row["fecha_agenda"], row["hora_agenda"], now),
                     "con_saldo": row["estado"] == Cita.EstadoChoices.COMPLETADA
