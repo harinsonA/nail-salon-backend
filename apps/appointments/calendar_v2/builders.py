@@ -17,7 +17,10 @@ ACTIONS = {
     "completar": ("Completar cita", "check_circle", "agenda_confirmation_modal", "bs-modal"),
     "cancelar": ("Cancelar cita", "cancel", "agenda_cancel_modal", "canvas-modal is-danger"),
     "restaurar": ("Restaurar cita", "restore", "agenda_restore_modal", "canvas-modal"),
+    "abonar": ("Registrar abono", "payments", "agenda_payment_modal", "bs-modal"),
 }
+
+PAYMENT_ACTION = "abonar"
 
 WHATSAPP_ACTION = {
     "label": "Enviar WhatsApp",
@@ -78,11 +81,17 @@ class CalendarBuilder:
             "estado": appointment["estado"],
             "sin_cerrar": appointment["sin_cerrar"],
             "con_saldo": appointment["con_saldo"],
-            "acciones": self.with_contact(
-                appointment,
-                [self.action(key, appointment["id"]) for key in ACTIONS_BY_STATUS.get(appointment["estado"], [])],
-            ),
+            "acciones": self.with_contact(appointment, self.actions(appointment)),
         }
+
+    def actions(self, appointment):
+        actions = [
+            self.action(key, appointment["id"])
+            for key in ACTIONS_BY_STATUS.get(appointment["estado"], [])
+        ]
+        if appointment["con_saldo"] and appointment.get("pago_id"):
+            actions.append(self.action(PAYMENT_ACTION, appointment["pago_id"]))
+        return actions
 
     @staticmethod
     def visual_status(appointment):

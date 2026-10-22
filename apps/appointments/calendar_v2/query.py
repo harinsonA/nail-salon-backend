@@ -40,6 +40,7 @@ class CalendarQuery:
             "cliente__telefono",
             "cliente__nombre",
             "cliente__apellido",
+            "pago__pk",
             "pago__estado_pago",
             "pago__is_removed",
         )
@@ -56,8 +57,10 @@ class CalendarQuery:
                     "cliente": f"{row['cliente__nombre']} {row['cliente__apellido']}".strip(),
                     "sin_cerrar": is_unclosed(row["estado"], row["fecha_agenda"], row["hora_agenda"], now),
                     "con_saldo": row["estado"] == Cita.EstadoChoices.COMPLETADA
+                    and row["pago__pk"] is not None
                     and row["pago__estado_pago"] == EstadoPago.PENDIENTE
                     and not row["pago__is_removed"],
+                    "pago_id": row["pago__pk"],
                 }
             )
         return result

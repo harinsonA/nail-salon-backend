@@ -621,3 +621,10 @@ form.cal2-detail-form {
   font-size: .76rem;
   color: var(--text-muted);
 }
+
+.cal2-detail__pay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+}

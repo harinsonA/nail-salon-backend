@@ -1,10 +1,11 @@
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.appointments.models import Cita
 from apps.common.utils.currency import format_money
 from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name
-from apps.payments.choices import MetodoPago
+from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
 
 """========================================================================="""
@@ -136,7 +137,9 @@ class AppointmentPanel:
         if pending:
             rows.append({"label": "Saldo pendiente", "value": format_money(pending), "debt": True})
         first = installments[0] if installments else None
+        can_pay = pending and payment.estado_pago == EstadoPago.PENDIENTE
         return {
+            "pay_url": reverse("agenda_payment_modal", args=[payment.pk]) if can_pay else "",
             "badge": {"label": "Pago incompleto", "debt": True} if pending else {"label": "Pagado", "debt": False},
             "rows": rows,
             "first": {

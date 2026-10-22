@@ -8,6 +8,7 @@ from apps.appointments.views.agenda_modals.create import AgendaCreateView
 from apps.appointments.views.agenda_modals.delete import AgendaDeleteModalView
 from apps.appointments.views.agenda_modals.detail import AgendaSeeModalView
 from apps.appointments.views.agenda_modals.edit import AgendaUpdateModalView
+from apps.appointments.views.agenda_modals.payment import AgendaPaymentModalView
 from apps.appointments.views.agenda_modals.restore import AgendaRestoreModalView
 from apps.appointments.views.calendar.view import CalendarListView, CalendarView
 from apps.appointments.views.calendar_v2.view import CalendarV2DataView, CalendarV2View
@@ -62,6 +63,11 @@ urlpatterns = [
         "agenda/detalle/<str:pk>/confirmar/modal/",
         AgendaConfirmationModal.as_view(),
         name="agenda_confirmation_modal",
+    ),
+    path(
+        "agenda/pago/<int:pk>/abonar/modal/",
+        AgendaPaymentModalView.as_view(),
+        name="agenda_payment_modal",
     ),
     path(
         "agenda/detalle/<str:pk>/cancelar/modal/",
