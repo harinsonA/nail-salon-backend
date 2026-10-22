@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 190">
+  <style>
+    .line { fill: none; stroke: #c29a6f; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .thin { stroke-width: 1; }
+    .hatch { stroke-width: .7; opacity: .7; }
+    .paper { fill: #ffffff; stroke: #c29a6f; stroke-width: 1.6; stroke-linejoin: round; }
+    .shadow { fill: rgba(134, 100, 65, .12); }
+    .ring-dot { fill: #c29a6f; }
+    .glass { fill: #ffffff; }
+    .num { fill: #a67f56; font: 7.5px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .num.on { fill: #ffffff; font-weight: 600; }
+    .done { fill: #7d8b4e; }
+    .pending { fill: #c8843c; }
+    .spark { fill: #dfbe99; transform-box: fill-box; transform-origin: center; animation: twinkle 2.8s ease-in-out infinite; }
+    .spark.late { fill: #e6cba9; animation-delay: 1.4s; }
+    @keyframes twinkle { 0%, 100% { opacity: .45; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.1); } }
+    @media (prefers-reduced-motion: reduce) { .spark { animation: none; } }
+  </style>
+  <ellipse cx="160" cy="180" rx="128" ry="6" class="shadow"></ellipse>
+  <path d="M252 36L284 174H236" class="line"></path>
+  <path d="M248 33V170M252 35V172" class="line thin"></path>
+  <rect x="110" y="30" width="136" height="140" rx="3" class="paper"></rect>
+  <ellipse cx="120.0" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="120.0" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="130.4" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="130.4" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="140.8" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="140.8" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="151.2" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="151.2" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="161.6" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="161.6" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="172.0" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="172.0" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="182.4" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="182.4" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="192.8" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="192.8" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="203.2" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="203.2" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="213.6" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="213.6" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="224.0" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="224.0" cy="30" r="1.5" class="ring-dot"></circle>
+  <ellipse cx="234.4" cy="23" rx="3.4" ry="5.2" class="line"></ellipse><circle cx="234.4" cy="30" r="1.5" class="ring-dot"></circle>
+  <rect x="120" y="38" width="116" height="30" class="line thin"></rect>
+  <rect x="123" y="41" width="110" height="24" class="line thin"></rect>
+  <path d="M123 45.0L128.0 41 M123 61.0L128.0 65 M233 45.0L228.0 41 M233 61.0L228.0 65 M123 47.8L131.5 41 M123 58.2L131.5 65 M233 47.8L224.5 41 M233 58.2L224.5 65 M123 50.6L135.0 41 M123 55.4L135.0 65 M233 50.6L221.0 41 M233 55.4L221.0 65 M123 53.4L138.5 41 M123 52.6L138.5 65 M233 53.4L217.5 41 M233 52.6L217.5 65" class="line hatch"></path>
+  <path d="M140 41L130 53L140 65M216 41L226 53L216 65" class="line thin"></path>
+  <path d="M122.5 77H132.5M122.5 79.5H132.5 M140.5 77H150.5M140.5 79.5H150.5 M158.5 77H168.5M158.5 79.5H168.5 M176.5 77H186.5M176.5 79.5H186.5 M194.5 77H204.5M194.5 79.5H204.5 M212.5 77H222.5M212.5 79.5H222.5 M230.5 77H240.5M230.5 79.5H240.5" class="line thin"></path>
+  <path d="M118 84H244 M118 100H244 M118 116H244 M118 132H244 M118 148H244 M136.5 84V164 M154.5 84V164 M172.5 84V164 M190.5 84V164 M208.5 84V164 M226.5 84V164" class="line thin"></path>
+  <circle cx="163.5" cy="106.4" r="6.6" class="done"></circle>
+  <circle cx="199.5" cy="122.4" r="6.6" class="done"></circle>
+  <circle cx="181.5" cy="154.4" r="6.6" class="pending"></circle>
+  <g><text x="163.5" y="93" text-anchor="middle" class="num">1</text><text x="181.5" y="93" text-anchor="middle" class="num">2</text><text x="199.5" y="93" text-anchor="middle" class="num">3</text><text x="217.5" y="93" text-anchor="middle" class="num">4</text><text x="235.5" y="93" text-anchor="middle" class="num">5</text><text x="127.5" y="109" text-anchor="middle" class="num">6</text><text x="145.5" y="109" text-anchor="middle" class="num">7</text><text x="163.5" y="109" text-anchor="middle" class="num on">8</text><text x="181.5" y="109" text-anchor="middle" class="num">9</text><text x="199.5" y="109" text-anchor="middle" class="num">10</text><text x="217.5" y="109" text-anchor="middle" class="num">11</text><text x="235.5" y="109" text-anchor="middle" class="num">12</text><text x="127.5" y="125" text-anchor="middle" class="num">13</text><text x="145.5" y="125" text-anchor="middle" class="num">14</text><text x="163.5" y="125" text-anchor="middle" class="num">15</text><text x="181.5" y="125" text-anchor="middle" class="num">16</text><text x="199.5" y="125" text-anchor="middle" class="num on">17</text><text x="217.5" y="125" text-anchor="middle" class="num">18</text><text x="235.5" y="125" text-anchor="middle" class="num">19</text><text x="127.5" y="141" text-anchor="middle" class="num">20</text><text x="145.5" y="141" text-anchor="middle" class="num">21</text><text x="163.5" y="141" text-anchor="middle" class="num">22</text><text x="181.5" y="141" text-anchor="middle" class="num">23</text><text x="199.5" y="141" text-anchor="middle" class="num">24</text><text x="217.5" y="141" text-anchor="middle" class="num">25</text><text x="235.5" y="141" text-anchor="middle" class="num">26</text><text x="127.5" y="157" text-anchor="middle" class="num">27</text><text x="145.5" y="157" text-anchor="middle" class="num">28</text><text x="163.5" y="157" text-anchor="middle" class="num">29</text><text x="181.5" y="157" text-anchor="middle" class="num on">30</text><text x="199.5" y="157" text-anchor="middle" class="num">31</text></g>
+  <path d="M246 126C244 152 230 166 196 170M246 136C243 156 232 166 210 170M246 146C242 160 236 167 224 170" class="line thin"></path>
+  <g transform="translate(40 40) scale(.115)">
+    <path d="M55 45H809V135H759V192C764 420 528 520 528 620C528 720 764 820 759 1022V1078H809V1168H55V1078H105V1022C100 820 336 720 336 620C336 520 100 420 105 192V135H55Z" class="glass"></path>
+  </g>
+  <path d="M282 141C283.35 147.75 284.25 148.65 291 150C284.25 151.35 283.35 152.25 282 159C280.65 152.25 279.75 151.35 273 150C279.75 148.65 280.65 147.75 282 141Z" class="spark"></path>
+  <path d="M36 39C37.05 44.25 37.75 44.95 43 46C37.75 47.05 37.05 47.75 36 53C34.95 47.75 34.25 47.05 29 46C34.25 44.95 34.95 44.25 36 39Z" class="spark late"></path>
+  <path d="M274 23C274.75 26.75 275.25 27.25 279 28C275.25 28.75 274.75 29.25 274 33C273.25 29.25 272.75 28.75 269 28C272.75 27.25 273.25 26.75 274 23Z" class="spark late"></path>
+  <path d="M28 132C28.6 135.0 29.0 135.4 32 136C29.0 136.6 28.6 137.0 28 140C27.4 137.0 27.0 136.6 24 136C27.0 135.4 27.4 135.0 28 132Z" class="spark"></path>
+</svg>

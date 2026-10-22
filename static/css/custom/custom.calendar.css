@@ -1129,78 +1129,39 @@ form.calendar-config-form {
 }
 
 .calendar-welcome__art {
-  width: min(100%, 260px);
-  height: auto;
+  position: relative;
+  width: min(100%, 340px);
+  aspect-ratio: 300 / 190;
+  container-type: inline-size;
   animation: calendar-welcome-rise .5s cubic-bezier(.2, .8, .2, 1) both;
 }
 
-.calendar-welcome__shadow {
-  fill: rgba(134, 100, 65, 0.14);
+.calendar-welcome__scene {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.calendar-welcome__paper {
-  fill: var(--bg-surface);
-  stroke: var(--sand-200);
-  stroke-width: 1.5;
+.calendar-welcome__hourglass {
+  position: absolute;
+  top: 21.053%;
+  left: 13.333%;
+  width: 33.12%;
+  height: auto;
 }
 
-.calendar-welcome__band {
-  fill: var(--sand-500);
-}
-
-.calendar-welcome__ring {
-  fill: var(--cocoa-600);
-}
-
-.calendar-welcome__grid rect {
-  fill: var(--cream-300);
-}
-
-.calendar-welcome__grid .is-done {
-  fill: var(--calendar-completada);
-}
-
-.calendar-welcome__grid .is-pending {
-  fill: var(--calendar-pendiente);
-}
-
-.calendar-welcome__grid .is-today {
-  fill: none;
-  stroke: var(--calendar-today);
-  stroke-width: 2;
-}
-
-.calendar-welcome__polish {
-  transform-origin: 196px 126px;
-  transform: rotate(8deg);
-}
-
-.calendar-welcome__cap {
-  fill: var(--cocoa-700);
-}
-
-.calendar-welcome__bottle {
-  fill: var(--cocoa-300);
-}
-
-.calendar-welcome__shine {
-  fill: rgba(255, 255, 255, 0.55);
-}
-
-.calendar-welcome__spark {
-  fill: var(--sand-500);
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: calendar-welcome-twinkle 2.8s ease-in-out infinite;
-}
-
-.calendar-welcome__spark--late {
-  fill: var(--sand-400);
-  animation-delay: 1.4s;
-}
-
-.calendar-welcome__dot {
-  fill: var(--sand-300);
+.calendar-welcome__month {
+  position: absolute;
+  top: 27.9%;
+  left: 59.333%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-size: 4.17cqw;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: .53cqw;
+  white-space: nowrap;
+  color: var(--sand-700);
 }
 
 .calendar-welcome__body {
@@ -1340,17 +1301,6 @@ form.calendar-config-form {
   }
 }
 
-@keyframes calendar-welcome-twinkle {
-  0%, 100% {
-    opacity: .45;
-    transform: scale(.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-}
-
 @media (max-width: 575.98px) {
   .calendar-welcome__body {
     padding: 16px 16px 18px;
@@ -1369,8 +1319,7 @@ form.calendar-config-form {
 
 @media (prefers-reduced-motion: reduce) {
   .calendar-welcome__art,
-  .calendar-welcome__step,
-  .calendar-welcome__spark {
+  .calendar-welcome__step {
     animation: none;
   }
 }
