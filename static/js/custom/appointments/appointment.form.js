@@ -2,6 +2,7 @@
   "use strict";
 
   const CREATED_EVENT = "appointment:created";
+  const CHANGED_EVENT = "appointment:changed";
   const ALL_CATEGORIES = "";
   const NOTES_MAX = 250;
   const REQUIRED = "Este campo es obligatorio.";
@@ -43,7 +44,7 @@
       this.form = form;
       this.config = config;
       this.modal = $(form).closest(".modal");
-      this.lines = [];
+      this.lines = (config.lines || []).map((line) => ({ ...line }));
       this.service = null;
       this.busyRequest = 0;
 
@@ -228,6 +229,9 @@
         return;
       }
       const params = new URLSearchParams({ fecha: this.fields.date.value, asignada: this.fields.staff.value });
+      if (this.config.appointmentId) {
+        params.set("excluir", this.config.appointmentId);
+      }
       fetch(`${this.config.busyUrl}?${params}`, { headers: { "X-Requested-With": "XMLHttpRequest" } })
         .then((response) => (response.ok ? response.json() : { horas: [] }))
         .catch(() => ({ horas: [] }))
@@ -316,7 +320,11 @@
         return;
       }
       this.fields.services.value = JSON.stringify(
-        this.lines.map((line) => ({ id: line.service.id, cantidad: line.quantity, descuento: line.discount })),
+        this.lines.map((line) => ({
+          ...(line.detalle ? { detalle: line.detalle } : { id: line.service.id }),
+          cantidad: line.quantity,
+          descuento: line.discount,
+        })),
       );
       const data = Object.fromEntries(new FormData(this.form).entries());
       this.ui.save.disabled = true;
@@ -324,7 +332,8 @@
       if (status === 200) {
         notifyAlert(response, status);
         this.modal.modal("hide");
-        document.dispatchEvent(new CustomEvent(CREATED_EVENT, { detail: { fecha: response.fecha } }));
+        const event = this.config.appointmentId ? CHANGED_EVENT : CREATED_EVENT;
+        document.dispatchEvent(new CustomEvent(event, { detail: { fecha: response.fecha } }));
         return;
       }
       if (status === 401 && typeof redirectToLogin === "function") {
@@ -373,6 +382,9 @@
       $(ui.service).on("change", () => {
         this.service = this.config.services.find((service) => String(service.id) === ui.service.value) || null;
         const existing = this.lines.find((line) => this.service && line.service.id === this.service.id);
+        if (existing) {
+          this.service = existing.service;
+        }
         ui.quantity.value = existing ? existing.quantity : 1;
         ui.discount.value = existing ? existing.discount : 0;
         this.renderEditor();
@@ -381,7 +393,7 @@
         const line = this.editorLine();
         const existing = this.lines.find((item) => item.service.id === line.service.id);
         if (existing) {
-          Object.assign(existing, line);
+          Object.assign(existing, { quantity: line.quantity, discount: line.discount });
         } else {
           this.lines.push(line);
         }
@@ -397,5 +409,6 @@
 
   window.AppointmentForm = AppointmentForm;
   window.APPOINTMENT_CREATED_EVENT = CREATED_EVENT;
+  window.APPOINTMENT_CHANGED_EVENT = CHANGED_EVENT;
   window.initAppointmentForm = (form, config) => new AppointmentForm(form, config);
 })(window, jQuery);
