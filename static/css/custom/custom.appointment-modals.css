@@ -516,3 +516,108 @@ form.cal2-detail-form {
     scrollbar-color: var(--cal2-scroll-thumb) transparent;
   }
 }
+
+.cal2-pay__balance {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--cal2-pendiente-bg);
+  color: var(--cal2-pendiente-text);
+  font-size: .8rem;
+}
+
+.cal2-pay__balance strong {
+  font-size: 1.35rem;
+  color: var(--cal2-pendiente-text);
+}
+
+.cal2-pay__full {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: .82rem;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.cal2-pay__full .form-check-input {
+  float: none;
+  margin: 0;
+}
+
+.cal2-pay__money {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.cal2-pay__reference[hidden] {
+  display: none;
+}
+
+.cal2-pay__progress {
+  display: flex;
+  height: 8px;
+  margin: 12px 0 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--cream-300);
+}
+
+.cal2-pay__progress-paid {
+  background: var(--cal2-completada);
+}
+
+.cal2-pay__progress-now {
+  background: var(--sand-500);
+}
+
+.cal2-pay__this dd {
+  color: var(--cal2-completada-text);
+  font-weight: 600;
+}
+
+.cal2-pay .is-total dd.is-settled {
+  color: var(--cal2-completada-text);
+}
+
+.cal2-done__total {
+  background: var(--cal2-completada-bg);
+  color: var(--cal2-completada-text);
+}
+
+.cal2-done__total strong {
+  color: var(--cal2-completada-text);
+}
+
+.cal2-done__full {
+  margin: 0 0 4px;
+}
+
+.cal2-done__partial {
+  margin-top: 12px;
+}
+
+.cal2-done__partial[hidden],
+.cal2-done__method[hidden] {
+  display: none;
+}
+
+.cal2-done .is-total dd.has-debt {
+  color: var(--color-danger-text);
+}
+
+.cal2-config__hint {
+  margin: 0 0 10px;
+  font-size: .76rem;
+  color: var(--text-muted);
+}

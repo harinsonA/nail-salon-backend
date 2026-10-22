@@ -7,13 +7,12 @@
   const MENU_ID = "cal2-actions";
 
   class AppointmentMenu {
-    constructor({ onChange }) {
+    constructor() {
       this.menu = null;
       this.trigger = null;
       this.onOutside = this.onOutside.bind(this);
       this.onKey = this.onKey.bind(this);
       this.onViewport = () => this.close(false);
-      this.bindRefresh(onChange);
     }
 
     open(appointment, trigger) {
@@ -118,22 +117,6 @@
         const step = event.key === "ArrowDown" ? 1 : -1;
         items[(index + step + items.length) % items.length].focus();
       }
-    }
-
-    bindRefresh(onChange) {
-      $("#modal").on("show.bs.modal", function ({ currentTarget }) {
-        const finish = (status) => {
-          if (status === 200) {
-            $(currentTarget).modal("hide");
-            onChange();
-          }
-        };
-        $("#agenda_confirmation_btn").off("click").on("click", async () => {
-          const form = $(currentTarget).find("form");
-          const [, status] = await submitRequestBSModal(form[0]);
-          finish(status);
-        });
-      });
     }
   }
 

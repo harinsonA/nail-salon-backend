@@ -89,6 +89,7 @@ Citas: {{ full_date }}
 {% block extra_js %}
 <script src="{% static 'js/custom/appointments/appointment.form.js' %}"></script>
 <script src="{% static 'js/custom/appointments/appointment.panel.js' %}"></script>
+<script src="{% static 'js/custom/appointments/appointment.complete.js' %}"></script>
 <script>
   const agendaStatusIcon = {
     pendiente: {
@@ -262,14 +263,6 @@ Citas: {{ full_date }}
         }
       };
       $('#delete_submit_btn').off('click').on('click', handleSimpleModalAction);
-      $('#agenda_confirmation_btn').off('click').on('click', async () => {
-        const form = $(currentTarget).find('form');
-        const [response = {}, status] = await submitRequestBSModal(form[0]);
-        if ([200].includes(status)) {
-          $(currentTarget).modal('hide');
-          table.draw();
-        }
-      });
     });
   });
 </script>
