@@ -1100,3 +1100,277 @@ form.cal2-config-form {
     text-align: center;
   }
 }
+
+.cal2-welcome .modal-dialog {
+  max-width: 520px;
+}
+
+.cal2-welcome .modal-content {
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: 0 24px 48px -20px rgba(70, 51, 42, 0.45);
+}
+
+.cal2-welcome__hero {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 28px 24px 6px;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.85), transparent 45%),
+    linear-gradient(160deg, var(--sand-100) 0%, var(--cream-200) 55%, var(--cream-50) 100%);
+}
+
+.cal2-welcome__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.cal2-welcome__art {
+  width: min(100%, 260px);
+  height: auto;
+  animation: cal2-welcome-rise .5s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.cal2-welcome__shadow {
+  fill: rgba(134, 100, 65, 0.14);
+}
+
+.cal2-welcome__paper {
+  fill: var(--bg-surface);
+  stroke: var(--sand-200);
+  stroke-width: 1.5;
+}
+
+.cal2-welcome__band {
+  fill: var(--sand-500);
+}
+
+.cal2-welcome__ring {
+  fill: var(--cocoa-600);
+}
+
+.cal2-welcome__grid rect {
+  fill: var(--cream-300);
+}
+
+.cal2-welcome__grid .is-done {
+  fill: var(--cal2-completada);
+}
+
+.cal2-welcome__grid .is-pending {
+  fill: var(--cal2-pendiente);
+}
+
+.cal2-welcome__grid .is-today {
+  fill: none;
+  stroke: var(--cal2-today);
+  stroke-width: 2;
+}
+
+.cal2-welcome__polish {
+  transform-origin: 196px 126px;
+  transform: rotate(8deg);
+}
+
+.cal2-welcome__cap {
+  fill: var(--cocoa-700);
+}
+
+.cal2-welcome__bottle {
+  fill: var(--cocoa-300);
+}
+
+.cal2-welcome__shine {
+  fill: rgba(255, 255, 255, 0.55);
+}
+
+.cal2-welcome__spark {
+  fill: var(--sand-500);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cal2-welcome-twinkle 2.8s ease-in-out infinite;
+}
+
+.cal2-welcome__spark--late {
+  fill: var(--sand-400);
+  animation-delay: 1.4s;
+}
+
+.cal2-welcome__dot {
+  fill: var(--sand-300);
+}
+
+.cal2-welcome__body {
+  padding: 18px 28px 22px;
+  text-align: center;
+}
+
+.cal2-welcome__eyebrow {
+  margin: 0 0 4px;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--sand-700);
+}
+
+.cal2-welcome__title {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  text-wrap: balance;
+}
+
+.cal2-welcome__text {
+  max-width: 400px;
+  margin: 0 auto 18px;
+  font-size: .86rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+
+.cal2-welcome__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.cal2-welcome__step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  animation: cal2-welcome-rise .45s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.cal2-welcome__step:nth-child(2) {
+  animation-delay: .06s;
+}
+
+.cal2-welcome__step:nth-child(3) {
+  animation-delay: .12s;
+}
+
+.cal2-welcome__mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-soft-hover);
+  color: var(--sand-800);
+}
+
+.cal2-welcome__step-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: .78rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.cal2-welcome__step-text strong {
+  font-size: .86rem;
+  color: var(--text-strong);
+}
+
+.cal2-welcome__go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cal2-welcome__badge {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  font-size: .72rem;
+  font-weight: 600;
+}
+
+.cal2-welcome__step.is-done {
+  border-color: var(--color-success-border);
+  background: var(--cream-50);
+}
+
+.cal2-welcome__step.is-done .cal2-welcome__mark {
+  background: var(--cal2-completada);
+  color: #fff;
+}
+
+.cal2-welcome__step.is-locked {
+  border-style: dashed;
+  background: transparent;
+}
+
+.cal2-welcome__step.is-locked .cal2-welcome__mark {
+  background: var(--cream-300);
+  color: var(--warm-gray-500);
+}
+
+@keyframes cal2-welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cal2-welcome-twinkle {
+  0%, 100% {
+    opacity: .45;
+    transform: scale(.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .cal2-welcome__body {
+    padding: 16px 16px 18px;
+  }
+
+  .cal2-welcome__step {
+    flex-wrap: wrap;
+  }
+
+  .cal2-welcome__go {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal2-welcome__art,
+  .cal2-welcome__step,
+  .cal2-welcome__spark {
+    animation: none;
+  }
+}

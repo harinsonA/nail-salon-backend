@@ -9,7 +9,10 @@ from apps.appointments.calendar_v2.builders import BUILDERS
 from apps.appointments.calendar_v2.filters import VIEW_CHOICES, CalendarFilterForm
 from apps.appointments.calendar_v2.query import CalendarQuery
 from apps.appointments.calendar_v2.settings import calendar_settings, visible_statuses
+from apps.clients.models import Cliente
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
+from apps.profiles.permisos import administra_el_negocio
+from apps.services.models import Servicio
 
 """========================================================================="""
 # region ........ Constants
@@ -29,6 +32,34 @@ GRID_HOURS = {"desde": 5, "hasta": 24}
 class CalendarV2View(ProtectedView, TemplateView):
     template_name = "calendar_v2/list.html"
 
+    def welcome(self):
+        has_clients = Cliente.activos.exists()
+        has_services = Servicio.activos.exists()
+        if has_clients and has_services:
+            return None
+        manages = administra_el_negocio(self.request.user)
+        return {
+            "steps": [
+                {
+                    "icon": "group",
+                    "title": "Registra a tus clientes",
+                    "text": "Agrégalos uno a uno o impórtalos desde un Excel.",
+                    "done": has_clients,
+                    "url": reverse("clients"),
+                    "action": "Ir a Clientes",
+                },
+                {
+                    "icon": "spa",
+                    "title": "Crea tus servicios",
+                    "text": "Lo que ofreces, con su precio y duración.",
+                    "done": has_services,
+                    "url": reverse("services") if manages else "",
+                    "action": "Ir a Servicios",
+                    "hint": "Pídeselos a quien administra el negocio.",
+                },
+            ],
+        }
+
     def get_context_data(self, **kwargs):
         today = timezone.localdate()
         new_appointment_url = reverse(
@@ -40,6 +71,7 @@ class CalendarV2View(ProtectedView, TemplateView):
             "new_appointment_url": new_appointment_url,
             "preferences_url": reverse("calendar_preferences"),
             "calendar_filtered": settings["filtered"],
+            "welcome": self.welcome(),
             "calendar_config": {
                 "dataUrl": reverse("calendar_data"),
                 "today": today.isoformat(),

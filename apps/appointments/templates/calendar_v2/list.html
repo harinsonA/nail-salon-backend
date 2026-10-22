@@ -65,6 +65,9 @@ Calendario
   </div>
 </section>
 {{ calendar_config|json_script:"calendar-config" }}
+{% if welcome %}
+{% include "calendar_v2/_welcome_modal.html" %}
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -86,4 +89,9 @@ Calendario
     JSON.parse(document.getElementById("calendar-config").textContent),
   );
 </script>
+{% if welcome %}
+<script>
+  $("#calendar-welcome").modal("show");
+</script>
+{% endif %}
 {% endblock %}
