@@ -3,15 +3,12 @@
 from .agenda import (
     AppointmentsView,
     AgendaListView,
-    AgendaUpdateModalView,
-    AgendaCancelModalView,
-    AgendaSeeModalView,
 )
-from .agenda_create import (
-    AgendaCreateView,
-    ServiceDetailsAjax,
-    AvailableHoursAjax,
-)
+from .agenda_modals.available_hours import AvailableHoursAjax
+from .agenda_modals.cancel import AgendaCancelModalView
+from .agenda_modals.create import AgendaCreateView
+from .agenda_modals.detail import AgendaSeeModalView
+from .agenda_modals.edit import AgendaUpdateModalView
 
 __all__ = [
     "AppointmentsView",
@@ -21,5 +18,4 @@ __all__ = [
     "AgendaSeeModalView",
     "AgendaUpdateModalView",
     "AvailableHoursAjax",
-    "ServiceDetailsAjax",
 ]

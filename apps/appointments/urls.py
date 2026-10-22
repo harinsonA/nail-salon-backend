@@ -1,21 +1,14 @@
 from django.urls import path
 
-from apps.appointments.views.agenda import (
-    AgendaCancelModalView,
-    AgendaConfirmationModal,
-    AgendaDeleteModalView,
-    AgendaListView,
-    AgendaRestoreModalView,
-    AgendaSeeModalView,
-    AgendaUpdateModalView,
-    AppointmentsView,
-)
-from apps.appointments.views.agenda_create import (
-    AgendaCreateView,
-    AvailableHoursAjax,
-    ServiceDetailsAjax,
-    ServicesByCategoryAjax,
-)
+from apps.appointments.views.agenda import AgendaListView, AppointmentsView
+from apps.appointments.views.agenda_modals.available_hours import AvailableHoursAjax
+from apps.appointments.views.agenda_modals.cancel import AgendaCancelModalView
+from apps.appointments.views.agenda_modals.complete import AgendaConfirmationModal
+from apps.appointments.views.agenda_modals.create import AgendaCreateView
+from apps.appointments.views.agenda_modals.delete import AgendaDeleteModalView
+from apps.appointments.views.agenda_modals.detail import AgendaSeeModalView
+from apps.appointments.views.agenda_modals.edit import AgendaUpdateModalView
+from apps.appointments.views.agenda_modals.restore import AgendaRestoreModalView
 from apps.appointments.views.calendar.view import CalendarListView, CalendarView
 from apps.appointments.views.calendar_v2.view import CalendarV2DataView, CalendarV2View
 
@@ -86,18 +79,8 @@ urlpatterns = [
         name="agenda_delete_modal",
     ),
     path(
-        "agenda/servicio/detalles/ajax/",
-        ServiceDetailsAjax.as_view(),
-        name="service_details_ajax",
-    ),
-    path(
         "agenda/horas/disponibles/ajax/",
         AvailableHoursAjax.as_view(),
         name="available_hours_ajax",
-    ),
-    path(
-        "agenda/servicios/por-categoria/ajax/",
-        ServicesByCategoryAjax.as_view(),
-        name="services_by_category_ajax",
     ),
 ]
