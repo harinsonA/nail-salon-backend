@@ -1,5 +1,4 @@
 import datetime
-from decimal import Decimal, InvalidOperation
 
 from result import Err, Ok
 
@@ -58,15 +57,7 @@ class ServiceAsyncImportValidator(BaseAsyncImportValidator):
         return CommonCleaner.clean_250_characters_field("descripción", descripcion)
 
     def clean_precio(self, precio, **kwargs):
-        if not precio:
-            return Ok(Decimal("0"))
-        try:
-            valor = Decimal(precio.replace(" ", ""))
-        except (InvalidOperation, AttributeError):
-            return Err(f"El precio debe ser un número válido: {precio}.")
-        if valor < 0:
-            return Err("El precio no puede ser negativo.")
-        return Ok(valor)
+        return CommonCleaner.clean_amount_field("precio", precio)
 
     def clean_duracion_estimada(self, duracion_estimada, **kwargs):
         # Opcional: si viene vacía se usa la duración por defecto.

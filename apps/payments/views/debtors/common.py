@@ -17,7 +17,7 @@ from apps.common.form_fields import NoteField
 from apps.common.utils.currency import format_money
 from apps.common.utils.dates import format_date_time
 from apps.common.utils.text import user_display_name
-from apps.common.utils.utils import get_errors_to_response
+from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
 
@@ -48,7 +48,6 @@ class AddPaymentForm(BSModalModelForm):
     )
     down_payment = forms.IntegerField(
         label="Monto abonado",
-        min_value=0,
         required=False,
         widget=forms.NumberInput(
             attrs={
@@ -123,7 +122,12 @@ class AddPaymentForm(BSModalModelForm):
             raise forms.ValidationError(NO_BALANCE)
         if self.cleaned_data.get("full_payment"):
             return self.pending_payment_amount
-        down_payment = self.cleaned_data.get("down_payment")
+        result = CommonCleaner.clean_amount_field(
+            "monto abonado", self.cleaned_data.get("down_payment")
+        )
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
+        down_payment = result.ok_value
         if not down_payment:
             raise forms.ValidationError(AMOUNT_REQUIRED)
         if down_payment > self.pending_payment_amount:

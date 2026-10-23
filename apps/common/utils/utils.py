@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.password_validation import (
     CommonPasswordValidator,
@@ -179,6 +180,20 @@ class CommonCleaner(PasswordPolicyValidator, BusinessCleaner):
         if len(field_value) > 250:
             return Err(f"El campo '{field_name}' no debe exceder 250 caracteres.")
         return Ok(field_value.strip())
+
+    @staticmethod
+    def clean_amount_field(field_name: str, field_value) -> Result[Decimal, str]:
+        if field_value is None or field_value == "":
+            return Ok(Decimal("0"))
+        try:
+            value = Decimal(str(field_value).replace(" ", ""))
+        except InvalidOperation:
+            return Err(f"El campo '{field_name}' debe ser un número válido: {field_value}.")
+        if not value.is_finite():
+            return Err(f"El campo '{field_name}' debe ser un número válido: {field_value}.")
+        if value < 0:
+            return Err(f"El campo '{field_name}' no puede ser negativo.")
+        return Ok(value)
 
 
 # endregion
