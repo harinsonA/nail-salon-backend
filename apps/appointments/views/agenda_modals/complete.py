@@ -19,7 +19,7 @@ from apps.common.form_classes import (
 from apps.common.form_fields import NoteField
 from apps.common.utils.currency import format_money
 from apps.common.utils.text import user_display_name
-from apps.common.utils.utils import get_errors_to_response
+from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
 
@@ -27,7 +27,6 @@ from apps.payments.models import DetallePago, Pago
 # region ........ Constants
 
 
-AMOUNT_REQUIRED = "El monto abonado es requerido."
 AMOUNT_TOO_HIGH = 'Si paga {total} o más, activa "Paga el total ahora".'
 
 
@@ -48,7 +47,6 @@ class AgendaConfirmationForm(BSModalModelForm):
     down_payment = forms.IntegerField(
         label="Monto abonado",
         initial=0,
-        min_value=0,
         required=False,
         widget=forms.NumberInput(
             attrs={
@@ -111,8 +109,10 @@ class AgendaConfirmationForm(BSModalModelForm):
         down_payment = self.cleaned_data.get("down_payment")
         if self.cleaned_data.get("full_payment"):
             return down_payment
-        if down_payment is None:
-            raise forms.ValidationError(AMOUNT_REQUIRED)
+        result = CommonCleaner.clean_amount_field("monto abonado", down_payment)
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
+        down_payment = result.ok_value
         if down_payment >= self.remaining_payment_value:
             total = format_money(self.remaining_payment_value)
             raise forms.ValidationError(AMOUNT_TOO_HIGH.format(total=total))

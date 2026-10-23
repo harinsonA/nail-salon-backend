@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
@@ -84,3 +86,28 @@ class PasswordPolicyValidatorTests(SimpleTestCase):
     def test_common_cleaner_inherits_the_policy(self):
         self.assertTrue(issubclass(CommonCleaner, PasswordPolicyValidator))
         self.assertEqual(CommonCleaner().get_help_text(), PasswordPolicyValidator().get_help_text())
+
+
+class AmountRuleTests(SimpleTestCase):
+    def test_empty_counts_as_zero(self):
+        for monto in (None, ""):
+            with self.subTest(monto=monto):
+                self.assertEqual(CommonCleaner.clean_amount_field("precio", monto).ok_value, Decimal("0"))
+
+    def test_accepts_zero_and_positive_amounts(self):
+        for monto, esperado in ((0, "0"), ("0", "0"), (Decimal("15000.50"), "15000.50"), ("15 000", "15000"), (3000, "3000")):
+            with self.subTest(monto=monto):
+                self.assertEqual(CommonCleaner.clean_amount_field("precio", monto).ok_value, Decimal(esperado))
+
+    def test_rejects_negative_amounts(self):
+        for monto in (-1, "-500", Decimal("-0.01")):
+            with self.subTest(monto=monto):
+                self.assertEqual(
+                    CommonCleaner.clean_amount_field("precio", monto).err_value,
+                    "El campo 'precio' no puede ser negativo.",
+                )
+
+    def test_rejects_values_that_are_not_numbers(self):
+        for monto in ("abc", "NaN", "Infinity"):
+            with self.subTest(monto=monto):
+                self.assertIn("debe ser un número válido", CommonCleaner.clean_amount_field("precio", monto).err_value)

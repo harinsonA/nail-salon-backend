@@ -48,13 +48,17 @@ class CompletarCitaTests(NegocioTestCase):
         self.assertEqual(self.cita.estado, Cita.EstadoChoices.PENDIENTE)
         self.assertFalse(Pago.objects.filter(cita=self.cita).exists())
 
-    def test_sin_pago_completo_el_monto_abonado_vacio_es_requerido(self):
+    def test_sin_pago_completo_el_monto_abonado_vacio_cuenta_como_cero(self):
         respuesta = self.completar(down_payment="")
-        self.assertNoSeCompleta(respuesta)
-        self.assertIn("El monto abonado es requerido.", str(respuesta.json()["errors"]))
+        self.assertEqual(respuesta.status_code, 200)
+        self.cita.refresh_from_db()
+        self.assertEqual(self.cita.estado, Cita.EstadoChoices.COMPLETADA)
+        self.assertFalse(self.cita.pago.detalles_pago.exists())
 
     def test_sin_pago_completo_el_monto_abonado_no_puede_ser_negativo(self):
-        self.assertNoSeCompleta(self.completar(down_payment="-500"))
+        respuesta = self.completar(down_payment="-500")
+        self.assertNoSeCompleta(respuesta)
+        self.assertIn("El campo 'monto abonado' no puede ser negativo.", str(respuesta.json()["errors"]))
 
     def test_sin_pago_completo_acepta_monto_abonado_cero(self):
         respuesta = self.completar(down_payment="0")

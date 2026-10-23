@@ -50,7 +50,7 @@ class PrecioServicioTests(NegocioTestCase):
     def test_rechaza_precio_negativo(self):
         respuesta = self.crear("-100")
         self.assertEqual(respuesta.status_code, 400)
-        self.assertIn("El precio no puede ser negativo.", respuesta.content.decode())
+        self.assertIn("El campo 'precio' no puede ser negativo.", respuesta.content.decode())
         self.assertFalse(Servicio.objects.exists())
 
     def test_editar_precio_a_cero(self):
@@ -74,4 +74,4 @@ class PrecioServicioTests(NegocioTestCase):
         validador = ServiceAsyncImportValidator.__new__(ServiceAsyncImportValidator)
         self.assertEqual(validador.clean_precio("").ok_value, Decimal("0"))
         self.assertEqual(validador.clean_precio("0").ok_value, Decimal("0"))
-        self.assertEqual(validador.clean_precio("-1").err_value, "El precio no puede ser negativo.")
+        self.assertEqual(validador.clean_precio("-1").err_value, "El campo 'precio' no puede ser negativo.")

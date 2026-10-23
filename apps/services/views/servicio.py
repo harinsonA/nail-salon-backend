@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 from django import forms
@@ -21,7 +19,7 @@ from apps.common.form_classes import (
 )
 from apps.common.form_fields import AlphabeticField, NoteField
 from apps.common.utils.currency import format_currency
-from apps.common.utils.utils import get_errors_to_response
+from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 
 from ..models.categoria import Categoria
@@ -158,12 +156,10 @@ class ServicesForm(BSModalForm):
         return category
 
     def clean_price(self):
-        price = self.cleaned_data.get("price")
-        if price is None:
-            return Decimal("0")
-        if price < 0:
-            raise forms.ValidationError("El precio no puede ser negativo.")
-        return price
+        result = CommonCleaner.clean_amount_field("precio", self.cleaned_data.get("price"))
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
+        return result.ok_value
 
     def clean_duration(self):
         duration = self.cleaned_data.get("duration")

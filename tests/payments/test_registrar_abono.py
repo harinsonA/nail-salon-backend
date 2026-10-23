@@ -131,6 +131,15 @@ class RegistrarAbonoTests(NegocioTestCase):
         self.assertIn("$13.000", self.errores(self.abonar(down_payment="13001"))["id_down_payment"])
         self.assertIn("id_down_payment", self.errores(self.abonar(down_payment="0")))
 
+    def test_el_abono_vacio_pide_monto_y_el_negativo_se_rechaza(self):
+        self.assertEqual(
+            self.errores(self.abonar(down_payment=""))["id_down_payment"], "El monto debe ser mayor a $0."
+        )
+        self.assertEqual(
+            self.errores(self.abonar(down_payment="-500"))["id_down_payment"],
+            "El campo 'monto abonado' no puede ser negativo.",
+        )
+
     def test_sin_efectivo_la_referencia_es_opcional(self):
         respuesta = self.abonar(down_payment="3000", payment_method="TRANSFERENCIA")
         self.assertEqual(respuesta.status_code, 200)
