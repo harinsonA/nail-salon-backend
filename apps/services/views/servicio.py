@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 from django import forms
@@ -120,12 +122,13 @@ class ServicesForm(BSModalForm):
         max_digits=10,
         decimal_places=2,
         initial=0,
-        required=True,
+        required=False,
         widget=forms.NumberInput(
             attrs={
                 "class": FORM_CONTROL_CLASS,
                 "placeholder": "15000",
                 "step": "0.01",
+                "min": "0",
             },
         ),
     )
@@ -156,8 +159,10 @@ class ServicesForm(BSModalForm):
 
     def clean_price(self):
         price = self.cleaned_data.get("price")
-        if price is not None and price <= 0:
-            raise forms.ValidationError("El precio debe ser mayor a cero.")
+        if price is None:
+            return Decimal("0")
+        if price < 0:
+            raise forms.ValidationError("El precio no puede ser negativo.")
         return price
 
     def clean_duration(self):
@@ -192,7 +197,7 @@ class ServicesForm(BSModalForm):
         ]
         for form_field, model_field in fields:
             value = data.get(form_field)
-            if not value and form_field != "status":
+            if not value and form_field not in ("status", "price"):
                 continue
             normalized_data[model_field] = value
         return normalized_data

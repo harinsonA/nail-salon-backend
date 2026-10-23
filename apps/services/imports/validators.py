@@ -59,13 +59,13 @@ class ServiceAsyncImportValidator(BaseAsyncImportValidator):
 
     def clean_precio(self, precio, **kwargs):
         if not precio:
-            return Err("El campo 'precio' es obligatorio.")
+            return Ok(Decimal("0"))
         try:
             valor = Decimal(precio.replace(" ", ""))
         except (InvalidOperation, AttributeError):
             return Err(f"El precio debe ser un número válido: {precio}.")
-        if valor <= 0:
-            return Err("El precio debe ser mayor a cero.")
+        if valor < 0:
+            return Err("El precio no puede ser negativo.")
         return Ok(valor)
 
     def clean_duracion_estimada(self, duracion_estimada, **kwargs):
