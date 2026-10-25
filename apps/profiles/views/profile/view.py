@@ -1,17 +1,28 @@
+from bootstrap_modal_forms.forms import BSModalModelForm
+from bootstrap_modal_forms.generic import BSModalUpdateView
 from django import forms
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
-from bootstrap_modal_forms.forms import BSModalModelForm
-from bootstrap_modal_forms.generic import BSModalUpdateView
+
 from apps.common.middleware import start_session_window
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
+from apps.profiles.models import Perfil
+from apps.profiles.permisos import rol_de
 from apps.settings.preferences import SESSION_IDLE_MINUTES, Category
 from apps.settings.preferences.forms import PreferenceFieldsMixin
 
 User = get_user_model()
 
+"""========================================================================="""
+# region ........ Constants
+
+PERSONAL_FIELDS = ("username", "first_name", "last_name", "email")
+
+
+# endregion
+"""========================================================================="""
 """========================================================================="""
 # region ........ Forms
 
@@ -52,9 +63,14 @@ class ProfileForm(PreferenceFieldsMixin, BSModalModelForm):
             }
         ),
     )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_preference_fields(self.instance)
+        self.personal_data_locked = rol_de(self.instance) == Perfil.Rol.PROPIETARIO
+        if self.personal_data_locked:
+            for name in PERSONAL_FIELDS:
+                self.fields[name].disabled = True
 
     class Meta:
         model = User
@@ -83,9 +99,17 @@ class ProfileForm(PreferenceFieldsMixin, BSModalModelForm):
     def clean_email(self):
         correo = (self.cleaned_data.get("email") or "").strip().lower()
         if not correo:
-            raise forms.ValidationError("El correo es obligatorio: es con lo que inicias sesión.")
-        if User.objects.filter(email__iexact=correo).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError("Ese correo ya lo usa otra persona de este negocio.")
+            raise forms.ValidationError(
+                "El correo es obligatorio: es con lo que inicias sesión."
+            )
+        if (
+            User.objects.filter(email__iexact=correo)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise forms.ValidationError(
+                "Ese correo ya lo usa otra persona de este negocio."
+            )
         return correo
 
     def clean(self):
