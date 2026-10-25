@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.admin.models import ADDITION, LogEntry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -62,11 +64,14 @@ class PersonCreateModalTests(TestCase):
 
     def payload(self, **changes):
         data = {
+            "national_id_country": "CL",
+            "national_id_type": "rut",
+            "national_id": "12.345.678-5",
             "first_name": "Ana",
             "second_name": "",
             "first_surname": "",
             "second_surname": "",
-            "email": "",
+            "email": "ana@ejemplo.com",
             "country_phone_prefix": "+56",
             "phone": "",
             "phone_type": "movil",
@@ -187,12 +192,15 @@ class PersonCreateModalTests(TestCase):
         )
         self.assertEqual(log.action_flag, ADDITION)
 
-    def test_only_the_first_name_is_required(self):
+    def test_only_the_identifier_first_name_and_email_are_required(self):
         response = self.post()
         self.assertEqual(response.status_code, 200)
         person = Persona.objects.get(nombres="Ana")
         self.assertEqual((person.apellidos, person.notas), ("", None))
-        self.assertFalse(person.correos.exists())
+        self.assertEqual(
+            list(person.correos.values_list("correo", "es_principal")),
+            [("ana@ejemplo.com", True)],
+        )
         self.assertFalse(person.telefonos.exists())
         self.assertFalse(person.direcciones.exists())
 
@@ -327,3 +335,75 @@ class PersonCreateModalTests(TestCase):
             {"nombres": "Ana", "apellidos": "", "notas": ""},
         )
         self.assertFalse(Persona.objects.filter(nombres="Ana").exists())
+
+    def test_identifier_goes_first_contact_has_its_own_tab_and_starts_empty(self):
+        html = (
+            self.browser(self.superuser)
+            .get(CREATE_URL, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            .content.decode()
+        )
+        basic, contact = html.split('id="person-pane-contact"')
+        self.assertIn('data-bs-target="#person-pane-contact"', html)
+        self.assertIn('name="email-correo"', contact)
+        self.assertIn('name="phone-numero"', contact)
+        self.assertNotIn('name="email-correo"', basic)
+        self.assertIn('name="national_id_country"', basic)
+        self.assertLess(basic.index('name="national_id_country"'), basic.index('name="first_name"'))
+        self.assertLess(basic.index('name="national_id"'), basic.index('name="first_name"'))
+        self.assertNotIn("El identificador nacional es opcional", basic)
+        country = re.search(r'<select name="national_id_country".*?</select>', html, re.DOTALL)
+        self.assertNotIn("selected", country.group(0).replace('value="" selected', ""))
+        self.assertIn('data-national-id-types="', country.group(0))
+        self.assertRegex(html, r'<select name="national_id_type"[^>]*disabled')
+
+    def test_saves_the_national_identifier_normalized(self):
+        self.assertEqual(
+            self.post(
+                national_id_country="CL",
+                national_id_type="rut",
+                national_id="12.345.678-5",
+            ).status_code,
+            200,
+        )
+        person = Persona.objects.get(nombres="Ana")
+        self.assertEqual(
+            (person.pais, person.tipo_identificador_nacional, person.identificador_nacional),
+            ("CL", "rut", "12345678-5"),
+        )
+
+    def test_the_three_identifier_fields_are_mandatory(self):
+        empty = self.errors(self.post(national_id_country="", national_id_type="", national_id=""))
+        self.assertEqual(empty["id_national_id_country"], "Elige el país del identificador nacional.")
+        self.assertEqual(empty["id_national_id_type"], "Elige el tipo de identificador nacional.")
+        self.assertEqual(empty["id_national_id"], "Escribe el identificador nacional del tipo elegido.")
+        country_only = self.errors(self.post(national_id_country="VE", national_id_type="", national_id=""))
+        self.assertNotIn("id_national_id_country", country_only)
+        self.assertEqual(set(country_only) & {"id_national_id_type", "id_national_id"}, {"id_national_id_type", "id_national_id"})
+        self.assertFalse(Persona.objects.exists())
+
+    def test_type_and_number_go_together(self):
+        without_number = self.errors(self.post(national_id_country="CL", national_id_type="rut", national_id=""))
+        self.assertEqual(without_number["id_national_id"], "Escribe el identificador nacional del tipo elegido.")
+        without_type = self.errors(self.post(national_id_country="", national_id_type="", national_id="12345678-5"))
+        self.assertEqual(without_type["id_national_id_type"], "Elige el tipo de identificador nacional.")
+        self.assertEqual(without_type["id_national_id_country"], "Elige el país del identificador nacional.")
+        self.assertFalse(Persona.objects.exists())
+
+    def test_the_number_follows_the_rules_of_its_country(self):
+        errors = self.errors(
+            self.post(national_id_country="CL", national_id_type="rut", national_id="12.345.678-9")
+        )
+        self.assertIn("dígito verificador", errors["id_national_id"])
+
+    def test_the_type_must_belong_to_the_country(self):
+        errors = self.errors(
+            self.post(national_id_country="CL", national_id_type="curp", national_id="BOXW310820HNERXN09")
+        )
+        self.assertIn("id_national_id_type", errors)
+
+    def test_the_email_is_mandatory(self):
+        for email, message in (("", "Escribe el correo del propietario."), ("ana", "correo")):
+            with self.subTest(email=email):
+                errors = self.errors(self.post(email=email))
+                self.assertIn(message, errors["id_email"])
+        self.assertFalse(Persona.objects.exists())

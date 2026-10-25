@@ -17,6 +17,7 @@ from apps.common.forms import (
     OPTIONAL_FORM_OPTIONS,
     AddressForm,
     MainItemFormSet,
+    NationalIdentifierForm,
     main_item_formset,
 )
 from apps.common.utils.countries.constants import CountryPhonePrefix
@@ -79,7 +80,9 @@ class PeopleFilterForm(forms.Form):
         return {}
 
 
-class PersonNamesForm(BSModalForm):
+class PersonNamesForm(NationalIdentifierForm, BSModalForm):
+    national_id_required = True
+
     first_name = AlphabeticField(
         label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana")
     )
@@ -148,6 +151,7 @@ class PersonNamesForm(BSModalForm):
             "nombres": self.full_names(),
             "apellidos": self.full_surnames(),
             "notas": self.cleaned_data["notes"] or None,
+            **self.national_id_data(),
         }
 
 
@@ -162,18 +166,20 @@ class PersonCreateForm(PersonNamesForm):
 class PersonUpdateForm(PersonNamesForm):
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
-        super().__init__(*args, **kwargs)
         first_name, second_name = split_name(instance.nombres)
         first_surname, second_surname = split_name(instance.apellidos)
-        self.initial.update(
-            {
-                "first_name": first_name,
-                "second_name": second_name,
-                "first_surname": first_surname,
-                "second_surname": second_surname,
-                "notes": instance.notas or "",
-            }
-        )
+        kwargs["initial"] = {
+            "first_name": first_name,
+            "second_name": second_name,
+            "first_surname": first_surname,
+            "second_surname": second_surname,
+            "national_id_country": instance.pais or "",
+            "national_id_type": instance.tipo_identificador_nacional or "",
+            "national_id": instance.identificador_nacional or "",
+            "notes": instance.notas or "",
+            **kwargs.get("initial", {}),
+        }
+        super().__init__(*args, **kwargs)
 
     def save(self):
         for field, value in self.person_data().items():
@@ -187,6 +193,7 @@ class PersonEmailForm(forms.ModelForm):
     correo = forms.EmailField(
         label="Correo",
         max_length=254,
+        error_messages={"required": "Escribe el correo del propietario."},
         widget=forms.EmailInput(
             attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@ejemplo.com"}
         ),
@@ -245,15 +252,16 @@ class PersonAddressForm(AddressForm):
 
 class PersonEmailFormSet(MainItemFormSet):
     item_name = "un correo"
+    requires_one = True
 
     def clean(self):
-        super().clean()
         if any(
             form.cleaned_data.get("DELETE") and form.is_locked() for form in self.forms
         ):
             raise ValidationError(
                 "El correo de acceso de su negocio no se puede quitar."
             )
+        super().clean()
 
 
 class PersonPhoneFormSet(MainItemFormSet):
@@ -400,9 +408,7 @@ class PersonCreateModalView(RelatedFormsMixin, PanelCreateModalView):
 
     def get_related_forms(self, data):
         return {
-            "email_form": PersonEmailForm(
-                data, prefix="email", **OPTIONAL_FORM_OPTIONS
-            ),
+            "email_form": PersonEmailForm(data, prefix="email"),
             "phone_form": PersonPhoneForm(
                 data, prefix="phone", **OPTIONAL_FORM_OPTIONS
             ),
