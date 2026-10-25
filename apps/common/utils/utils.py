@@ -11,12 +11,16 @@ from django.forms import BaseFormSet
 from result import Err, Ok, Result
 
 from apps.common.utils.businesses import BusinessCleaner
+from apps.common.utils.countries.base import IDENTIFIER_TYPE_INVALID_MESSAGE
 from apps.common.utils.countries.dispatcher import CountryDispatcher
 from apps.common.utils.passwords import PasswordPolicyValidator
 
 USERNAME_MIN_LENGTH = 3
 USERNAME_MAX_LENGTH = 30
 USERNAME_PATTERN = re.compile(r"^[a-z][a-z0-9._-]*$")
+NATIONAL_ID_COUNTRY_MISSING = "Elige el país del identificador nacional."
+NATIONAL_ID_TYPE_MISSING = "Elige el tipo de identificador nacional."
+NATIONAL_ID_NUMBER_MISSING = "Escribe el identificador nacional del tipo elegido."
 
 """========================================================================="""
 # region ........ functions
@@ -161,6 +165,32 @@ class CommonCleaner(PasswordPolicyValidator, BusinessCleaner):
         if not all(is_ascii_digit(character) for character in field_value):
             return Err(f"El campo '{field_name}' debe solo contener números.")
         return Ok(field_value)
+
+    @staticmethod
+    def clean_national_identifier(
+        country: str, identifier_type: str, number: str
+    ) -> Result[str | None, dict]:
+        """
+        Optional national identifier: type and number go together and need a country.
+        Errors come keyed by "country", "type" or "number".
+        """
+        if not (identifier_type or number):
+            return Ok(None)
+        errors = {}
+        if not country:
+            errors["country"] = NATIONAL_ID_COUNTRY_MISSING
+        if not identifier_type:
+            errors["type"] = NATIONAL_ID_TYPE_MISSING
+        if not number:
+            errors["number"] = NATIONAL_ID_NUMBER_MISSING
+        if errors:
+            return Err(errors)
+        result = CountryDispatcher.validate_identifier(country, identifier_type, number)
+        if result.is_err():
+            invalid_type = result.err_value == IDENTIFIER_TYPE_INVALID_MESSAGE
+            key = "type" if invalid_type else "number"
+            return Err({key: result.err_value})
+        return result
 
     @staticmethod
     def clean_phone_field(prefix_value: str, phone_number: str) -> Result[str, str]:

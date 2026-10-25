@@ -8,21 +8,17 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.form_fields import (
-    AlphabeticField,
-    NoteField,
-    NumericField,
-)
+from apps.common.form_fields import NoteField, NumericField
 from apps.common.forms import (
     OPTIONAL_FORM_OPTIONS,
     AddressForm,
     MainItemFormSet,
     NationalIdentifierForm,
+    SplitNamesForm,
     main_item_formset,
 )
 from apps.common.utils.countries.constants import CountryPhonePrefix
 from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
-from apps.common.utils.text import join_name_parts, split_name
 from apps.common.widgets import switch_input, text_input
 from apps.panel.views.base import (
     PanelCreateModalView,
@@ -45,8 +41,6 @@ from apps.tenancy.propietario import sync_owner_data
 
 
 EMPTY = "—"
-NAME_PART_MAX_LENGTH = 50
-FULL_NAME_MAX_LENGTH = 100
 PHONE_MAX_DIGITS = 15
 ACCESS_EMAIL_LABEL = "acceso"
 
@@ -81,30 +75,9 @@ class PeopleFilterForm(forms.Form):
         return {}
 
 
-class PersonNamesForm(NationalIdentifierForm, BSModalForm):
+class PersonNamesForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
     national_id_required = True
 
-    first_name = AlphabeticField(
-        label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana")
-    )
-    second_name = AlphabeticField(
-        label="Segundo nombre",
-        max_length=NAME_PART_MAX_LENGTH,
-        required=False,
-        widget=text_input("María"),
-    )
-    first_surname = AlphabeticField(
-        label="Primer apellido",
-        max_length=NAME_PART_MAX_LENGTH,
-        required=False,
-        widget=text_input("Rojas"),
-    )
-    second_surname = AlphabeticField(
-        label="Segundo apellido",
-        max_length=NAME_PART_MAX_LENGTH,
-        required=False,
-        widget=text_input("Pérez"),
-    )
     notes = NoteField(
         label="Nota",
         required=False,
@@ -117,35 +90,6 @@ class PersonNamesForm(NationalIdentifierForm, BSModalForm):
             }
         ),
     )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        if cleaned_data.get("second_surname") and not cleaned_data.get("first_surname"):
-            self.add_error(
-                "first_surname", "Escribe el primer apellido antes del segundo."
-            )
-        if len(self.full_names()) > FULL_NAME_MAX_LENGTH:
-            self.add_error(
-                "second_name",
-                f"Los nombres juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.",
-            )
-        if len(self.full_surnames()) > FULL_NAME_MAX_LENGTH:
-            self.add_error(
-                "second_surname",
-                f"Los apellidos juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.",
-            )
-        return cleaned_data
-
-    def full_names(self):
-        return join_name_parts(
-            self.cleaned_data.get("first_name"), self.cleaned_data.get("second_name")
-        )
-
-    def full_surnames(self):
-        return join_name_parts(
-            self.cleaned_data.get("first_surname"),
-            self.cleaned_data.get("second_surname"),
-        )
 
     def person_data(self):
         return {
@@ -167,13 +111,8 @@ class PersonCreateForm(PersonNamesForm):
 class PersonUpdateForm(PersonNamesForm):
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
-        first_name, second_name = split_name(instance.nombres)
-        first_surname, second_surname = split_name(instance.apellidos)
         kwargs["initial"] = {
-            "first_name": first_name,
-            "second_name": second_name,
-            "first_surname": first_surname,
-            "second_surname": second_surname,
+            **self.split_names_initial(instance.nombres, instance.apellidos),
             **self.national_id_initial(instance),
             "notes": instance.notas or "",
             **kwargs.get("initial", {}),

@@ -11,6 +11,7 @@ Lista de clientes
 
 {% block content %}
 {% include 'common/bs_modal.html' %}
+{% include 'common/bs_xl_modal.html' %}
 <section>
   <section class="d-inline-flex align-items-center gap-2">
     <a id="client-create-btn" data-form-url="{%  url 'client_create_modal' %}"
@@ -107,6 +108,7 @@ Lista de clientes
         },
         drawCallback: () => {
           initializeAllBSModals();
+          initializeAllBSXLModals();
         },
         initComplete: function () {
           const api = this.api();
@@ -124,12 +126,34 @@ Lista de clientes
       table.draw()
     });
 
-    initializeBSModals('#client-create-btn');
-    $('#modal').on('show.bs.modal', ({ target }) => {
-      const submitBtn = target.querySelector('#client_submit_btn') || target.querySelector('#delete_submit_btn');
+    initializeBSXLModals('#client-create-btn');
+    $('#xl_modal').on('show.bs.modal', ({ target }) => {
+      const submitBtn = target.querySelector('#client_submit_btn');
+      if (!submitBtn) return;
       $(submitBtn).click(async () => {
         submitBtn.disabled = true;
-        const modalForm = target.querySelector('#client-form-modal') || target.querySelector('#common-form-modal');
+        const modalForm = target.querySelector('#client-form-modal');
+        const reloadTable = (form, response, statusCode) => {
+          if (statusCode === 400) {
+            showTabsWithErrors(form);
+          }
+          if ([200].includes(statusCode)) {
+            $('#xl_modal').modal('hide');
+            table.draw();
+          }
+          submitBtn.disabled = statusCode === 200;
+          return [response, statusCode];
+        };
+        await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
+      });
+    });
+
+    $('#modal').on('show.bs.modal', ({ target }) => {
+      const submitBtn = target.querySelector('#delete_submit_btn');
+      if (!submitBtn) return;
+      $(submitBtn).click(async () => {
+        submitBtn.disabled = true;
+        const modalForm = target.querySelector('#common-form-modal');
         const reloadTable = (form, response, statusCode) => {
           if ([200].includes(statusCode)) {
             $('#modal').modal('hide');
@@ -138,7 +162,7 @@ Lista de clientes
           submitBtn.disabled = statusCode === 200;
           return [response, statusCode];
         };
-        const [response, statusCode] = await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
+        await submitRequestBSModal(modalForm, { reload: false, callBack: reloadTable });
       });
     });
 

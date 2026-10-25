@@ -7,7 +7,23 @@ from apps.common.exports.styles import (
     FREEZE_HEADER,
     write_header_row,
 )
+from apps.common.utils.countries.constants import Country, NationalIdentifierType
 from apps.common.views.base_views import ProtectedExportView
+
+
+def national_id_help_sheets():
+    return [
+        {
+            "title": "Países",
+            "headers": ["Código", "País"],
+            "rows": Country.choices,
+        },
+        {
+            "title": "Tipos de identificador",
+            "headers": ["Código", "Tipo"],
+            "rows": NationalIdentifierType.choices,
+        },
+    ]
 
 
 class BaseExampleExportView(ProtectedExportView, View):
@@ -43,7 +59,23 @@ class BaseExampleExportView(ProtectedExportView, View):
         if FREEZE_HEADER:
             sheet.freeze_panes = "A2"
 
+        for help_sheet in self.get_help_sheets():
+            self.write_help_sheet(workbook, help_sheet)
+
         response = HttpResponse(content_type=CONTENT_TYPE_XLSX)
         response["Content-Disposition"] = f'attachment; filename="{self.filename}.xlsx"'
         workbook.save(response)
         return response
+
+    def get_help_sheets(self):
+        return []
+
+    def write_help_sheet(self, workbook, help_sheet):
+        sheet = workbook.create_sheet(help_sheet["title"])
+        headers = help_sheet["headers"]
+        write_header_row(sheet, headers, [self.column_width] * len(headers))
+        for row_index, row in enumerate(help_sheet["rows"], start=2):
+            for col_index, value in enumerate(row, start=1):
+                sheet.cell(row=row_index, column=col_index, value=value)
+        if FREEZE_HEADER:
+            sheet.freeze_panes = "A2"

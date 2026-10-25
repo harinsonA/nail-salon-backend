@@ -93,7 +93,11 @@ class TareasPorNegocioTests(TestCase):
         navegador = Client(HTTP_HOST=NEGOCIOS["tareas_uno"])
         with schema_context("tareas_uno"):
             navegador.force_login(usuario)
-        contenido = "Nombre,Apellido,Teléfono,Email,Estado,Notas\nLaura,Pérez,,laura@correo.cl,activo,\n"
+        contenido = (
+            "Nombre,Apellido,Teléfono,Email,"
+            "País,Tipo de identificador nacional,Identificador nacional,Estado,Notas\n"
+            "Laura,Pérez,,laura@correo.cl,CL,rut,12.345.678-5,activo,\n"
+        )
         archivo = SimpleUploadedFile("clientes.csv", contenido.encode("utf-8"), content_type="text/csv")
 
         respuesta = navegador.post(reverse("client_import"), {"archivo": archivo})
@@ -102,6 +106,10 @@ class TareasPorNegocioTests(TestCase):
         with schema_context("tareas_uno"):
             tarea = TareaEnProceso.objects.get()
             self.assertEqual(tarea.estado, TareaEnProceso.Estado.COMPLETADO, tarea.resultado_metadata)
-            self.assertTrue(Cliente.objects.filter(nombre="Laura", apellido="Pérez").exists())
+            laura = Cliente.objects.get(nombre="Laura", apellido="Pérez")
+            self.assertEqual(
+                (laura.pais, laura.tipo_identificador_nacional, laura.identificador_nacional),
+                ("CL", "rut", "12345678-5"),
+            )
         with schema_context("tareas_dos"):
             self.assertFalse(Cliente.all_objects.exists())
