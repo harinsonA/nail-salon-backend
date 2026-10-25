@@ -8,6 +8,7 @@ from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.common.form_fields import AlphabeticField, AlphanumericField, NumericField
 from apps.common.utils.countries.constants import Country
 from apps.common.utils.countries.dispatcher import CountryDispatcher
+from apps.common.utils.text import join_name_parts, split_name
 from apps.common.widgets import switch_input, text_input
 
 """========================================================================="""
@@ -29,6 +30,8 @@ ADDRESS_COUNTRIES = [
 INVALID_CLASS = "is-invalid"
 OPTIONAL_FORM_OPTIONS = {"empty_permitted": True, "use_required_attribute": False}
 MAIN_ITEM_FIELD = "es_principal"
+NAME_PART_MAX_LENGTH = 50
+FULL_NAME_MAX_LENGTH = 100
 NATIONAL_ID_MAX_LENGTH = 20
 NATIONAL_ID_COUNTRY_MISSING = "Elige el país del identificador nacional."
 NATIONAL_ID_TYPE_MISSING = "Elige el tipo de identificador nacional."
@@ -151,6 +154,70 @@ class AddressForm(forms.ModelForm):
             "pais",
             "referencia",
         ]
+
+
+class SplitNamesForm(forms.Form):
+    first_name = AlphabeticField(
+        label="Primer nombre", max_length=NAME_PART_MAX_LENGTH, widget=text_input("Ana")
+    )
+    second_name = AlphabeticField(
+        label="Segundo nombre",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("María"),
+    )
+    first_surname = AlphabeticField(
+        label="Primer apellido",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("Rojas"),
+    )
+    second_surname = AlphabeticField(
+        label="Segundo apellido",
+        max_length=NAME_PART_MAX_LENGTH,
+        required=False,
+        widget=text_input("Pérez"),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("second_surname") and not cleaned_data.get("first_surname"):
+            self.add_error(
+                "first_surname", "Escribe el primer apellido antes del segundo."
+            )
+        if len(self.full_names()) > FULL_NAME_MAX_LENGTH:
+            self.add_error(
+                "second_name",
+                f"Los nombres juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.",
+            )
+        if len(self.full_surnames()) > FULL_NAME_MAX_LENGTH:
+            self.add_error(
+                "second_surname",
+                f"Los apellidos juntos no deben superar {FULL_NAME_MAX_LENGTH} caracteres.",
+            )
+        return cleaned_data
+
+    def full_names(self):
+        return join_name_parts(
+            self.cleaned_data.get("first_name"), self.cleaned_data.get("second_name")
+        )
+
+    def full_surnames(self):
+        return join_name_parts(
+            self.cleaned_data.get("first_surname"),
+            self.cleaned_data.get("second_surname"),
+        )
+
+    @staticmethod
+    def split_names_initial(names, surnames):
+        first_name, second_name = split_name(names)
+        first_surname, second_surname = split_name(surnames)
+        return {
+            "first_name": first_name,
+            "second_name": second_name,
+            "first_surname": first_surname,
+            "second_surname": second_surname,
+        }
 
 
 class NationalIdentifierForm(forms.Form):
