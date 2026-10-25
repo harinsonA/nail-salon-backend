@@ -22,8 +22,8 @@ from apps.common.form_classes import (
 )
 from apps.common.form_fields import AlphabeticField, NoteField
 from apps.common.utils.countries.constants import CountryPhonePrefix
-from apps.common.utils.phones import get_whatsapp_url
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
+from apps.common.utils.whatsapp import get_whatsapp_url
 from apps.common.views.base_views import ProtectedView
 
 from ..models.cliente import Cliente

@@ -6,6 +6,7 @@ from django.test import SimpleTestCase
 
 from apps.common.utils.passwords import PasswordPolicyValidator
 from apps.common.utils.utils import CommonCleaner
+from apps.tenancy.models import PersonaTelefono
 
 User = get_user_model()
 
@@ -111,3 +112,34 @@ class AmountRuleTests(SimpleTestCase):
         for monto in ("abc", "NaN", "Infinity"):
             with self.subTest(monto=monto):
                 self.assertIn("debe ser un número válido", CommonCleaner.clean_amount_field("precio", monto).err_value)
+
+
+class PhoneRuleTests(SimpleTestCase):
+    def test_validates_with_the_rules_of_the_prefix_country(self):
+        for prefijo, numero, esperado in (
+            ("+56", "9 1234 5678", "+56912345678"),
+            ("+58", "414-123-4567", "+584141234567"),
+            ("+52", "55 1234 5678", "+525512345678"),
+        ):
+            with self.subTest(prefijo=prefijo):
+                self.assertEqual(CommonCleaner.clean_phone_field(prefijo, numero).ok_value, esperado)
+
+    def test_rejects_numbers_out_of_the_country_rules(self):
+        for prefijo, numero, mensaje in (
+            ("+56", "812345678", "prefijo"),
+            ("+51", "91234567", "8 dígitos"),
+            ("+57", "300 12a 4567", "solo debe contener"),
+        ):
+            with self.subTest(prefijo=prefijo):
+                self.assertIn(mensaje, CommonCleaner.clean_phone_field(prefijo, numero).err_value)
+
+
+class TelefonoBaseCleanTests(SimpleTestCase):
+    def test_mobile_phones_follow_the_rules_of_their_country(self):
+        PersonaTelefono(codigo_pais="+58", numero="4141234567").clean()
+        with self.assertRaises(ValidationError) as error:
+            PersonaTelefono(codigo_pais="+58", numero="4151234567").clean()
+        self.assertIn("prefijo", error.exception.message_dict["numero"][0])
+
+    def test_landlines_are_not_checked(self):
+        PersonaTelefono(codigo_pais="+56", numero="221234567", tipo=PersonaTelefono.Tipo.FIJO).clean()

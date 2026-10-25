@@ -6,7 +6,7 @@ from model_utils.models import TimeStampedModel
 from apps.common.historial import HistorialRecords
 from apps.common.models.con_principal import ConPrincipal
 from apps.common.utils.countries.constants import CountryPhonePrefix
-from apps.common.utils.phones import PhoneCleaner
+from apps.common.utils.countries.dispatcher import CountryDispatcher
 
 solo_digitos = RegexValidator(r"^\d+$", "El número solo debe contener dígitos.")
 
@@ -48,6 +48,8 @@ class TelefonoBase(TimeStampedModel, ConPrincipal):
         super().clean()
         if self.tipo != self.Tipo.MOVIL or not self.numero:
             return
-        resultado = PhoneCleaner(self.codigo_pais).is_valid(self.numero)
+        resultado = CountryDispatcher.validate_phone_with_prefix(
+            self.codigo_pais, self.numero
+        )
         if resultado.is_err():
             raise ValidationError({"numero": resultado.err_value})

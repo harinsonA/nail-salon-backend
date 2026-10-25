@@ -190,7 +190,8 @@ nail-salon-backend/
 │       ├── views/base_views.py     # ProtectedView / ProtectedAjaxView / ProtectedExportView
 │       ├── exports/                # ExcelColumn, ExcelExportMixin, estilos de marca
 │       ├── imports/                # Formulario, validadores y vista base de import asíncrono
-│       └── utils/                  # CommonCleaner, PhoneCleaner, WhatsApp, formateo
+│       └── utils/                  # CommonCleaner, WhatsApp, formateo
+│           └── countries/          # Reglas por país (carpeta por código ISO) y CountryDispatcher
 ├── dashboard/                 # Dashboard de métricas (raíz redirige a /calendario/)
 │   ├── services/              # Cálculo de métricas y períodos
 │   └── views/charts/          # Un endpoint AJAX por gráfico
@@ -375,7 +376,7 @@ nail-salon-backend/
 - **ExcelExportMixin / ExcelColumn**: Base de exportación a Excel con estilos de marca (openpyxl)
 - **Import CSV base**: Formulario, validadores por columna y vista base asíncrona reutilizados por clientes, servicios y categorías
 - **CommonCleaner**: Validación de campos alfabéticos, longitud máxima y teléfonos
-- **PhoneCleaner**: Validación de teléfonos con prefijos de operador por país (9 países latinoamericanos)
+- **CountryDispatcher**: Punto único para validar teléfonos e identificadores nacionales con las reglas de cada país (9 países latinoamericanos, Chile por defecto); cada país vive en `apps/common/utils/countries/<código ISO>/`
 - **get_whatsapp_url()**: Armado del enlace a WhatsApp Web o a la aplicación, con mensaje prellenado
 - **DurationInMinutesField**: Campo personalizado para duraciones en minutos
 - **CustomDateField / CustomMonthField**: Campos de fecha en formato DD/MM/YYYY y selector de mes

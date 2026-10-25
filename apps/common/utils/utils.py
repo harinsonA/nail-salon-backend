@@ -11,8 +11,8 @@ from django.forms import BaseFormSet
 from result import Err, Ok, Result
 
 from apps.common.utils.businesses import BusinessCleaner
+from apps.common.utils.countries.dispatcher import CountryDispatcher
 from apps.common.utils.passwords import PasswordPolicyValidator
-from apps.common.utils.phones import PhoneCleaner
 
 USERNAME_MIN_LENGTH = 3
 USERNAME_MAX_LENGTH = 30
@@ -165,10 +165,9 @@ class CommonCleaner(PasswordPolicyValidator, BusinessCleaner):
     @staticmethod
     def clean_phone_field(prefix_value: str, phone_number: str) -> Result[str, str]:
         """
-        Cleans a phone number field using PhoneCleaner.
+        Cleans a phone number field with the rules of the prefix's country.
         """
-        phone_cleaner = PhoneCleaner(prefix_value)
-        return phone_cleaner.is_valid(phone_number)
+        return CountryDispatcher.validate_phone_with_prefix(prefix_value, phone_number)
 
     @staticmethod
     def clean_250_characters_field(
