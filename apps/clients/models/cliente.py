@@ -2,6 +2,8 @@ from django.db import models
 from model_utils.models import TimeStampedModel, SoftDeletableModel
 from simple_history.models import HistoricalRecords
 
+from apps.common.utils.countries.constants import Country
+
 
 class ClienteActivoManager(models.Manager):
     def get_queryset(self):
@@ -47,6 +49,9 @@ class Cliente(TimeStampedModel, SoftDeletableModel):
     apellido = models.CharField(max_length=100, blank=True, default="")
     telefono = models.CharField(max_length=20, blank=True, default="")
     email = models.EmailField(blank=True, default="")
+    pais = models.CharField(max_length=2, choices=Country.choices, null=True, blank=True)
+    tipo_identificador_nacional = models.CharField(max_length=20, null=True, blank=True)
+    identificador_nacional = models.CharField(max_length=20, null=True, blank=True)
     notas = models.TextField(blank=True, null=True)
 
     # Auditoría completa
