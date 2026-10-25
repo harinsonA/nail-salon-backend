@@ -4,7 +4,7 @@ from result import Err, Ok
 
 from apps.clients.models.cliente import Cliente
 from apps.common.imports.validators import BaseAsyncImportValidator
-from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.utils.countries.constants import CountryPhonePrefix
 from apps.common.utils.utils import CommonCleaner
 
 
