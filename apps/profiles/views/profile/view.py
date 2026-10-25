@@ -7,7 +7,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.forms import NATIONAL_ID_FIELDS, NationalIdentifierForm
 from apps.common.middleware import start_session_window
-from apps.common.utils.utils import get_errors_to_response
+from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import rol_de
@@ -31,6 +31,7 @@ PERSONAL_FIELDS = ("username", "first_name", "last_name", "email")
 class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelForm):
     preference_category = Category.SEGURIDAD
     national_id_required = True
+    national_id_holder = "otra persona de este negocio"
 
     current_password = forms.CharField(
         label="Contraseña actual",
@@ -106,20 +107,20 @@ class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelFor
             ),
         }
 
+    def national_id_queryset(self):
+        return Perfil.objects.exclude(user=self.instance)
+
     def clean_email(self):
         correo = (self.cleaned_data.get("email") or "").strip().lower()
         if not correo:
             raise forms.ValidationError(
                 "El correo es obligatorio: es con lo que inicias sesión."
             )
-        if (
-            User.objects.filter(email__iexact=correo)
-            .exclude(pk=self.instance.pk)
-            .exists()
-        ):
-            raise forms.ValidationError(
-                "Ese correo ya lo usa otra persona de este negocio."
-            )
+        result = CommonCleaner.check_email_available(
+            User.objects.exclude(pk=self.instance.pk), self.national_id_holder, correo
+        )
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
         return correo
 
     def clean(self):

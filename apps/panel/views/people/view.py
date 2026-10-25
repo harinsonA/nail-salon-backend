@@ -19,6 +19,7 @@ from apps.common.forms import (
 )
 from apps.common.utils.countries.constants import CountryPhonePrefix
 from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
+from apps.common.utils.utils import CommonCleaner
 from apps.common.widgets import switch_input, text_input
 from apps.panel.views.base import (
     PanelCreateModalView,
@@ -43,6 +44,19 @@ from apps.tenancy.propietario import sync_owner_data
 EMPTY = "—"
 PHONE_MAX_DIGITS = 15
 ACCESS_EMAIL_LABEL = "acceso"
+OWNER_HOLDER = "otro propietario"
+
+
+# endregion
+"""========================================================================="""
+
+"""========================================================================="""
+# region ........ Helpers
+
+
+def other_owners_contacts(model, persona_id):
+    contacts = model.objects.filter(persona__is_removed=False)
+    return contacts.exclude(persona_id=persona_id) if persona_id else contacts
 
 
 # endregion
@@ -77,6 +91,7 @@ class PeopleFilterForm(forms.Form):
 
 class PersonNamesForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
     national_id_required = True
+    national_id_holder = OWNER_HOLDER
 
     notes = NoteField(
         label="Nota",
@@ -90,6 +105,11 @@ class PersonNamesForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
             }
         ),
     )
+
+    def national_id_queryset(self):
+        instance = getattr(self, "instance", None)
+        people = Persona.objects.all()
+        return people.exclude(pk=instance.pk) if instance else people
 
     def person_data(self):
         return {
@@ -153,7 +173,16 @@ class PersonEmailForm(forms.ModelForm):
         return bool(self.instance.pk) and self.instance.etiqueta == ACCESS_EMAIL_LABEL
 
     def clean_correo(self):
-        return self.cleaned_data["correo"].strip().lower()
+        correo = self.cleaned_data["correo"].strip().lower()
+        result = CommonCleaner.check_email_available(
+            other_owners_contacts(PersonaCorreo, self.instance.persona_id),
+            OWNER_HOLDER,
+            correo,
+            field="correo",
+        )
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
+        return correo
 
 
 class PersonPhoneForm(forms.ModelForm):
@@ -181,6 +210,20 @@ class PersonPhoneForm(forms.ModelForm):
     class Meta:
         model = PersonaTelefono
         fields = ["codigo_pais", "numero", "tipo", "tiene_whatsapp"]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get("numero"):
+            return cleaned_data
+        result = CommonCleaner.check_phone_available(
+            other_owners_contacts(PersonaTelefono, self.instance.persona_id),
+            OWNER_HOLDER,
+            codigo_pais=cleaned_data.get("codigo_pais"),
+            numero=cleaned_data["numero"],
+        )
+        if result.is_err():
+            self.add_error("numero", result.err_value)
+        return cleaned_data
 
 
 class PersonAddressForm(AddressForm):

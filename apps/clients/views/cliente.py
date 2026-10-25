@@ -62,6 +62,19 @@ class ClientsFilterForm(BSModalForm):
 
 
 class ClientsForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
+    national_id_holder = "otro cliente"
+
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        super().__init__(*args, **kwargs)
+
+    def other_clients(self):
+        clients = Cliente.objects.all()
+        return clients.exclude(pk=self.instance.pk) if self.instance else clients
+
+    def national_id_queryset(self):
+        return self.other_clients()
+
     country_phone_prefix = forms.ChoiceField(
         label="Prefijo País",
         choices=CountryPhonePrefix.choices,
@@ -117,7 +130,23 @@ class ClientsForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
         result = CommonCleaner.clean_phone_field(phone_prefix, phone)
         if result.is_err():
             raise forms.ValidationError(result.value)
+        available = CommonCleaner.check_phone_available(
+            self.other_clients(), self.national_id_holder, telefono=result.value
+        )
+        if available.is_err():
+            raise forms.ValidationError(available.err_value)
         return result.value
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        if not email:
+            return ""
+        result = CommonCleaner.check_email_available(
+            self.other_clients(), self.national_id_holder, email
+        )
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
+        return email
 
     def clean_status(self):
         status = self.cleaned_data.get("status")
@@ -335,6 +364,9 @@ class ClientDetailModalView(BaseClientModalView):
     def get_object(self, queryset=None):
         client_id = self.kwargs.get(self.pk_url_kwarg)
         return Cliente.objects.filter(pk=client_id).first()
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "instance": self.get_object()}
 
     @staticmethod
     def get_phone_and_prefix(client: Cliente) -> tuple:

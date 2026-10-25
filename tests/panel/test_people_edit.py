@@ -309,3 +309,31 @@ class PersonEditModalTests(TestCase):
     def test_existing_owners_without_identifier_must_complete_it(self):
         errors = self.errors(self.post(person=self.owner, first_name="Carlos", second_name="", first_surname="", second_surname="", national_id_country="", national_id_type="", national_id=""))
         self.assertIn("id_national_id_country", errors)
+
+    def test_keeping_its_own_data_is_allowed_but_not_repeating_it(self):
+        self.assertEqual(self.post().status_code, 200)
+        emails = [
+            row(self.work_email, EMAIL_FIELDS),
+            row(self.home_email, EMAIL_FIELDS, correo="carla@trabajo.cl"),
+        ]
+        errors = self.errors(self.post(emails=emails))
+        self.assertIn("duplicado", errors["id_correos-errors"])
+        phones = [
+            row(self.mobile, PHONE_FIELDS),
+            {"codigo_pais": "+56", "numero": "912345678", "tipo": "movil"},
+        ]
+        errors = self.errors(self.post(phones=phones))
+        self.assertIn("duplicado", errors["id_telefonos-errors"])
+
+    def test_email_and_phone_of_another_owner_are_rejected(self):
+        PersonaTelefono.objects.create(
+            persona=self.owner, codigo_pais="+56", numero="987654321", es_principal=True
+        )
+        emails = [
+            row(self.work_email, EMAIL_FIELDS, correo="carlos@elcorte.cl"),
+            row(self.home_email, EMAIL_FIELDS),
+        ]
+        phones = [row(self.mobile, PHONE_FIELDS, numero="987654321")]
+        errors = self.errors(self.post(emails=emails, phones=phones))
+        self.assertEqual(errors["id_correos-0-correo"], "Ese correo ya lo usa otro propietario.")
+        self.assertEqual(errors["id_telefonos-0-numero"], "Ese teléfono ya lo usa otro propietario.")

@@ -13,6 +13,8 @@ from apps.common.utils.countries.dispatcher import CountryDispatcher
 from apps.common.utils.utils import CommonCleaner
 
 COUNTRY_INVALID_MESSAGE = "El país debe ser un código de dos letras: %(codes)s."
+REPEATED_IN_FILE_MESSAGE = "Ese %(what)s se repite en otra fila del archivo."
+CLIENT_HOLDER = "otro cliente"
 NATIONAL_ID_FIELD_BY_KEY = {
     "country": "pais",
     "type": "tipo_identificador_nacional",
@@ -21,6 +23,20 @@ NATIONAL_ID_FIELD_BY_KEY = {
 
 
 class ClientAsyncImportValidator(BaseAsyncImportValidator):
+    def __init__(self, task):
+        super().__init__(task)
+        self.seen_values = {
+            "correo": set(),
+            "teléfono": set(),
+            "identificador nacional": set(),
+        }
+
+    def first_in_file(self, what, value):
+        if value in self.seen_values[what]:
+            return Err(REPEATED_IN_FILE_MESSAGE % {"what": what})
+        self.seen_values[what].add(value)
+        return Ok(value)
+
     fields = {
         "nombre": "Nombre",
         "apellido": "Apellido",
@@ -50,7 +66,15 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
         for prefix in allowed_prefixes:
             if telefono.startswith(prefix):
                 _phone = telefono[len(prefix) :]
-                return CommonCleaner.clean_phone_field(prefix, _phone)
+                result = CommonCleaner.clean_phone_field(prefix, _phone)
+                if result.is_err():
+                    return result
+                available = CommonCleaner.check_phone_available(
+                    Cliente.objects.all(), CLIENT_HOLDER, telefono=result.ok_value
+                )
+                if available.is_err():
+                    return available
+                return self.first_in_file("teléfono", result.ok_value)
         str_prefixes = ", ".join(allowed_prefixes)
         return Err(
             f"El teléfono debe comenzar con uno de los siguientes prefijos: {str_prefixes}."
@@ -75,7 +99,13 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
             validate_email(email)
         except ValidationError:
             return Err(f"Email inválido: {email}")
-        return Ok(email)
+        email = email.lower()
+        available = CommonCleaner.check_email_available(
+            Cliente.objects.all(), CLIENT_HOLDER, email
+        )
+        if available.is_err():
+            return available
+        return self.first_in_file("correo", email)
 
     def clean_notas(self, notas, **kwargs):
         if not notas:
@@ -89,7 +119,27 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
         return self.national_identifier_field("tipo_identificador_nacional", data)
 
     def clean_identificador_nacional(self, **data):
-        return self.national_identifier_field("identificador_nacional", data)
+        result = self.national_identifier_field("identificador_nacional", data)
+        if result.is_err() or not result.ok_value:
+            return result
+        _, values = self.check_national_identifier(
+            data.get("pais", ""),
+            data.get("tipo_identificador_nacional", ""),
+            data.get("identificador_nacional", ""),
+        )
+        available = CommonCleaner.check_national_identifier_available(
+            Cliente.objects.all(),
+            CLIENT_HOLDER,
+            values["pais"],
+            values["tipo_identificador_nacional"],
+            values["identificador_nacional"],
+        )
+        if available.is_err():
+            return available
+        key = tuple(values.values())
+        if self.first_in_file("identificador nacional", key).is_err():
+            return Err(REPEATED_IN_FILE_MESSAGE % {"what": "identificador nacional"})
+        return result
 
     def national_identifier_field(self, field, data):
         errors, values = self.check_national_identifier(

@@ -407,3 +407,35 @@ class PersonCreateModalTests(TestCase):
                 errors = self.errors(self.post(email=email))
                 self.assertIn(message, errors["id_email"])
         self.assertFalse(Persona.objects.exists())
+
+    def test_the_national_identifier_cannot_repeat_between_owners(self):
+        Persona.objects.create(
+            nombres="Otra",
+            pais="CL",
+            tipo_identificador_nacional="rut",
+            identificador_nacional="12345678-5",
+        )
+        errors = self.errors(self.post())
+        self.assertEqual(
+            errors["id_national_id"],
+            "Ese identificador nacional ya lo tiene otro propietario.",
+        )
+
+    def test_a_deleted_owner_does_not_block_its_identifier(self):
+        Persona.objects.create(
+            nombres="Borrada",
+            pais="CL",
+            tipo_identificador_nacional="rut",
+            identificador_nacional="12345678-5",
+        ).delete()
+        self.assertEqual(self.post().status_code, 200)
+
+    def test_email_and_phone_cannot_repeat_between_owners(self):
+        other = Persona.objects.create(nombres="Otra")
+        PersonaCorreo.objects.create(persona=other, correo="ana@ejemplo.com", es_principal=True)
+        PersonaTelefono.objects.create(
+            persona=other, codigo_pais="+56", numero="912345678", es_principal=True
+        )
+        errors = self.errors(self.post(email="ANA@ejemplo.com", phone="912345678"))
+        self.assertEqual(errors["id_email"], "Ese correo ya lo usa otro propietario.")
+        self.assertEqual(errors["id_phone"], "Ese teléfono ya lo usa otro propietario.")

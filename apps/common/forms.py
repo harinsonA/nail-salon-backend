@@ -230,6 +230,7 @@ class SplitNamesForm(forms.Form):
 
 class NationalIdentifierForm(forms.Form):
     national_id_required = False
+    national_id_holder = "otra persona"
 
     national_id_country = forms.ChoiceField(
         label="País",
@@ -287,12 +288,30 @@ class NationalIdentifierForm(forms.Form):
         if result.is_ok():
             if result.ok_value:
                 cleaned_data["national_id"] = result.ok_value
+                self.check_national_id_available(cleaned_data)
             return cleaned_data
         for key, message in result.err_value.items():
             field = NATIONAL_ID_FIELD_BY_KEY[key]
             if field not in self.errors:
                 self.add_error(field, message)
         return cleaned_data
+
+    def national_id_queryset(self):
+        return None
+
+    def check_national_id_available(self, cleaned_data):
+        queryset = self.national_id_queryset()
+        if queryset is None:
+            return
+        result = CommonCleaner.check_national_identifier_available(
+            queryset,
+            self.national_id_holder,
+            cleaned_data["national_id_country"],
+            cleaned_data["national_id_type"],
+            cleaned_data["national_id"],
+        )
+        if result.is_err():
+            self.add_error("national_id", result.err_value)
 
     @property
     def national_id_optional(self):

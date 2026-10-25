@@ -21,6 +21,9 @@ USERNAME_PATTERN = re.compile(r"^[a-z][a-z0-9._-]*$")
 NATIONAL_ID_COUNTRY_MISSING = "Elige el país del identificador nacional."
 NATIONAL_ID_TYPE_MISSING = "Elige el tipo de identificador nacional."
 NATIONAL_ID_NUMBER_MISSING = "Escribe el identificador nacional del tipo elegido."
+NATIONAL_ID_TAKEN = "Ese identificador nacional ya lo tiene %(holder)s."
+EMAIL_TAKEN = "Ese correo ya lo usa %(holder)s."
+PHONE_TAKEN = "Ese teléfono ya lo usa %(holder)s."
 
 """========================================================================="""
 # region ........ functions
@@ -165,6 +168,41 @@ class CommonCleaner(PasswordPolicyValidator, BusinessCleaner):
         if not all(is_ascii_digit(character) for character in field_value):
             return Err(f"El campo '{field_name}' debe solo contener números.")
         return Ok(field_value)
+
+    @staticmethod
+    def check_unique(queryset, message: str, **lookup) -> Result[None, str]:
+        """
+        Err(message) when another record of the queryset already has these values.
+        """
+        if queryset.filter(**lookup).exists():
+            return Err(message)
+        return Ok(None)
+
+    @classmethod
+    def check_national_identifier_available(
+        cls, queryset, holder: str, country: str, identifier_type: str, number: str
+    ) -> Result[None, str]:
+        return cls.check_unique(
+            queryset,
+            NATIONAL_ID_TAKEN % {"holder": holder},
+            pais=country,
+            tipo_identificador_nacional=identifier_type,
+            identificador_nacional=number,
+        )
+
+    @classmethod
+    def check_email_available(
+        cls, queryset, holder: str, email: str, field: str = "email"
+    ) -> Result[None, str]:
+        return cls.check_unique(
+            queryset, EMAIL_TAKEN % {"holder": holder}, **{f"{field}__iexact": email}
+        )
+
+    @classmethod
+    def check_phone_available(
+        cls, queryset, holder: str, **lookup
+    ) -> Result[None, str]:
+        return cls.check_unique(queryset, PHONE_TAKEN % {"holder": holder}, **lookup)
 
     @staticmethod
     def clean_national_identifier(

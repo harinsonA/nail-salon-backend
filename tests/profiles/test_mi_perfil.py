@@ -1,5 +1,3 @@
-import re
-
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
@@ -96,7 +94,10 @@ class MiPerfilTests(NegocioTestCase):
         self.assertTrue(propietaria.check_password("Clave-Nueva-2026"))
 
     def test_encargado_y_colaborador_siguen_editando_sus_datos(self):
-        for rol, nombre in ((Rol.ENCARGADO, "ana"), (Rol.COLABORADOR, "laura")):
+        for rol, nombre, rut in (
+            (Rol.ENCARGADO, "ana", "12.345.678-5"),
+            (Rol.COLABORADOR, "laura", "11.111.111-1"),
+        ):
             with self.subTest(rol=rol):
                 usuario = self.crear(rol, nombre)
                 html = (
@@ -107,7 +108,10 @@ class MiPerfilTests(NegocioTestCase):
                 self.assertIn(PESTANA_PERSONAL, html)
                 self.assertNotRegex(html, r'<input[^>]*name="email"[^>]*disabled')
                 respuesta = self.guardar(
-                    usuario, first_name="Nueva", email=f"{nombre}.nueva@correo.cl"
+                    usuario,
+                    first_name="Nueva",
+                    email=f"{nombre}.nueva@correo.cl",
+                    national_id=rut,
                 )
                 self.assertEqual(respuesta.status_code, 200)
                 usuario.refresh_from_db()
@@ -151,3 +155,13 @@ class MiPerfilTests(NegocioTestCase):
         propietaria.refresh_from_db()
         self.assertTrue(propietaria.check_password("Clave-Nueva-2026"))
         self.assertIsNone(propietaria.perfil.identificador_nacional)
+
+    def test_el_identificador_no_puede_ser_el_de_otra_persona_del_negocio(self):
+        self.guardar(self.crear(Rol.ENCARGADO, "ana"))
+        respuesta = self.guardar(self.crear(Rol.COLABORADOR, "laura"))
+        self.assertEqual(respuesta.status_code, 400)
+        errores = {e["id_element"]: e["error"] for e in respuesta.json()["errors"]}
+        self.assertEqual(
+            errores["id_national_id"],
+            "Ese identificador nacional ya lo tiene otra persona de este negocio.",
+        )

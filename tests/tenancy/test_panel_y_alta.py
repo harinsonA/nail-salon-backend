@@ -361,3 +361,14 @@ class PanelYAltaTests(TestCase):
             self.assertRegex(
                 clave, re.compile(r"^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$")
             )
+
+    @mock.patch.object(preparar_negocio, "delay")
+    def test_el_correo_de_acceso_no_puede_ser_de_otro_propietario(self, encolar):
+        otra = Persona.objects.create(nombres="Otra")
+        PersonaCorreo.objects.create(persona=otra, correo="carlos@elcorte.cl", es_principal=True)
+        respuesta = self.crear()
+        self.assertEqual(
+            respuesta.context["form"].errors["correo"],
+            ["Ese correo ya lo usa otro propietario."],
+        )
+        encolar.assert_not_called()

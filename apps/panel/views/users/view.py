@@ -102,6 +102,7 @@ def user_permission_rows(user):
 
 class UserFormBase(NationalIdentifierForm, BSModalForm):
     national_id_required = True
+    national_id_holder = "otro usuario del panel"
 
     username = forms.CharField(
         label="Usuario",
@@ -160,6 +161,10 @@ class UserFormBase(NationalIdentifierForm, BSModalForm):
             }
         super().__init__(*args, **kwargs)
 
+    def national_id_queryset(self):
+        profiles = PerfilPanel.objects.all()
+        return profiles.exclude(user=self.instance) if self.instance else profiles
+
     def other_users(self):
         users = User.objects.all()
         return users.exclude(pk=self.instance.pk) if self.instance else users
@@ -174,8 +179,11 @@ class UserFormBase(NationalIdentifierForm, BSModalForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
-        if self.other_users().filter(email__iexact=email).exists():
-            raise forms.ValidationError("Ese correo ya lo usa otro usuario del panel.")
+        result = CommonCleaner.check_email_available(
+            self.other_users(), self.national_id_holder, email
+        )
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
         return email
 
     def clean_password_pair(self, cleaned_data):
