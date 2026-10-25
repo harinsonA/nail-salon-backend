@@ -150,3 +150,16 @@ DESIGN.md
 docs/design/
 .impeccable/
 plans/
+
+# Graphify (grafo de conocimiento del código para Claude Code). Se usa solo en
+# local: el grafo generado, su configuración y las instrucciones que escribe
+# para el asistente no forman parte del proyecto.
+graphify-out/
+/CLAUDE.md
+.graphifyignore
+.graphifyinclude
+.graphifyrc
+.agents/
+
+# Restos de worktrees temporales creados durante correcciones
+.wt-fix/
