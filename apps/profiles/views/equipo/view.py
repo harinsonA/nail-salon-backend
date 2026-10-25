@@ -209,7 +209,8 @@ class MemberForm(NationalIdentifierForm, BSModalForm):
         if not member.pk:
             member.set_unusable_password()
         member.save()
-        self.save_national_id(Perfil.objects.get(user=member), rol=data["rol"])
+        perfil = self.instance.perfil if self.instance else Perfil.objects.get(user=member)
+        self.save_national_id(perfil, rol=data["rol"])
         return member
 
 

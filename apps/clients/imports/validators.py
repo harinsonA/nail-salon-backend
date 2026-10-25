@@ -10,11 +10,21 @@ from apps.common.utils.countries.constants import (
     NationalIdentifierType,
 )
 from apps.common.utils.countries.dispatcher import CountryDispatcher
-from apps.common.utils.utils import CommonCleaner
+from apps.common.utils.utils import (
+    EMAIL_TAKEN,
+    NATIONAL_ID_TAKEN,
+    PHONE_TAKEN,
+    CommonCleaner,
+)
 
 COUNTRY_INVALID_MESSAGE = "El país debe ser un código de dos letras: %(codes)s."
 REPEATED_IN_FILE_MESSAGE = "Ese %(what)s se repite en otra fila del archivo."
 CLIENT_HOLDER = "otro cliente"
+TAKEN_MESSAGES = {
+    "correo": EMAIL_TAKEN,
+    "teléfono": PHONE_TAKEN,
+    "identificador nacional": NATIONAL_ID_TAKEN,
+}
 NATIONAL_ID_FIELD_BY_KEY = {
     "country": "pais",
     "type": "tipo_identificador_nacional",
@@ -30,6 +40,34 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
             "teléfono": set(),
             "identificador nacional": set(),
         }
+        self.existing_values = None
+
+    def load_existing_values(self):
+        existing = {what: set() for what in TAKEN_MESSAGES}
+        rows = Cliente.objects.values_list(
+            "email",
+            "telefono",
+            "pais",
+            "tipo_identificador_nacional",
+            "identificador_nacional",
+        )
+        for email, phone, country, identifier_type, number in rows:
+            if email:
+                existing["correo"].add(email.lower())
+            if phone:
+                existing["teléfono"].add(phone)
+            if number:
+                existing["identificador nacional"].add(
+                    (country, identifier_type, number)
+                )
+        return existing
+
+    def check_available(self, what, value):
+        if self.existing_values is None:
+            self.existing_values = self.load_existing_values()
+        if value in self.existing_values[what]:
+            return Err(TAKEN_MESSAGES[what] % {"holder": CLIENT_HOLDER})
+        return self.first_in_file(what, value)
 
     def first_in_file(self, what, value):
         if value in self.seen_values[what]:
@@ -69,12 +107,7 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
                 result = CommonCleaner.clean_phone_field(prefix, _phone)
                 if result.is_err():
                     return result
-                available = CommonCleaner.check_phone_available(
-                    Cliente.objects.all(), CLIENT_HOLDER, telefono=result.ok_value
-                )
-                if available.is_err():
-                    return available
-                return self.first_in_file("teléfono", result.ok_value)
+                return self.check_available("teléfono", result.ok_value)
         str_prefixes = ", ".join(allowed_prefixes)
         return Err(
             f"El teléfono debe comenzar con uno de los siguientes prefijos: {str_prefixes}."
@@ -99,13 +132,7 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
             validate_email(email)
         except ValidationError:
             return Err(f"Email inválido: {email}")
-        email = email.lower()
-        available = CommonCleaner.check_email_available(
-            Cliente.objects.all(), CLIENT_HOLDER, email
-        )
-        if available.is_err():
-            return available
-        return self.first_in_file("correo", email)
+        return self.check_available("correo", email.lower())
 
     def clean_notas(self, notas, **kwargs):
         if not notas:
@@ -127,19 +154,10 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
             data.get("tipo_identificador_nacional", ""),
             data.get("identificador_nacional", ""),
         )
-        available = CommonCleaner.check_national_identifier_available(
-            Cliente.objects.all(),
-            CLIENT_HOLDER,
-            values["pais"],
-            values["tipo_identificador_nacional"],
-            values["identificador_nacional"],
+        available = self.check_available(
+            "identificador nacional", tuple(values.values())
         )
-        if available.is_err():
-            return available
-        key = tuple(values.values())
-        if self.first_in_file("identificador nacional", key).is_err():
-            return Err(REPEATED_IN_FILE_MESSAGE % {"what": "identificador nacional"})
-        return result
+        return available if available.is_err() else result
 
     def national_identifier_field(self, field, data):
         errors, values = self.check_national_identifier(

@@ -45,6 +45,15 @@ EMPTY = "—"
 PHONE_MAX_DIGITS = 15
 ACCESS_EMAIL_LABEL = "acceso"
 OWNER_HOLDER = "otro propietario"
+OWNER_SYNC_FIELDS = {
+    "first_name",
+    "second_name",
+    "first_surname",
+    "second_surname",
+    "national_id_country",
+    "national_id_type",
+    "national_id",
+}
 
 
 # endregion
@@ -441,7 +450,8 @@ class PersonUpdateModalView(RelatedFormsMixin, PanelUpdateModalView):
         person = form.save()
         for formset in self.related_forms().values():
             formset.save()
-        sync_owner_data(person)
+        if OWNER_SYNC_FIELDS & set(form.changed_data):
+            sync_owner_data(person)
         return person
 
 

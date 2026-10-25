@@ -1,4 +1,5 @@
 import json
+from functools import cache
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -73,11 +74,14 @@ def mark_invalid_fields(*forms_to_mark):
                 widget.attrs["class"] = " ".join([*classes, INVALID_CLASS])
 
 
-def national_id_types_by_country():
-    return {
-        country: CountryDispatcher.identifier_types(country)
-        for country in Country.values
-    }
+@cache
+def national_id_types_json():
+    return json.dumps(
+        {
+            country: CountryDispatcher.identifier_types(country)
+            for country in Country.values
+        }
+    )
 
 
 def main_item_formset(parent_model, form, formset):
@@ -259,7 +263,7 @@ class NationalIdentifierForm(forms.Form):
         country_field = self.fields["national_id_country"]
         country_field.widget.attrs.update(
             {
-                "data-national-id-types": json.dumps(national_id_types_by_country()),
+                "data-national-id-types": national_id_types_json(),
                 "data-national-id-type-field": f"#{self['national_id_type'].auto_id}",
             }
         )

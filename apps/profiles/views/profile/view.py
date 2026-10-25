@@ -10,7 +10,6 @@ from apps.common.middleware import start_session_window
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
-from apps.profiles.permisos import rol_de
 from apps.settings.preferences import SESSION_IDLE_MINUTES, Category
 from apps.settings.preferences.forms import PreferenceFieldsMixin
 
@@ -20,6 +19,19 @@ User = get_user_model()
 # region ........ Constants
 
 PERSONAL_FIELDS = ("username", "first_name", "last_name", "email")
+
+
+# endregion
+"""========================================================================="""
+"""========================================================================="""
+# region ........ Helpers
+
+
+def profile_of(user):
+    try:
+        return user.perfil if user else None
+    except Perfil.DoesNotExist:
+        return None
 
 
 # endregion
@@ -68,15 +80,16 @@ class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelFor
     )
 
     def __init__(self, *args, **kwargs):
-        instance = kwargs.get("instance")
-        self.perfil = Perfil.objects.filter(user=instance).first() if instance else None
+        self.perfil = profile_of(kwargs.get("instance"))
         kwargs["initial"] = {
             **self.national_id_initial(self.perfil),
             **kwargs.get("initial", {}),
         }
         super().__init__(*args, **kwargs)
         self.add_preference_fields(self.instance)
-        self.personal_data_locked = rol_de(self.instance) == Perfil.Rol.PROPIETARIO
+        self.personal_data_locked = bool(self.perfil) and (
+            self.perfil.rol == Perfil.Rol.PROPIETARIO
+        )
         if self.personal_data_locked:
             for name in PERSONAL_FIELDS:
                 self.fields[name].disabled = True

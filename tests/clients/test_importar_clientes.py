@@ -1,7 +1,9 @@
 import io
 from types import SimpleNamespace
 
+from django.db import connection
 from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 from openpyxl import load_workbook
 
 from apps.clients.imports.validators import ClientAsyncImportValidator
@@ -152,3 +154,15 @@ class ImportarClientesTests(NegocioTestCase):
                 (3, "Ese teléfono se repite en otra fila del archivo."),
             ],
         )
+
+    def test_las_consultas_no_crecen_con_la_cantidad_de_filas(self):
+        def consultas(cantidad):
+            filas = [
+                f"Importado,X,+5698{i:07d},imp{i}@correo.cl,,,,activo,"
+                for i in range(cantidad)
+            ]
+            with CaptureQueriesContext(connection) as contexto:
+                self.assertTrue(validar(*filas).is_ok())
+            return len(contexto.captured_queries)
+
+        self.assertEqual(consultas(5), consultas(40))

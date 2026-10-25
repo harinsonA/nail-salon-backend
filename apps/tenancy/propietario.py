@@ -46,13 +46,13 @@ def apply_owner_data(perfil, persona):
 
 
 def sync_owner_data(persona):
-    negocios = persona.negocios_como_titular.exclude(
+    schema_names = persona.negocios_como_titular.exclude(
         schema_name=get_public_schema_name()
-    )
-    for negocio in negocios:
-        if not schema_exists(negocio.schema_name):
+    ).values_list("schema_name", flat=True)
+    for schema_name in schema_names:
+        if not schema_exists(schema_name):
             continue
-        with schema_context(negocio.schema_name), sin_autor_de_la_peticion():
+        with schema_context(schema_name), sin_autor_de_la_peticion():
             perfil = find_owner()
             if perfil is not None:
                 apply_owner_data(perfil, persona)

@@ -154,9 +154,10 @@ class UserFormBase(NationalIdentifierForm, BSModalForm):
 
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
+        self.profile = panel_profile(instance) if instance else None
         if instance:
             kwargs["initial"] = {
-                **self.national_id_initial(panel_profile(instance)),
+                **self.national_id_initial(self.profile),
                 **kwargs.get("initial", {}),
             }
         super().__init__(*args, **kwargs)
@@ -345,7 +346,7 @@ class UserUpdateForm(UserFormBase):
         if data.get("password"):
             user.set_password(data["password"])
         user.save()
-        self.save_national_id(panel_profile(user) or PerfilPanel(user=user))
+        self.save_national_id(self.profile or PerfilPanel(user=user))
         if data.get("password"):
             unlock(user, PASSWORD_UNLOCK_REASON)
         if not self.fields["groups"].disabled:

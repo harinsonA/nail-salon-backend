@@ -362,8 +362,10 @@ class ClientDetailModalView(BaseClientModalView):
     base_object = None
 
     def get_object(self, queryset=None):
-        client_id = self.kwargs.get(self.pk_url_kwarg)
-        return Cliente.objects.filter(pk=client_id).first()
+        if not hasattr(self, "_object"):
+            client_id = self.kwargs.get(self.pk_url_kwarg)
+            self._object = Cliente.objects.filter(pk=client_id).first()
+        return self._object
 
     def get_form_kwargs(self):
         return {**super().get_form_kwargs(), "instance": self.get_object()}
