@@ -424,3 +424,76 @@
 .action-modal__request .readonly-info {
   margin-top: 0.75rem;
 }
+
+/* ---- Pestañas laterales de los modales grandes ---- */
+.side-tabs {
+  gap: 0.25rem;
+}
+
+.side-tabs .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: start;
+  color: var(--text-primary);
+  background-color: transparent;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.side-tabs .nav-link .material-symbols-outlined {
+  font-size: var(--icon-size-menu);
+  color: var(--text-muted);
+}
+
+.side-tabs .nav-link:hover {
+  color: var(--text-strong);
+  background-color: var(--bg-muted);
+}
+
+.side-tabs .nav-link.active {
+  color: var(--text-strong);
+  background-color: var(--color-primary-soft);
+  border-left-color: var(--color-primary);
+}
+
+.side-tabs .nav-link.active .material-symbols-outlined {
+  color: var(--color-primary-hover);
+}
+
+.side-tabs .nav-link:focus-visible {
+  outline: 2px solid var(--color-primary-hover);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.side-tabs .nav-link .side-tab-error {
+  display: none;
+  margin-left: auto;
+  color: var(--color-danger);
+}
+
+.side-tabs .nav-link.has-errors {
+  color: var(--color-danger-text);
+}
+
+.side-tabs .nav-link.has-errors .side-tab-error {
+  display: inline-block;
+}
+
+.side-tab-title {
+  margin-bottom: 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.side-tab-subtitle {
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
