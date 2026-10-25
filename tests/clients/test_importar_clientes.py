@@ -165,4 +165,4 @@ class ImportarClientesTests(NegocioTestCase):
                 self.assertTrue(validar(*filas).is_ok())
             return len(contexto.captured_queries)
 
-        self.assertEqual(consultas(5), consultas(40))
+        self.assertLessEqual(consultas(40), 2)
