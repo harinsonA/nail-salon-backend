@@ -135,6 +135,10 @@
           {% endif %}
           {% endif %}
           <div class="row g-2">
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.rubro %}
+            </div>
+            <div class="w-100"></div>
             {% if not business %}
             <div class="col-12 mb-2">
               {% include 'common/form_field.html' with field=form.nombre %}
@@ -158,7 +162,7 @@
             </div>
             {% endif %}
             <div class="col-12 col-sm-6 mb-2">
-              {% include 'common/form_field.html' with field=form.rubro %}
+              {% include 'common/form_field.html' with field=form.pais %}
             </div>
             <div class="col-12 col-sm-6 mb-2">
               {% include 'common/form_field.html' with field=form.zona_horaria %}

@@ -22,6 +22,7 @@ def dar_de_alta(datos, creado_por, direccion=None):
             nombre=datos["nombre"],
             titular=titular,
             rubro=datos.get("rubro"),
+            pais=datos["pais"],
             zona_horaria=datos["zona_horaria"],
             notas_internas=datos.get("notas_internas") or None,
             creado_por=creado_por,
