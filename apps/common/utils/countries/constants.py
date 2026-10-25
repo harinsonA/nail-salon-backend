@@ -66,5 +66,13 @@ class CountryPhonePrefix(TextChoices):
     VENEZUELA = venezuela.PHONE_PREFIX, phone_prefix_label(venezuela)
 
 
+class NationalIdentifierType(TextChoices):
+    CEDULA = "cedula", "Cédula"
+    CURP = "curp", "CURP"
+    DNI = "dni", "DNI"
+    PASSPORT = "pasaporte", "Pasaporte"
+    RUT = "rut", "RUT"
+
+
 # endregion
 """========================================================================="""

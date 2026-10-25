@@ -4,8 +4,20 @@ from result import Err, Ok
 
 from apps.clients.models.cliente import Cliente
 from apps.common.imports.validators import BaseAsyncImportValidator
-from apps.common.utils.countries.constants import CountryPhonePrefix
+from apps.common.utils.countries.constants import (
+    Country,
+    CountryPhonePrefix,
+    NationalIdentifierType,
+)
+from apps.common.utils.countries.dispatcher import CountryDispatcher
 from apps.common.utils.utils import CommonCleaner
+
+COUNTRY_INVALID_MESSAGE = "El país debe ser un código de dos letras: %(codes)s."
+NATIONAL_ID_FIELD_BY_KEY = {
+    "country": "pais",
+    "type": "tipo_identificador_nacional",
+    "number": "identificador_nacional",
+}
 
 
 class ClientAsyncImportValidator(BaseAsyncImportValidator):
@@ -14,6 +26,9 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
         "apellido": "Apellido",
         "telefono": "Teléfono",
         "email": "Email",
+        "pais": "País",
+        "tipo_identificador_nacional": "Tipo de identificador nacional",
+        "identificador_nacional": "Identificador nacional",
         "estado": "Estado",
         "notas": "Notas",
     }
@@ -66,3 +81,51 @@ class ClientAsyncImportValidator(BaseAsyncImportValidator):
         if not notas:
             return Ok("")
         return CommonCleaner.clean_250_characters_field("notas", notas)
+
+    def clean_pais(self, **data):
+        return self.national_identifier_field("pais", data)
+
+    def clean_tipo_identificador_nacional(self, **data):
+        return self.national_identifier_field("tipo_identificador_nacional", data)
+
+    def clean_identificador_nacional(self, **data):
+        return self.national_identifier_field("identificador_nacional", data)
+
+    def national_identifier_field(self, field, data):
+        errors, values = self.check_national_identifier(
+            data.get("pais", ""),
+            data.get("tipo_identificador_nacional", ""),
+            data.get("identificador_nacional", ""),
+        )
+        if field in errors:
+            return Err(errors[field])
+        return Ok(values.get(field))
+
+    @staticmethod
+    def check_national_identifier(country, identifier_type, number):
+        country = country.strip().upper()
+        if country and country not in Country.values:
+            return {
+                "pais": COUNTRY_INVALID_MESSAGE % {"codes": ", ".join(Country.values)}
+            }, {}
+        identifier_type = identifier_type.strip()
+        types = CountryDispatcher.identifier_types(country) if country else []
+        generic_names = dict(NationalIdentifierType.choices)
+        for value, label in types:
+            names = (value, label, generic_names.get(value, value))
+            if identifier_type.casefold() in (name.casefold() for name in names):
+                identifier_type = value
+                break
+        result = CommonCleaner.clean_national_identifier(
+            country, identifier_type, number.strip()
+        )
+        if result.is_err():
+            return {
+                NATIONAL_ID_FIELD_BY_KEY[key]: message
+                for key, message in result.err_value.items()
+            }, {}
+        return {}, {
+            "pais": country or None,
+            "tipo_identificador_nacional": identifier_type or None,
+            "identificador_nacional": result.ok_value,
+        }

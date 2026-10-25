@@ -4,7 +4,9 @@ from apps.common.utils.countries.constants import (
     COUNTRIES,
     Country,
     CountryPhonePrefix,
+    NationalIdentifierType,
 )
+from apps.common.utils.countries.dispatcher import CountryDispatcher
 
 
 class CountryListsTests(SimpleTestCase):
@@ -24,3 +26,9 @@ class CountryListsTests(SimpleTestCase):
                 self.assertEqual(
                     CountryPhonePrefix[country.COUNTRY_KEY], country.PHONE_PREFIX
                 )
+
+    def test_every_identifier_type_of_every_country_is_in_the_shared_list(self):
+        for country in Country.values:
+            for code, _ in CountryDispatcher.identifier_types(country):
+                with self.subTest(country=country, code=code):
+                    self.assertIn(code, NationalIdentifierType.values)

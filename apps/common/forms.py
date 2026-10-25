@@ -9,6 +9,12 @@ from apps.common.form_fields import AlphabeticField, AlphanumericField, NumericF
 from apps.common.utils.countries.constants import Country
 from apps.common.utils.countries.dispatcher import CountryDispatcher
 from apps.common.utils.text import join_name_parts, split_name
+from apps.common.utils.utils import (
+    NATIONAL_ID_COUNTRY_MISSING,
+    NATIONAL_ID_NUMBER_MISSING,
+    NATIONAL_ID_TYPE_MISSING,
+    CommonCleaner,
+)
 from apps.common.widgets import switch_input, text_input
 
 """========================================================================="""
@@ -33,15 +39,17 @@ MAIN_ITEM_FIELD = "es_principal"
 NAME_PART_MAX_LENGTH = 50
 FULL_NAME_MAX_LENGTH = 100
 NATIONAL_ID_MAX_LENGTH = 20
-NATIONAL_ID_COUNTRY_MISSING = "Elige el país del identificador nacional."
-NATIONAL_ID_TYPE_MISSING = "Elige el tipo de identificador nacional."
-NATIONAL_ID_NUMBER_MISSING = "Escribe el identificador nacional del tipo elegido."
 NATIONAL_ID_MISSING_MESSAGES = {
     "national_id_country": NATIONAL_ID_COUNTRY_MISSING,
     "national_id_type": NATIONAL_ID_TYPE_MISSING,
     "national_id": NATIONAL_ID_NUMBER_MISSING,
 }
 NATIONAL_ID_FIELDS = tuple(NATIONAL_ID_MISSING_MESSAGES)
+NATIONAL_ID_FIELD_BY_KEY = {
+    "country": "national_id_country",
+    "type": "national_id_type",
+    "number": "national_id",
+}
 
 
 # endregion
@@ -271,25 +279,19 @@ class NationalIdentifierForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        country = cleaned_data.get("national_id_country")
-        identifier_type = cleaned_data.get("national_id_type")
-        number = cleaned_data.get("national_id")
-        if not (identifier_type or number or "national_id_type" in self.errors):
-            return cleaned_data
-        if not country and "national_id_country" not in self.errors:
-            self.add_error("national_id_country", NATIONAL_ID_COUNTRY_MISSING)
-        if not identifier_type and "national_id_type" not in self.errors:
-            self.add_error("national_id_type", NATIONAL_ID_TYPE_MISSING)
-        if not number and "national_id" not in self.errors:
-            self.add_error("national_id", NATIONAL_ID_NUMBER_MISSING)
-        if country and identifier_type and number:
-            result = CountryDispatcher.validate_identifier(
-                country, identifier_type, number
-            )
-            if result.is_err():
-                self.add_error("national_id", result.err_value)
-            else:
+        result = CommonCleaner.clean_national_identifier(
+            cleaned_data.get("national_id_country"),
+            cleaned_data.get("national_id_type"),
+            cleaned_data.get("national_id"),
+        )
+        if result.is_ok():
+            if result.ok_value:
                 cleaned_data["national_id"] = result.ok_value
+            return cleaned_data
+        for key, message in result.err_value.items():
+            field = NATIONAL_ID_FIELD_BY_KEY[key]
+            if field not in self.errors:
+                self.add_error(field, message)
         return cleaned_data
 
     @property

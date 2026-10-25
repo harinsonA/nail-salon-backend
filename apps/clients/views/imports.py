@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from apps.clients.imports import ClientAsyncImportValidator
 from apps.clients.tasks import import_clients
 from apps.common.imports.async_views import BaseAsyncImportView
-from apps.common.imports.views import BaseExampleExportView
+from apps.common.imports.views import BaseExampleExportView, national_id_help_sheets
 
 
 class ClientImportView(BaseAsyncImportView):
@@ -27,7 +27,13 @@ class ClientExampleExportView(BaseExampleExportView):
             "González",
             "+56912345678",
             "maria@ejemplo.cl",
+            "CL",
+            "rut",
+            "12.345.678-5",
             "activo",
             "Clienta frecuente",
         ],
     ]
+
+    def get_help_sheets(self):
+        return national_id_help_sheets()
