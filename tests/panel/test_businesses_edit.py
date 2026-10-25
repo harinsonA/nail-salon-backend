@@ -343,3 +343,19 @@ class BusinessEditTests(TestCase):
             .status_code,
             404,
         )
+
+    def test_shows_the_national_identifier_of_the_owner(self):
+        html = self.browser().get(self.url()).content.decode()
+        for label in ("País del titular", "Tipo de identificador nacional", "Identificador nacional"):
+            self.assertRegex(html, rf'{label}</span>\s*<span class="readonly-info__value">—</span>')
+        Persona.objects.filter(pk=self.owner.pk).update(
+            pais="VE", tipo_identificador_nacional="cedula", identificador_nacional="V-12345678"
+        )
+        html = self.browser().get(self.url()).content.decode()
+        for label, value in (
+            ("País del titular", "Venezuela"),
+            ("Tipo de identificador nacional", "Cédula de identidad"),
+            ("Identificador nacional", "V-12345678"),
+        ):
+            with self.subTest(label=label):
+                self.assertRegex(html, rf'{label}</span>\s*<span class="readonly-info__value">{value}</span>')

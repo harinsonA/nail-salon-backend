@@ -36,6 +36,7 @@ from apps.common.forms import (
 )
 from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
 from apps.common.utils.countries.constants import Country
+from apps.common.utils.countries.dispatcher import CountryDispatcher
 from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.widgets import text_input
@@ -104,6 +105,18 @@ CODE_INPUT_ATTRS = {
 
 """========================================================================="""
 # region ........ Helpers
+
+
+def owner_identifier(titular):
+    if titular is None or not titular.identificador_nacional:
+        return {}
+    return {
+        "owner_country": titular.get_pais_display(),
+        "owner_id_type": CountryDispatcher.identifier_type_label(
+            titular.pais, titular.tipo_identificador_nacional
+        ),
+        "owner_id": titular.identificador_nacional,
+    }
 
 
 def businesses():
@@ -722,6 +735,7 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
             "access_email": correo_de_acceso(business.titular)
             if business.titular
             else None,
+            **owner_identifier(business.titular),
             "owner_access": describe_lock(owner_access) if owner_access else "",
             "owner_locked": bool(owner_access and owner_access.is_locked),
             "actions": [
