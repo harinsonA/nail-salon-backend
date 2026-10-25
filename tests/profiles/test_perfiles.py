@@ -23,6 +23,10 @@ class PerfilTests(NegocioTestCase):
         self.assertEqual(perfil.rol, Perfil.Rol.COLABORADOR)
         self.assertTrue(perfil.debe_cambiar_clave)
         self.assertEqual(perfil.user.perfil, perfil)
+        self.assertEqual(
+            (perfil.pais, perfil.tipo_identificador_nacional, perfil.identificador_nacional),
+            (None, None, None),
+        )
 
     def test_un_solo_propietario_por_negocio(self):
         self.crear_perfil("maria", rol=Perfil.Rol.PROPIETARIO)
