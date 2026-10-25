@@ -57,6 +57,7 @@ class PanelYAltaTests(TestCase):
             "titular": self.titular.pk,
             "correo": "Carlos@ElCorte.cl",
             "rubro": Rubro.objects.get(codigo="barberia").pk,
+            "pais": "CL",
             "zona_horaria": "America/Santiago",
             "notas_internas": "",
             "address-calle": "",
@@ -88,6 +89,7 @@ class PanelYAltaTests(TestCase):
         ):
             with self.subTest(texto=texto):
                 self.assertContains(respuesta, texto)
+        self.assertContains(respuesta, '<option value="CL" selected>Chile</option>')
         for campo in ("nombres", "apellidos", "telefono", "codigo_pais"):
             with self.subTest(campo=campo):
                 self.assertNotContains(respuesta, f'name="{campo}"')
@@ -162,12 +164,14 @@ class PanelYAltaTests(TestCase):
         respuesta = self.crear(
             nombre="Barbería 21",
             rubro="",
+            pais="AR-",
             notas_internas="x" * 251,
             **{"address-comuna": "Providencia 2"},
         )
         form = respuesta.context["form"]
         self.assertIn("caracteres alfabéticos y espacios", form.errors["nombre"][0])
         self.assertIn("rubro", form.errors)
+        self.assertIn("pais", form.errors)
         self.assertIn("250", form.errors["notas_internas"][0])
         direccion = respuesta.context["addresses"]
         self.assertEqual(
@@ -184,6 +188,7 @@ class PanelYAltaTests(TestCase):
         with self.captureOnCommitCallbacks(execute=True):
             respuesta = self.crear(
                 esquema="corte_central",
+                pais="MX",
                 notas_internas="Primer mes sin costo.",
                 **{
                     "address-calle": "Av. Providencia",
@@ -210,6 +215,7 @@ class PanelYAltaTests(TestCase):
         self.assertEqual(negocio.creado_por, self.admin)
         self.assertEqual(negocio.titular, self.titular)
         self.assertEqual(negocio.rubro.codigo, "barberia")
+        self.assertEqual(negocio.pais, "MX")
         self.assertEqual(negocio.notas_internas, "Primer mes sin costo.")
         self.assertEqual(
             negocio.domains.get(is_primary=True).domain, "el-corte.localhost"

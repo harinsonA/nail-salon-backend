@@ -35,6 +35,7 @@ from apps.common.forms import (
     mark_invalid_fields,
 )
 from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
+from apps.common.utils.countries.constants import Country
 from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.widgets import text_input
@@ -78,6 +79,7 @@ STATUS_DESCRIPTIONS = {
     Negocio.Estado.CANCELADO: "Nadie entra; los datos se conservan y se puede reactivar.",
 }
 ALL = "all"
+DEFAULT_COUNTRY = Country.CHILE
 DEFAULT_TIME_ZONE = "America/Santiago"
 TIME_ZONES = [
     ("America/Santiago", "Chile (Santiago)"),
@@ -355,6 +357,12 @@ class BusinessSettingsForm(forms.Form):
         empty_label="Selecciona un rubro",
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
+    pais = forms.ChoiceField(
+        label="País",
+        choices=Country.choices,
+        initial=DEFAULT_COUNTRY,
+        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
+    )
     zona_horaria = forms.ChoiceField(
         label="Zona horaria",
         choices=TIME_ZONES,
@@ -377,12 +385,13 @@ class BusinessSettingsForm(forms.Form):
 
 class BusinessCreateForm(BusinessSettingsForm):
     field_order = [
+        "rubro",
         "nombre",
         "subdominio",
         "esquema",
         "titular",
         "correo",
-        "rubro",
+        "pais",
         "zona_horaria",
         "notas_internas",
     ]
@@ -459,6 +468,7 @@ class BusinessUpdateForm(BusinessSettingsForm):
         self.initial.update(
             {
                 "rubro": instance.rubro_id,
+                "pais": instance.pais or DEFAULT_COUNTRY,
                 "zona_horaria": instance.zona_horaria,
                 "notas_internas": instance.notas_internas or "",
             }
@@ -467,6 +477,7 @@ class BusinessUpdateForm(BusinessSettingsForm):
     def save(self):
         business = self.instance
         business.rubro = self.cleaned_data["rubro"]
+        business.pais = self.cleaned_data["pais"]
         business.zona_horaria = self.cleaned_data["zona_horaria"]
         business.notas_internas = self.cleaned_data["notas_internas"] or None
         business._change_reason = "Edición desde el panel"
@@ -897,6 +908,7 @@ class BusinessHistoryListAjaxView(HistoryListAjaxView):
     ignored_fields = ("modified", "estado_desde")
     field_labels = {
         "schema_name": "Esquema",
+        "pais": "País",
         "zona_horaria": "Zona horaria",
         "error_preparacion": "Error de preparación",
         "notas_internas": "Notas internas",

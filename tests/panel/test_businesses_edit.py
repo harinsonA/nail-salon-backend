@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -125,6 +127,7 @@ class BusinessEditTests(TestCase):
         )
         data = {
             "rubro": self.barber.pk,
+            "pais": "CL",
             "zona_horaria": "America/Santiago",
             "notas_internas": "Cliente desde 2025",
             **changes,
@@ -200,9 +203,21 @@ class BusinessEditTests(TestCase):
         self.assertContains(preparing, "Falló desde el")
         self.assertContains(self.browser().get(self.url()), "Activo desde el")
 
-    def test_updates_industry_time_zone_and_notes(self):
+    def selected_country(self):
+        html = self.browser().get(self.url()).content.decode()
+        select = re.search(r'<select name="pais".*?</select>', html, re.DOTALL).group(0)
+        return re.findall(r'<option value="(\w+)" selected>', select)
+
+    def test_country_defaults_to_chile_only_when_empty(self):
+        self.assertEqual(self.selected_country(), ["CL"])
+        self.business.pais = "PE"
+        self.business.save()
+        self.assertEqual(self.selected_country(), ["PE"])
+
+    def test_updates_industry_country_time_zone_and_notes(self):
         response = self.post(
             rubro=self.nails.pk,
+            pais="PE",
             zona_horaria="America/Lima",
             notas_internas="  Paga el día 5 ",
         )
@@ -211,10 +226,11 @@ class BusinessEditTests(TestCase):
         self.assertEqual(
             (
                 self.business.rubro,
+                self.business.pais,
                 self.business.zona_horaria,
                 self.business.notas_internas,
             ),
-            (self.nails, "America/Lima", "Paga el día 5"),
+            (self.nails, "PE", "America/Lima", "Paga el día 5"),
         )
         self.assertEqual(
             self.business.history.first().history_change_reason,
@@ -275,12 +291,15 @@ class BusinessEditTests(TestCase):
             address_row(self.local, calle="Calle 5"),
             address_row(self.branch, es_principal=True),
         ]
-        response = self.post(addresses=rows, rubro="", notas_internas="x" * 251)
+        response = self.post(
+            addresses=rows, rubro="", pais="", notas_internas="x" * 251
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.context["sections_with_errors"], ["basic", "addresses", "notes"]
         )
         self.assertIn("rubro", response.context["form"].errors)
+        self.assertIn("pais", response.context["form"].errors)
         addresses = response.context["addresses"]
         self.assertIn("caracteres alfabéticos", addresses.forms[0].errors["calle"][0])
         self.assertContains(response, "is-invalid")
