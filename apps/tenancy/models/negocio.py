@@ -7,6 +7,7 @@ from model_utils.fields import MonitorField
 from model_utils.models import TimeStampedModel
 
 from apps.common.historial import HistorialRecords
+from apps.common.utils.countries.constants import Country
 from apps.common.utils.utils import CommonCleaner
 
 
@@ -49,6 +50,7 @@ class Negocio(TenantMixin, TimeStampedModel):
         db_index=True,
     )
     estado_desde = MonitorField(monitor="estado")
+    pais = models.CharField(max_length=2, choices=Country.choices, null=True, blank=True)
     zona_horaria = models.CharField(
         max_length=50,
         default="America/Santiago",
