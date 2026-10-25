@@ -98,6 +98,9 @@ class PersonEditModalTests(TestCase):
         person = person or self.person
         rows = self.current_rows(person)
         data = {
+            "national_id_country": "CL",
+            "national_id_type": "rut",
+            "national_id": "12.345.678-5",
             "first_name": "Carla",
             "second_name": "Andrea",
             "first_surname": "Rojas",
@@ -266,3 +269,37 @@ class PersonEditModalTests(TestCase):
         browser.post(f"/admin/tenancy/persona/{self.person.pk}/delete/", {"post": "yes"})
         self.person.refresh_from_db()
         self.assertEqual(self.person.nombres, "Carla Andrea")
+
+    def test_loads_the_saved_identifier_with_the_types_of_its_country(self):
+        Persona.objects.filter(pk=self.person.pk).update(
+            pais="MX", tipo_identificador_nacional="curp", identificador_nacional="BOXW310820HNERXN09"
+        )
+        html = self.browser(self.superuser).get(self.url(), HTTP_X_REQUESTED_WITH="XMLHttpRequest").content.decode()
+        self.assertRegex(html, r'<option value="MX" selected>México</option>')
+        self.assertRegex(html, r'<option value="curp" selected>CURP</option>')
+        self.assertNotRegex(html, r'<select name="national_id_type"[^>]*disabled')
+        self.assertRegex(html, r'name="national_id" value="BOXW310820HNERXN09"')
+
+    def test_updates_the_identifier_and_does_not_let_it_be_cleared(self):
+        response = self.post(national_id_country="VE", national_id_type="cedula", national_id="v-12.345.678")
+        self.assertEqual(response.status_code, 200)
+        self.person.refresh_from_db()
+        self.assertEqual(
+            (self.person.pais, self.person.tipo_identificador_nacional, self.person.identificador_nacional),
+            ("VE", "cedula", "V-12345678"),
+        )
+        errors = self.errors(self.post(national_id_country="", national_id_type="", national_id=""))
+        self.assertEqual(
+            set(errors) & {"id_national_id_country", "id_national_id_type", "id_national_id"},
+            {"id_national_id_country", "id_national_id_type", "id_national_id"},
+        )
+        self.person.refresh_from_db()
+        self.assertEqual(self.person.identificador_nacional, "V-12345678")
+
+    def test_edit_applies_the_same_identifier_rules(self):
+        errors = self.errors(self.post(national_id_country="VE", national_id_type="cedula", national_id=""))
+        self.assertEqual(errors["id_national_id"], "Escribe el identificador nacional del tipo elegido.")
+
+    def test_existing_owners_without_identifier_must_complete_it(self):
+        errors = self.errors(self.post(person=self.owner, first_name="Carlos", second_name="", first_surname="", second_surname="", national_id_country="", national_id_type="", national_id=""))
+        self.assertIn("id_national_id_country", errors)

@@ -22,6 +22,13 @@
             Datos básicos
             <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
           </button>
+          <button class="nav-link" id="person-tab-contact" data-bs-toggle="pill"
+            data-bs-target="#person-pane-contact" type="button" role="tab" aria-controls="person-pane-contact"
+            aria-selected="false">
+            <span class="material-symbols-outlined" aria-hidden="true">contact_phone</span>
+            Contacto
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
           <button class="nav-link" id="person-tab-address" data-bs-toggle="pill"
             data-bs-target="#person-pane-address" type="button" role="tab" aria-controls="person-pane-address"
             aria-selected="false">
@@ -35,17 +42,22 @@
         <div class="tab-content">
           <div class="tab-pane fade show active" id="person-pane-basic" role="tabpanel" aria-labelledby="person-tab-basic">
             <h6 class="side-tab-title">Datos básicos</h6>
-            <p class="side-tab-subtitle">Cómo se llama y cómo contactarla.</p>
+            <p class="side-tab-subtitle">Cómo se identifica y cómo se llama.</p>
+            {% include 'common/national_id_fields.html' %}
             {% include 'panel/people/names_fields.html' %}
+            <div class="mb-2">
+              {% include 'common/form_field.html' with field=form.notes optional=True %}
+            </div>
+          </div>
+          <div class="tab-pane fade" id="person-pane-contact" role="tabpanel" aria-labelledby="person-tab-contact">
+            <h6 class="side-tab-title">Contacto</h6>
+            <p class="side-tab-subtitle">Cómo contactarla.</p>
             <div class="profile-note">
               <span class="material-symbols-outlined" aria-hidden="true">info</span>
               <span>El correo y el teléfono son opcionales.</span>
             </div>
             {% include 'panel/people/email_fields.html' with form=email_form %}
             {% include 'panel/people/phone_fields.html' with form=phone_form %}
-            <div class="mb-2">
-              {% include 'common/form_field.html' with field=form.notes optional=True %}
-            </div>
           </div>
           <div class="tab-pane fade" id="person-pane-address" role="tabpanel" aria-labelledby="person-tab-address">
             <h6 class="side-tab-title">Dirección</h6>

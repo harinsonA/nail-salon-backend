@@ -1,0 +1,18 @@
+{% if form.national_id_optional %}
+<div class="profile-note">
+  <span class="material-symbols-outlined" aria-hidden="true">info</span>
+  <span>El identificador nacional es opcional. Si indicas el tipo o el número, completa el país, el tipo y el número.</span>
+</div>
+{% endif %}
+<div class="row g-2">
+  <div class="col-12 col-sm-6 mb-2">
+    {% include 'common/form_field.html' with field=form.national_id_country optional=form.national_id_optional %}
+  </div>
+  <div class="w-100"></div>
+  <div class="col-12 col-sm-6 mb-2">
+    {% include 'common/form_field.html' with field=form.national_id_type optional=form.national_id_optional %}
+  </div>
+  <div class="col-12 col-sm-6 mb-2">
+    {% include 'common/form_field.html' with field=form.national_id optional=form.national_id_optional %}
+  </div>
+</div>
