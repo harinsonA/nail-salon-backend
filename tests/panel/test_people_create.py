@@ -71,7 +71,7 @@ class PersonCreateModalTests(TestCase):
             "second_name": "",
             "first_surname": "",
             "second_surname": "",
-            "email": "",
+            "email": "ana@ejemplo.com",
             "country_phone_prefix": "+56",
             "phone": "",
             "phone_type": "movil",
@@ -192,12 +192,15 @@ class PersonCreateModalTests(TestCase):
         )
         self.assertEqual(log.action_flag, ADDITION)
 
-    def test_only_the_identifier_and_the_first_name_are_required(self):
+    def test_only_the_identifier_first_name_and_email_are_required(self):
         response = self.post()
         self.assertEqual(response.status_code, 200)
         person = Persona.objects.get(nombres="Ana")
         self.assertEqual((person.apellidos, person.notas), ("", None))
-        self.assertFalse(person.correos.exists())
+        self.assertEqual(
+            list(person.correos.values_list("correo", "es_principal")),
+            [("ana@ejemplo.com", True)],
+        )
         self.assertFalse(person.telefonos.exists())
         self.assertFalse(person.direcciones.exists())
 
@@ -397,3 +400,10 @@ class PersonCreateModalTests(TestCase):
             self.post(national_id_country="CL", national_id_type="curp", national_id="BOXW310820HNERXN09")
         )
         self.assertIn("id_national_id_type", errors)
+
+    def test_the_email_is_mandatory(self):
+        for email, message in (("", "Escribe el correo del propietario."), ("ana", "correo")):
+            with self.subTest(email=email):
+                errors = self.errors(self.post(email=email))
+                self.assertIn(message, errors["id_email"])
+        self.assertFalse(Persona.objects.exists())

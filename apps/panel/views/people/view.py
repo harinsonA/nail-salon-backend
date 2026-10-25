@@ -193,6 +193,7 @@ class PersonEmailForm(forms.ModelForm):
     correo = forms.EmailField(
         label="Correo",
         max_length=254,
+        error_messages={"required": "Escribe el correo del propietario."},
         widget=forms.EmailInput(
             attrs={"class": FORM_CONTROL_CLASS, "placeholder": "ana.rojas@ejemplo.com"}
         ),
@@ -251,15 +252,16 @@ class PersonAddressForm(AddressForm):
 
 class PersonEmailFormSet(MainItemFormSet):
     item_name = "un correo"
+    requires_one = True
 
     def clean(self):
-        super().clean()
         if any(
             form.cleaned_data.get("DELETE") and form.is_locked() for form in self.forms
         ):
             raise ValidationError(
                 "El correo de acceso de su negocio no se puede quitar."
             )
+        super().clean()
 
 
 class PersonPhoneFormSet(MainItemFormSet):
@@ -406,9 +408,7 @@ class PersonCreateModalView(RelatedFormsMixin, PanelCreateModalView):
 
     def get_related_forms(self, data):
         return {
-            "email_form": PersonEmailForm(
-                data, prefix="email", **OPTIONAL_FORM_OPTIONS
-            ),
+            "email_form": PersonEmailForm(data, prefix="email"),
             "phone_form": PersonPhoneForm(
                 data, prefix="phone", **OPTIONAL_FORM_OPTIONS
             ),

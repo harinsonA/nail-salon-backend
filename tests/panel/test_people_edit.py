@@ -300,6 +300,12 @@ class PersonEditModalTests(TestCase):
         errors = self.errors(self.post(national_id_country="VE", national_id_type="cedula", national_id=""))
         self.assertEqual(errors["id_national_id"], "Escribe el identificador nacional del tipo elegido.")
 
+    def test_at_least_one_email_must_remain(self):
+        emails = [row(self.work_email, EMAIL_FIELDS, DELETE=True), row(self.home_email, EMAIL_FIELDS, DELETE=True)]
+        errors = self.errors(self.post(emails=emails))
+        self.assertEqual(errors["id_correos-errors"], "Debe tener al menos un correo.")
+        self.assertEqual(self.person.correos.count(), 2)
+
     def test_existing_owners_without_identifier_must_complete_it(self):
         errors = self.errors(self.post(person=self.owner, first_name="Carlos", second_name="", first_surname="", second_surname="", national_id_country="", national_id_type="", national_id=""))
         self.assertIn("id_national_id_country", errors)

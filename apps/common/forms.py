@@ -239,6 +239,7 @@ class NationalIdentifierForm(forms.Form):
 
 class MainItemFormSet(BaseInlineFormSet):
     item_name = ""
+    requires_one = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -256,6 +257,8 @@ class MainItemFormSet(BaseInlineFormSet):
         if any(self.errors):
             return
         kept = self.kept_forms()
+        if self.requires_one and not kept:
+            raise ValidationError(f"Debe tener al menos {self.item_name}.")
         main = [form for form in kept if form.cleaned_data.get(MAIN_ITEM_FIELD)]
         if len(main) > 1:
             raise ValidationError(f"Solo puede haber {self.item_name} principal.")
