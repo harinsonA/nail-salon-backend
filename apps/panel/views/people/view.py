@@ -58,7 +58,7 @@ ACCESS_EMAIL_LABEL = "acceso"
 
 class PeopleFilterForm(forms.Form):
     class OwnershipChoices(TextChoices):
-        ALL = "all", "Todas"
+        ALL = "all", "Todos"
         OWNERS = "owners", "Titulares de algún negocio"
         WITHOUT_BUSINESS = "without_business", "Sin negocio"
 
@@ -396,7 +396,7 @@ class PersonListAjaxView(PanelListViewAjax):
 class PersonCreateModalView(RelatedFormsMixin, PanelCreateModalView):
     template_name = "panel/people/person_modal.html"
     form_class = PersonCreateForm
-    success_message = "Persona %(name)s creada exitosamente."
+    success_message = "Propietario %(name)s creado exitosamente."
 
     def get_related_forms(self, data):
         return {
@@ -426,7 +426,7 @@ class PersonCreateModalView(RelatedFormsMixin, PanelCreateModalView):
 class PersonUpdateModalView(RelatedFormsMixin, PanelUpdateModalView):
     template_name = "panel/people/person_edit_modal.html"
     form_class = PersonUpdateForm
-    success_message = "Persona %(name)s actualizada exitosamente."
+    success_message = "Propietario %(name)s actualizado exitosamente."
     section_labels = {
         "emails": "Correos",
         "phones": "Teléfonos",
@@ -458,7 +458,7 @@ class PersonUpdateModalView(RelatedFormsMixin, PanelUpdateModalView):
 
 
 class PersonDeleteModalView(PanelDeleteModalView):
-    success_message = "Persona %(name)s eliminada exitosamente."
+    success_message = "Propietario %(name)s eliminado exitosamente."
     in_use_message = "No se puede eliminar a «%(name)s»: es titular de un negocio. Primero cambia el titular."
 
     def is_blocked(self, person):
