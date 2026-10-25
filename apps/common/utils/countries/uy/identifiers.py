@@ -49,7 +49,7 @@ class UruguayIdentifierValidator(IdentifierValidator):
         padded_body = body.zfill(len(CEDULA_CHECK_WEIGHTS))
         total = sum(
             int(digit) * weight
-            for digit, weight in zip(padded_body, CEDULA_CHECK_WEIGHTS)
+            for digit, weight in zip(padded_body, CEDULA_CHECK_WEIGHTS, strict=True)
         )
         if str((10 - total % 10) % 10) != check_digit:
             return Err(CEDULA_CHECK_DIGIT_MESSAGE)

@@ -101,3 +101,10 @@ class CountryDispatcherTests(SimpleTestCase):
                     "+56912345678",
                 )
         self.assertEqual(CountryDispatcher.country_for_phone_prefix("+34"), "CL")
+
+    def test_a_missing_identifier_is_an_error_not_an_exception(self):
+        for number in (None, ""):
+            with self.subTest(number=number):
+                self.assertTrue(
+                    CountryDispatcher.validate_identifier("CL", "rut", number).is_err()
+                )

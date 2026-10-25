@@ -58,7 +58,7 @@ class IdentifierValidator(ABC):
     def validate(self, identifier_type: str, number: str) -> Result[str, str]:
         if identifier_type not in self.types.values:
             return Err(IDENTIFIER_TYPE_INVALID_MESSAGE)
-        return self.validate_number(identifier_type, number.strip().upper())
+        return self.validate_number(identifier_type, (number or "").strip().upper())
 
     @abstractmethod
     def validate_number(
