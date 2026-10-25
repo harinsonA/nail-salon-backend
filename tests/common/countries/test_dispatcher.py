@@ -108,3 +108,11 @@ class CountryDispatcherTests(SimpleTestCase):
                 self.assertTrue(
                     CountryDispatcher.validate_identifier("CL", "rut", number).is_err()
                 )
+
+    def test_gives_the_label_of_an_identifier_type(self):
+        self.assertEqual(CountryDispatcher.identifier_type_label("CL", "rut"), "RUT")
+        self.assertEqual(
+            CountryDispatcher.identifier_type_label("VE", "cedula"),
+            "Cédula de identidad",
+        )
+        self.assertEqual(CountryDispatcher.identifier_type_label("CL", "otro"), "otro")

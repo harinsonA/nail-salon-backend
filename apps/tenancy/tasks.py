@@ -8,6 +8,11 @@ from apps.common.historial import sin_autor_de_la_peticion
 from apps.profiles.models import Perfil
 from apps.settings.models import ConfiguracionNegocio
 from apps.tenancy.models import Negocio
+from apps.tenancy.propietario import (
+    owner_profile_data,
+    owner_user_data,
+    update_if_changed,
+)
 
 
 @shared_task
@@ -50,5 +55,9 @@ def crear_propietario(negocio, correo, hash_clave):
     perfil = usuario.perfil
     if not Perfil.objects.filter(rol=Perfil.Rol.PROPIETARIO).exclude(user=usuario).exists():
         perfil.rol = Perfil.Rol.PROPIETARIO
+    if perfil.rol == Perfil.Rol.PROPIETARIO:
+        update_if_changed(usuario, owner_user_data(negocio.titular))
+        for field, value in owner_profile_data(negocio.titular).items():
+            setattr(perfil, field, value)
     perfil.debe_cambiar_clave = True
     perfil.save()

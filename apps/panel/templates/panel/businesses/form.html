@@ -87,6 +87,27 @@
               </div>
             </div>
             <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">public</span>
+              <div>
+                <span class="readonly-info__label">País del titular</span>
+                <span class="readonly-info__value">{{ owner_country|default:"—" }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+              <div>
+                <span class="readonly-info__label">Tipo de identificador nacional</span>
+                <span class="readonly-info__value">{{ owner_id_type|default:"—" }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">id_card</span>
+              <div>
+                <span class="readonly-info__label">Identificador nacional</span>
+                <span class="readonly-info__value">{{ owner_id|default:"—" }}</span>
+              </div>
+            </div>
+            <div class="readonly-info__item">
               <span class="material-symbols-outlined" aria-hidden="true">mail</span>
               <div>
                 <span class="readonly-info__label">Correo de acceso del propietario</span>

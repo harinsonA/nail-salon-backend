@@ -56,6 +56,10 @@ class CountryDispatcher:
         return cls.get_validator(country).identifier_types()
 
     @classmethod
+    def identifier_type_label(cls, country: str | None, identifier_type: str) -> str:
+        return dict(cls.identifier_types(country)).get(identifier_type, identifier_type)
+
+    @classmethod
     def validate_phone(cls, country: str | None, number: str) -> Result[str, str]:
         return cls.get_validator(country).validate_phone(number)
 
