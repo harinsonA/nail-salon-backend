@@ -46,6 +46,7 @@
       {% endfor %}
     </div>
     <div class="form-text mb-2"><small>{{ form.password.help_text }}</small></div>
+    {% include 'common/national_id_fields.html' %}
     <div class="row g-2">
       {% for field in form %}
       {% if field.name == 'first_name' or field.name == 'second_name' or field.name == 'first_surname' or field.name == 'second_surname' %}

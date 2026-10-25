@@ -11,6 +11,7 @@ from django_tenants.utils import get_public_schema_name
 from apps.seguridad.access import lock_status, register_failure
 from apps.seguridad.models import AccesoUsuario
 from apps.tenancy.models import Dominio, Negocio
+from tests.base import IDENTIFICADOR_VALIDO
 
 User = get_user_model()
 
@@ -143,6 +144,7 @@ class UsersUnlockTests(TestCase):
         response = browser.post(
             f"/admin/auth/user/{self.ana.pk}/change/modal/",
             {
+                **IDENTIFICADOR_VALIDO,
                 "username": "ana",
                 "first_name": "Ana",
                 "first_surname": "Rojas",

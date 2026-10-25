@@ -6,6 +6,8 @@ from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name
 
 from apps.tenancy.models import Dominio, Negocio
+from tests.base import IDENTIFICADOR_VALIDO
+from apps.panel.models import PerfilPanel
 
 User = get_user_model()
 
@@ -34,6 +36,7 @@ class UserCreateModalTests(TestCase):
 
     def payload(self, **changes):
         data = {
+            **IDENTIFICADOR_VALIDO,
             "username": "ana.rojas",
             "password": "Clave#123",
             "password_confirmation": "Clave#123",
@@ -170,3 +173,24 @@ class UserCreateModalTests(TestCase):
         response = self.browser().post(MODAL_URL, self.payload(), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(response.status_code, 401)
         self.assertFalse(User.objects.filter(username="ana.rojas").exists())
+
+    def test_the_national_identifier_is_mandatory(self):
+        errors = self.errors(
+            self.submit(national_id_country="", national_id_type="", national_id="")
+        )
+        for field in ("id_national_id_country", "id_national_id_type", "id_national_id"):
+            self.assertIn(field, errors)
+        self.assertFalse(User.objects.filter(username="ana.rojas").exists())
+
+    def test_saves_the_national_identifier_in_its_panel_profile(self):
+        self.assertEqual(
+            self.submit(
+                national_id_country="VE", national_id_type="cedula", national_id="v-12.345.678"
+            ).status_code,
+            200,
+        )
+        perfil = PerfilPanel.objects.get(user__username="ana.rojas")
+        self.assertEqual(
+            (perfil.pais, perfil.tipo_identificador_nacional, perfil.identificador_nacional),
+            ("VE", "cedula", "V-12345678"),
+        )

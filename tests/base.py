@@ -4,6 +4,12 @@ from django.test import TestCase
 
 from apps.tenancy.models import Dominio, Negocio, Persona
 
+IDENTIFICADOR_VALIDO = {
+    "national_id_country": "CL",
+    "national_id_type": "rut",
+    "national_id": "12.345.678-5",
+}
+
 
 def crear_negocio_de_prueba(esquema, dominio=None):
     connection.set_schema_to_public()

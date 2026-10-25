@@ -5,7 +5,7 @@ from django.test import Client
 from django.urls import reverse
 
 from apps.profiles.models import Perfil
-from tests.base import NegocioTestCase
+from tests.base import IDENTIFICADOR_VALIDO, NegocioTestCase
 
 User = get_user_model()
 Rol = Perfil.Rol
@@ -34,6 +34,7 @@ class MiPerfilTests(NegocioTestCase):
 
     def guardar(self, usuario, **cambios):
         datos = {
+            **IDENTIFICADOR_VALIDO,
             "username": usuario.username,
             "first_name": usuario.first_name,
             "last_name": usuario.last_name,
@@ -114,3 +115,39 @@ class MiPerfilTests(NegocioTestCase):
                     (usuario.first_name, usuario.email),
                     ("Nueva", f"{nombre}.nueva@correo.cl"),
                 )
+
+    def test_encargado_y_colaborador_deben_completar_su_identificador(self):
+        encargada = self.crear(Rol.ENCARGADO, "ana")
+        respuesta = self.guardar(
+            encargada, national_id_country="", national_id_type="", national_id=""
+        )
+        self.assertEqual(respuesta.status_code, 400)
+        campos = {error["id_element"] for error in respuesta.json()["errors"]}
+        self.assertTrue(
+            {"id_national_id_country", "id_national_id_type", "id_national_id"} <= campos
+        )
+        self.assertEqual(self.guardar(encargada).status_code, 200)
+        encargada.perfil.refresh_from_db()
+        self.assertEqual(encargada.perfil.identificador_nacional, "12345678-5")
+
+    def test_al_propietario_no_se_le_pide_el_identificador(self):
+        propietaria = self.crear(Rol.PROPIETARIO, "maria")
+        html = (
+            self.navegador_de(propietaria)
+            .get(reverse("profile_modal"), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            .content.decode()
+        )
+        self.assertNotIn('name="national_id', html)
+        respuesta = self.guardar(
+            propietaria,
+            national_id_country="",
+            national_id_type="",
+            national_id="",
+            current_password="clave-actual-1",
+            new_password="Clave-Nueva-2026",
+            confirm_password="Clave-Nueva-2026",
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        propietaria.refresh_from_db()
+        self.assertTrue(propietaria.check_password("Clave-Nueva-2026"))
+        self.assertIsNone(propietaria.perfil.identificador_nacional)

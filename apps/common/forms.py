@@ -38,6 +38,7 @@ NATIONAL_ID_MISSING_MESSAGES = {
     "national_id_type": NATIONAL_ID_TYPE_MISSING,
     "national_id": NATIONAL_ID_NUMBER_MISSING,
 }
+NATIONAL_ID_FIELDS = tuple(NATIONAL_ID_MISSING_MESSAGES)
 
 
 # endregion
@@ -227,6 +228,27 @@ class NationalIdentifierForm(forms.Form):
     @property
     def national_id_optional(self):
         return not self.national_id_required
+
+    @staticmethod
+    def national_id_initial(holder):
+        if holder is None:
+            return {}
+        return {
+            "national_id_country": holder.pais or "",
+            "national_id_type": holder.tipo_identificador_nacional or "",
+            "national_id": holder.identificador_nacional or "",
+        }
+
+    def save_national_id(self, holder, **other_fields):
+        changes = {**self.national_id_data(), **other_fields}
+        if holder.pk and all(
+            getattr(holder, field) == value for field, value in changes.items()
+        ):
+            return holder
+        for field, value in changes.items():
+            setattr(holder, field, value)
+        holder.save()
+        return holder
 
     def national_id_data(self):
         return {

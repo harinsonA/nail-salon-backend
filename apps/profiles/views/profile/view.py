@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
+from apps.common.forms import NATIONAL_ID_FIELDS, NationalIdentifierForm
 from apps.common.middleware import start_session_window
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
@@ -27,8 +28,9 @@ PERSONAL_FIELDS = ("username", "first_name", "last_name", "email")
 # region ........ Forms
 
 
-class ProfileForm(PreferenceFieldsMixin, BSModalModelForm):
+class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelForm):
     preference_category = Category.SEGURIDAD
+    national_id_required = True
 
     current_password = forms.CharField(
         label="Contraseña actual",
@@ -65,12 +67,20 @@ class ProfileForm(PreferenceFieldsMixin, BSModalModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        instance = kwargs.get("instance")
+        self.perfil = Perfil.objects.filter(user=instance).first() if instance else None
+        kwargs["initial"] = {
+            **self.national_id_initial(self.perfil),
+            **kwargs.get("initial", {}),
+        }
         super().__init__(*args, **kwargs)
         self.add_preference_fields(self.instance)
         self.personal_data_locked = rol_de(self.instance) == Perfil.Rol.PROPIETARIO
         if self.personal_data_locked:
             for name in PERSONAL_FIELDS:
                 self.fields[name].disabled = True
+            for name in NATIONAL_ID_FIELDS:
+                del self.fields[name]
 
     class Meta:
         model = User
@@ -147,6 +157,8 @@ class ProfileForm(PreferenceFieldsMixin, BSModalModelForm):
             user.set_password(new_pw)
         if commit:
             user.save()
+            if self.perfil and not self.personal_data_locked:
+                self.save_national_id(self.perfil)
         return user
 
 
