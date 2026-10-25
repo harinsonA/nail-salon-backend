@@ -5,7 +5,8 @@ from model_utils.models import TimeStampedModel
 
 from apps.common.historial import HistorialRecords
 from apps.common.models.con_principal import ConPrincipal
-from apps.common.utils.phones import CountryPhonePrefix, PhoneCleaner
+from apps.common.utils.countries.constants import CountryPhonePrefix
+from apps.common.utils.phones import PhoneCleaner
 
 solo_digitos = RegexValidator(r"^\d+$", "El número solo debe contener dígitos.")
 

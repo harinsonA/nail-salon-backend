@@ -19,7 +19,7 @@ from apps.common.forms import (
     MainItemFormSet,
     main_item_formset,
 )
-from apps.common.utils.phones import CountryPhonePrefix
+from apps.common.utils.countries.constants import CountryPhonePrefix
 from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
 from apps.common.utils.text import join_name_parts, split_name
 from apps.common.widgets import switch_input, text_input
