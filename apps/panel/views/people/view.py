@@ -38,6 +38,7 @@ from apps.tenancy.models import (
     PersonaDireccion,
     PersonaTelefono,
 )
+from apps.tenancy.propietario import sync_owner_data
 
 """========================================================================="""
 # region ........ Constants
@@ -458,6 +459,7 @@ class PersonUpdateModalView(RelatedFormsMixin, PanelUpdateModalView):
         person = form.save()
         for formset in self.related_forms().values():
             formset.save()
+        sync_owner_data(person)
         return person
 
 
