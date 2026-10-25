@@ -16,61 +16,69 @@
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
   <div class="modal-body">
-    <div class="mb-2">
-      <label for="{{ form.name.id_for_label }}" class="form-label form-label--custom">
-        {{ form.name.label }}
-      </label>
-      {{ form.name }}
-      <span class="invalid-feedback invalid-feedback--custom {{ form.name.id_for_label }}">
-        {{ form.name.errors.0 }}
-      </span>
-    </div>
-    <div class="mb-2">
-      <label for="{{ form.last_name.id_for_label }}" class="form-label form-label--custom">
-        {{ form.last_name.label }}
-      </label>
-      {{ form.last_name }}
-      <span class="invalid-feedback invalid-feedback--custom {{ form.last_name.id_for_label }}">
-        {{ form.last_name.errors.0 }}
-      </span>
-    </div>
-    <div class="mb-2">
-      <label for="{{ form.phone.id_for_label }}" class="form-label form-label--custom">
-        {{ form.phone.label }}
-      </label>
-      <div class="input-group">
-        <div class="input-group-append">
-          {{ form.country_phone_prefix }}
+    <div class="row g-4">
+      <div class="col-12 col-md-3">
+        <div class="nav flex-column side-tabs" role="tablist" aria-orientation="vertical">
+          <button class="nav-link active" id="client-tab-basic" data-bs-toggle="pill"
+            data-bs-target="#client-pane-basic" type="button" role="tab" aria-controls="client-pane-basic"
+            aria-selected="true">
+            <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+            Datos básicos
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
+          <button class="nav-link" id="client-tab-contact" data-bs-toggle="pill"
+            data-bs-target="#client-pane-contact" type="button" role="tab" aria-controls="client-pane-contact"
+            aria-selected="false">
+            <span class="material-symbols-outlined" aria-hidden="true">contact_phone</span>
+            Contacto
+            <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+          </button>
         </div>
-        {{ form.phone }}
-        <span class="invalid-feedback invalid-feedback--custom {{ form.phone.id_for_label }}">
-          {{ form.phone.errors.0 }}
-        </span>
       </div>
-    </div>
-    <div class="mb-2">
-      <label for="{{ form.email.id_for_label }}" class="form-label form-label--custom">
-        {{ form.email.label }}
-      </label>
-      {{ form.email }}
-      <span class="invalid-feedback invalid-feedback--custom {{ form.email.id_for_label }}">
-        {{ form.email.errors.0 }}
-      </span>
-    </div>
-    <div class="mb-2">
-      <label for="{{ form.notes.id_for_label }}" class="form-label form-label--custom">
-        {{ form.notes.label }}
-      </label>
-      {{ form.notes }}
-      <span class="invalid-feedback invalid-feedback--custom {{ form.notes.id_for_label }}">
-        {{ form.notes.errors.0 }}
-      </span>
-    </div>
-    <div class="form-check form-switch">
-      <label class="form-check-label form-label--custom" for="{{ form.status.id_for_label }}">
-        {{ form.status.label }}
-      </label>
-      {{ form.status }}
+      <div class="col-12 col-md-9">
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="client-pane-basic" role="tabpanel" aria-labelledby="client-tab-basic">
+            <h6 class="side-tab-title">Datos básicos</h6>
+            <p class="side-tab-subtitle">Cómo se identifica y cómo se llama.</p>
+            {% include 'common/national_id_fields.html' %}
+            {% include 'common/names_fields.html' %}
+            <div class="mb-2">
+              {% include 'common/form_field.html' with field=form.notes optional=True %}
+            </div>
+            <div class="form-check form-switch">
+              <label class="form-check-label form-label--custom" for="{{ form.status.id_for_label }}">
+                {{ form.status.label }}
+              </label>
+              {{ form.status }}
+            </div>
+          </div>
+          <div class="tab-pane fade" id="client-pane-contact" role="tabpanel" aria-labelledby="client-tab-contact">
+            <h6 class="side-tab-title">Contacto</h6>
+            <p class="side-tab-subtitle">Cómo contactarla.</p>
+            <div class="profile-note">
+              <span class="material-symbols-outlined" aria-hidden="true">info</span>
+              <span>El correo y el teléfono son opcionales.</span>
+            </div>
+            <div class="mb-2">
+              {% include 'common/form_field.html' with field=form.email optional=True %}
+            </div>
+            <div class="mb-2">
+              <label for="{{ form.phone.id_for_label }}" class="form-label form-label--custom">
+                {{ form.phone.label }} <span class="text-body-secondary">(opcional)</span>
+              </label>
+              <div class="input-group">
+                <div class="input-group-append">
+                  {{ form.country_phone_prefix }}
+                </div>
+                {{ form.phone }}
+                <span class="invalid-feedback invalid-feedback--custom {{ form.phone.id_for_label }}">
+                  {{ form.phone.errors.0 }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="modal-footer modal-footer-soft">

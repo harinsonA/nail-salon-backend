@@ -20,7 +20,8 @@ from apps.common.form_classes import (
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT_CLASS,
 )
-from apps.common.form_fields import AlphabeticField, NoteField
+from apps.common.form_fields import NoteField
+from apps.common.forms import NationalIdentifierForm, SplitNamesForm
 from apps.common.utils.countries.constants import CountryPhonePrefix
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.utils.whatsapp import get_whatsapp_url
@@ -60,29 +61,7 @@ class ClientsFilterForm(BSModalForm):
         return data_to_filter
 
 
-class ClientsForm(BSModalForm):
-    name = AlphabeticField(
-        label="Nombres",
-        max_length=50,
-        required=True,
-        widget=forms.TextInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Jose Jose",
-            },
-        ),
-    )
-    last_name = AlphabeticField(
-        label="Apellidos",
-        required=False,
-        max_length=50,
-        widget=forms.TextInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Garcia Vazquez",
-            },
-        ),
-    )
+class ClientsForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
     country_phone_prefix = forms.ChoiceField(
         label="Prefijo País",
         choices=CountryPhonePrefix.choices,
@@ -148,7 +127,12 @@ class ClientsForm(BSModalForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        return self.normaliza_data(cleaned_data)
+        return {
+            **self.normaliza_data(cleaned_data),
+            "nombre": self.full_names(),
+            "apellido": self.full_surnames(),
+            **self.national_id_data(),
+        }
 
     @staticmethod
     def normaliza_data(data: dict) -> dict:
@@ -157,8 +141,6 @@ class ClientsForm(BSModalForm):
         """
         normalized_data = {}
         fields = [
-            ("name", "nombre"),
-            ("last_name", "apellido"),
             ("phone", "telefono"),
             ("email", "email"),
             ("status", "estado"),
@@ -258,7 +240,7 @@ class ClientListView(BaseListViewAjax):
                     ),
                     "bsModal": True,
                     "icon": "edit_document",
-                    "className": "bs-modal",
+                    "className": "bs-xl-modal",
                 },
                 {
                     "label": "Eliminar",
@@ -373,8 +355,10 @@ class ClientDetailModalView(BaseClientModalView):
         self.base_object = self.get_object()
         prefix, phone = self.get_phone_and_prefix(self.base_object)
         initial = {
-            "name": self.base_object.nombre,
-            "last_name": self.base_object.apellido,
+            **ClientsForm.split_names_initial(
+                self.base_object.nombre, self.base_object.apellido
+            ),
+            **ClientsForm.national_id_initial(self.base_object),
             "country_phone_prefix": prefix,
             "phone": phone,
             "email": self.base_object.email,
