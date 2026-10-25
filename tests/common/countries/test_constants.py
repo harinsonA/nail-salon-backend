@@ -3,7 +3,6 @@ from django.test import SimpleTestCase
 from apps.common.utils.countries.constants import (
     COUNTRIES,
     Country,
-    CountryPhoneLength,
     CountryPhonePrefix,
 )
 
@@ -11,7 +10,7 @@ from apps.common.utils.countries.constants import (
 class CountryListsTests(SimpleTestCase):
     def test_every_list_has_one_member_per_country_in_the_same_order(self):
         keys = [country.COUNTRY_KEY for country in COUNTRIES]
-        for choices in (Country, CountryPhonePrefix, CountryPhoneLength):
+        for choices in (Country, CountryPhonePrefix):
             with self.subTest(choices=choices.__name__):
                 self.assertEqual(choices.names, keys)
 
@@ -24,8 +23,4 @@ class CountryListsTests(SimpleTestCase):
                 )
                 self.assertEqual(
                     CountryPhonePrefix[country.COUNTRY_KEY], country.PHONE_PREFIX
-                )
-                self.assertEqual(
-                    CountryPhoneLength[country.COUNTRY_KEY].label,
-                    str(country.PHONE_LENGTH),
                 )

@@ -60,6 +60,10 @@ class CountryDispatcher:
         return cls.get_validator(country).validate_phone(number)
 
     @classmethod
+    def validate_phone_with_prefix(cls, prefix: str, number: str) -> Result[str, str]:
+        return cls.validate_phone(cls.country_for_phone_prefix(prefix), number)
+
+    @classmethod
     def validate_identifier(
         cls, country: str | None, identifier_type: str, number: str
     ) -> Result[str, str]:

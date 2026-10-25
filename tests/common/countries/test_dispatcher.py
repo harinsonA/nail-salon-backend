@@ -5,12 +5,7 @@ from apps.common.utils.countries.base import (
     IdentifierValidator,
     PhoneValidator,
 )
-from apps.common.utils.countries.constants import (
-    COUNTRY_OPERATOR_PREFIX,
-    Country,
-    CountryPhoneLength,
-    CountryPhonePrefix,
-)
+from apps.common.utils.countries.constants import Country, CountryPhonePrefix
 from apps.common.utils.countries.dispatcher import CountryDispatcher
 
 
@@ -27,17 +22,32 @@ class CountryDispatcherTests(SimpleTestCase):
                 self.assertIsInstance(validator.identifier, IdentifierValidator)
                 self.assertIn("pasaporte", validator.identifier.types.values)
 
-    def test_phone_rules_match_the_current_phone_constants(self):
-        lengths = dict(CountryPhoneLength.choices)
+    def test_each_phone_prefix_belongs_to_its_country(self):
         for member in Country:
             with self.subTest(country=member.value):
-                phone = CountryDispatcher.get_validator(member.value).phone
                 prefix = CountryPhonePrefix[member.name]
-                self.assertEqual(phone.prefix, prefix)
-                self.assertEqual(phone.length, int(lengths[prefix]))
                 self.assertEqual(
-                    set(phone.operator_prefixes), set(COUNTRY_OPERATOR_PREFIX[prefix])
+                    CountryDispatcher.get_validator(member.value).phone.prefix, prefix
                 )
+                self.assertEqual(
+                    CountryDispatcher.country_for_phone_prefix(prefix), member.value
+                )
+
+    def test_validates_a_phone_from_its_prefix(self):
+        self.assertEqual(
+            CountryDispatcher.validate_phone_with_prefix("+58", "414 123 4567").value,
+            "+584141234567",
+        )
+        self.assertEqual(
+            CountryDispatcher.validate_phone_with_prefix(
+                "+1-809", "829 123 4567"
+            ).value,
+            "+1-8098291234567",
+        )
+        self.assertIn(
+            "prefijo",
+            CountryDispatcher.validate_phone_with_prefix("+56", "812345678").value,
+        )
 
     def test_sends_each_identifier_to_its_country(self):
         self.assertEqual(

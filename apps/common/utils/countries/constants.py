@@ -66,25 +66,5 @@ class CountryPhonePrefix(TextChoices):
     VENEZUELA = venezuela.PHONE_PREFIX, phone_prefix_label(venezuela)
 
 
-class CountryPhoneLength(TextChoices):
-    ARGENTINA = argentina.PHONE_PREFIX, str(argentina.PHONE_LENGTH)
-    CHILE = chile.PHONE_PREFIX, str(chile.PHONE_LENGTH)
-    COLOMBIA = colombia.PHONE_PREFIX, str(colombia.PHONE_LENGTH)
-    ECUADOR = ecuador.PHONE_PREFIX, str(ecuador.PHONE_LENGTH)
-    MEXICO = mexico.PHONE_PREFIX, str(mexico.PHONE_LENGTH)
-    PERU = peru.PHONE_PREFIX, str(peru.PHONE_LENGTH)
-    REPUBLICA_DOMINICANA = (
-        dominican_republic.PHONE_PREFIX,
-        str(dominican_republic.PHONE_LENGTH),
-    )
-    URUGUAY = uruguay.PHONE_PREFIX, str(uruguay.PHONE_LENGTH)
-    VENEZUELA = venezuela.PHONE_PREFIX, str(venezuela.PHONE_LENGTH)
-
-
-COUNTRY_OPERATOR_PREFIX = {
-    country.PHONE_PREFIX: set(country.PHONE_OPERATOR_PREFIXES) for country in COUNTRIES
-}
-
-
 # endregion
 """========================================================================="""
