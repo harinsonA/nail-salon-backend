@@ -1,79 +1,88 @@
 from django.db.models import TextChoices
 
+from apps.common.utils.countries.ar import constants as argentina
+from apps.common.utils.countries.cl import constants as chile
+from apps.common.utils.countries.co import constants as colombia
+from apps.common.utils.countries.do import constants as dominican_republic
+from apps.common.utils.countries.ec import constants as ecuador
+from apps.common.utils.countries.mx import constants as mexico
+from apps.common.utils.countries.pe import constants as peru
+from apps.common.utils.countries.uy import constants as uruguay
+from apps.common.utils.countries.ve import constants as venezuela
+
+"""========================================================================="""
+# region ........ Helpers
+
+
+def phone_prefix_label(country) -> str:
+    return f"{country.COUNTRY_CODE} ({country.PHONE_PREFIX})"
+
+
+# endregion
+"""========================================================================="""
 """========================================================================="""
 # region ........ Constants
 
+COUNTRIES = (
+    argentina,
+    chile,
+    colombia,
+    ecuador,
+    mexico,
+    peru,
+    dominican_republic,
+    uruguay,
+    venezuela,
+)
+
 
 class Country(TextChoices):
-    ARGENTINA = "AR", "Argentina"
-    CHILE = "CL", "Chile"
-    COLOMBIA = "CO", "Colombia"
-    ECUADOR = "EC", "Ecuador"
-    MEXICO = "MX", "México"
-    PERU = "PE", "Perú"
-    REPUBLICA_DOMINICANA = "DO", "República Dominicana"
-    URUGUAY = "UY", "Uruguay"
-    VENEZUELA = "VE", "Venezuela"
+    ARGENTINA = argentina.COUNTRY_CODE, argentina.COUNTRY_NAME
+    CHILE = chile.COUNTRY_CODE, chile.COUNTRY_NAME
+    COLOMBIA = colombia.COUNTRY_CODE, colombia.COUNTRY_NAME
+    ECUADOR = ecuador.COUNTRY_CODE, ecuador.COUNTRY_NAME
+    MEXICO = mexico.COUNTRY_CODE, mexico.COUNTRY_NAME
+    PERU = peru.COUNTRY_CODE, peru.COUNTRY_NAME
+    REPUBLICA_DOMINICANA = (
+        dominican_republic.COUNTRY_CODE,
+        dominican_republic.COUNTRY_NAME,
+    )
+    URUGUAY = uruguay.COUNTRY_CODE, uruguay.COUNTRY_NAME
+    VENEZUELA = venezuela.COUNTRY_CODE, venezuela.COUNTRY_NAME
 
 
 class CountryPhonePrefix(TextChoices):
-    ARGENTINA = "+54", "AR (+54)"
-    CHILE = "+56", "CL (+56)"
-    COLOMBIA = "+57", "CO (+57)"
-    ECUADOR = "+593", "EC (+593)"
-    MEXICO = "+52", "MX (+52)"
-    PERU = "+51", "PE (+51)"
-    REPUBLICA_DOMINICANA = "+1-809", "DO (+1-809)"
-    URUGUAY = "+598", "UY (+598)"
-    VENEZUELA = "+58", "VE (+58)"
+    ARGENTINA = argentina.PHONE_PREFIX, phone_prefix_label(argentina)
+    CHILE = chile.PHONE_PREFIX, phone_prefix_label(chile)
+    COLOMBIA = colombia.PHONE_PREFIX, phone_prefix_label(colombia)
+    ECUADOR = ecuador.PHONE_PREFIX, phone_prefix_label(ecuador)
+    MEXICO = mexico.PHONE_PREFIX, phone_prefix_label(mexico)
+    PERU = peru.PHONE_PREFIX, phone_prefix_label(peru)
+    REPUBLICA_DOMINICANA = (
+        dominican_republic.PHONE_PREFIX,
+        phone_prefix_label(dominican_republic),
+    )
+    URUGUAY = uruguay.PHONE_PREFIX, phone_prefix_label(uruguay)
+    VENEZUELA = venezuela.PHONE_PREFIX, phone_prefix_label(venezuela)
 
 
 class CountryPhoneLength(TextChoices):
-    ARGENTINA = CountryPhonePrefix.ARGENTINA, "10"
-    CHILE = CountryPhonePrefix.CHILE, "8"
-    COLOMBIA = CountryPhonePrefix.COLOMBIA, "7"
-    ECUADOR = CountryPhonePrefix.ECUADOR, "8"
-    MEXICO = CountryPhonePrefix.MEXICO, "10"
-    PERU = CountryPhonePrefix.PERU, "8"
-    REPUBLICA_DOMINICANA = CountryPhonePrefix.REPUBLICA_DOMINICANA, "7"
-    URUGUAY = CountryPhonePrefix.URUGUAY, "7"
-    VENEZUELA = CountryPhonePrefix.VENEZUELA, "7"
+    ARGENTINA = argentina.PHONE_PREFIX, str(argentina.PHONE_LENGTH)
+    CHILE = chile.PHONE_PREFIX, str(chile.PHONE_LENGTH)
+    COLOMBIA = colombia.PHONE_PREFIX, str(colombia.PHONE_LENGTH)
+    ECUADOR = ecuador.PHONE_PREFIX, str(ecuador.PHONE_LENGTH)
+    MEXICO = mexico.PHONE_PREFIX, str(mexico.PHONE_LENGTH)
+    PERU = peru.PHONE_PREFIX, str(peru.PHONE_LENGTH)
+    REPUBLICA_DOMINICANA = (
+        dominican_republic.PHONE_PREFIX,
+        str(dominican_republic.PHONE_LENGTH),
+    )
+    URUGUAY = uruguay.PHONE_PREFIX, str(uruguay.PHONE_LENGTH)
+    VENEZUELA = venezuela.PHONE_PREFIX, str(venezuela.PHONE_LENGTH)
 
 
 COUNTRY_OPERATOR_PREFIX = {
-    CountryPhonePrefix.ARGENTINA: {"9"},
-    CountryPhonePrefix.CHILE: {"9"},
-    CountryPhonePrefix.COLOMBIA: {
-        "300",
-        "301",
-        "302",
-        "303",
-        "304",
-        "305",
-        "310",
-        "311",
-        "312",
-        "313",
-        "314",
-        "315",
-        "316",
-        "317",
-        "318",
-        "319",
-        "320",
-        "321",
-        "322",
-        "323",
-        "324",
-        "350",
-        "351",
-    },
-    CountryPhonePrefix.ECUADOR: {"09"},
-    CountryPhonePrefix.MEXICO: {},
-    CountryPhonePrefix.PERU: {"9"},
-    CountryPhonePrefix.REPUBLICA_DOMINICANA: {"809", "829", "849"},
-    CountryPhonePrefix.URUGUAY: {"09"},
-    CountryPhonePrefix.VENEZUELA: {"424", "414", "412", "416", "426"},
+    country.PHONE_PREFIX: set(country.PHONE_OPERATOR_PREFIXES) for country in COUNTRIES
 }
 
 
