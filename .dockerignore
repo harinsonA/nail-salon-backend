@@ -33,3 +33,12 @@ docker-compose.yml
 static/images/logos/logo-1.png
 static/images/logos/logo-2.png
 static/images/logos/logo-4.png
+
+# Graphify y otras carpetas locales: material de trabajo que no va en la imagen.
+graphify-out/
+CLAUDE.md
+.graphifyignore
+.graphifyinclude
+.graphifyrc
+.agents/
+.wt-fix/
