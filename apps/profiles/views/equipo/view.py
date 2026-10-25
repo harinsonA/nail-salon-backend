@@ -20,7 +20,7 @@ from apps.common.form_fields import AlphabeticField
 from apps.common.forms import NationalIdentifierForm
 from apps.common.utils.search import search_ignoring_accents
 from apps.common.utils.text import user_display_name
-from apps.common.utils.utils import get_errors_to_response
+from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import puede_gestionar, roles_que_puede_crear
@@ -137,6 +137,7 @@ class ManagedMemberMixin:
 
 class MemberForm(NationalIdentifierForm, BSModalForm):
     national_id_required = True
+    national_id_holder = "otra persona de este negocio"
 
     first_name = AlphabeticField(
         label="Nombre",
@@ -183,13 +184,18 @@ class MemberForm(NationalIdentifierForm, BSModalForm):
                 }
             )
 
+    def national_id_queryset(self):
+        profiles = Perfil.objects.all()
+        return profiles.exclude(user=self.instance) if self.instance else profiles
+
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
         others = User.objects.all()
         if self.instance:
             others = others.exclude(pk=self.instance.pk)
-        if others.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Ese correo ya lo usa otra persona de este negocio.")
+        result = CommonCleaner.check_email_available(others, self.national_id_holder, email)
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
         return email
 
     @transaction.atomic
@@ -203,7 +209,8 @@ class MemberForm(NationalIdentifierForm, BSModalForm):
         if not member.pk:
             member.set_unusable_password()
         member.save()
-        self.save_national_id(Perfil.objects.get(user=member), rol=data["rol"])
+        perfil = self.instance.perfil if self.instance else Perfil.objects.get(user=member)
+        self.save_national_id(perfil, rol=data["rol"])
         return member
 
 

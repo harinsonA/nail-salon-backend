@@ -1,11 +1,15 @@
 import io
 from types import SimpleNamespace
 
-from django.test import RequestFactory, SimpleTestCase
+from django.db import connection
+from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 from openpyxl import load_workbook
 
 from apps.clients.imports.validators import ClientAsyncImportValidator
+from apps.clients.models import Cliente
 from apps.clients.views.imports import ClientExampleExportView
+from tests.base import NegocioTestCase
 
 ENCABEZADO = (
     "Nombre,Apellido,Teléfono,Email,"
@@ -33,7 +37,9 @@ def valores(hoja):
     return [list(fila) for fila in hoja.iter_rows(values_only=True)]
 
 
-class ImportarClientesTests(SimpleTestCase):
+class ImportarClientesTests(NegocioTestCase):
+    esquema = "importar_clientes"
+
     def test_las_columnas_siguen_el_orden_de_la_plantilla(self):
         self.assertEqual(
             ClientAsyncImportValidator.get_headers(), ENCABEZADO.split(",")
@@ -113,3 +119,50 @@ class ImportarClientesTests(SimpleTestCase):
                 self.assertTrue(
                     any(mensaje in error["message"] for error in resultado.err_value)
                 )
+
+    def test_no_repite_datos_de_clientes_existentes_ni_dentro_del_archivo(self):
+        Cliente.objects.create(
+            nombre="Otra",
+            email="ana@correo.cl",
+            telefono="+56912345678",
+            pais="CL",
+            tipo_identificador_nacional="rut",
+            identificador_nacional="12345678-5",
+        )
+        contra_la_base = validar(
+            "Ana,Rojas,+56912345678,ANA@correo.cl,CL,rut,12.345.678-5,activo,"
+        )
+        mensajes = {error["message"] for error in contra_la_base.err_value}
+        esperados = {
+            "Ese correo ya lo usa otro cliente.",
+            "Ese teléfono ya lo usa otro cliente.",
+            "Ese identificador nacional ya lo tiene otro cliente.",
+        }
+        self.assertTrue(esperados <= mensajes)
+        dentro_del_archivo = validar(
+            "Ana,Rojas,+56987654321,ana2@correo.cl,VE,cedula,V-12345678,activo,",
+            "Lucía,Soto,+56987654321,ANA2@correo.cl,ve,cedula,v-12.345.678,activo,",
+        )
+        mensajes = sorted(
+            (error["row"], error["message"]) for error in dentro_del_archivo.err_value
+        )
+        self.assertEqual(
+            mensajes,
+            [
+                (3, "Ese correo se repite en otra fila del archivo."),
+                (3, "Ese identificador nacional se repite en otra fila del archivo."),
+                (3, "Ese teléfono se repite en otra fila del archivo."),
+            ],
+        )
+
+    def test_las_consultas_no_crecen_con_la_cantidad_de_filas(self):
+        def consultas(cantidad):
+            filas = [
+                f"Importado,X,+5698{i:07d},imp{i}@correo.cl,,,,activo,"
+                for i in range(cantidad)
+            ]
+            with CaptureQueriesContext(connection) as contexto:
+                self.assertTrue(validar(*filas).is_ok())
+            return len(contexto.captured_queries)
+
+        self.assertLessEqual(consultas(40), 2)

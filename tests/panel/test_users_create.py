@@ -194,3 +194,16 @@ class UserCreateModalTests(TestCase):
             (perfil.pais, perfil.tipo_identificador_nacional, perfil.identificador_nacional),
             ("VE", "cedula", "V-12345678"),
         )
+
+    def test_the_national_identifier_cannot_repeat_between_panel_users(self):
+        other = User.objects.create_user(username="otro", password="x", is_staff=True)
+        PerfilPanel.objects.create(
+            user=other,
+            pais="CL",
+            tipo_identificador_nacional="rut",
+            identificador_nacional="12345678-5",
+        )
+        self.assertEqual(
+            self.errors(self.submit())["id_national_id"],
+            "Ese identificador nacional ya lo tiene otro usuario del panel.",
+        )

@@ -102,6 +102,7 @@ def user_permission_rows(user):
 
 class UserFormBase(NationalIdentifierForm, BSModalForm):
     national_id_required = True
+    national_id_holder = "otro usuario del panel"
 
     username = forms.CharField(
         label="Usuario",
@@ -153,12 +154,17 @@ class UserFormBase(NationalIdentifierForm, BSModalForm):
 
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
+        self.profile = panel_profile(instance) if instance else None
         if instance:
             kwargs["initial"] = {
-                **self.national_id_initial(panel_profile(instance)),
+                **self.national_id_initial(self.profile),
                 **kwargs.get("initial", {}),
             }
         super().__init__(*args, **kwargs)
+
+    def national_id_queryset(self):
+        profiles = PerfilPanel.objects.all()
+        return profiles.exclude(user=self.instance) if self.instance else profiles
 
     def other_users(self):
         users = User.objects.all()
@@ -174,8 +180,11 @@ class UserFormBase(NationalIdentifierForm, BSModalForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
-        if self.other_users().filter(email__iexact=email).exists():
-            raise forms.ValidationError("Ese correo ya lo usa otro usuario del panel.")
+        result = CommonCleaner.check_email_available(
+            self.other_users(), self.national_id_holder, email
+        )
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
         return email
 
     def clean_password_pair(self, cleaned_data):
@@ -337,7 +346,7 @@ class UserUpdateForm(UserFormBase):
         if data.get("password"):
             user.set_password(data["password"])
         user.save()
-        self.save_national_id(panel_profile(user) or PerfilPanel(user=user))
+        self.save_national_id(self.profile or PerfilPanel(user=user))
         if data.get("password"):
             unlock(user, PASSWORD_UNLOCK_REASON)
         if not self.fields["groups"].disabled:

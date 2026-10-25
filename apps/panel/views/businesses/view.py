@@ -38,7 +38,7 @@ from apps.common.utils.businesses import BUSINESS_NAME_MAX_LENGTH
 from apps.common.utils.countries.constants import Country
 from apps.common.utils.countries.dispatcher import CountryDispatcher
 from apps.common.utils.search import contains_ignoring_accents, search_ignoring_accents
-from apps.common.utils.utils import get_errors_to_response
+from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.widgets import text_input
 from apps.panel.views.base import (
     PanelAjaxView,
@@ -50,7 +50,14 @@ from apps.panel.views.history.view import HistoryListAjaxView
 from apps.seguridad.access import describe_lock
 from apps.tenancy.alta import correo_de_acceso, dar_de_alta, dominio_de, url_en_dominio
 from apps.tenancy.estados import cambiar_estado, estados_posibles
-from apps.tenancy.models import Dominio, Negocio, NegocioDireccion, Persona, Rubro
+from apps.tenancy.models import (
+    Dominio,
+    Negocio,
+    NegocioDireccion,
+    Persona,
+    PersonaCorreo,
+    Rubro,
+)
 from apps.tenancy.models.negocio import FAILED_STATUS_KEY, FAILED_STATUS_LABEL
 from apps.tenancy.propietario import (
     owner_lock_status,
@@ -468,7 +475,17 @@ class BusinessCreateForm(BusinessSettingsForm):
         return esquema
 
     def clean_correo(self):
-        return self.cleaned_data["correo"].strip().lower()
+        correo = self.cleaned_data["correo"].strip().lower()
+        titular = self.cleaned_data.get("titular")
+        others = PersonaCorreo.objects.filter(persona__is_removed=False)
+        if titular:
+            others = others.exclude(persona=titular)
+        result = CommonCleaner.check_email_available(
+            others, "otro propietario", correo, field="correo"
+        )
+        if result.is_err():
+            raise forms.ValidationError(result.err_value)
+        return correo
 
 
 class BusinessUpdateForm(BusinessSettingsForm):

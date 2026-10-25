@@ -134,3 +134,36 @@ class ClienteModalTests(NegocioTestCase):
             (cliente.nombre, cliente.apellido, cliente.pais, cliente.identificador_nacional),
             ("Carla", "Soto", None, None),
         )
+
+    def test_identificador_correo_y_telefono_no_se_repiten_entre_clientes(self):
+        Cliente.objects.create(
+            nombre="Otra",
+            email="ana@correo.cl",
+            telefono="+56912345678",
+            pais="CL",
+            tipo_identificador_nacional="rut",
+            identificador_nacional="12345678-5",
+        )
+        errores = self.errores(
+            self.crear(
+                email="ANA@correo.cl",
+                phone="9 1234 5678",
+                national_id_country="CL",
+                national_id_type="rut",
+                national_id="12.345.678-5",
+            )
+        )
+        self.assertEqual(errores["id_email"], "Ese correo ya lo usa otro cliente.")
+        self.assertEqual(errores["id_phone"], "Ese teléfono ya lo usa otro cliente.")
+        self.assertEqual(
+            errores["id_national_id"], "Ese identificador nacional ya lo tiene otro cliente."
+        )
+
+    def test_editar_conserva_sus_datos_y_un_cliente_borrado_no_bloquea(self):
+        cliente = Cliente.objects.create(
+            nombre="Ana", email="ana@correo.cl", telefono="+56912345678"
+        )
+        respuesta = self.editar(cliente, email="ana@correo.cl", phone="912345678")
+        self.assertEqual(respuesta.status_code, 200)
+        cliente.delete()
+        self.assertEqual(self.crear(email="ana@correo.cl", phone="912345678").status_code, 200)

@@ -275,3 +275,16 @@ class EquipoTests(NegocioTestCase):
         )
         modal = navegador.get(reverse("equipo_editar", args=[perfil.user.pk]))
         self.assertContains(modal, '<option value="dni" selected>DNI</option>')
+
+    def test_el_identificador_no_se_repite_dentro_del_negocio(self):
+        navegador = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria"))
+        datos = {**IDENTIFICADOR_VALIDO, "rol": Rol.ENCARGADO}
+        primera = navegador.post(
+            reverse("equipo_crear"), {**datos, "first_name": "Ana", "email": "ana@correo.cl"}
+        )
+        self.assertEqual(primera.status_code, 200)
+        segunda = navegador.post(
+            reverse("equipo_crear"), {**datos, "first_name": "Sofi", "email": "sofi@correo.cl"}
+        )
+        self.assertIn("id_national_id", self.errores(segunda))
+        self.assertFalse(User.objects.filter(email="sofi@correo.cl").exists())
