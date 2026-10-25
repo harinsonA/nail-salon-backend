@@ -9,6 +9,7 @@
   </div>
   <div class="modal-body">
     <div class="action-modal__request">
+      {% include 'common/national_id_fields.html' %}
       <div class="row g-2">
         <div class="col-12 col-md-6">
           {% include 'common/form_field.html' with field=form.first_name %}

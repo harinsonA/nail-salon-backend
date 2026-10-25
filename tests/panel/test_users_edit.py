@@ -8,6 +8,8 @@ from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name
 
 from apps.tenancy.models import Dominio, Negocio
+from tests.base import IDENTIFICADOR_VALIDO
+from apps.panel.models import PerfilPanel
 
 User = get_user_model()
 
@@ -65,6 +67,7 @@ class UserUpdateModalTests(TestCase):
     def payload(self, user=None, **changes):
         user = user or self.ana
         data = {
+            **IDENTIFICADOR_VALIDO,
             "username": user.username,
             "first_name": user.first_name.partition(" ")[0] or "Prueba",
             "second_name": user.first_name.partition(" ")[2],
@@ -242,3 +245,33 @@ class UserUpdateModalTests(TestCase):
         response = self.browser(self.superuser).post(f"/admin/auth/user/{self.ana.pk}/delete/", {"post": "yes"})
         self.assertRedirects(response, LIST_URL, fetch_redirect_response=False)
         self.assertTrue(User.objects.filter(pk=self.ana.pk).exists())
+
+    def test_loads_and_updates_the_national_identifier(self):
+        PerfilPanel.objects.create(
+            user=self.ana, pais="MX", tipo_identificador_nacional="curp",
+            identificador_nacional="BOXW310820HNERXN09",
+        )
+        html = self.modal().content.decode()
+        self.assertRegex(html, r'<option value="curp" selected>CURP</option>')
+        self.assertEqual(self.submit().status_code, 200)
+        perfil = PerfilPanel.objects.get(user=self.ana)
+        self.assertEqual(
+            (perfil.pais, perfil.identificador_nacional), ("CL", "12345678-5")
+        )
+
+    def test_a_user_without_panel_profile_gets_one_when_saved(self):
+        self.assertFalse(PerfilPanel.objects.filter(user=self.ana).exists())
+        self.assertEqual(self.submit().status_code, 200)
+        self.assertEqual(PerfilPanel.objects.get(user=self.ana).tipo_identificador_nacional, "rut")
+
+    def test_saving_without_changes_does_not_add_history(self):
+        self.submit()
+        perfil = PerfilPanel.objects.get(user=self.ana)
+        self.submit()
+        self.assertEqual(perfil.history.count(), 1)
+
+    def test_the_identifier_cannot_be_left_empty(self):
+        errors = self.errors(
+            self.submit(national_id_country="", national_id_type="", national_id="")
+        )
+        self.assertIn("id_national_id_country", errors)

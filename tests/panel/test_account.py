@@ -6,6 +6,8 @@ from django.test import Client, TestCase
 from django_tenants.utils import get_public_schema_name
 
 from apps.tenancy.models import Dominio, Negocio
+from tests.base import IDENTIFICADOR_VALIDO
+from apps.panel.models import PerfilPanel
 
 User = get_user_model()
 
@@ -37,6 +39,7 @@ class AccountModalTests(TestCase):
 
     def payload(self, **changes):
         data = {
+            **IDENTIFICADOR_VALIDO,
             "username": "ana.rojas",
             "first_name": "Ana",
             "first_surname": "Rojas",
@@ -110,3 +113,11 @@ class AccountModalTests(TestCase):
         self.browser.post("/admin/password_change/", {"old_password": "Inicial#123", "new_password1": "Otra#4567", "new_password2": "Otra#4567"})
         self.ana.refresh_from_db()
         self.assertTrue(self.ana.check_password("Inicial#123"))
+
+    def test_my_account_asks_for_the_national_identifier(self):
+        response = self.post(national_id_country="", national_id_type="", national_id="")
+        self.assertEqual(response.status_code, 400)
+        fields = {error["id_element"] for error in response.json()["errors"]}
+        self.assertTrue({"id_national_id_country", "id_national_id_type", "id_national_id"} <= fields)
+        self.assertEqual(self.post().status_code, 200)
+        self.assertEqual(PerfilPanel.objects.get(user=self.ana).identificador_nacional, "12345678-5")

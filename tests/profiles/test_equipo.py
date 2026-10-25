@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import puede_gestionar
-from tests.base import NegocioTestCase
+from tests.base import IDENTIFICADOR_VALIDO, NegocioTestCase
 
 User = get_user_model()
 Rol = Perfil.Rol
@@ -105,7 +105,7 @@ class EquipoTests(NegocioTestCase):
         self.assertContains(modal, "data-sensitive")
         respuesta = navegador.post(
             reverse("equipo_crear"),
-            {"first_name": "Ana", "last_name": "Pérez", "email": "Ana@Correo.cl", "rol": Rol.ENCARGADO},
+            {**IDENTIFICADOR_VALIDO, "first_name": "Ana", "last_name": "Pérez", "email": "Ana@Correo.cl", "rol": Rol.ENCARGADO},
         )
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn("no-store", respuesta["Cache-Control"])
@@ -123,7 +123,7 @@ class EquipoTests(NegocioTestCase):
         self.assertEqual([valor for valor, _ in formulario.context["form"].fields["rol"].choices], [Rol.COLABORADOR])
         intento = navegador.post(
             reverse("equipo_crear"),
-            {"first_name": "Sofi", "email": "sofi@correo.cl", "rol": Rol.ENCARGADO},
+            {**IDENTIFICADOR_VALIDO, "first_name": "Sofi", "email": "sofi@correo.cl", "rol": Rol.ENCARGADO},
         )
         self.assertEqual(self.errores(intento), {"id_rol"})
         self.assertFalse(User.objects.filter(email="sofi@correo.cl").exists())
@@ -133,7 +133,7 @@ class EquipoTests(NegocioTestCase):
         navegador = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria"))
         respuesta = navegador.post(
             reverse("equipo_crear"),
-            {"first_name": "Laura", "email": "LAURA@correo.cl", "rol": Rol.COLABORADOR},
+            {**IDENTIFICADOR_VALIDO, "first_name": "Laura", "email": "LAURA@correo.cl", "rol": Rol.COLABORADOR},
         )
         self.assertEqual(self.errores(respuesta), {"id_email"})
 
@@ -141,7 +141,7 @@ class EquipoTests(NegocioTestCase):
         navegador = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria"))
         respuesta = navegador.post(
             reverse("equipo_crear"),
-            {"first_name": "Ana123", "email": "ana@correo.cl", "rol": Rol.COLABORADOR},
+            {**IDENTIFICADOR_VALIDO, "first_name": "Ana123", "email": "ana@correo.cl", "rol": Rol.COLABORADOR},
         )
         self.assertEqual(self.errores(respuesta), {"id_first_name"})
 
@@ -155,14 +155,22 @@ class EquipoTests(NegocioTestCase):
         self.assertNotContains(modal, "data-sensitive")
         self.assertEqual(
             modal.context["form"].initial,
-            {"first_name": "Laura", "last_name": "Soto", "email": "laura@correo.cl", "rol": Rol.COLABORADOR},
+            {
+                "national_id_country": "",
+                "national_id_type": "",
+                "national_id": "",
+                "first_name": "Laura",
+                "last_name": "Soto",
+                "email": "laura@correo.cl",
+                "rol": Rol.COLABORADOR,
+            },
         )
 
     def test_la_propietaria_edita_datos_y_rol(self):
         colaboradora = self.crear(Rol.COLABORADOR, "laura")
         respuesta = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria")).post(
             reverse("equipo_editar", args=[colaboradora.pk]),
-            {"first_name": "Laura", "last_name": "Soto", "email": "Laura.Soto@correo.cl", "rol": Rol.ENCARGADO},
+            {**IDENTIFICADOR_VALIDO, "first_name": "Laura", "last_name": "Soto", "email": "Laura.Soto@correo.cl", "rol": Rol.ENCARGADO},
         )
         self.assertEqual(respuesta.json()["message"], "Laura Soto quedó actualizado.")
         colaboradora.refresh_from_db()
@@ -179,11 +187,11 @@ class EquipoTests(NegocioTestCase):
         colaboradora = self.crear(Rol.COLABORADOR, "laura")
         navegador = self.navegador_de(self.crear(Rol.ENCARGADO, "ana"))
         ruta = reverse("equipo_editar", args=[colaboradora.pk])
-        mismo = navegador.post(ruta, {"first_name": "Laura", "email": "laura@correo.cl", "rol": Rol.COLABORADOR})
+        mismo = navegador.post(ruta, {**IDENTIFICADOR_VALIDO, "first_name": "Laura", "email": "laura@correo.cl", "rol": Rol.COLABORADOR})
         self.assertEqual(mismo.status_code, 200)
-        ajeno = navegador.post(ruta, {"first_name": "Laura", "email": "sofi@correo.cl", "rol": Rol.COLABORADOR})
+        ajeno = navegador.post(ruta, {**IDENTIFICADOR_VALIDO, "first_name": "Laura", "email": "sofi@correo.cl", "rol": Rol.COLABORADOR})
         self.assertEqual(self.errores(ajeno), {"id_email"})
-        ascenso = navegador.post(ruta, {"first_name": "Laura", "email": "laura@correo.cl", "rol": Rol.ENCARGADO})
+        ascenso = navegador.post(ruta, {**IDENTIFICADOR_VALIDO, "first_name": "Laura", "email": "laura@correo.cl", "rol": Rol.ENCARGADO})
         self.assertEqual(self.errores(ascenso), {"id_rol"})
 
     def test_desactivar_y_reactivar(self):
@@ -238,3 +246,32 @@ class EquipoTests(NegocioTestCase):
         self.assertEqual(navegador.get(reverse("equipo_lista")).status_code, 403)
         self.assertEqual(navegador.get(reverse("equipo_crear")).status_code, 403)
         self.assertNotContains(navegador.get(reverse("calendar")), f'href="{reverse("equipo")}"')
+
+    def test_el_identificador_nacional_es_obligatorio_y_se_guarda_en_su_perfil(self):
+        navegador = self.navegador_de(self.crear(Rol.PROPIETARIO, "maria"))
+        sin_identificador = navegador.post(
+            reverse("equipo_crear"),
+            {"first_name": "Ana", "email": "ana@correo.cl", "rol": Rol.ENCARGADO},
+        )
+        self.assertTrue(
+            {"id_national_id_country", "id_national_id_type", "id_national_id"}
+            <= self.errores(sin_identificador)
+        )
+        navegador.post(
+            reverse("equipo_crear"),
+            {
+                "national_id_country": "PE",
+                "national_id_type": "dni",
+                "national_id": "01234567",
+                "first_name": "Ana",
+                "email": "ana@correo.cl",
+                "rol": Rol.ENCARGADO,
+            },
+        )
+        perfil = Perfil.objects.get(user__email="ana@correo.cl")
+        self.assertEqual(
+            (perfil.rol, perfil.pais, perfil.tipo_identificador_nacional, perfil.identificador_nacional),
+            (Rol.ENCARGADO, "PE", "dni", "01234567"),
+        )
+        modal = navegador.get(reverse("equipo_editar", args=[perfil.user.pk]))
+        self.assertContains(modal, '<option value="dni" selected>DNI</option>')

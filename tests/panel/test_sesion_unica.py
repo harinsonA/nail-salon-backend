@@ -6,6 +6,7 @@ from django_tenants.utils import get_public_schema_name
 from apps.seguridad.models import AccesoUsuario
 from apps.seguridad.sessions import CLOSED_ELSEWHERE_MESSAGE, SESSION_TOKEN_KEY
 from apps.tenancy.models import Dominio, Negocio
+from tests.base import IDENTIFICADOR_VALIDO
 
 User = get_user_model()
 
@@ -70,6 +71,7 @@ class SesionUnicaEnElPanelTests(TestCase):
         respuesta = navegador.post(
             "/admin/account/modal/",
             {
+                **IDENTIFICADOR_VALIDO,
                 "username": "admin",
                 "first_name": "Ana",
                 "first_surname": "Rojas",

@@ -2,6 +2,7 @@ from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.contrib.auth.models import Group, Permission
+from django.db import transaction
 from django.db.models import Count, Q, TextChoices, Value
 from django.db.models.functions import Concat, Trim
 from django.http import JsonResponse
@@ -16,11 +17,13 @@ from apps.common.form_classes import (
     FORM_SELECT_CLASS,
 )
 from apps.common.form_fields import AlphabeticField
+from apps.common.forms import NationalIdentifierForm
 from apps.common.utils.passwords import PasswordPolicyValidator
 from apps.common.utils.search import search_ignoring_accents
 from apps.common.utils.text import join_name_parts, split_name
 from apps.common.utils.utils import USERNAME_MAX_LENGTH, CommonCleaner
 from apps.common.widgets import password_input, switch_input, text_input
+from apps.panel.models import PerfilPanel
 from apps.panel.permissions import (
     build_permission_rows,
     group_permission_map,
@@ -70,6 +73,10 @@ PASSWORD_UNLOCK_REASON = "Desbloqueado al cambiar la contraseña desde el panel"
 # region ........ Helpers
 
 
+def panel_profile(user):
+    return PerfilPanel.objects.filter(user=user).first()
+
+
 def format_datetime(value):
     return timezone.localtime(value).strftime(DATETIME_FORMAT) if value else NEVER
 
@@ -93,7 +100,9 @@ def user_permission_rows(user):
 # region ........ Forms
 
 
-class UserFormBase(BSModalForm):
+class UserFormBase(NationalIdentifierForm, BSModalForm):
+    national_id_required = True
+
     username = forms.CharField(
         label="Usuario",
         help_text="Entre 3 y 30 caracteres: minúsculas, números, punto, guion y guion bajo.",
@@ -144,6 +153,11 @@ class UserFormBase(BSModalForm):
 
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
+        if instance:
+            kwargs["initial"] = {
+                **self.national_id_initial(panel_profile(instance)),
+                **kwargs.get("initial", {}),
+            }
         super().__init__(*args, **kwargs)
 
     def other_users(self):
@@ -309,6 +323,7 @@ class UserUpdateForm(UserFormBase):
             self.clean_password_pair(cleaned_data)
         return cleaned_data
 
+    @transaction.atomic
     def save(self):
         user = self.instance
         data = self.cleaned_data
@@ -322,6 +337,7 @@ class UserUpdateForm(UserFormBase):
         if data.get("password"):
             user.set_password(data["password"])
         user.save()
+        self.save_national_id(panel_profile(user) or PerfilPanel(user=user))
         if data.get("password"):
             unlock(user, PASSWORD_UNLOCK_REASON)
         if not self.fields["groups"].disabled:
@@ -571,8 +587,11 @@ class UserCreateModalView(PanelCreateModalView):
     form_class = UserCreateForm
     success_message = "Usuario %(name)s creado exitosamente."
 
+    @transaction.atomic
     def create_object(self, form):
-        return User.objects.create_user(**form.user_data())
+        user = User.objects.create_user(**form.user_data())
+        form.save_national_id(PerfilPanel(user=user))
+        return user
 
 
 class UserUpdateModalView(PanelUpdateModalView):

@@ -173,9 +173,7 @@ class PersonUpdateForm(PersonNamesForm):
             "second_name": second_name,
             "first_surname": first_surname,
             "second_surname": second_surname,
-            "national_id_country": instance.pais or "",
-            "national_id_type": instance.tipo_identificador_nacional or "",
-            "national_id": instance.identificador_nacional or "",
+            **self.national_id_initial(instance),
             "notes": instance.notas or "",
             **kwargs.get("initial", {}),
         }

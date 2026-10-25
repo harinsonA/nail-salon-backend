@@ -3,6 +3,7 @@ from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Count, F, Q, TextChoices, Value
 from django.db.models.functions import Concat, Trim
 from django.http import JsonResponse
@@ -16,6 +17,7 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.claves import generar_clave_temporal
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
 from apps.common.form_fields import AlphabeticField
+from apps.common.forms import NationalIdentifierForm
 from apps.common.utils.search import search_ignoring_accents
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
@@ -133,7 +135,9 @@ class ManagedMemberMixin:
 # region ........ Forms
 
 
-class MemberForm(BSModalForm):
+class MemberForm(NationalIdentifierForm, BSModalForm):
+    national_id_required = True
+
     first_name = AlphabeticField(
         label="Nombre",
         max_length=NAME_MAX_LENGTH,
@@ -160,6 +164,11 @@ class MemberForm(BSModalForm):
 
     def __init__(self, *args, instance=None, **kwargs):
         self.instance = instance
+        if instance:
+            kwargs["initial"] = {
+                **self.national_id_initial(instance.perfil),
+                **kwargs.get("initial", {}),
+            }
         super().__init__(*args, **kwargs)
         self.fields["rol"].choices = [
             (rol.value, rol.label) for rol in roles_que_puede_crear(self.request.user)
@@ -183,6 +192,7 @@ class MemberForm(BSModalForm):
             raise forms.ValidationError("Ese correo ya lo usa otra persona de este negocio.")
         return email
 
+    @transaction.atomic
     def save(self):
         data = self.cleaned_data
         member = self.instance or User()
@@ -193,10 +203,7 @@ class MemberForm(BSModalForm):
         if not member.pk:
             member.set_unusable_password()
         member.save()
-        perfil = Perfil.objects.get(user=member)
-        if perfil.rol != data["rol"]:
-            perfil.rol = data["rol"]
-            perfil.save()
+        self.save_national_id(Perfil.objects.get(user=member), rol=data["rol"])
         return member
 
 

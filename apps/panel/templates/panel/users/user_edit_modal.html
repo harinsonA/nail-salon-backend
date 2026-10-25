@@ -70,6 +70,7 @@
               </span>
               <div class="form-text"><small>{{ form.username.help_text }}</small></div>
             </div>
+            {% include 'common/national_id_fields.html' %}
             <div class="row g-2">
               {% for field in form %}
               {% if field.name == 'first_name' or field.name == 'second_name' or field.name == 'first_surname' or field.name == 'second_surname' %}
