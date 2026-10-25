@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block view_title %}
-Personas
+Propietarios
 {% endblock %}
 
 {% block content %}
@@ -13,7 +13,7 @@ Personas
   <section class="d-inline-flex align-items-center gap-2">
     <a id="person-create-btn" data-form-url="{{ create_modal_url }}"
       class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
-      Persona
+      Propietario
       <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16" class="icon--small">
     </a>
   </section>
@@ -23,7 +23,7 @@ Personas
       <div class="card rounded-4 agenda-card">
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary m-0">
-            <span>Total de personas</span>
+            <span>Total de propietarios</span>
           </h6>
           <h4 class="card-title text-end text-primary m-0">
             <b id="total_people_id">0</b>

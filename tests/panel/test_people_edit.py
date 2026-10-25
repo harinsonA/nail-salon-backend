@@ -123,7 +123,7 @@ class PersonEditModalTests(TestCase):
         response = self.browser(self.superuser).get(self.url(), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertTemplateUsed(response, "panel/people/person_edit_modal.html")
         html = response.content.decode()
-        self.assertIn("Editar persona · Carla Andrea Rojas Pérez", html)
+        self.assertIn("Editar propietario · Carla Andrea Rojas Pérez", html)
         for name, value in (("first_name", "Carla"), ("second_name", "Andrea"), ("first_surname", "Rojas"), ("second_surname", "Pérez")):
             self.assertRegex(html, rf'name="{name}" value="{value}"')
         self.assertIn("Clienta antigua", html)
@@ -137,7 +137,7 @@ class PersonEditModalTests(TestCase):
 
     def test_updates_names_and_note_and_logs_the_change(self):
         response = self.post(second_name="", second_surname="", notes="  Prefiere WhatsApp ")
-        self.assertEqual(response.json()["message"], "Persona Carla Rojas actualizada exitosamente.")
+        self.assertEqual(response.json()["message"], "Propietario Carla Rojas actualizado exitosamente.")
         self.person.refresh_from_db()
         self.assertEqual((self.person.nombres, self.person.apellidos, self.person.notas), ("Carla", "Rojas", "Prefiere WhatsApp"))
         self.assertEqual(self.person.history.first().history_change_reason, "Edición desde el panel")

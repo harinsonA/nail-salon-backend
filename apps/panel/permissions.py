@@ -7,7 +7,7 @@ from django.db.models import Q
 
 PANEL_PERMISSION_MODELS = [
     ("tenancy", "negocio", "Negocios"),
-    ("tenancy", "persona", "Personas"),
+    ("tenancy", "persona", "Propietarios"),
     ("tenancy", "rubro", "Rubros"),
     ("auth", "user", "Usuarios"),
     ("auth", "group", "Grupos"),

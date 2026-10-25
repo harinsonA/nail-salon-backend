@@ -409,8 +409,8 @@ class BusinessCreateForm(BusinessSettingsForm):
     titular = forms.ModelChoiceField(
         label="Titular",
         queryset=Persona.objects.order_by("nombres", "apellidos"),
-        empty_label="Selecciona una persona",
-        help_text="Si la persona no existe, créala primero en Personas.",
+        empty_label="Selecciona un propietario",
+        help_text="Si el propietario no existe, créalo primero en Propietarios.",
         widget=forms.Select(attrs={"class": FORM_SELECT2_CLASS}),
     )
     correo = forms.EmailField(

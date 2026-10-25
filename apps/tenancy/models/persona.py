@@ -18,8 +18,8 @@ class Persona(TimeStampedModel, SoftDeletableModel):
 
     class Meta:
         db_table = "personas"
-        verbose_name = "Persona"
-        verbose_name_plural = "Personas"
+        verbose_name = "Propietario"
+        verbose_name_plural = "Propietarios"
         ordering = ["nombres", "apellidos"]
 
     def __str__(self):
@@ -33,7 +33,7 @@ class Persona(TimeStampedModel, SoftDeletableModel):
         negocios = self.negocios_como_titular.all()
         if soft and negocios.exists():
             raise ProtectedError(
-                "No se puede eliminar a una persona que es titular de un negocio: primero cambia el titular.",
+                "No se puede eliminar a un propietario que es titular de un negocio: primero cambia el titular.",
                 set(negocios),
             )
         return super().delete(using, *args, soft=soft, **kwargs)

@@ -107,7 +107,7 @@ class PersonCreateModalTests(TestCase):
         )
         self.assertTemplateUsed(response, "panel/people/person_modal.html")
         html = response.content.decode()
-        self.assertIn("Nueva persona", html)
+        self.assertIn("Nuevo propietario", html)
         self.assertIn('data-bs-target="#person-pane-basic"', html)
         self.assertIn('data-bs-target="#person-pane-address"', html)
         self.assertRegex(html, r'<option value="\+56" selected>')
@@ -134,7 +134,7 @@ class PersonCreateModalTests(TestCase):
         )
         self.assertEqual(
             response.json()["message"],
-            "Persona Ana María Rojas Pérez creada exitosamente.",
+            "Propietario Ana María Rojas Pérez creado exitosamente.",
         )
         person = Persona.objects.get(nombres="Ana María")
         self.assertEqual(

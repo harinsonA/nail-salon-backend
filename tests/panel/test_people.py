@@ -115,7 +115,7 @@ class PeopleScreenTests(TestCase):
         response = self.browser(self.superuser).post(
             self.delete_modal_url(self.contact), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
         )
-        self.assertEqual(response.json()["message"], "Persona Lucía eliminada exitosamente.")
+        self.assertEqual(response.json()["message"], "Propietario Lucía eliminado exitosamente.")
         self.assertFalse(Persona.objects.filter(pk=self.contact.pk).exists())
         self.assertTrue(Persona.all_objects.filter(pk=self.contact.pk, is_removed=True).exists())
         log = LogEntry.objects.get(object_id=str(self.contact.pk), content_type__model="persona")
