@@ -230,14 +230,16 @@ class ClientListView(BaseListViewAjax):
         "telefono",
         "email",
         "estado",
+        "identificador_nacional",
         "full_name",
     ]
 
     ordering_fields = {
         "0": "full_name",
-        "1": "estado",
-        "2": "telefono",
-        "3": "email",
+        "1": "identificador_nacional",
+        "2": "estado",
+        "3": "telefono",
+        "4": "email",
     }
 
     def get_queryset(self):
@@ -304,6 +306,7 @@ class ClientExportView(ExcelExportMixin, ClientListView):
 
     excel_columns = [
         ExcelColumn("Nombre completo", "full_name", width=30),
+        ExcelColumn("Número de documento", "identificador_nacional", width=20),
         ExcelColumn("Teléfono", "telefono", width=18),
         ExcelColumn("Correo", "email", width=30),
         ExcelColumn(
