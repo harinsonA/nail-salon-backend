@@ -93,7 +93,7 @@ Dashboard
       <h4 class="dashboard-card__title">Servicios más solicitados</h4>
       <small class="dashboard-card__subtitle">Top servicios · <span data-period-label>Últimos 6 meses</span></small>
     </header>
-    <div class="dashboard-chart">
+    <div class="dashboard-chart dashboard-chart--tall">
       <canvas id="chart-top-services" data-url="{% url 'dashboard_top_services_ajax' %}"></canvas>
       <div class="dashboard-chart__state" data-state="loading">
         <span class="spinner-border spinner-border-sm" role="status"></span> Cargando…

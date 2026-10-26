@@ -150,7 +150,7 @@
   }
 
   // Renderiza un gráfico a partir del contrato JSON uniforme
-  function renderChart(canvasId, type, payload, optionsExtra) {
+  function renderChart(canvasId, type, payload, optionsExtra, plugins) {
     var canvas = document.getElementById(canvasId);
     if (!canvas) return null;
     // Destruir la instancia previa antes de redibujar (evita fugas al refiltrar)
@@ -179,6 +179,7 @@
       type: type,
       data: { labels: payload.labels, datasets: buildDatasets(payload, type) },
       options: options,
+      plugins: plugins || [],
     });
     instances[canvasId] = chart;
     return chart;
@@ -186,11 +187,12 @@
 
   // Registra un gráfico para que el filtro global pueda recargarlo.
   // No toca el DOM: solo guarda su configuración.
-  function register(canvasId, type, optionsExtra) {
+  function register(canvasId, type, optionsExtra, plugins) {
     registry.push({
       canvasId: canvasId,
       type: type,
       optionsExtra: optionsExtra || null,
+      plugins: plugins || null,
     });
   }
 
@@ -202,7 +204,7 @@
     setState(canvas, "loading");
     fetchJSON(url, params)
       .then(function (payload) {
-        renderChart(entry.canvasId, entry.type, payload, entry.optionsExtra);
+        renderChart(entry.canvasId, entry.type, payload, entry.optionsExtra, entry.plugins);
       })
       .catch(function () {
         setState(canvas, "error");
