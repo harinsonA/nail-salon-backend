@@ -91,6 +91,10 @@
   box-shadow: 0 0 0 2px var(--calendar-today, var(--sand-600));
 }
 
+.calendar-new__card:has(> .calendar-new__editor) {
+  container-type: inline-size;
+}
+
 .calendar-new__editor {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) 80px 120px minmax(0, 1fr) auto;
@@ -305,13 +309,25 @@
   .calendar-new__summary {
     position: static;
   }
+}
 
+@container (max-width: 639.98px) {
   .calendar-new__editor {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 80px minmax(0, 1fr) auto auto;
   }
 
   .calendar-new__editor-info {
     grid-column: 1 / -1;
+  }
+}
+
+@container (max-width: 379.98px) {
+  .calendar-new__editor {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .calendar-new__editor [data-add] {
+    justify-self: end;
   }
 }
 
