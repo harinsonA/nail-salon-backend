@@ -70,6 +70,10 @@
 	height: 280px;
 }
 
+.dashboard-chart--tall {
+  height: 360px;
+}
+
 .dashboard-chart canvas {
 	width: 100% !important;
 }
