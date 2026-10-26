@@ -64,6 +64,7 @@ Lista de clientes
       <thead>
         <tr>
           <th scope="col">Nombre</th>
+          <th scope="col">Número de documento</th>
           <th scope="col">Estado</th>
           <th scope="col">Teléfono</th>
           <th scope="col">Correo</th>
@@ -92,6 +93,7 @@ Lista de clientes
       requestData: filterData,
       columns: [
         { data: 'full_name', className: 'fs-7 w-auto text-nowrap' },
+        { data: ({ identificador_nacional }) => identificador_nacional || '-- --', className: 'fs-7 w-auto text-nowrap' },
         { data: ({ status }) => statusColumn(status), className: 'fs-7 w-auto text-center' },
         { data: ({ whatsapp_modal_url, telefono }) => whatsappColumn(whatsapp_modal_url, telefono), className: 'fs-7 w-auto text-center' },
         { data: 'email', className: 'fs-7 w-auto' },
