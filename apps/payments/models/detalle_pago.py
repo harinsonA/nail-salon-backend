@@ -6,7 +6,7 @@ from django.db import models
 from model_utils.models import TimeStampedModel
 from simple_history.models import HistoricalRecords
 
-from apps.payments.choices import MetodoPago
+from apps.payments.choices import EstadoDetallePago, MetodoPago, TipoDetallePago
 
 
 class DetallePago(TimeStampedModel):
@@ -47,6 +47,25 @@ class DetallePago(TimeStampedModel):
         null=True,
         blank=True,
         related_name="abonos_registrados",
+    )
+    tipo_detalle = models.CharField(
+        max_length=20,
+        choices=TipoDetallePago.CHOICES,
+        blank=True,
+        null=True,
+    )
+    estado_detalle = models.CharField(
+        max_length=20,
+        choices=EstadoDetallePago.CHOICES,
+        blank=True,
+        null=True,
+    )
+    detalle_devuelto = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="devoluciones",
     )
 
     # Auditoría histórica

@@ -41,3 +41,29 @@ class EstadoPago:
         (REEMBOLSADO, "Reembolsado"),
         (IMPAGO, "Impago"),
     ]
+
+
+class TipoDetallePago:
+    RESERVA = "RESERVA"
+    ANTICIPO = "ANTICIPO"
+    ABONO = "ABONO"
+    DEVOLUCION = "DEVOLUCION"
+
+    CHOICES = [
+        (RESERVA, "Reserva"),
+        (ANTICIPO, "Anticipo"),
+        (ABONO, "Abono"),
+        (DEVOLUCION, "Devolución"),
+    ]
+
+
+class EstadoDetallePago:
+    VIGENTE = "VIGENTE"
+    RETENIDO = "RETENIDO"
+    DEVUELTO = "DEVUELTO"
+
+    CHOICES = [
+        (VIGENTE, "Vigente"),
+        (RETENIDO, "Retenido"),
+        (DEVUELTO, "Devuelto"),
+    ]
