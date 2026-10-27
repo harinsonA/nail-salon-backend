@@ -88,8 +88,11 @@ class AjaxListViewBase(ListView):
 
         total_records = queryset.count()
 
-        queryset = queryset.filter(self.get_filter_by_search())
-        filtered_records = queryset.count()
+        search_filter = self.get_filter_by_search()
+        filtered_records = total_records
+        if search_filter:
+            queryset = queryset.filter(search_filter)
+            filtered_records = queryset.count()
 
         page = self.apply_pagination(queryset)
         data = self.get_values(page)
