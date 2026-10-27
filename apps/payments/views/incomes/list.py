@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django import forms
-from django.db.models import Avg, Sum
+from django.db.models import Avg, Count
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -14,6 +14,7 @@ from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import DetallePago
+from apps.payments.services.account import incoming, net_paid
 
 from ...choices import MetodoPago
 
@@ -159,13 +160,14 @@ class IncomesListView(BaseListViewAjax):
 
     def additional_data(self, queryset) -> dict:
         additional_data = queryset.aggregate(
-            monto_total=Sum("monto_pago"),
-            monto_promedio=Avg("monto_pago"),
+            monto_total=net_paid(),
+            monto_promedio=Avg("monto_pago", filter=incoming()),
+            cantidad_ingresos=Count("pk", filter=incoming()),
         )
         return {
             "monto_total": format_currency(additional_data.get("monto_total")),
             "monto_promedio": format_currency(additional_data.get("monto_promedio")),
-            "cantidad_ingresos": queryset.count(),
+            "cantidad_ingresos": additional_data.get("cantidad_ingresos"),
         }
 
 

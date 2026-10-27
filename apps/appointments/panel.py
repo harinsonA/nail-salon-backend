@@ -7,6 +7,7 @@ from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name
 from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
+from apps.payments.services.account import PaymentAccount
 
 """========================================================================="""
 # region ........ Constants
@@ -138,8 +139,9 @@ class AppointmentPanel:
         installments = list(
             DetallePago.objects.filter(pago=payment).select_related("registrado_por").order_by("fecha_pago", "pk")
         )
-        paid = sum(item.monto_pago for item in installments)
-        pending = max(0, payment.monto_total_cita - paid)
+        account = PaymentAccount(payment, installments)
+        paid = account.paid()
+        pending = account.balance()
         rows = [
             {"label": "Total de la cita", "value": format_money(payment.monto_total_cita)},
             {"label": "Pagado", "value": format_money(paid)},

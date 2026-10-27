@@ -1,9 +1,8 @@
 from decimal import Decimal
 
-from django.db.models import Sum
-
 from apps.payments.choices import MetodoPago
 from apps.payments.models import DetallePago
+from apps.payments.services.account import net_paid
 
 # Servicio del gráfico "Ingresos por método de pago" de la página de ingresos.
 # Devuelve el mismo contrato JSON uniforme que los gráficos del dashboard
@@ -20,7 +19,7 @@ def _num(value):
 
 
 def income_by_method(filters):
-    """Monto recibido (DetallePago.monto_pago) agrupado por método de pago.
+    """Monto recibido neto (DetallePago.monto_pago, las devoluciones restan) agrupado por método de pago.
 
     Recibe el dict de filtros ORM que arma IncomesFilterForm.clean (el rango de
     fechas y, si la usuaria eligió uno, `metodo_pago`) y lo aplica tal cual, de
@@ -34,7 +33,7 @@ def income_by_method(filters):
     rows = (
         DetallePago.objects.filter(pago__is_removed=False, **filters)
         .values("metodo_pago")
-        .annotate(total=Sum("monto_pago"))
+        .annotate(total=net_paid())
     )
     totals = {row["metodo_pago"]: row["total"] for row in rows}
 

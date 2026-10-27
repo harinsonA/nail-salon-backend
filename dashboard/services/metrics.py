@@ -1,13 +1,14 @@
 from decimal import Decimal
 
-from django.db.models import Count, Sum, DateField
+from django.db.models import Count, DateField, Sum
 from django.db.models.functions import TruncMonth
 
 from apps.appointments.models.agenda import Cita
 from apps.appointments.models.detalle_cita import DetalleCita
-from apps.payments.models.pago import Pago
-from apps.payments.models.detalle_pago import DetallePago
 from apps.payments.choices import MetodoPago
+from apps.payments.models.detalle_pago import DetallePago
+from apps.payments.models.pago import Pago
+from apps.payments.services.account import net_paid
 
 # Todas las funciones reciben un `period` (dashboard.services.periods.Period)
 # ya resuelto por el form a partir del filtro global, y devuelven el contrato
@@ -72,13 +73,14 @@ def attended_clients(period):
 
 
 def income_billed_vs_collected(period):
-    """Facturado (Pago.monto_total_cita por fecha_cita) vs. cobrado
-    (DetallePago.monto_pago por fecha_pago), por mes."""
+    """Facturado (Pago.monto_total_cita por fecha_cita, sin citas pendientes) vs.
+    cobrado neto (DetallePago.monto_pago por fecha_pago, las devoluciones restan), por mes."""
     billed_rows = (
         Pago.objects.filter(
             fecha_cita__date__gte=period.start_date,
             fecha_cita__date__lt=period.end_date,
         )
+        .exclude(cita__estado=Cita.EstadoChoices.PENDIENTE)
         .annotate(period=TruncMonth("fecha_cita", output_field=DateField()))
         .values("period")
         .annotate(total=Sum("monto_total_cita"))
@@ -91,7 +93,7 @@ def income_billed_vs_collected(period):
         )
         .annotate(period=TruncMonth("fecha_pago", output_field=DateField()))
         .values("period")
-        .annotate(total=Sum("monto_pago"))
+        .annotate(total=net_paid())
     )
 
     billed = _monthly_series(period, billed_rows, "total")
@@ -133,7 +135,7 @@ def appointment_status(period):
 
 
 def payment_methods(period):
-    """Monto cobrado agrupado por método de pago en el período."""
+    """Monto cobrado neto (las devoluciones restan) agrupado por método de pago en el período."""
     rows = (
         DetallePago.objects.filter(
             pago__is_removed=False,
@@ -141,7 +143,7 @@ def payment_methods(period):
             fecha_pago__date__lt=period.end_date,
         )
         .values("metodo_pago")
-        .annotate(total=Sum("monto_pago"))
+        .annotate(total=net_paid())
     )
     totals = {row["metodo_pago"]: row["total"] for row in rows}
 

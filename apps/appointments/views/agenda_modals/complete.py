@@ -20,7 +20,12 @@ from apps.common.form_fields import NoteField
 from apps.common.utils.currency import format_money
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
-from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.choices import (
+    EstadoDetallePago,
+    EstadoPago,
+    MetodoPago,
+    TipoDetallePago,
+)
 from apps.payments.models import DetallePago, Pago
 
 """========================================================================="""
@@ -42,7 +47,9 @@ class AgendaConfirmationForm(BSModalModelForm):
         label="Paga el total ahora",
         required=False,
         initial=True,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"}),
+        widget=forms.CheckboxInput(
+            attrs={"class": "form-check-input", "role": "switch"}
+        ),
     )
     down_payment = forms.IntegerField(
         label="Monto abonado",
@@ -217,6 +224,8 @@ class AgendaConfirmationModal(
             metodo_pago=payment_method,
             notas_detalle=observation,
             registrado_por=user,
+            tipo_detalle=TipoDetallePago.ABONO,
+            estado_detalle=EstadoDetallePago.VIGENTE,
         )
         if payment_method != MetodoPago.EFECTIVO:
             payment_reference = cleaned_data.get("payment_reference") or None

@@ -1,11 +1,10 @@
 from datetime import datetime
-from decimal import Decimal
 
 from bootstrap_modal_forms.forms import BSModalModelForm
 from django import forms
-from django.db.models import Sum
 from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.functional import cached_property
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 
 from apps.common.form_classes import (
@@ -18,8 +17,14 @@ from apps.common.utils.currency import format_money
 from apps.common.utils.dates import format_date_time
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
-from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.choices import (
+    EstadoDetallePago,
+    EstadoPago,
+    MetodoPago,
+    TipoDetallePago,
+)
 from apps.payments.models import DetallePago, Pago
+from apps.payments.services.account import PaymentAccount
 
 """========================================================================="""
 # region ........ Constants
@@ -44,7 +49,9 @@ class AddPaymentForm(BSModalModelForm):
     full_payment = forms.BooleanField(
         label="Pagar el saldo completo",
         required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"}),
+        widget=forms.CheckboxInput(
+            attrs={"class": "form-check-input", "role": "switch"}
+        ),
     )
     down_payment = forms.IntegerField(
         label="Monto abonado",
@@ -153,12 +160,15 @@ class PaymentInstallmentMixin:
             "fecha_pago", "pk"
         )
 
+    @cached_property
+    def account(self):
+        return PaymentAccount(self.object, self.installments())
+
     def paid_amount(self):
-        total = self.object.detalles_pago.aggregate(total=Sum("monto_pago"))["total"]
-        return total or Decimal("0")
+        return self.account.paid()
 
     def pending_amount(self):
-        return max(Decimal("0"), self.object.monto_total_cita - self.paid_amount())
+        return self.account.balance()
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -201,7 +211,7 @@ class PaymentInstallmentMixin:
                         else "—",
                         "amount": format_money(item.monto_pago),
                     }
-                    for item in self.installments()
+                    for item in self.account.details
                 ],
             }
         )
@@ -222,6 +232,8 @@ class PaymentInstallmentMixin:
             else None,
             notas_detalle=data["observations"],
             registrado_por=self.request.user,
+            tipo_detalle=TipoDetallePago.ABONO,
+            estado_detalle=EstadoDetallePago.VIGENTE,
         )
 
     def update_payment_status(self):
@@ -241,6 +253,7 @@ class PaymentInstallmentMixin:
 
     def form_valid(self, form):
         self.save_installment(form.cleaned_data)
+        del self.account
         fully_paid = self.update_payment_status()
         return JsonResponse(
             {"message": self.success_message(fully_paid)}, status=HTTP_200_OK

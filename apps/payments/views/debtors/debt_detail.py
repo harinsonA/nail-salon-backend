@@ -1,14 +1,14 @@
+from bootstrap_modal_forms.generic import BSModalReadView
 from django.db.models import DecimalField, ExpressionWrapper, F, Sum
 from django.urls import reverse_lazy
 
+from apps.appointments.models import DetalleCita
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
-from apps.payments.models import Pago, DetallePago
 from apps.payments.choices import MetodoPago
-from apps.appointments.models import DetalleCita
-from bootstrap_modal_forms.generic import BSModalReadView
-
+from apps.payments.models import DetallePago, Pago
+from apps.payments.services.account import net_paid
 
 """========================================================================="""
 # region ........ Views
@@ -36,7 +36,7 @@ class DebtDetailModalView(ProtectedView, BSModalReadView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        pago = self.get_object()
+        pago = self.object
         context.update(
             {
                 "object": pago,
@@ -173,7 +173,7 @@ class PaymentDetailListView(BaseListViewAjax):
 
     @staticmethod
     def additional_data(queryset):
-        additional_data = queryset.aggregate(total_paid=Sum("monto_pago"))
+        additional_data = queryset.aggregate(total_paid=net_paid())
         total_paid = additional_data.get("total_paid") or 0
         return {
             "total_paid_formatted": format_currency(total_paid),
