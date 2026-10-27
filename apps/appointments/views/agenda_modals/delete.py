@@ -12,6 +12,9 @@ from apps.appointments.views.agenda_modals.common import (
 # region ........ Views
 
 
+# TODO: antes de ofrecer esta vista en el menú del calendario, bloquear el borrado si la cita tiene
+# pagos o movimientos en detalle_pago (reservas, anticipos, abonos o devoluciones): el CASCADE de
+# pagos los eliminaría. Ver arquitecturas/anticipos/02-plan-implementacion.html.
 class AgendaDeleteModalView(
     AppointmentAccessMixin, AppointmentPanelMixin, AgendaBaseModalView, BSModalReadView
 ):
