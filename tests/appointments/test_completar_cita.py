@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from apps.appointments.models import Cita, DetalleCita
 from apps.clients.models import Cliente
+from apps.payments.choices import EstadoDetallePago, TipoDetallePago
 from apps.payments.models import Pago
 from apps.profiles.models import Perfil
 from apps.services.models import Categoria, Servicio
@@ -120,6 +121,7 @@ class CompletarCitaTests(NegocioTestCase):
         abono = self.cita.pago.detalles_pago.get()
         self.assertEqual((abono.monto_pago, abono.referencia_pago), (Decimal("4000"), "TRX-123"))
         self.assertEqual(abono.notas_detalle, "Paga el resto el viernes.")
+        self.assertEqual((abono.tipo_detalle, abono.estado_detalle), (TipoDetallePago.ABONO, EstadoDetallePago.VIGENTE))
 
     def test_las_observaciones_no_superan_250_caracteres(self):
         respuesta = self.completar(full_payment="on", observations="a" * 251)

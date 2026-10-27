@@ -8,7 +8,12 @@ from django.utils import timezone
 
 from apps.appointments.models import Cita, DetalleCita
 from apps.clients.models import Cliente
-from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.choices import (
+    EstadoDetallePago,
+    EstadoPago,
+    MetodoPago,
+    TipoDetallePago,
+)
 from apps.payments.models import DetallePago, Pago
 from apps.profiles.models import Perfil
 from tests.base import NegocioTestCase
@@ -92,11 +97,15 @@ class RegistrarAbonoTests(NegocioTestCase):
             **datos,
         }
         url = reverse(nombre, args=[pk or self.pago.pk])
-        return self.navegador(usuario).post(url, payload, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        return self.navegador(usuario).post(
+            url, payload, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
 
     def errores(self, respuesta):
         self.assertEqual(respuesta.status_code, 400)
-        return {error["id_element"]: error["error"] for error in respuesta.json()["errors"]}
+        return {
+            error["id_element"]: error["error"] for error in respuesta.json()["errors"]
+        }
 
     def test_deudores_abre_el_modal_con_el_formato_nuevo(self):
         respuesta = self.abrir("add_payment_modal", self.pago.pk)
@@ -104,7 +113,10 @@ class RegistrarAbonoTests(NegocioTestCase):
         self.assertContains(respuesta, "Registrar abono: Paula Herrera")
         self.assertContains(respuesta, "$13.000")
         self.assertContains(respuesta, "20 octubre 2026, 11:00")
-        self.assertEqual(respuesta.context["payment_config"], {"total": 18000, "paid": 5000, "balance": 13000})
+        self.assertEqual(
+            respuesta.context["payment_config"],
+            {"total": 18000, "paid": 5000, "balance": 13000},
+        )
 
     def test_un_abono_parcial_queda_registrado_con_su_fecha_y_quien_lo_recibe(self):
         respuesta = self.abonar(down_payment="3000")
@@ -112,7 +124,14 @@ class RegistrarAbonoTests(NegocioTestCase):
         abono = self.pago.detalles_pago.order_by("-pk").first()
         self.assertEqual(abono.monto_pago, Decimal("3000"))
         self.assertEqual(abono.registrado_por, self.encargada)
-        self.assertEqual(timezone.localtime(abono.fecha_pago).strftime("%Y-%m-%d %H:%M"), "2026-10-22 09:15")
+        self.assertEqual(
+            (abono.tipo_detalle, abono.estado_detalle),
+            (TipoDetallePago.ABONO, EstadoDetallePago.VIGENTE),
+        )
+        self.assertEqual(
+            timezone.localtime(abono.fecha_pago).strftime("%Y-%m-%d %H:%M"),
+            "2026-10-22 09:15",
+        )
         self.pago.refresh_from_db()
         self.assertEqual(self.pago.estado_pago, EstadoPago.PENDIENTE)
 
@@ -123,17 +142,23 @@ class RegistrarAbonoTests(NegocioTestCase):
 
     def test_pagar_el_saldo_completo_registra_lo_que_faltaba(self):
         self.assertEqual(self.abonar(full_payment="on").status_code, 200)
-        self.assertEqual(self.pago.detalles_pago.order_by("-pk").first().monto_pago, Decimal("13000"))
+        self.assertEqual(
+            self.pago.detalles_pago.order_by("-pk").first().monto_pago, Decimal("13000")
+        )
         self.pago.refresh_from_db()
         self.assertEqual(self.pago.estado_pago, EstadoPago.COMPLETADO)
 
     def test_el_abono_no_supera_el_saldo_ni_es_cero(self):
-        self.assertIn("$13.000", self.errores(self.abonar(down_payment="13001"))["id_down_payment"])
+        self.assertIn(
+            "$13.000",
+            self.errores(self.abonar(down_payment="13001"))["id_down_payment"],
+        )
         self.assertIn("id_down_payment", self.errores(self.abonar(down_payment="0")))
 
     def test_el_abono_vacio_pide_monto_y_el_negativo_se_rechaza(self):
         self.assertEqual(
-            self.errores(self.abonar(down_payment=""))["id_down_payment"], "El monto debe ser mayor a $0."
+            self.errores(self.abonar(down_payment=""))["id_down_payment"],
+            "El monto debe ser mayor a $0.",
         )
         self.assertEqual(
             self.errores(self.abonar(down_payment="-500"))["id_down_payment"],
@@ -144,12 +169,18 @@ class RegistrarAbonoTests(NegocioTestCase):
         respuesta = self.abonar(down_payment="3000", payment_method="TRANSFERENCIA")
         self.assertEqual(respuesta.status_code, 200)
         abono = self.pago.detalles_pago.order_by("-pk").first()
-        self.assertEqual((abono.metodo_pago, abono.referencia_pago), ("TRANSFERENCIA", None))
+        self.assertEqual(
+            (abono.metodo_pago, abono.referencia_pago), ("TRANSFERENCIA", None)
+        )
 
     def test_guarda_la_referencia_cuando_la_ingresan(self):
-        respuesta = self.abonar(down_payment="3000", payment_method="TARJETA", payment_reference="  TRX-9  ")
+        respuesta = self.abonar(
+            down_payment="3000", payment_method="TARJETA", payment_reference="  TRX-9  "
+        )
         self.assertEqual(respuesta.status_code, 200)
-        self.assertEqual(self.pago.detalles_pago.order_by("-pk").first().referencia_pago, "TRX-9")
+        self.assertEqual(
+            self.pago.detalles_pago.order_by("-pk").first().referencia_pago, "TRX-9"
+        )
 
     def test_un_pago_ya_saldado_no_acepta_otro_abono_en_deudores(self):
         DetallePago.objects.create(
@@ -159,25 +190,50 @@ class RegistrarAbonoTests(NegocioTestCase):
             metodo_pago=MetodoPago.EFECTIVO,
         )
         errores = self.errores(self.abonar(full_payment="on"))
-        self.assertEqual(errores["id_down_payment"], "Este pago ya no tiene saldo pendiente.")
+        self.assertEqual(
+            errores["id_down_payment"], "Este pago ya no tiene saldo pendiente."
+        )
 
     def test_el_calendario_abre_el_mismo_modal_con_su_propio_acceso(self):
         respuesta = self.abrir("agenda_payment_modal", self.pago.pk)
         self.assertTemplateUsed(respuesta, "debtors/_add_payment.html")
-        self.assertEqual(self.abrir("agenda_payment_modal", self.pago.pk, self.colaboradora).status_code, 200)
-        respuesta = self.abonar("agenda_payment_modal", down_payment="2000", usuario=self.colaboradora)
+        self.assertEqual(
+            self.abrir(
+                "agenda_payment_modal", self.pago.pk, self.colaboradora
+            ).status_code,
+            200,
+        )
+        respuesta = self.abonar(
+            "agenda_payment_modal", down_payment="2000", usuario=self.colaboradora
+        )
         self.assertEqual(respuesta.status_code, 200)
 
     def test_el_calendario_responde_404_si_no_hay_un_pago_pendiente_valido(self):
-        ajena = self.pago_de(self.cita_completada(self.encargada, date(2026, 10, 21)), abonado=Decimal("1000"))
-        saldado = self.pago_de(self.cita_completada(self.colaboradora, date(2026, 10, 22)), abonado=Decimal("1000"))
+        ajena = self.pago_de(
+            self.cita_completada(self.encargada, date(2026, 10, 21)),
+            abonado=Decimal("1000"),
+        )
+        saldado = self.pago_de(
+            self.cita_completada(self.colaboradora, date(2026, 10, 22)),
+            abonado=Decimal("1000"),
+        )
         saldado.estado_pago = EstadoPago.COMPLETADO
         saldado.save()
-        borrado = self.pago_de(self.cita_completada(self.colaboradora, date(2026, 10, 23)), abonado=Decimal("1000"))
+        borrado = self.pago_de(
+            self.cita_completada(self.colaboradora, date(2026, 10, 23)),
+            abonado=Decimal("1000"),
+        )
         borrado.delete()
-        self.assertEqual(self.abrir("agenda_payment_modal", ajena.pk, self.colaboradora).status_code, 404)
-        self.assertEqual(self.abrir("agenda_payment_modal", saldado.pk).status_code, 404)
-        self.assertEqual(self.abrir("agenda_payment_modal", borrado.pk).status_code, 404)
+        self.assertEqual(
+            self.abrir("agenda_payment_modal", ajena.pk, self.colaboradora).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.abrir("agenda_payment_modal", saldado.pk).status_code, 404
+        )
+        self.assertEqual(
+            self.abrir("agenda_payment_modal", borrado.pk).status_code, 404
+        )
         self.assertEqual(self.abrir("agenda_payment_modal", 999999).status_code, 404)
 
     def acciones_del_dia(self, dia):
@@ -191,7 +247,10 @@ class RegistrarAbonoTests(NegocioTestCase):
 
     def test_el_menu_ofrece_registrar_abono_solo_con_saldo_pendiente(self):
         acciones = self.acciones_del_dia("2026-10-20")
-        self.assertEqual(acciones["Registrar abono"], reverse("agenda_payment_modal", args=[self.pago.pk]))
+        self.assertEqual(
+            acciones["Registrar abono"],
+            reverse("agenda_payment_modal", args=[self.pago.pk]),
+        )
         self.pago.estado_pago = EstadoPago.COMPLETADO
         self.pago.save()
         self.assertNotIn("Registrar abono", self.acciones_del_dia("2026-10-20"))
@@ -199,13 +258,19 @@ class RegistrarAbonoTests(NegocioTestCase):
     def test_una_completada_sin_pago_no_ofrece_abono_ni_falla(self):
         self.cita_completada(self.colaboradora, date(2026, 10, 24))
         self.assertEqual(list(self.acciones_del_dia("2026-10-24")), ["Ver detalle"])
-        respuesta = self.abrir("agenda_see_modal", Cita.objects.get(fecha_agenda=date(2026, 10, 24)).pk)
+        respuesta = self.abrir(
+            "agenda_see_modal", Cita.objects.get(fecha_agenda=date(2026, 10, 24)).pk
+        )
         self.assertEqual(respuesta.status_code, 200)
         self.assertNotContains(respuesta, "data-panel-payment")
 
     def test_el_detalle_muestra_el_boton_de_abono_solo_si_hay_saldo(self):
         respuesta = self.abrir("agenda_see_modal", self.cita.pk)
-        self.assertContains(respuesta, reverse("agenda_payment_modal", args=[self.pago.pk]))
+        self.assertContains(
+            respuesta, reverse("agenda_payment_modal", args=[self.pago.pk])
+        )
         self.pago.estado_pago = EstadoPago.COMPLETADO
         self.pago.save()
-        self.assertNotContains(self.abrir("agenda_see_modal", self.cita.pk), "data-panel-payment")
+        self.assertNotContains(
+            self.abrir("agenda_see_modal", self.cita.pk), "data-panel-payment"
+        )
