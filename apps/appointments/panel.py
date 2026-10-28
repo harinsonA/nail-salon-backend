@@ -130,12 +130,17 @@ class AppointmentPanel:
         if status == Cita.EstadoChoices.CANCELADA:
             return {"rows": [{"label": "Estado", "value": "Sin pago: la cita fue cancelada"}]}
         if status == Cita.EstadoChoices.PENDIENTE or not payment:
-            return {
-                "rows": [
-                    {"label": "Estado", "value": "Se registra al completar la cita"},
-                    {"label": "Monto estimado", "value": format_money(total)},
+            rows = [
+                {"label": "Estado", "value": "Se registra al completar la cita"},
+                {"label": "Monto estimado", "value": format_money(total)},
+            ]
+            advance = PaymentAccount(payment).paid() if payment else 0
+            if advance:
+                rows += [
+                    {"label": "Anticipo", "value": format_money(advance)},
+                    {"label": "Queda por pagar", "value": format_money(max(0, total - advance))},
                 ]
-            }
+            return {"rows": rows}
         installments = list(
             DetallePago.objects.filter(pago=payment).select_related("registrado_por").order_by("fecha_pago", "pk")
         )

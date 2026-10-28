@@ -157,3 +157,15 @@ class CrearCitaConAnticiposTests(CitaBase):
         respuesta = navegador.post(url, datos, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertEqual(respuesta.status_code, 200)
         self.assertFalse(Pago.objects.exists())
+
+    def test_el_detalle_de_la_cita_pendiente_muestra_el_anticipo(self):
+        self.encender()
+        self.con_anticipos([self.anticipo(4000)])
+        cita = Cita.objects.get()
+        respuesta = self.navegador(self.encargada).get(
+            reverse("agenda_see_modal", args=[cita.pk]), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        filas = {fila["label"]: fila["value"] for fila in respuesta.context["payment"]["rows"]}
+        self.assertEqual(filas["Monto estimado"], "$10.000")
+        self.assertEqual(filas["Anticipo"], "$4.000")
+        self.assertEqual(filas["Queda por pagar"], "$6.000")
