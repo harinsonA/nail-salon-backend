@@ -94,9 +94,30 @@
           <p class="calendar-new__error" data-discount-error hidden>El descuento no puede superar el precio.</p>
         </section>
 
+        {% if advances_enabled %}
+        <section class="calendar-new__card" aria-labelledby="appointment-advance" data-advance-card>
+          <h6 class="calendar-new__card-title" id="appointment-advance">
+            <span class="calendar-new__step">4</span> Anticipo
+            <span class="calendar-new__optional">(opcional)</span>
+          </h6>
+          <label class="form-check form-switch calendar-pay__full calendar-advance__switch">
+            <input type="checkbox" class="form-check-input" role="switch" data-advance-switch>
+            <span>Incluye anticipo</span>
+          </label>
+          <div class="calendar-advance__body" data-advance-body hidden>
+            <div class="calendar-advance__list" data-advance-list></div>
+            <p class="calendar-new__error {{ form.advances.id_for_label }}" aria-live="polite" data-advance-error></p>
+            <button type="button" class="btn btn-sm btn-success bg-gradient calendar-advance__add" data-advance-add>
+              <span class="material-symbols-outlined icon--small" aria-hidden="true">add_circle</span>
+              Añadir anticipo
+            </button>
+          </div>
+        </section>
+        {% endif %}
+
         <section class="calendar-new__card" aria-labelledby="appointment-notes">
           <h6 class="calendar-new__card-title" id="appointment-notes">
-            <span class="calendar-new__step">4</span> Observaciones
+            <span class="calendar-new__step">{% if advances_enabled %}5{% else %}4{% endif %}</span> Observaciones
             <span class="calendar-new__optional">(opcional)</span>
           </h6>
           <label for="{{ form.observations.id_for_label }}" class="visually-hidden">Observaciones de la cita (opcional)</label>
@@ -121,9 +142,21 @@
           <div><dt>Descuentos</dt><dd data-discounts>$0</dd></div>
           <div class="is-total"><dt>Total</dt><dd data-total>$0</dd></div>
         </dl>
+        {% if advances_enabled %}
+        <div class="calendar-advance__totals" data-advance-summary hidden>
+          <div class="calendar-pay__progress" aria-hidden="true">
+            <span class="calendar-pay__progress-paid" data-advance-bar></span>
+          </div>
+          <dl class="calendar-new__totals">
+            <div class="calendar-advance__paid"><dt>Anticipo</dt><dd data-advance-paid></dd></div>
+            <div class="is-total"><dt>Queda por pagar</dt><dd data-advance-balance></dd></div>
+          </dl>
+        </div>
+        {% endif %}
       </aside>
     </div>
     {{ form.services }}
+    {% if advances_enabled %}{{ form.advances }}{% endif %}
   </div>
   <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
