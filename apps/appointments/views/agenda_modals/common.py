@@ -19,10 +19,12 @@ from apps.common.form_classes import (
     FORM_SELECT2_CLASS,
 )
 from apps.common.form_fields import NoteField
+from apps.common.utils.currency import format_money
 from apps.common.utils.dates import format_long_date, format_plain_date
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
+from apps.payments.choices import MetodoPago
 from apps.services.models import Categoria, Servicio
 
 User = get_user_model()
@@ -43,6 +45,14 @@ DISCOUNT_INVALID = (
     "El descuento de «{name}» no puede ser negativo ni superar su precio."
 )
 NO_CATEGORY = "Sin categoría"
+REFERENCE_MAX_LENGTH = 100
+PAYMENT_METHODS = {value for value, _ in MetodoPago.CHOICES}
+ADVANCES_INVALID = "Los anticipos enviados no son válidos."
+ADVANCE_AMOUNT_REQUIRED = "Ingresa el monto de cada anticipo."
+ADVANCES_TOO_HIGH = (
+    "Los anticipos suman {paid} y no pueden superar el total de los servicios "
+    "({total})."
+)
 
 
 # endregion
@@ -179,11 +189,13 @@ class AppointmentForm(BSModalForm):
         ),
     )
     services = forms.CharField(required=False, widget=forms.HiddenInput)
+    advances = forms.CharField(required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, instance=None, **kwargs):
+    def __init__(self, *args, instance=None, allow_advances=False, **kwargs):
         super().__init__(*args, **kwargs)
         user = self.request.user
         self.instance = instance
+        self.allow_advances = allow_advances
         self.details = {}
         if instance:
             self.details = {detail.pk: detail for detail in instance.detalles.all()}
@@ -276,6 +288,50 @@ class AppointmentForm(BSModalForm):
         user = self.request.user
         return user if is_collaborator(user) else self.cleaned_data["assigned_to"]
 
+    def clean_advances(self):
+        if not self.allow_advances:
+            return []
+        try:
+            advances = json.loads(self.cleaned_data.get("advances") or "[]")
+        except json.JSONDecodeError as error:
+            raise forms.ValidationError(ADVANCES_INVALID) from error
+        if not isinstance(advances, list):
+            raise forms.ValidationError(ADVANCES_INVALID)
+        return [self.clean_advance(advance) for advance in advances]
+
+    @staticmethod
+    def clean_advance(advance):
+        if not isinstance(advance, dict):
+            raise forms.ValidationError(ADVANCES_INVALID)
+        amount = advance.get("monto")
+        method = advance.get("metodo")
+        reference = advance.get("referencia") or ""
+        if amount in (None, "", 0):
+            raise forms.ValidationError(ADVANCE_AMOUNT_REQUIRED)
+        if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
+            raise forms.ValidationError(ADVANCES_INVALID)
+        if method not in PAYMENT_METHODS or not isinstance(reference, str):
+            raise forms.ValidationError(ADVANCES_INVALID)
+        reference = reference.strip()
+        if len(reference) > REFERENCE_MAX_LENGTH:
+            raise forms.ValidationError(ADVANCES_INVALID)
+        return {"amount": amount, "method": method, "reference": reference}
+
+    def clean(self):
+        cleaned_data = super().clean()
+        advances = cleaned_data.get("advances") or []
+        lines = cleaned_data.get("services")
+        if not advances or not lines:
+            return cleaned_data
+        paid = sum(advance["amount"] for advance in advances)
+        total = sum(line["total"] for line in lines)
+        if paid > total:
+            self.add_error(
+                "advances",
+                ADVANCES_TOO_HIGH.format(paid=format_money(paid), total=format_money(total)),
+            )
+        return cleaned_data
+
 
 # endregion
 """========================================================================="""
@@ -301,6 +357,12 @@ class AppointmentFormMixin:
     def initial_lines(self):
         return []
 
+    def advances_enabled(self):
+        return False
+
+    def get_form_kwargs(self):
+        return {**super().get_form_kwargs(), "allow_advances": self.advances_enabled()}
+
     def get_context_data(self, **kwargs):
         appointment = getattr(self, "object", None)
         services = Servicio.activos.select_related("categoria").order_by("nombre")
@@ -310,6 +372,7 @@ class AppointmentFormMixin:
             "modal_url": self.request.path,
             "form_title": self.form_title(),
             "save_label": self.save_label,
+            "advances_enabled": self.advances_enabled(),
             "appointment_form_config": {
                 "services": [service_data(service) for service in services],
                 "categories": [
@@ -321,6 +384,12 @@ class AppointmentFormMixin:
                 "busyUrl": reverse("available_hours_ajax"),
                 "currentUser": self.request.user.pk,
                 "maxQuantity": MAX_QUANTITY,
+                "advances": {
+                    "enabled": self.advances_enabled(),
+                    "methods": MetodoPago.CHOICES,
+                    "cash": MetodoPago.EFECTIVO,
+                    "referenceMaxLength": REFERENCE_MAX_LENGTH,
+                },
             },
         }
 

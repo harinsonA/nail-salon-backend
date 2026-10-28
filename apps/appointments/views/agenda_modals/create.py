@@ -11,6 +11,8 @@ from apps.appointments.views.agenda_modals.common import (
     build_detail,
 )
 from apps.common.views.base_views import ProtectedView
+from apps.payments.services.advances import register_advances
+from apps.settings.preferences import ADVANCE_MODULE
 
 """========================================================================="""
 # region ........ Views
@@ -32,6 +34,9 @@ class AgendaCreateView(AppointmentFormMixin, ProtectedView, BSModalFormView):
             "assigned_to": self.request.user,
         }
 
+    def advances_enabled(self):
+        return ADVANCE_MODULE.is_enabled()
+
     @transaction.atomic
     def save_appointment(self, data):
         appointment = Cita.objects.create(
@@ -46,6 +51,7 @@ class AgendaCreateView(AppointmentFormMixin, ProtectedView, BSModalFormView):
         DetalleCita.objects.bulk_create(
             build_detail(appointment, line) for line in data["services"]
         )
+        register_advances(appointment, data["advances"], self.request.user)
         return appointment
 
 

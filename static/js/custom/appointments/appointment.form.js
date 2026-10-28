@@ -39,6 +39,192 @@
   const longDate = (date) =>
     capitalize(`${fmtWeekday.format(date)} ${date.getDate()} ${fmtMonth.format(date)} ${date.getFullYear()}`);
 
+  const parseAmount = (text) => parseInt(String(text).replace(/\D/g, ""), 10) || 0;
+  const amountText = (value) => (value ? value.toLocaleString("es-CL") : "");
+
+  const field = (labelText, control) => {
+    const label = el("label", "calendar-new__field");
+    label.append(el("span", "", labelText), control);
+    return label;
+  };
+
+  class AdvanceList {
+    constructor(form, config, onChange) {
+      const find = (name) => form.querySelector(`[data-${name}]`);
+      this.config = config;
+      this.onChange = onChange;
+      this.rows = [];
+      this.touched = false;
+      this.total = 0;
+      this.ui = {
+        toggle: find("advance-switch"),
+        body: find("advance-body"),
+        list: find("advance-list"),
+        add: find("advance-add"),
+        error: find("advance-error"),
+        summary: find("advance-summary"),
+        bar: find("advance-bar"),
+        paid: find("advance-paid"),
+        balance: find("advance-balance"),
+        field: form.querySelector("#id_advances"),
+      };
+      this.methodLabels = Object.fromEntries(config.methods);
+      this.bind();
+    }
+
+    newRow() {
+      return { amount: 0, method: this.config.cash, reference: "" };
+    }
+
+    paid() {
+      return this.rows.reduce((sum, row) => sum + row.amount, 0);
+    }
+
+    errorMessage() {
+      if (this.rows.some((row) => !row.amount)) {
+        return "Ingresa el monto de cada anticipo.";
+      }
+      const paid = this.paid();
+      if (paid > this.total) {
+        return `Los anticipos suman ${money(paid)} y no pueden superar el total de los servicios (${money(this.total)}).`;
+      }
+      return "";
+    }
+
+    isValid() {
+      return !this.errorMessage();
+    }
+
+    rowElement(row, index) {
+      const wrapper = el("div", "calendar-advance__row");
+
+      const amount = el("input", "form-control form-control--custom");
+      amount.type = "text";
+      amount.inputMode = "numeric";
+      amount.placeholder = "0";
+      amount.value = amountText(row.amount);
+      amount.setAttribute("aria-label", `Monto del anticipo ${index + 1}`);
+      amount.addEventListener("input", () => {
+        row.amount = parseAmount(amount.value);
+        amount.value = amountText(row.amount);
+        this.onChange();
+      });
+      amount.addEventListener("blur", () => {
+        this.touched = true;
+        this.onChange();
+      });
+      const currency = el("span", "", "$");
+      currency.setAttribute("aria-hidden", "true");
+      const amountBox = el("span", "calendar-new__money");
+      amountBox.append(currency, amount);
+      row.input = amount;
+
+      const method = el("select", "form-select form-select--custom");
+      this.config.methods.forEach(([value, label]) => {
+        const option = el("option", "", label);
+        option.value = value;
+        option.selected = value === row.method;
+        method.append(option);
+      });
+
+      const reference = el("input", "form-control form-control--custom");
+      reference.type = "text";
+      reference.maxLength = this.config.referenceMaxLength;
+      reference.value = row.reference;
+      reference.addEventListener("input", () => {
+        row.reference = reference.value;
+      });
+      const referenceField = field("Referencia (opcional)", reference);
+      referenceField.classList.add("calendar-advance__reference");
+      const syncReference = () => referenceField.classList.toggle("is-hidden", row.method === this.config.cash);
+      method.addEventListener("change", () => {
+        row.method = method.value;
+        syncReference();
+      });
+      syncReference();
+
+      const remove = el("button", "calendar-new__line-remove");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `Quitar anticipo ${index + 1}`);
+      remove.append(icon("close"));
+      remove.addEventListener("click", () => {
+        this.rows.splice(index, 1);
+        if (!this.rows.length) {
+          this.ui.toggle.checked = false;
+          this.touched = false;
+        }
+        this.render();
+      });
+
+      const fields = el("div", "calendar-advance__fields");
+      fields.append(field("Monto *", amountBox), field("Método de pago *", method), referenceField, remove);
+      wrapper.append(fields);
+      return wrapper;
+    }
+
+    render() {
+      this.ui.body.hidden = !this.ui.toggle.checked;
+      this.ui.list.replaceChildren(...this.rows.map((row, index) => this.rowElement(row, index)));
+      this.onChange();
+    }
+
+    renderTotals(total) {
+      this.total = total;
+      const paid = this.paid();
+      const message = this.errorMessage();
+      this.showError(this.touched ? message : "");
+      this.rows.forEach((row) => {
+        const invalid = this.touched && (!row.amount || paid > total);
+        row.input.classList.toggle("is-invalid", invalid);
+        row.input.setAttribute("aria-invalid", String(invalid));
+      });
+      this.ui.summary.hidden = !paid;
+      this.ui.paid.textContent = `-${money(Math.min(paid, total))}`;
+      this.ui.balance.textContent = money(Math.max(0, total - paid));
+      this.ui.bar.style.width = `${total ? Math.min(100, (paid / total) * 100) : 0}%`;
+    }
+
+    showError(message) {
+      this.ui.error.textContent = message || "";
+    }
+
+    reveal() {
+      this.touched = true;
+      this.onChange();
+      const invalid = this.rows.find((row) => !row.amount) || (this.isValid() ? null : this.rows[0]);
+      if (invalid) {
+        invalid.input.focus();
+      }
+      return this.isValid();
+    }
+
+    serialize() {
+      this.ui.field.value = JSON.stringify(
+        this.rows.map((row) => ({
+          monto: row.amount,
+          metodo: row.method,
+          referencia: row.method === this.config.cash ? "" : row.reference.trim(),
+        })),
+      );
+    }
+
+    bind() {
+      this.ui.toggle.addEventListener("change", () => {
+        this.rows = this.ui.toggle.checked ? [this.newRow()] : [];
+        this.touched = false;
+        this.render();
+        if (this.rows.length) {
+          this.rows[0].input.focus();
+        }
+      });
+      this.ui.add.addEventListener("click", () => {
+        this.rows.push(this.newRow());
+        this.render();
+        this.rows[this.rows.length - 1].input.focus();
+      });
+    }
+  }
+
   class AppointmentForm {
     constructor(form, config) {
       this.form = form;
@@ -82,6 +268,8 @@
         total: find("total"),
         save: find("save"),
       };
+      const advances = config.advances || {};
+      this.advances = advances.enabled ? new AdvanceList(form, advances, () => this.renderSummary()) : null;
 
       this.markCurrentUser();
       this.renderCategories();
@@ -213,11 +401,15 @@
       this.ui.subtotal.textContent = money(subtotal);
       this.ui.discounts.textContent = discounts ? `-${money(discounts)}` : money(0);
       this.ui.total.textContent = money(subtotal - discounts);
+      if (this.advances) {
+        this.advances.renderTotals(subtotal - discounts);
+      }
       this.ui.save.disabled = !this.isComplete();
     }
 
     isComplete() {
-      return Boolean(this.fields.client.value && this.fields.date.value && this.fields.time.value && this.lines.length);
+      const filled = Boolean(this.fields.client.value && this.fields.date.value && this.fields.time.value && this.lines.length);
+      return filled && (!this.advances || this.advances.isValid());
     }
 
     loadBusyHours() {
@@ -282,6 +474,9 @@
 
     clearErrors() {
       ["client", "staff", "date", "time", "notes", "service"].forEach((field) => this.setError(field, ""));
+      if (this.advances) {
+        this.advances.showError("");
+      }
     }
 
     validate() {
@@ -295,8 +490,9 @@
       const first = Object.keys(errors).find((field) => errors[field]);
       if (first) {
         (this.fields[first] || this.ui.service).focus();
+        return false;
       }
-      return !first;
+      return !this.advances || this.advances.reveal();
     }
 
     serverErrors(errors) {
@@ -311,6 +507,8 @@
       errors.forEach(({ id_element: id, error }) => {
         if (byId[id]) {
           this.setError(byId[id], error);
+        } else if (id === "id_advances" && this.advances) {
+          this.advances.showError(error);
         }
       });
     }
@@ -326,6 +524,9 @@
           descuento: line.discount,
         })),
       );
+      if (this.advances) {
+        this.advances.serialize();
+      }
       const data = Object.fromEntries(new FormData(this.form).entries());
       this.ui.save.disabled = true;
       const [response = {}, status] = await getResponseToRequest(this.form.action, data);
