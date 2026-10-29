@@ -53,10 +53,16 @@
       const find = (name) => form.querySelector(`[data-${name}]`);
       this.config = config;
       this.onChange = onChange;
-      this.rows = [];
+      this.methodLabels = Object.fromEntries(config.methods);
+      this.rows = (config.rows || []).map((row) => ({
+        ...row,
+        removed: false,
+        editable: config.canChangeSaved && !row.locked,
+      }));
       this.touched = false;
       this.total = 0;
       this.ui = {
+        switchLabel: find("advance-switch-label"),
         toggle: find("advance-switch"),
         body: find("advance-body"),
         list: find("advance-list"),
@@ -68,20 +74,28 @@
         balance: find("advance-balance"),
         field: form.querySelector("#id_advances"),
       };
-      this.methodLabels = Object.fromEntries(config.methods);
       this.bind();
+      this.render();
     }
 
     newRow() {
-      return { amount: 0, method: this.config.cash, reference: "" };
+      return { id: null, amount: 0, method: this.config.cash, reference: "", removed: false, editable: true };
+    }
+
+    hasSaved() {
+      return this.rows.some((row) => row.id);
+    }
+
+    activeRows() {
+      return this.rows.filter((row) => !row.removed);
     }
 
     paid() {
-      return this.rows.reduce((sum, row) => sum + row.amount, 0);
+      return this.activeRows().reduce((sum, row) => sum + row.amount, 0);
     }
 
     errorMessage() {
-      if (this.rows.some((row) => !row.amount)) {
+      if (this.activeRows().some((row) => row.editable && !row.amount)) {
         return "Ingresa el monto de cada anticipo.";
       }
       const paid = this.paid();
@@ -95,14 +109,38 @@
       return !this.errorMessage();
     }
 
+    removedElement(row) {
+      const wrapper = el("div", "calendar-advance__removed");
+      const method = this.methodLabels[row.method].toLowerCase();
+      const undo = el("button", "btn btn-link btn-sm p-0", "Deshacer");
+      undo.type = "button";
+      undo.addEventListener("click", () => {
+        row.removed = false;
+        this.render();
+      });
+      wrapper.append(el("span", "", `El anticipo de ${money(row.amount)} en ${method} del ${row.date} se quitará al guardar.`), undo);
+      return wrapper;
+    }
+
     rowElement(row, index) {
-      const wrapper = el("div", "calendar-advance__row");
+      if (row.removed) {
+        return this.removedElement(row);
+      }
+      const wrapper = el("div", row.id ? "calendar-advance__row is-saved" : "calendar-advance__row");
+      const title = row.id ? el("p", "calendar-advance__row-title") : null;
+      const syncTitle = () => {
+        if (title) {
+          title.textContent = `${this.methodLabels[row.method]} - ${row.date}`;
+        }
+      };
+      syncTitle();
 
       const amount = el("input", "form-control form-control--custom");
       amount.type = "text";
       amount.inputMode = "numeric";
       amount.placeholder = "0";
       amount.value = amountText(row.amount);
+      amount.disabled = !row.editable;
       amount.setAttribute("aria-label", `Monto del anticipo ${index + 1}`);
       amount.addEventListener("input", () => {
         row.amount = parseAmount(amount.value);
@@ -120,6 +158,7 @@
       row.input = amount;
 
       const method = el("select", "form-select form-select--custom");
+      method.disabled = !row.editable;
       this.config.methods.forEach(([value, label]) => {
         const option = el("option", "", label);
         option.value = value;
@@ -131,6 +170,7 @@
       reference.type = "text";
       reference.maxLength = this.config.referenceMaxLength;
       reference.value = row.reference;
+      reference.disabled = !row.editable;
       reference.addEventListener("input", () => {
         row.reference = reference.value;
       });
@@ -140,30 +180,47 @@
       method.addEventListener("change", () => {
         row.method = method.value;
         syncReference();
+        syncTitle();
       });
       syncReference();
 
-      const remove = el("button", "calendar-new__line-remove");
-      remove.type = "button";
-      remove.setAttribute("aria-label", `Quitar anticipo ${index + 1}`);
-      remove.append(icon("close"));
-      remove.addEventListener("click", () => {
-        this.rows.splice(index, 1);
-        if (!this.rows.length) {
-          this.ui.toggle.checked = false;
-          this.touched = false;
-        }
-        this.render();
-      });
-
       const fields = el("div", "calendar-advance__fields");
-      fields.append(field("Monto *", amountBox), field("Método de pago *", method), referenceField, remove);
+      const required = row.editable ? " *" : "";
+      fields.append(field(`Monto${required}`, amountBox), field(`Método de pago${required}`, method), referenceField);
+      if (row.editable) {
+        const remove = el("button", "calendar-new__line-remove");
+        remove.type = "button";
+        remove.setAttribute("aria-label", `Quitar anticipo ${index + 1}`);
+        remove.append(icon("close"));
+        remove.addEventListener("click", () => this.remove(row));
+        fields.append(remove);
+      } else {
+        fields.append(el("span"));
+      }
+      if (title) {
+        wrapper.append(title);
+      }
       wrapper.append(fields);
       return wrapper;
     }
 
+    remove(row) {
+      if (row.id) {
+        row.removed = true;
+      } else {
+        this.rows.splice(this.rows.indexOf(row), 1);
+      }
+      if (!this.rows.length) {
+        this.ui.toggle.checked = false;
+        this.touched = false;
+      }
+      this.render();
+    }
+
     render() {
-      this.ui.body.hidden = !this.ui.toggle.checked;
+      const hasSaved = this.hasSaved();
+      this.ui.switchLabel.hidden = hasSaved;
+      this.ui.body.hidden = !hasSaved && !this.ui.toggle.checked;
       this.ui.list.replaceChildren(...this.rows.map((row, index) => this.rowElement(row, index)));
       this.onChange();
     }
@@ -173,8 +230,8 @@
       const paid = this.paid();
       const message = this.errorMessage();
       this.showError(this.touched ? message : "");
-      this.rows.forEach((row) => {
-        const invalid = this.touched && (!row.amount || paid > total);
+      this.activeRows().forEach((row) => {
+        const invalid = this.touched && row.editable && (!row.amount || paid > total);
         row.input.classList.toggle("is-invalid", invalid);
         row.input.setAttribute("aria-invalid", String(invalid));
       });
@@ -191,7 +248,8 @@
     reveal() {
       this.touched = true;
       this.onChange();
-      const invalid = this.rows.find((row) => !row.amount) || (this.isValid() ? null : this.rows[0]);
+      const active = this.activeRows().filter((row) => row.editable);
+      const invalid = active.find((row) => !row.amount) || (this.isValid() ? null : active[0]);
       if (invalid) {
         invalid.input.focus();
       }
@@ -199,13 +257,20 @@
     }
 
     serialize() {
-      this.ui.field.value = JSON.stringify(
-        this.rows.map((row) => ({
-          monto: row.amount,
-          metodo: row.method,
-          referencia: row.method === this.config.cash ? "" : row.reference.trim(),
-        })),
-      );
+      const changes = this.rows
+        .filter((row) => row.editable)
+        .map((row) => {
+          if (row.removed) {
+            return { id: row.id, quitar: true };
+          }
+          const change = {
+            monto: row.amount,
+            metodo: row.method,
+            referencia: row.method === this.config.cash ? "" : row.reference.trim(),
+          };
+          return row.id ? { id: row.id, ...change } : change;
+        });
+      this.ui.field.value = JSON.stringify(changes);
     }
 
     bind() {

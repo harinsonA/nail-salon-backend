@@ -138,26 +138,6 @@ class CrearCitaConAnticiposTests(CitaBase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(DetallePago.objects.get().registrado_por, self.colaboradora)
 
-    def test_editar_no_muestra_ni_guarda_anticipos_todavia(self):
-        self.encender()
-        self.crear()
-        cita = Cita.objects.get()
-        url = reverse("agenda_update_modal", args=[cita.pk])
-        navegador = self.navegador(self.encargada)
-        respuesta = navegador.get(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
-        self.assertNotContains(respuesta, "Incluye anticipo")
-        datos = {
-            "client": self.cliente.pk,
-            "assigned_to": self.encargada.pk,
-            "date": "2026-11-02",
-            "time": "10:30",
-            "services": json.dumps([{"detalle": cita.detalles.get().pk, "cantidad": 1, "descuento": 0}]),
-            "advances": json.dumps([self.anticipo(1000)]),
-        }
-        respuesta = navegador.post(url, datos, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
-        self.assertEqual(respuesta.status_code, 200)
-        self.assertFalse(Pago.objects.exists())
-
     def test_el_detalle_de_la_cita_pendiente_muestra_el_anticipo(self):
         self.encender()
         self.con_anticipos([self.anticipo(4000)])

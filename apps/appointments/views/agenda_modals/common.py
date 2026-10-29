@@ -1,4 +1,5 @@
 import json
+from functools import cached_property
 
 from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
@@ -20,12 +21,19 @@ from apps.common.form_classes import (
 )
 from apps.common.form_fields import NoteField
 from apps.common.utils.currency import format_money
-from apps.common.utils.dates import format_long_date, format_plain_date
+from apps.common.utils.dates import (
+    format_date_time,
+    format_long_date,
+    format_plain_date,
+)
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.payments.choices import MetodoPago
+from apps.payments.services.account import PaymentAccount
+from apps.payments.services.advances import appointment_payment, saved_advances
 from apps.services.models import Categoria, Servicio
+from apps.settings.preferences import ADVANCE_MODULE
 
 User = get_user_model()
 
@@ -49,6 +57,10 @@ REFERENCE_MAX_LENGTH = 100
 PAYMENT_METHODS = {value for value, _ in MetodoPago.CHOICES}
 ADVANCES_INVALID = "Los anticipos enviados no son válidos."
 ADVANCE_AMOUNT_REQUIRED = "Ingresa el monto de cada anticipo."
+ADVANCE_LOCKED_ROLE = (
+    "Solo la propietaria o la encargada pueden cambiar anticipos ya registrados."
+)
+ADVANCE_LOCKED_REFUND = "Un anticipo con devolución no se puede cambiar ni quitar."
 ADVANCES_TOO_HIGH = (
     "Los anticipos suman {paid} y no pueden superar el total de los servicios "
     "({total})."
@@ -196,6 +208,9 @@ class AppointmentForm(BSModalForm):
         user = self.request.user
         self.instance = instance
         self.allow_advances = allow_advances
+        self.can_change_saved = not is_collaborator(user)
+        self.payment = appointment_payment(instance)
+        self.saved_advances = saved_advances(self.payment) if allow_advances else []
         self.details = {}
         if instance:
             self.details = {detail.pk: detail for detail in instance.detalles.all()}
@@ -297,12 +312,34 @@ class AppointmentForm(BSModalForm):
             raise forms.ValidationError(ADVANCES_INVALID) from error
         if not isinstance(advances, list):
             raise forms.ValidationError(ADVANCES_INVALID)
-        return [self.clean_advance(advance) for advance in advances]
+        saved = {row.pk: row for row in self.saved_advances}
+        changes = [self.clean_advance(advance, saved) for advance in advances]
+        touched = [change["row"].pk for change in changes if change["row"]]
+        if len(touched) != len(set(touched)):
+            raise forms.ValidationError(ADVANCES_INVALID)
+        return changes
 
-    @staticmethod
-    def clean_advance(advance):
+    def saved_row(self, advance, saved):
+        if advance.get("id") is None:
+            return None
+        try:
+            row = saved.get(int(advance["id"]))
+        except (TypeError, ValueError) as error:
+            raise forms.ValidationError(ADVANCES_INVALID) from error
+        if row is None:
+            raise forms.ValidationError(ADVANCES_INVALID)
+        if not self.can_change_saved:
+            raise forms.ValidationError(ADVANCE_LOCKED_ROLE)
+        if row.has_refunds:
+            raise forms.ValidationError(ADVANCE_LOCKED_REFUND)
+        return row
+
+    def clean_advance(self, advance, saved):
         if not isinstance(advance, dict):
             raise forms.ValidationError(ADVANCES_INVALID)
+        row = self.saved_row(advance, saved)
+        if row and advance.get("quitar") is True:
+            return {"row": row, "remove": True, "amount": 0, "method": row.metodo_pago, "reference": ""}
         amount = advance.get("monto")
         method = advance.get("metodo")
         reference = advance.get("referencia") or ""
@@ -315,19 +352,24 @@ class AppointmentForm(BSModalForm):
         reference = reference.strip()
         if len(reference) > REFERENCE_MAX_LENGTH:
             raise forms.ValidationError(ADVANCES_INVALID)
-        return {"amount": amount, "method": method, "reference": reference}
+        return {"row": row, "remove": False, "amount": amount, "method": method, "reference": reference}
+
+    def paid_after(self, changes):
+        touched = {change["row"].pk for change in changes if change["row"]}
+        paid = PaymentAccount(self.payment).paid() if self.payment else 0
+        paid -= sum(row.monto_pago for row in self.saved_advances if row.pk in touched)
+        return paid + sum(change["amount"] for change in changes if not change["remove"])
 
     def clean(self):
         cleaned_data = super().clean()
-        advances = cleaned_data.get("advances") or []
         lines = cleaned_data.get("services")
-        if not advances or not lines:
+        if not lines or "advances" not in cleaned_data:
             return cleaned_data
-        paid = sum(advance["amount"] for advance in advances)
+        paid = self.paid_after(cleaned_data["advances"])
         total = sum(line["total"] for line in lines)
         if paid > total:
             self.add_error(
-                "advances",
+                "advances" if self.allow_advances else "services",
                 ADVANCES_TOO_HIGH.format(paid=format_money(paid), total=format_money(total)),
             )
         return cleaned_data
@@ -357,22 +399,39 @@ class AppointmentFormMixin:
     def initial_lines(self):
         return []
 
+    @cached_property
     def advances_enabled(self):
-        return False
+        return ADVANCE_MODULE.is_enabled()
 
     def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), "allow_advances": self.advances_enabled()}
+        return {**super().get_form_kwargs(), "allow_advances": self.advances_enabled}
+
+    @staticmethod
+    def advance_rows(form):
+        return [
+            {
+                "id": row.pk,
+                "amount": int(row.monto_pago),
+                "method": row.metodo_pago,
+                "reference": row.referencia_pago or "",
+                "date": format_date_time(row.fecha_pago),
+                "locked": row.has_refunds,
+            }
+            for row in form.saved_advances
+        ]
 
     def get_context_data(self, **kwargs):
         appointment = getattr(self, "object", None)
+        context = super().get_context_data(**kwargs)
+        form = context["form"]
         services = Servicio.activos.select_related("categoria").order_by("nombre")
         categories = Categoria.activos.order_by("nombre").values("pk", "nombre")
         return {
-            **super().get_context_data(**kwargs),
+            **context,
             "modal_url": self.request.path,
             "form_title": self.form_title(),
             "save_label": self.save_label,
-            "advances_enabled": self.advances_enabled(),
+            "advances_enabled": self.advances_enabled,
             "appointment_form_config": {
                 "services": [service_data(service) for service in services],
                 "categories": [
@@ -385,7 +444,9 @@ class AppointmentFormMixin:
                 "currentUser": self.request.user.pk,
                 "maxQuantity": MAX_QUANTITY,
                 "advances": {
-                    "enabled": self.advances_enabled(),
+                    "enabled": self.advances_enabled,
+                    "rows": self.advance_rows(form),
+                    "canChangeSaved": form.can_change_saved,
                     "methods": MetodoPago.CHOICES,
                     "cash": MetodoPago.EFECTIVO,
                     "referenceMaxLength": REFERENCE_MAX_LENGTH,

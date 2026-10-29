@@ -10,6 +10,7 @@ from apps.appointments.views.agenda_modals.common import (
     detail_line,
 )
 from apps.common.views.base_views import ProtectedView
+from apps.payments.services.advances import sync_advances
 
 """========================================================================="""
 # region ........ Views
@@ -61,6 +62,7 @@ class AgendaUpdateModalView(
                     "modified",
                 ]
             )
+        sync_advances(appointment, data["advances"], self.request.user)
         return appointment
 
 

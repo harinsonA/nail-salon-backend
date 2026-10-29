@@ -658,7 +658,8 @@ form.calendar-detail-form {
 }
 
 .calendar-advance__body[hidden],
-.calendar-advance__totals[hidden] {
+.calendar-advance__totals[hidden],
+.calendar-advance__switch[hidden] {
   display: none;
 }
 
@@ -673,6 +674,38 @@ form.calendar-detail-form {
   border-radius: 10px;
   background: var(--cream-100);
   border: 1px dashed var(--border-medium);
+}
+
+.calendar-advance__row.is-saved {
+  background: var(--bg-surface);
+  border-style: solid;
+  border-color: var(--border-soft);
+}
+
+.calendar-advance__row-title {
+  margin: 0 0 6px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.calendar-advance__removed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--color-danger-border);
+  background: var(--color-danger-bg);
+  font-size: .76rem;
+  color: var(--color-danger-text);
+}
+
+.calendar-advance__removed .btn-link {
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--text-link);
 }
 
 .calendar-advance__fields {
