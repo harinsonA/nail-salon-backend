@@ -11,9 +11,11 @@ from apps.clients.models import Cliente
 from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
 from apps.payments.services.account import net_paid
-from apps.payments.services.advances import register_advances
+from apps.payments.services.advances import register_advances, sync_advances
 from apps.profiles.models import Perfil
 from apps.services.models import Categoria, Servicio
+from apps.settings.models import Preference
+from apps.settings.preferences import Scope
 from tests.base import NegocioTestCase
 
 User = get_user_model()
@@ -191,6 +193,101 @@ class CancelarCitaConAnticiposTests(NegocioTestCase):
         self.assertEqual(self.cancelar(usuario=self.colaboradora).status_code, 200)
         self.cita.refresh_from_db()
         self.assertEqual(self.cita.estado, Cita.EstadoChoices.CANCELADA)
+
+    def restaurar(self):
+        respuesta = self.navegador().post(
+            reverse("agenda_restore_modal", args=[self.cita.pk]), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        self.cita.refresh_from_db()
+        return Pago.objects.get(cita=self.cita)
+
+    def anticipos_en_editar(self):
+        respuesta = self.navegador().get(
+            reverse("agenda_update_modal", args=[self.cita.pk]), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        return [fila["id"] for fila in respuesta.context["appointment_form_config"]["advances"]["rows"]]
+
+    def abrir_completar(self):
+        return self.navegador().get(
+            reverse("agenda_confirmation_modal", args=[self.cita.pk]), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+
+    def completar(self):
+        return self.navegador().post(
+            reverse("agenda_confirmation_modal", args=[self.cita.pk]),
+            {"payment_method": MetodoPago.EFECTIVO, "remaining_payment": "0", "full_payment": "on"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+    def encender_anticipos(self):
+        Preference.objects.update_or_create(
+            scope=Scope.NEGOCIO, scope_id="", key="advance_module", defaults={"value": True}
+        )
+
+    def test_restaurar_reabre_el_pago_con_el_total_de_los_servicios(self):
+        primera, segunda = self.con_anticipos((6000, MetodoPago.TARJETA), (4000, MetodoPago.EFECTIVO))
+        self.cancelar([self.reembolso(segunda)])
+        pago = self.restaurar()
+        self.assertEqual(self.cita.estado, Cita.EstadoChoices.PENDIENTE)
+        self.assertEqual(
+            (pago.estado_pago, pago.fecha_pago_completado, pago.monto_total_cita),
+            (EstadoPago.PENDIENTE, None, Decimal("20000")),
+        )
+
+    def test_tras_restaurar_editar_muestra_lo_retenido_y_no_lo_reembolsado(self):
+        self.encender_anticipos()
+        primera, segunda = self.con_anticipos((6000, MetodoPago.TARJETA), (4000, MetodoPago.EFECTIVO))
+        self.cancelar([self.reembolso(segunda)])
+        self.restaurar()
+        self.assertEqual(self.estados(), [EstadoDetallePago.VIGENTE, EstadoDetallePago.DEVUELTO])
+        self.assertEqual(self.anticipos_en_editar(), [primera.pk])
+        respuesta = self.navegador().get(
+            reverse("agenda_see_modal", args=[self.cita.pk]), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        filas = {fila["label"]: fila["value"] for fila in respuesta.context["payment"]["rows"]}
+        self.assertEqual((filas["Anticipo"], filas["Restante por pagar"]), ("$6.000", "$14.000"))
+
+    def test_tras_restaurar_lo_reembolsado_no_descuenta_al_completar(self):
+        fila = self.con_anticipos((5000, MetodoPago.TRANSFERENCIA))[0]
+        self.cancelar([self.reembolso(fila, MetodoPago.TRANSFERENCIA)])
+        self.restaurar()
+        self.assertEqual(self.abrir_completar().context["complete_config"]["total"], 20000)
+        self.assertEqual(self.completar().status_code, 200)
+        pago = Pago.objects.get()
+        self.assertEqual((pago.estado_pago, pago.monto_total_cita), (EstadoPago.COMPLETADO, Decimal("20000")))
+        self.assertEqual(DetallePago.objects.aggregate(total=net_paid())["total"], Decimal("20000"))
+
+    def test_tras_restaurar_lo_retenido_vuelve_a_descontar_al_completar(self):
+        self.con_anticipos((7000, MetodoPago.EFECTIVO))
+        self.cancelar([])
+        self.restaurar()
+        configuracion = self.abrir_completar().context["complete_config"]
+        self.assertEqual((configuracion["total"], configuracion["prepaid"]), (13000, 7000))
+        self.assertEqual(self.completar().status_code, 200)
+        pago = Pago.objects.get()
+        self.assertEqual((pago.estado_pago, pago.monto_total_cita), (EstadoPago.COMPLETADO, Decimal("20000")))
+        self.assertEqual(DetallePago.objects.aggregate(total=net_paid())["total"], Decimal("20000"))
+
+    def test_restaurar_y_volver_a_cancelar_permite_decidir_de_nuevo(self):
+        fila = self.con_anticipos((7000, MetodoPago.EFECTIVO))[0]
+        self.cancelar([])
+        self.restaurar()
+        self.assertEqual(self.cancelar([self.reembolso(fila)]).status_code, 200)
+        self.assertEqual(self.estados(), [EstadoDetallePago.DEVUELTO])
+        pago = Pago.objects.get()
+        self.assertEqual((pago.estado_pago, pago.monto_total_cita), (EstadoPago.REEMBOLSADO, Decimal("0")))
+
+    def test_tras_restaurar_un_anticipo_nuevo_si_descuenta(self):
+        self.encender_anticipos()
+        fila = self.con_anticipos((5000, MetodoPago.EFECTIVO))[0]
+        self.cancelar([self.reembolso(fila)])
+        self.restaurar()
+        cambio = {"row": None, "remove": False, "amount": 3000, "method": MetodoPago.EFECTIVO, "reference": ""}
+        sync_advances(self.cita, [cambio], self.encargada)
+        nueva = DetallePago.objects.filter(pago__cita=self.cita).latest("pk")
+        self.assertEqual(self.anticipos_en_editar(), [nueva.pk])
+        self.assertEqual(self.abrir_completar().context["complete_config"]["total"], 17000)
 
     def test_los_cambios_de_estado_quedan_en_el_historial(self):
         fila = self.con_anticipos((6000, MetodoPago.EFECTIVO))[0]

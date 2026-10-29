@@ -57,7 +57,7 @@
       this.rows = (config.rows || []).map((row) => ({
         ...row,
         removed: false,
-        editable: config.canChangeSaved && !row.locked,
+        editable: config.canChangeSaved,
       }));
       this.touched = false;
       this.total = 0;

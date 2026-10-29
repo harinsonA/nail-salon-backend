@@ -140,7 +140,7 @@ class AppointmentPanel:
                 {"label": "Estado", "value": "Se registra al completar la cita"},
                 {"label": "Monto estimado", "value": format_money(total)},
             ]
-            advance = PaymentAccount(payment).paid() if payment else 0
+            advance = PaymentAccount(payment).credit() if payment else 0
             if advance:
                 rows += [
                     {"label": "Anticipo", "value": format_money(advance)},

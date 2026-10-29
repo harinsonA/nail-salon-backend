@@ -1,4 +1,5 @@
 from bootstrap_modal_forms.generic import BSModalReadView
+from django.db import transaction
 from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
@@ -8,6 +9,7 @@ from apps.appointments.views.agenda_modals.common import (
     AgendaBaseModalView,
     AppointmentPanelMixin,
 )
+from apps.payments.services.advances import reopen_payment
 
 """========================================================================="""
 # region ........ Views
@@ -27,8 +29,10 @@ class AgendaRestoreModalView(
                 {"message": message},
                 status=HTTP_400_BAD_REQUEST,
             )
-        self.object.estado = Cita.EstadoChoices.PENDIENTE
-        self.object.save()
+        with transaction.atomic():
+            self.object.estado = Cita.EstadoChoices.PENDIENTE
+            self.object.save()
+            reopen_payment(self.object)
         message = (
             "La agenda de %(client_name)s para el día %(date)s a las %(time)s fue restaurada a Pendiente."
         ) % {

@@ -193,6 +193,20 @@ def settle_cancellation(appointment, refunds, user):
     return payment
 
 
+def reopen_payment(appointment):
+    payment = appointment_payment(appointment)
+    if payment is None:
+        return None
+    for row in saved_advances(payment):
+        if row.estado_detalle == EstadoDetallePago.RETENIDO:
+            row.estado_detalle = EstadoDetallePago.VIGENTE
+            row.save()
+    fill_payment(payment, appointment)
+    payment.estado_pago = EstadoPago.PENDIENTE
+    payment.fecha_pago_completado = None
+    payment.save()
+    return payment
+
 
 # endregion
 """========================================================================="""
