@@ -3,7 +3,12 @@ from datetime import datetime
 from django.db.models import Exists, OuterRef, Sum
 from django.utils import timezone
 
-from apps.payments.choices import EstadoDetallePago, MetodoPago, TipoDetallePago
+from apps.payments.choices import (
+    EstadoDetallePago,
+    EstadoPago,
+    MetodoPago,
+    TipoDetallePago,
+)
 from apps.payments.models import DetallePago, Pago
 from apps.payments.services.account import ZERO, PaymentAccount
 
@@ -26,6 +31,15 @@ def saved_advances(payment):
         .annotate(has_refunds=Exists(refunds))
         .order_by("fecha_pago", "pk")
     )
+
+
+def open_advances(payment):
+    return [
+        row
+        for row in saved_advances(payment)
+        if not row.has_refunds
+        and (row.estado_detalle or EstadoDetallePago.VIGENTE) == EstadoDetallePago.VIGENTE
+    ]
 
 
 # endregion
@@ -79,6 +93,21 @@ def update_advance(row, change):
     row.save()
 
 
+def build_refund(row, refund, user, moment):
+    method = refund["method"]
+    return DetallePago(
+        pago=row.pago,
+        fecha_pago=moment,
+        monto_pago=row.monto_pago,
+        metodo_pago=method,
+        referencia_pago=advance_reference(method, refund["reference"]),
+        registrado_por=user,
+        tipo_detalle=TipoDetallePago.DEVOLUCION,
+        estado_detalle=EstadoDetallePago.VIGENTE,
+        detalle_devuelto=row,
+    )
+
+
 # endregion
 """========================================================================="""
 
@@ -105,13 +134,15 @@ def register_advances(appointment, advances, user):
     return payment
 
 
-def fill_payment(payment, appointment):
+def fill_payment(payment, appointment, cancelled=False):
     services_total, discounts = services_amounts(appointment)
     details = None if payment.pk else []
     payment.cliente_nombre = appointment.cliente.nombre_completo
     payment.fecha_cita = appointment_moment(appointment)
     payment.descuento_total = discounts
-    payment.monto_total_cita = PaymentAccount(payment, details).total(services_total)
+    payment.monto_total_cita = PaymentAccount(payment, details).total(
+        services_total, cancelled=cancelled
+    )
     return payment
 
 
@@ -136,6 +167,44 @@ def sync_advances(appointment, changes, user):
     for change in added:
         build_advance(payment, change, user, moment).save()
     refresh_payment(payment, appointment)
+    return payment
+
+
+def settle_cancellation(appointment, refunds, user):
+    payment = appointment_payment(appointment)
+    if payment is None:
+        return None
+    moment = timezone.now()
+    for row in open_advances(payment):
+        refund = refunds.get(row.pk)
+        if refund:
+            build_refund(row, refund, user, moment).save()
+            row.estado_detalle = EstadoDetallePago.DEVUELTO
+        else:
+            row.estado_detalle = EstadoDetallePago.RETENIDO
+        row.save()
+    fill_payment(payment, appointment, cancelled=True)
+    if PaymentAccount(payment).paid() > ZERO:
+        payment.estado_pago = EstadoPago.COMPLETADO
+        payment.fecha_pago_completado = moment
+    else:
+        payment.estado_pago = EstadoPago.REEMBOLSADO
+    payment.save()
+    return payment
+
+
+def reopen_payment(appointment):
+    payment = appointment_payment(appointment)
+    if payment is None:
+        return None
+    for row in saved_advances(payment):
+        if row.estado_detalle == EstadoDetallePago.RETENIDO:
+            row.estado_detalle = EstadoDetallePago.VIGENTE
+            row.save()
+    fill_payment(payment, appointment)
+    payment.estado_pago = EstadoPago.PENDIENTE
+    payment.fecha_pago_completado = None
+    payment.save()
     return payment
 
 

@@ -104,7 +104,7 @@ class AgendaConfirmationForm(BSModalModelForm):
         super().__init__(*args, **kwargs)
         self.payment = appointment_payment(self.instance)
         self.services_total = self.__get_services_total()
-        self.prepaid = PaymentAccount(self.payment).paid() if self.payment else ZERO
+        self.prepaid = PaymentAccount(self.payment).credit() if self.payment else ZERO
         self.remaining_payment_value = max(ZERO, self.services_total - self.prepaid)
         if self.prepaid:
             self.fields["full_payment"].label = BALANCE_PAYMENT_LABEL
@@ -214,7 +214,7 @@ class AgendaConfirmationModal(
         payment = fill_payment(form.payment or Pago(cita=self.object), self.object)
         payment.atendido_por = user
         payment.atendido_por_nombre = user_display_name(user)
-        if form.prepaid + form.amount_paid_now() >= payment.monto_total_cita:
+        if form.prepaid + form.amount_paid_now() >= form.services_total:
             payment.estado_pago = EstadoPago.COMPLETADO
             payment.fecha_pago_completado = timezone.now()
         payment.save()

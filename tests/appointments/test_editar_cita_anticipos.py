@@ -78,7 +78,6 @@ class EditarCitaConAnticiposTests(CitaBase):
                     "method": MetodoPago.EFECTIVO,
                     "reference": "",
                     "date": configuracion["rows"][0]["date"],
-                    "locked": False,
                 },
                 {
                     "id": segunda.pk,
@@ -86,7 +85,6 @@ class EditarCitaConAnticiposTests(CitaBase):
                     "method": MetodoPago.TRANSFERENCIA,
                     "reference": "TRX-1",
                     "date": configuracion["rows"][1]["date"],
-                    "locked": False,
                 },
             ],
         )
@@ -170,9 +168,9 @@ class EditarCitaConAnticiposTests(CitaBase):
                 fila.refresh_from_db()
                 self.assertEqual(fila.monto_pago, Decimal("4000"))
 
-    def test_un_anticipo_con_devolucion_queda_bloqueado(self):
-        cita = self.cita_con([self.anticipo(4000)])
-        fila = self.filas(cita)[0]
+    def test_un_anticipo_con_devolucion_no_aparece_ni_se_puede_tocar(self):
+        cita = self.cita_con([self.anticipo(4000), self.anticipo(3000)])
+        fila, vigente = self.filas(cita)
         DetallePago.objects.create(
             pago=fila.pago,
             fecha_pago=timezone.now(),
@@ -182,14 +180,11 @@ class EditarCitaConAnticiposTests(CitaBase):
             detalle_devuelto=fila,
         )
         configuracion = self.abrir(cita).context["appointment_form_config"]["advances"]
-        self.assertTrue(configuracion["rows"][0]["locked"])
+        self.assertEqual([fila["id"] for fila in configuracion["rows"]], [vigente.pk])
         for cambio in ({"id": fila.pk, **self.anticipo(100)}, {"id": fila.pk, "quitar": True}):
             with self.subTest(cambio=cambio):
                 respuesta = self.editar(cita, [cambio])
-                self.assertIn(
-                    "Un anticipo con devolución no se puede cambiar ni quitar.",
-                    self.errores(respuesta)["id_advances"],
-                )
+                self.assertIn("Los anticipos enviados no son válidos.", self.errores(respuesta)["id_advances"])
         self.assertTrue(DetallePago.objects.filter(pk=fila.pk).exists())
 
     def test_rechaza_ids_ajenos_o_repetidos(self):

@@ -71,6 +71,29 @@
       </dl>
     </section>
 
+    {% if cancel_advances %}
+    <section class="calendar-new__card calendar-cancel__card" aria-labelledby="cancel-advances" data-cancel-advances>
+      <h6 class="calendar-new__card-title" id="cancel-advances">
+        <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">payments</span>
+        <span>¿Qué hacemos con los anticipos?</span>
+      </h6>
+      {% if cancel_advances.locked %}
+      <div class="calendar-cancel__locked">
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">lock</span>
+        <span>Esta cita tiene anticipos. Solo la propietaria o la encargada pueden cancelarla.</span>
+      </div>
+      {% else %}
+      <p class="calendar-cancel__hint">Elige qué pasa con cada anticipo. Lo que retengas queda para el negocio y vuelve a contar como anticipo si después restauras la cita.</p>
+      <div class="calendar-cancel__list" data-cancel-list></div>
+      <dl class="calendar-new__totals calendar-cancel__totals">
+        <div class="is-retained"><dt>Se retiene</dt><dd data-cancel-retained></dd></div>
+        <div class="is-refund"><dt>Se reembolsa</dt><dd data-cancel-refunded></dd></div>
+      </dl>
+      <input type="hidden" name="refunds" value="[]" data-cancel-refunds>
+      {{ cancel_advances.config|json_script:"cancel-advances-config" }}
+      {% endif %}
+    </section>
+    {% else %}
     <section class="calendar-new__card">
       <h6 class="calendar-new__card-title">
         <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">payments</span>
@@ -115,6 +138,8 @@
       {% endif %}
     </section>
 
+    {% endif %}
+
     <section class="calendar-new__card">
       <h6 class="calendar-new__card-title">
         <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">sticky_note_2</span>
@@ -127,7 +152,7 @@
   {% if mode.confirm_label %}
   <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">Volver</button>
-    <button type="button" class="btn btn-sm btn-{{ mode.button|default:mode.variant }} bg-gradient" data-panel-confirm>{{ mode.confirm_label }}</button>
+    <button type="button" class="btn btn-sm btn-{{ mode.button|default:mode.variant }} bg-gradient" data-panel-confirm{% if cancel_advances.locked %} disabled{% endif %}>{{ mode.confirm_label }}</button>
   </div>
   {% else %}
   <div class="modal-footer modal-footer-soft calendar-detail__footer">

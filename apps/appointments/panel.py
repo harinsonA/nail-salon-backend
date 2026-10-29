@@ -1,13 +1,15 @@
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.appointments.access import is_collaborator
 from apps.appointments.models import Cita
 from apps.common.utils.currency import format_money
 from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name
-from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.choices import EstadoPago, MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
 from apps.payments.services.account import PaymentAccount
+from apps.payments.services.advances import open_advances
 
 """========================================================================="""
 # region ........ Constants
@@ -49,6 +51,10 @@ PANEL_MODES = {
 }
 
 METHOD_LABELS = dict(MetodoPago.CHOICES)
+REFUND_METHODS = [
+    (MetodoPago.EFECTIVO, METHOD_LABELS[MetodoPago.EFECTIVO]),
+    (MetodoPago.TRANSFERENCIA, METHOD_LABELS[MetodoPago.TRANSFERENCIA]),
+]
 
 
 # endregion
@@ -128,13 +134,13 @@ class AppointmentPanel:
     def payment(self, payment, total):
         status = self.appointment.estado
         if status == Cita.EstadoChoices.CANCELADA:
-            return {"rows": [{"label": "Estado", "value": "Sin pago: la cita fue cancelada"}]}
+            return self.cancelled_payment(payment)
         if status == Cita.EstadoChoices.PENDIENTE or not payment:
             rows = [
                 {"label": "Estado", "value": "Se registra al completar la cita"},
                 {"label": "Monto estimado", "value": format_money(total)},
             ]
-            advance = PaymentAccount(payment).paid() if payment else 0
+            advance = PaymentAccount(payment).credit() if payment else 0
             if advance:
                 rows += [
                     {"label": "Anticipo", "value": format_money(advance)},
@@ -176,6 +182,49 @@ class AppointmentPanel:
             ],
         }
 
+    @staticmethod
+    def cancelled_payment(payment):
+        account = PaymentAccount(payment) if payment else None
+        if not account or not account.details:
+            return {"rows": [{"label": "Estado", "value": "Sin pago: la cita fue cancelada"}]}
+        refunded = sum(
+            (item.monto_pago for item in account.details if item.tipo_detalle == TipoDetallePago.DEVOLUCION),
+            0,
+        )
+        return {
+            "rows": [
+                {"label": "Estado", "value": "Cita cancelada"},
+                {"label": "Retenido", "value": format_money(account.retained())},
+                {"label": "Reembolsado", "value": format_money(refunded)},
+            ]
+        }
+
+    def cancel_advances(self, payment):
+        if self.mode["key"] != "cancel" or not payment:
+            return None
+        rows = open_advances(payment)
+        if not rows:
+            return None
+        return {
+            "locked": is_collaborator(self.viewer),
+            "config": {
+                "rows": [
+                    {
+                        "id": row.pk,
+                        "amount": int(row.monto_pago),
+                        "method": row.metodo_pago,
+                        "methodLabel": METHOD_LABELS.get(row.metodo_pago, row.metodo_pago),
+                        "date": format_date_time(row.fecha_pago),
+                    }
+                    for row in rows
+                ],
+                "refundMethods": REFUND_METHODS,
+                "cash": MetodoPago.EFECTIVO,
+                "transfer": MetodoPago.TRANSFERENCIA,
+                "referenceMaxLength": 100,
+            },
+        }
+
     def context(self):
         appointment = self.appointment
         payment = self.payment_record()
@@ -194,6 +243,7 @@ class AppointmentPanel:
             "discounts": format_money(-discounts) if discounts else format_money(0),
             "total": format_money(total),
             "payment": self.payment(payment, total),
+            "cancel_advances": self.cancel_advances(payment),
             "notes": appointment.observaciones,
             "created_by": person_name(appointment.creado_por, self.viewer),
             "created_at": format_date_time(appointment.created),

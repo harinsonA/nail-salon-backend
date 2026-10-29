@@ -115,6 +115,9 @@ class PaymentAccount:
                 total += self.refundable(detail)
         return total
 
+    def credit(self):
+        return self.paid() - self.charges()
+
     def total(self, services_amount, cancelled=False):
         return (ZERO if cancelled else Decimal(services_amount)) + self.charges()
 

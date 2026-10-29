@@ -31,7 +31,7 @@ from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.payments.choices import MetodoPago
 from apps.payments.services.account import PaymentAccount
-from apps.payments.services.advances import appointment_payment, saved_advances
+from apps.payments.services.advances import appointment_payment, open_advances
 from apps.services.models import Categoria, Servicio
 from apps.settings.preferences import ADVANCE_MODULE
 
@@ -60,7 +60,6 @@ ADVANCE_AMOUNT_REQUIRED = "Ingresa el monto de cada anticipo."
 ADVANCE_LOCKED_ROLE = (
     "Solo la propietaria o la encargada pueden cambiar anticipos ya registrados."
 )
-ADVANCE_LOCKED_REFUND = "Un anticipo con devolución no se puede cambiar ni quitar."
 ADVANCES_TOO_HIGH = (
     "Los anticipos suman {paid} y no pueden superar el total de los servicios "
     "({total})."
@@ -210,7 +209,7 @@ class AppointmentForm(BSModalForm):
         self.allow_advances = allow_advances
         self.can_change_saved = not is_collaborator(user)
         self.payment = appointment_payment(instance)
-        self.saved_advances = saved_advances(self.payment) if allow_advances else []
+        self.saved_advances = open_advances(self.payment) if allow_advances else []
         self.details = {}
         if instance:
             self.details = {detail.pk: detail for detail in instance.detalles.all()}
@@ -330,8 +329,6 @@ class AppointmentForm(BSModalForm):
             raise forms.ValidationError(ADVANCES_INVALID)
         if not self.can_change_saved:
             raise forms.ValidationError(ADVANCE_LOCKED_ROLE)
-        if row.has_refunds:
-            raise forms.ValidationError(ADVANCE_LOCKED_REFUND)
         return row
 
     def clean_advance(self, advance, saved):
@@ -356,7 +353,7 @@ class AppointmentForm(BSModalForm):
 
     def paid_after(self, changes):
         touched = {change["row"].pk for change in changes if change["row"]}
-        paid = PaymentAccount(self.payment).paid() if self.payment else 0
+        paid = PaymentAccount(self.payment).credit() if self.payment else 0
         paid -= sum(row.monto_pago for row in self.saved_advances if row.pk in touched)
         return paid + sum(change["amount"] for change in changes if not change["remove"])
 
@@ -415,7 +412,6 @@ class AppointmentFormMixin:
                 "method": row.metodo_pago,
                 "reference": row.referencia_pago or "",
                 "date": format_date_time(row.fecha_pago),
-                "locked": row.has_refunds,
             }
             for row in form.saved_advances
         ]
