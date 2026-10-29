@@ -105,13 +105,18 @@ def register_advances(appointment, advances, user):
     return payment
 
 
-def refresh_payment(payment, appointment):
+def fill_payment(payment, appointment):
     services_total, discounts = services_amounts(appointment)
+    details = None if payment.pk else []
     payment.cliente_nombre = appointment.cliente.nombre_completo
     payment.fecha_cita = appointment_moment(appointment)
     payment.descuento_total = discounts
-    payment.monto_total_cita = PaymentAccount(payment).total(services_total)
-    payment.save()
+    payment.monto_total_cita = PaymentAccount(payment, details).total(services_total)
+    return payment
+
+
+def refresh_payment(payment, appointment):
+    fill_payment(payment, appointment).save()
 
 
 def sync_advances(appointment, changes, user):

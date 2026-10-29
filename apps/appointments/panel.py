@@ -138,7 +138,7 @@ class AppointmentPanel:
             if advance:
                 rows += [
                     {"label": "Anticipo", "value": format_money(advance)},
-                    {"label": "Queda por pagar", "value": format_money(max(0, total - advance))},
+                    {"label": "Restante por pagar", "value": format_money(max(0, total - advance))},
                 ]
             return {"rows": rows}
         installments = list(

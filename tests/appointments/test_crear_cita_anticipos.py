@@ -148,4 +148,4 @@ class CrearCitaConAnticiposTests(CitaBase):
         filas = {fila["label"]: fila["value"] for fila in respuesta.context["payment"]["rows"]}
         self.assertEqual(filas["Monto estimado"], "$10.000")
         self.assertEqual(filas["Anticipo"], "$4.000")
-        self.assertEqual(filas["Queda por pagar"], "$6.000")
+        self.assertEqual(filas["Restante por pagar"], "$6.000")
