@@ -11,7 +11,15 @@
   <div class="modal-body">
     <div class="calendar-new__layout">
       <div class="calendar-new__main">
-        <section class="calendar-new__card" aria-labelledby="appointment-complete-amount">
+        {% if not total_value %}
+        <section class="calendar-new__card" aria-labelledby="appointment-complete-settled">
+          <h6 class="calendar-new__card-title" id="appointment-complete-settled">
+            <span class="calendar-new__step">1</span> Pago de hoy
+          </h6>
+          <p class="calendar-config__hint mb-0">El anticipo ya cubre el total de la cita. Al completarla queda pagada y hoy no hay nada que cobrar.</p>
+        </section>
+        {% endif %}
+        <section class="calendar-new__card" aria-labelledby="appointment-complete-amount"{% if not total_value %} hidden{% endif %}>
           <h6 class="calendar-new__card-title" id="appointment-complete-amount">
             <span class="calendar-new__step">1</span> Pago de hoy
           </h6>
@@ -48,7 +56,7 @@
           </div>
         </section>
 
-        <section class="calendar-new__card" aria-labelledby="appointment-complete-notes">
+        <section class="calendar-new__card" aria-labelledby="appointment-complete-notes"{% if not total_value %} hidden{% endif %}>
           <h6 class="calendar-new__card-title" id="appointment-complete-notes">
             <span class="calendar-new__step" data-notes-step>3</span> Observaciones
             <span class="calendar-new__optional">(opcional)</span>
@@ -62,7 +70,7 @@
 
       <aside class="calendar-new__summary" aria-labelledby="appointment-complete-summary">
         <div class="calendar-pay__balance calendar-done__total">
-          <span>Total a pagar</span>
+          <span>{% if prepaid %}Saldo a pagar{% else %}Total a pagar{% endif %}</span>
           <strong>{{ total }}</strong>
         </div>
         <h6 class="calendar-new__summary-title" id="appointment-complete-summary">Resumen</h6>
@@ -84,14 +92,17 @@
         <dl class="calendar-new__totals">
           <div><dt>Subtotal</dt><dd>{{ subtotal }}</dd></div>
           <div><dt>Descuentos</dt><dd>{{ discounts }}</dd></div>
-          <div><dt>Total</dt><dd>{{ total }}</dd></div>
+          <div><dt>Total</dt><dd>{{ services_total }}</dd></div>
+          {% if prepaid %}
+          <div class="calendar-advance__paid"><dt>Anticipo</dt><dd>{{ prepaid }}</dd></div>
+          {% endif %}
         </dl>
         <div class="calendar-pay__progress" aria-hidden="true">
           <span class="calendar-pay__progress-paid" data-bar></span>
         </div>
         <dl class="calendar-new__totals">
-          <div class="calendar-pay__this"><dt>Paga ahora</dt><dd data-now></dd></div>
-          <div class="is-total"><dt>Queda debiendo</dt><dd data-after></dd></div>
+          <div class="calendar-pay__this"><dt>Total a pagar</dt><dd data-now></dd></div>
+          <div class="is-total" data-after-row hidden><dt>Restante por pagar</dt><dd data-after></dd></div>
         </dl>
       </aside>
     </div>
@@ -101,6 +112,10 @@
     <button type="button" class="btn btn-sm btn-success bg-gradient" data-save>Completar cita</button>
   </div>
 </form>
+{{ complete_config|json_script:"appointment-complete-config" }}
 <script>
-  initAppointmentComplete(document.getElementById("appointment-complete"), { total: {{ total_value }} });
+  initAppointmentComplete(
+    document.getElementById("appointment-complete"),
+    JSON.parse(document.getElementById("appointment-complete-config").textContent),
+  );
 </script>
