@@ -9,7 +9,7 @@ from apps.common.utils.text import user_display_name
 from apps.payments.choices import EstadoPago, MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
 from apps.payments.services.account import PaymentAccount
-from apps.payments.services.advances import open_advances
+from apps.payments.services.advances import open_advances, retained_advances
 
 """========================================================================="""
 # region ........ Constants
@@ -208,20 +208,39 @@ class AppointmentPanel:
         return {
             "locked": is_collaborator(self.viewer),
             "config": {
-                "rows": [
-                    {
-                        "id": row.pk,
-                        "amount": int(row.monto_pago),
-                        "method": row.metodo_pago,
-                        "methodLabel": METHOD_LABELS.get(row.metodo_pago, row.metodo_pago),
-                        "date": format_date_time(row.fecha_pago),
-                    }
-                    for row in rows
-                ],
+                "rows": self.advance_rows(rows),
                 "refundMethods": REFUND_METHODS,
                 "cash": MetodoPago.EFECTIVO,
                 "transfer": MetodoPago.TRANSFERENCIA,
                 "referenceMaxLength": 100,
+            },
+        }
+
+    @staticmethod
+    def advance_rows(rows):
+        return [
+            {
+                "id": row.pk,
+                "amount": int(row.monto_pago),
+                "method": row.metodo_pago,
+                "methodLabel": METHOD_LABELS.get(row.metodo_pago, row.metodo_pago),
+                "date": format_date_time(row.fecha_pago),
+            }
+            for row in rows
+        ]
+
+    def restore_advances(self, payment, total):
+        if self.mode["key"] != "restore" or not payment:
+            return None
+        rows = retained_advances(payment)
+        if not rows:
+            return None
+        return {
+            "locked": is_collaborator(self.viewer),
+            "config": {
+                "rows": self.advance_rows(rows),
+                "servicesTotal": int(total),
+                "prepaid": int(PaymentAccount(payment).credit()),
             },
         }
 
@@ -244,6 +263,7 @@ class AppointmentPanel:
             "total": format_money(total),
             "payment": self.payment(payment, total),
             "cancel_advances": self.cancel_advances(payment),
+            "restore_advances": self.restore_advances(payment, total),
             "notes": appointment.observaciones,
             "created_by": person_name(appointment.creado_por, self.viewer),
             "created_at": format_date_time(appointment.created),

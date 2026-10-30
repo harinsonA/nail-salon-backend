@@ -42,6 +42,14 @@ def open_advances(payment):
     ]
 
 
+def retained_advances(payment):
+    return [
+        row
+        for row in saved_advances(payment)
+        if row.estado_detalle == EstadoDetallePago.RETENIDO
+    ]
+
+
 # endregion
 """========================================================================="""
 
@@ -193,14 +201,16 @@ def settle_cancellation(appointment, refunds, user):
     return payment
 
 
-def reopen_payment(appointment):
+def reopen_payment(appointment, restored):
     payment = appointment_payment(appointment)
     if payment is None:
         return None
-    for row in saved_advances(payment):
-        if row.estado_detalle == EstadoDetallePago.RETENIDO:
+    for row in retained_advances(payment):
+        if row.pk in restored:
             row.estado_detalle = EstadoDetallePago.VIGENTE
-            row.save()
+        else:
+            row.estado_detalle = EstadoDetallePago.RETENIDO_DEFINITIVO
+        row.save()
     fill_payment(payment, appointment)
     payment.estado_pago = EstadoPago.PENDIENTE
     payment.fecha_pago_completado = None

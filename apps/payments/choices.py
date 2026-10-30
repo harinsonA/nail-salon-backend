@@ -60,10 +60,12 @@ class TipoDetallePago:
 class EstadoDetallePago:
     VIGENTE = "VIGENTE"
     RETENIDO = "RETENIDO"
+    RETENIDO_DEFINITIVO = "RETENIDO_DEFINITIVO"
     DEVUELTO = "DEVUELTO"
 
     CHOICES = [
         (VIGENTE, "Vigente"),
         (RETENIDO, "Retenido"),
+        (RETENIDO_DEFINITIVO, "Retenido definitivo"),
         (DEVUELTO, "Devuelto"),
     ]
