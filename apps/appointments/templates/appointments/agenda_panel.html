@@ -93,6 +93,30 @@
       {{ cancel_advances.config|json_script:"cancel-advances-config" }}
       {% endif %}
     </section>
+    {% elif restore_advances %}
+    <section class="calendar-new__card calendar-cancel__card" aria-labelledby="restore-advances" data-restore-advances>
+      <h6 class="calendar-new__card-title" id="restore-advances">
+        <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">payments</span>
+        <span>¿Restauramos también los anticipos retenidos?</span>
+      </h6>
+      {% if restore_advances.locked %}
+      <div class="calendar-cancel__locked">
+        <span class="material-symbols-outlined icon--inline" aria-hidden="true">lock</span>
+        <span>Esta cita tiene anticipos retenidos. Solo la propietaria o la encargada pueden restaurarla.</span>
+      </div>
+      {% else %}
+      <p class="calendar-cancel__hint">Al cancelar, el negocio se quedó con este dinero. Elige cuáles se restauran junto con la cita; los que no, quedan para el negocio de forma definitiva.</p>
+      <div class="calendar-cancel__list" data-restore-list></div>
+      <dl class="calendar-new__totals calendar-cancel__totals calendar-restore__totals">
+        <div><dt>Total de los servicios</dt><dd data-restore-services></dd></div>
+        <div class="is-back" data-restore-back-row><dt>Anticipo restaurado</dt><dd data-restore-back></dd></div>
+        <div data-restore-kept-row><dt>Queda para el negocio</dt><dd data-restore-kept></dd></div>
+        <div class="is-total"><dt>Restante por pagar</dt><dd data-restore-remaining></dd></div>
+      </dl>
+      <input type="hidden" name="restored" value="[]" data-restore-restored>
+      {{ restore_advances.config|json_script:"restore-advances-config" }}
+      {% endif %}
+    </section>
     {% else %}
     <section class="calendar-new__card">
       <h6 class="calendar-new__card-title">
@@ -152,7 +176,7 @@
   {% if mode.confirm_label %}
   <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-outline-secondary me-2" data-bs-dismiss="modal">Volver</button>
-    <button type="button" class="btn btn-sm btn-{{ mode.button|default:mode.variant }} bg-gradient" data-panel-confirm{% if cancel_advances.locked %} disabled{% endif %}>{{ mode.confirm_label }}</button>
+    <button type="button" class="btn btn-sm btn-{{ mode.button|default:mode.variant }} bg-gradient" data-panel-confirm{% if cancel_advances.locked or restore_advances.locked %} disabled{% endif %}>{{ mode.confirm_label }}</button>
   </div>
   {% else %}
   <div class="modal-footer modal-footer-soft calendar-detail__footer">

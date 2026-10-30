@@ -115,6 +115,71 @@
     render();
   };
 
+  const initRestoreAdvances = (form) => {
+    const configNode = form.querySelector("#restore-advances-config");
+    if (!configNode) {
+      return;
+    }
+    const config = JSON.parse(configNode.textContent);
+    const find = (name) => form.querySelector(`[data-restore-${name}]`);
+    const ui = {
+      list: find("list"),
+      services: find("services"),
+      backRow: find("back-row"),
+      back: find("back"),
+      keptRow: find("kept-row"),
+      kept: find("kept"),
+      remaining: find("remaining"),
+      field: find("restored"),
+    };
+    const rows = config.rows.map((row) => ({ ...row, restore: false }));
+
+    const serialize = () => {
+      ui.field.value = JSON.stringify(rows.filter((row) => row.restore).map((row) => row.id));
+      const back = rows.filter((row) => row.restore).reduce((sum, row) => sum + row.amount, 0);
+      const kept = rows.reduce((sum, row) => sum + row.amount, 0) - back;
+      ui.services.textContent = money(config.servicesTotal);
+      ui.backRow.hidden = !back;
+      ui.back.textContent = `-${money(back)}`;
+      ui.keptRow.hidden = !kept;
+      ui.kept.textContent = money(kept);
+      ui.remaining.textContent = money(Math.max(0, config.servicesTotal - config.prepaid - back));
+    };
+
+    const rowElement = (row) => {
+      const wrapper = el("div", `calendar-cancel__row calendar-restore__row${row.restore ? "" : " is-kept"}`);
+      const head = el("div", "calendar-cancel__head");
+      head.append(el("span", "", `${row.methodLabel} - ${row.date}`), el("strong", "", money(row.amount)));
+
+      const note = el(
+        "p",
+        `calendar-restore__note${row.restore ? "" : " is-kept"}`,
+        row.restore ? "Se descuenta al completar la cita." : "El negocio se queda con este dinero.",
+      );
+
+      const toggle = el("label", "form-check form-switch calendar-pay__full calendar-cancel__toggle");
+      const input = el("input", "form-check-input");
+      input.type = "checkbox";
+      input.setAttribute("role", "switch");
+      input.checked = row.restore;
+      input.addEventListener("change", () => {
+        row.restore = input.checked;
+        render();
+      });
+      toggle.append(input, el("span", "", "Restaurar anticipo"));
+
+      wrapper.append(head, note, toggle);
+      return wrapper;
+    };
+
+    const render = () => {
+      ui.list.replaceChildren(...rows.map(rowElement));
+      serialize();
+    };
+
+    render();
+  };
+
   const initAppointmentPanel = (form) => {
     const modal = $(form).closest(".modal");
     modal.addClass(PANEL_CLASS);
@@ -124,6 +189,7 @@
     });
 
     initCancelAdvances(form);
+    initRestoreAdvances(form);
 
     const payButton = form.querySelector("[data-panel-payment]");
     if (payButton) {

@@ -884,3 +884,30 @@ form.calendar-detail-form {
   color: var(--color-warning-text);
   font-size: .8rem;
 }
+
+.calendar-restore__row.is-kept {
+  background: var(--bg-muted);
+}
+
+.calendar-restore__row.is-kept .calendar-cancel__head strong {
+  color: var(--text-muted);
+}
+
+.calendar-restore__note {
+  margin: 0;
+  font-size: .76rem;
+  color: var(--calendar-completada-text);
+}
+
+.calendar-restore__note.is-kept {
+  color: var(--text-muted);
+}
+
+.calendar-restore__totals [hidden] {
+  display: none;
+}
+
+.calendar-restore__totals .is-back dd {
+  color: var(--calendar-completada-text);
+  font-weight: 600;
+}
