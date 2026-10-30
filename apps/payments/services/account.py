@@ -12,6 +12,7 @@ from apps.payments.choices import EstadoDetallePago, TipoDetallePago
 ZERO = Decimal("0")
 MONEY_FIELD = DecimalField(max_digits=12, decimal_places=2)
 PREPAID_TYPES = (TipoDetallePago.RESERVA, TipoDetallePago.ANTICIPO)
+RETAINED_STATES = (EstadoDetallePago.RETENIDO, EstadoDetallePago.RETENIDO_DEFINITIVO)
 
 
 # endregion
@@ -99,7 +100,7 @@ class PaymentAccount:
             (
                 self.refundable(detail)
                 for detail in self.details
-                if detail_status(detail) == EstadoDetallePago.RETENIDO
+                if detail_status(detail) in RETAINED_STATES
             ),
             ZERO,
         )
@@ -110,7 +111,7 @@ class PaymentAccount:
             kind = detail_type(detail)
             if kind == TipoDetallePago.RESERVA or (
                 kind == TipoDetallePago.ANTICIPO
-                and detail_status(detail) == EstadoDetallePago.RETENIDO
+                and detail_status(detail) in RETAINED_STATES
             ):
                 total += self.refundable(detail)
         return total
