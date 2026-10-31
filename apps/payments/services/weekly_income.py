@@ -1,9 +1,10 @@
 from calendar import monthrange
 from decimal import Decimal
 
-from django.db.models import Sum, DateField
+from django.db.models import DateField, Sum
 from django.db.models.functions import TruncDay
 
+from apps.appointments.models import Cita
 from apps.payments.choices import EstadoPago
 from apps.payments.models import Pago
 
@@ -26,7 +27,7 @@ def weekly_income(first_day, last_day):
 
     Recibe el rango [first_day, last_day] (datetimes) que resuelve
     PaymentsFilterForm a partir del filtro `months`, y usa exactamente los
-    mismos filtros que la tabla de pagos (estado COMPLETADO; el manager de
+    mismos filtros que la tabla de pagos (estado COMPLETADO y cita completada; el manager de
     Pago ya excluye los eliminados) para que la suma de las barras cuadre con
     la card "Total de pagos".
 
@@ -41,6 +42,7 @@ def weekly_income(first_day, last_day):
     rows = (
         Pago.objects.filter(
             estado_pago=EstadoPago.COMPLETADO,
+            cita__estado=Cita.EstadoChoices.COMPLETADA,
             fecha_cita__gte=first_day,
             fecha_cita__lte=last_day,
         )
