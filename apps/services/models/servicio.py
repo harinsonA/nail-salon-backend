@@ -1,7 +1,11 @@
 import datetime
+
 from django.db import models
-from model_utils.models import TimeStampedModel, SoftDeletableModel
+from model_utils.models import SoftDeletableModel, TimeStampedModel
 from simple_history.models import HistoricalRecords
+
+from apps.common.utils.currency import Money
+
 from .categoria import Categoria
 
 
@@ -92,4 +96,4 @@ class Servicio(TimeStampedModel, SoftDeletableModel):
 
     def get_precio_formateado(self):
         """Retorna el precio formateado como string"""
-        return f"${self.precio:,.0f}"
+        return Money.format(self.precio)

@@ -1,11 +1,9 @@
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 
-def format_currency(value) -> str:
-    value = value or Decimal("0")
-    return f"$ {value:,.0f}"
-
-
-def format_money(value) -> str:
-    amount = f"{abs(value or 0):,.0f}".replace(",", ".")
-    return f"-${amount}" if (value or 0) < 0 else f"${amount}"
+class Money:
+    @staticmethod
+    def format(value) -> str:
+        amount = Decimal(value or 0).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+        digits = f"{abs(amount):,.0f}".replace(",", ".")
+        return f"-${digits}" if amount < 0 else f"${digits}"

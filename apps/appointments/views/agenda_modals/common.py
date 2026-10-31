@@ -20,7 +20,7 @@ from apps.common.form_classes import (
     FORM_SELECT2_CLASS,
 )
 from apps.common.form_fields import NoteField
-from apps.common.utils.currency import format_money
+from apps.common.utils.currency import Money
 from apps.common.utils.dates import (
     format_date_time,
     format_long_date,
@@ -367,7 +367,7 @@ class AppointmentForm(BSModalForm):
         if paid > total:
             self.add_error(
                 "advances" if self.allow_advances else "services",
-                ADVANCES_TOO_HIGH.format(paid=format_money(paid), total=format_money(total)),
+                ADVANCES_TOO_HIGH.format(paid=Money.format(paid), total=Money.format(total)),
             )
         return cleaned_data
 

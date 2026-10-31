@@ -18,7 +18,7 @@ from apps.common.form_classes import (
     FORM_SELECT_CLASS,
 )
 from apps.common.form_fields import AlphabeticField, NoteField
-from apps.common.utils.currency import format_currency
+from apps.common.utils.currency import Money
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 
@@ -281,7 +281,7 @@ class ServiceListView(BaseListViewAjax):
                         estimated_duration=item.get("duracion_estimada")
                     ),
                     "category_name": item.get("categoria__nombre") or "Sin definir",
-                    "price_formatted": format_currency(item.get("precio", 0)),
+                    "price_formatted": Money.format(item.get("precio", 0)),
                     "status": item.get("estado") == Servicio.EstadoChoices.ACTIVO,
                 }
             )
@@ -488,7 +488,7 @@ class ServiceDeleteModalView(ProtectedView, BSModalDeleteView):
             if not value:
                 continue
             if field == "precio":
-                text = f"Precio: ${value:,.0f}"
+                text = f"Precio: {Money.format(value)}"
             elif field == "duracion_estimada":
                 text = f"Duración: {value} minutos"
             elif field == "created":

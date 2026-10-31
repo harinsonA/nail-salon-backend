@@ -11,7 +11,7 @@ from apps.common.custom_time_fields import CustomDateField
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.form_classes import FORM_SELECT_CLASS
-from apps.common.utils.currency import format_currency
+from apps.common.utils.currency import Money
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import DetallePago
 from apps.payments.services.account import (
@@ -197,7 +197,7 @@ class IncomesListView(BaseListViewAjax):
                     "referencia_pago_display": item.get("referencia_pago") or "—",
                     "tipo_movimiento_display": MOVEMENT_LABELS.get(movement, movement),
                     "es_egreso": movement == TipoMovimiento.EGRESO,
-                    "monto_movimiento_formatted": format_currency(
+                    "monto_movimiento_formatted": Money.format(
                         item.get("monto_movimiento")
                     ),
                 }
@@ -211,9 +211,9 @@ class IncomesListView(BaseListViewAjax):
             total_neto=net_paid(),
         )
         return {
-            "total_ingresos": format_currency(additional_data.get("total_ingresos")),
-            "total_egresos": format_currency(additional_data.get("total_egresos")),
-            "total_neto": format_currency(additional_data.get("total_neto")),
+            "total_ingresos": Money.format(additional_data.get("total_ingresos")),
+            "total_egresos": Money.format(additional_data.get("total_egresos")),
+            "total_neto": Money.format(additional_data.get("total_neto")),
         }
 
 

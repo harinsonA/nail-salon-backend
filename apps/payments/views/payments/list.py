@@ -9,7 +9,7 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthField
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.utils.currency import format_currency
+from apps.common.utils.currency import Money
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
 
@@ -103,10 +103,10 @@ class PaymentsListView(BaseListViewAjax):
                     "fecha_pago_completado_display": self._format_datetime(
                         item.get("fecha_pago_completado")
                     ),
-                    "descuento_total_formatted": format_currency(
+                    "descuento_total_formatted": Money.format(
                         item.get("descuento_total")
                     ),
-                    "monto_total_cita_formatted": format_currency(
+                    "monto_total_cita_formatted": Money.format(
                         item.get("monto_total_cita")
                     ),
                 }
@@ -127,9 +127,9 @@ class PaymentsListView(BaseListViewAjax):
         ).aggregate(total=Sum("monto_total_cita"))
 
         return {
-            "monto_total_cita": format_currency(total),
-            "descuento_total": format_currency(discount),
-            "monto_recibido_mes": format_currency(received.get("total", 0)),
+            "monto_total_cita": Money.format(total),
+            "descuento_total": Money.format(discount),
+            "monto_recibido_mes": Money.format(received.get("total", 0)),
         }
 
 

@@ -232,7 +232,7 @@ class CuentaPagoTests(NegocioTestCase):
         view = self.lista(DebtorsListView)
         totales = view.additional_data(view.get_queryset())
         self.assertEqual(
-            totales, {"total_pendiente": "$ 18,000", "total_abonado": "$ 10,000"}
+            totales, {"total_pendiente": "$18.000", "total_abonado": "$10.000"}
         )
 
     def test_movimientos_separan_ingresos_egresos_y_neto(self):
@@ -245,9 +245,9 @@ class CuentaPagoTests(NegocioTestCase):
         self.assertEqual(
             totales,
             {
-                "total_ingresos": "$ 16,000",
-                "total_egresos": "$ 4,000",
-                "total_neto": "$ 12,000",
+                "total_ingresos": "$16.000",
+                "total_egresos": "$4.000",
+                "total_neto": "$12.000",
             },
         )
 

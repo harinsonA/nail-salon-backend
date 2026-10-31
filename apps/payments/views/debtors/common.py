@@ -13,7 +13,7 @@ from apps.common.form_classes import (
     FORM_SELECT_CLASS,
 )
 from apps.common.form_fields import NoteField
-from apps.common.utils.currency import format_money
+from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
@@ -139,7 +139,7 @@ class AddPaymentForm(BSModalModelForm):
         if not down_payment:
             raise forms.ValidationError(AMOUNT_REQUIRED)
         if down_payment > self.pending_payment_amount:
-            balance = format_money(self.pending_payment_amount)
+            balance = Money.format(self.pending_payment_amount)
             raise forms.ValidationError(AMOUNT_TOO_HIGH.format(balance=balance))
         return down_payment
 
@@ -196,9 +196,9 @@ class PaymentInstallmentMixin:
                 if payment.fecha_cita
                 else "—",
                 "atendido_por": self.attended_by(),
-                "total": format_money(total),
-                "pagado": format_money(paid),
-                "saldo": format_money(pending),
+                "total": Money.format(total),
+                "pagado": Money.format(paid),
+                "saldo": Money.format(pending),
                 "payment_config": {
                     "total": int(total),
                     "paid": int(paid),
@@ -212,7 +212,7 @@ class PaymentInstallmentMixin:
                         "by": user_display_name(item.registrado_por)
                         if item.registrado_por
                         else "—",
-                        "amount": format_money(item.monto_pago),
+                        "amount": Money.format(item.monto_pago),
                     }
                     for item in self.account.appointment_payments()
                 ],

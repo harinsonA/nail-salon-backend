@@ -6,7 +6,7 @@ from apps.appointments.models import Cita
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.utils.currency import format_currency
+from apps.common.utils.currency import Money
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
 from apps.payments.services.account import net_paid, retained_amount
@@ -93,11 +93,11 @@ class DebtorsListView(BaseListViewAjax):
             item.update(
                 {
                     "fecha_cita_display": self._format_datetime(item.get("fecha_cita")),
-                    "total_cita_formatted": format_currency(item.get("total_cita")),
-                    "total_abonado_formatted": format_currency(
+                    "total_cita_formatted": Money.format(item.get("total_cita")),
+                    "total_abonado_formatted": Money.format(
                         item.get("total_abonado")
                     ),
-                    "saldo_pendiente_formatted": format_currency(
+                    "saldo_pendiente_formatted": Money.format(
                         item.get("saldo_pendiente")
                     ),
                     "debt_detail_url": reverse_lazy(
@@ -116,8 +116,8 @@ class DebtorsListView(BaseListViewAjax):
             suma_abonado=Sum("total_abonado"),
         )
         return {
-            "total_pendiente": format_currency(additional_data.get("suma_pendiente")),
-            "total_abonado": format_currency(additional_data.get("suma_abonado")),
+            "total_pendiente": Money.format(additional_data.get("suma_pendiente")),
+            "total_abonado": Money.format(additional_data.get("suma_abonado")),
         }
 
 

@@ -6,6 +6,7 @@ from django.db import models
 from model_utils.models import SoftDeletableModel, TimeStampedModel
 from simple_history.models import HistoricalRecords
 
+from apps.common.utils.currency import Money
 from apps.payments.choices import EstadoPago
 
 
@@ -84,4 +85,4 @@ class Pago(TimeStampedModel, SoftDeletableModel):
         ordering = ["-created"]
 
     def __str__(self):
-        return f"Pago {self.pk} - Cita {self.cita.pk} - ${self.monto_total_cita}"
+        return f"Pago {self.pk} - Cita {self.cita.pk} - {Money.format(self.monto_total_cita)}"

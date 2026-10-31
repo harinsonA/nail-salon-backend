@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 
 from apps.appointments.models import DetalleCita
 from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.common.utils.currency import format_currency
+from apps.common.utils.currency import Money
 from apps.common.views.base_views import ProtectedView
 from apps.payments.choices import MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
@@ -41,9 +41,9 @@ class DebtDetailModalView(ProtectedView, BSModalReadView):
         context.update(
             {
                 "object": pago,
-                "total_cita": format_currency(account.appointment_total()),
-                "total_pagado": format_currency(account.appointment_paid()),
-                "total_pendiente": format_currency(account.balance()),
+                "total_cita": Money.format(account.appointment_total()),
+                "total_pagado": Money.format(account.appointment_paid()),
+                "total_pendiente": Money.format(account.balance()),
                 "appointment_id": pago.cita_id,
                 "services_detail_list_url": reverse_lazy(
                     "services_detail_list",
@@ -104,12 +104,12 @@ class ServicesDetailListView(BaseListViewAjax):
         for item in values:
             item.update(
                 {
-                    "precio_formatted": format_currency(item.get("precio_servicio")),
-                    "total_servicio_formatted": format_currency(
+                    "precio_formatted": Money.format(item.get("precio_servicio")),
+                    "total_servicio_formatted": Money.format(
                         item.get("total_servicio")
                     ),
-                    "descuento_formatted": format_currency(item.get("descuento")),
-                    "precio_acordado_formatted": format_currency(
+                    "descuento_formatted": Money.format(item.get("descuento")),
+                    "precio_acordado_formatted": Money.format(
                         item.get("precio_acordado")
                     ),
                 }
@@ -166,7 +166,7 @@ class PaymentDetailListView(BaseListViewAjax):
                     "metodo_pago_display": payment_method_display.get(
                         item.get("metodo_pago"), item.get("metodo_pago")
                     ),
-                    "monto_pago_formatted": format_currency(item.get("monto_pago")),
+                    "monto_pago_formatted": Money.format(item.get("monto_pago")),
                 }
             )
         return values
