@@ -138,20 +138,20 @@
         {% endif %}
       </dl>
       {% if payment.badge %}
-      <h6 class="calendar-new__summary-sub">Abonos</h6>
-      {% if payment.installments %}
+      <h6 class="calendar-new__summary-sub">Pagos</h6>
+      {% if payment.payments %}
       <table class="calendar-detail__services calendar-detail__payments">
         <thead>
-          <tr><th>Abono</th><th>Método</th><th>Registró</th><th>Monto</th></tr>
+          <tr><th>Fecha</th><th>Tipo</th><th>Método</th><th>Registró</th><th>Monto</th></tr>
         </thead>
         <tbody>
-          {% for item in payment.installments %}
-          <tr><td>{{ item.when }}</td><td>{{ item.method }}</td><td>{{ item.by }}</td><td>{{ item.amount }}</td></tr>
+          {% for item in payment.payments %}
+          <tr><td>{{ item.when }}</td><td>{{ item.kind }}</td><td>{{ item.method }}</td><td>{{ item.by }}</td><td>{{ item.amount }}</td></tr>
           {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <p class="calendar-detail__notes">Sin abonos registrados.</p>
+      <p class="calendar-detail__notes">Sin pagos registrados.</p>
       {% endif %}
       {% if payment.pay_url %}
       <button type="button" class="btn btn-sm btn-success bg-gradient calendar-detail__pay-btn" data-panel-payment="{{ payment.pay_url }}">

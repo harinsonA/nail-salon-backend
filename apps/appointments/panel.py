@@ -6,9 +6,14 @@ from apps.appointments.models import Cita
 from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name
-from apps.payments.accounting import AppointmentLedger, PaymentAccount, PaymentLabels
+from apps.payments.accounting import (
+    AppointmentLedger,
+    AppointmentPaymentSummary,
+    PaymentAccount,
+    PaymentLabels,
+)
 from apps.payments.choices import EstadoPago, MetodoPago
-from apps.payments.models import DetallePago, Pago
+from apps.payments.models import Pago
 
 """========================================================================="""
 # region ........ Constants
@@ -140,19 +145,16 @@ class AppointmentPanel:
                     {"label": "Restante por pagar", "value": Money.format(max(0, total - advance))},
                 ]
             return {"rows": rows}
-        installments = list(
-            DetallePago.objects.filter(pago=payment).select_related("registrado_por").order_by("fecha_pago", "pk")
-        )
-        account = PaymentAccount(payment, installments)
-        paid = account.paid()
-        pending = account.balance()
+        summary = AppointmentPaymentSummary.for_payment(payment)
+        pending = summary.pending()
         rows = [
-            {"label": "Total de la cita", "value": Money.format(payment.monto_total_cita)},
-            {"label": "Pagado", "value": Money.format(paid)},
+            {"label": "Total de la cita", "value": Money.format(summary.total())},
+            {"label": "Pagado", "value": Money.format(summary.paid())},
         ]
         if pending:
             rows.append({"label": "Saldo pendiente", "value": Money.format(pending), "debt": True})
-        first = installments[0] if installments else None
+        payments = summary.payments()
+        first = payments[0] if payments else None
         can_pay = pending and payment.estado_pago == EstadoPago.PENDIENTE
         return {
             "pay_url": reverse("agenda_payment_modal", args=[payment.pk]) if can_pay else "",
@@ -164,15 +166,7 @@ class AppointmentPanel:
             }
             if first
             else None,
-            "installments": [
-                {
-                    "when": format_date_time(item.fecha_pago),
-                    "method": PaymentLabels.method(item.metodo_pago),
-                    "by": user_display_name(item.registrado_por).split(" ")[0] if item.registrado_por else "—",
-                    "amount": Money.format(item.monto_pago),
-                }
-                for item in installments
-            ],
+            "payments": summary.rows(),
         }
 
     @staticmethod

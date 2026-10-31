@@ -10,6 +10,13 @@ class AppointmentPaymentSummary:
         self.payment = payment
         self.account = PaymentAccount(payment, details)
 
+    @classmethod
+    def for_payment(cls, payment):
+        return cls(
+            payment,
+            payment.detalles_pago.select_related("registrado_por").order_by("fecha_pago", "pk"),
+        )
+
     def total(self):
         return self.account.appointment_total()
 
