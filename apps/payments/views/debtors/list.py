@@ -9,7 +9,7 @@ from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
-from apps.payments.services.account import net_paid
+from apps.payments.services.account import net_paid, retained_amount
 
 from ...choices import EstadoPago
 
@@ -43,7 +43,7 @@ class DebtorsListView(BaseListViewAjax):
         "pk",
         "fecha_cita",
         "cliente_nombre",
-        "monto_total_cita",
+        "total_cita",
         "total_abonado",
         "saldo_pendiente",
     ]
@@ -51,7 +51,7 @@ class DebtorsListView(BaseListViewAjax):
     ordering_fields = {
         "0": "fecha_cita",
         "1": "cliente_nombre",
-        "2": "monto_total_cita",
+        "2": "total_cita",
         "3": "total_abonado",
         "4": "saldo_pendiente",
     }
@@ -67,9 +67,20 @@ class DebtorsListView(BaseListViewAjax):
             super()
             .get_queryset()
             .annotate(
-                total_abonado=net_paid("detalles_pago__"),
+                total_pagado=net_paid("detalles_pago__"),
+                total_retenido=retained_amount("detalles_pago__"),
+            )
+            .annotate(
+                total_cita=ExpressionWrapper(
+                    F("monto_total_cita") - F("total_retenido"),
+                    output_field=DecimalField(),
+                ),
+                total_abonado=ExpressionWrapper(
+                    F("total_pagado") - F("total_retenido"),
+                    output_field=DecimalField(),
+                ),
                 saldo_pendiente=ExpressionWrapper(
-                    F("monto_total_cita") - F("total_abonado"),
+                    F("monto_total_cita") - F("total_pagado"),
                     output_field=DecimalField(),
                 ),
             )
@@ -82,9 +93,7 @@ class DebtorsListView(BaseListViewAjax):
             item.update(
                 {
                     "fecha_cita_display": self._format_datetime(item.get("fecha_cita")),
-                    "monto_total_cita_formatted": format_currency(
-                        item.get("monto_total_cita")
-                    ),
+                    "total_cita_formatted": format_currency(item.get("total_cita")),
                     "total_abonado_formatted": format_currency(
                         item.get("total_abonado")
                     ),
@@ -103,14 +112,12 @@ class DebtorsListView(BaseListViewAjax):
 
     def additional_data(self, queryset) -> dict:
         additional_data = queryset.aggregate(
-            total_cita=Sum("monto_total_cita"),
-            total_pagado=Sum("total_abonado"),
+            suma_pendiente=Sum("saldo_pendiente"),
+            suma_abonado=Sum("total_abonado"),
         )
-        total = additional_data.get("total_cita", 0)
-        total_abonado = additional_data.get("total_pagado", 0)
         return {
-            "monto_total_cita": format_currency(total),
-            "total_abonado": format_currency(total_abonado),
+            "total_pendiente": format_currency(additional_data.get("suma_pendiente")),
+            "total_abonado": format_currency(additional_data.get("suma_abonado")),
         }
 
 
@@ -123,7 +130,7 @@ class DebtorsExportView(ExcelExportMixin, DebtorsListView):
         ExcelColumn("Fecha cita", "fecha_cita_display", width=20, align="center"),
         ExcelColumn("Cliente", "cliente_nombre", width=30),
         ExcelColumn(
-            "Total servicio", "monto_total_cita_formatted", width=16, align="right"
+            "Total de la cita", "total_cita_formatted", width=16, align="right"
         ),
         ExcelColumn(
             "Total abonado", "total_abonado_formatted", width=16, align="right"

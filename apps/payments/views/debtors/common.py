@@ -24,7 +24,7 @@ from apps.payments.choices import (
     TipoDetallePago,
 )
 from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import PaymentAccount
+from apps.payments.services.account import PaymentAccount, detail_type
 
 """========================================================================="""
 # region ........ Constants
@@ -36,6 +36,7 @@ AMOUNT_REQUIRED = "El monto debe ser mayor a $0."
 AMOUNT_TOO_HIGH = "No puede superar el saldo pendiente ({balance})."
 NO_BALANCE = "Este pago ya no tiene saldo pendiente."
 METHOD_LABELS = dict(MetodoPago.CHOICES)
+TYPE_LABELS = dict(TipoDetallePago.CHOICES)
 
 
 # endregion
@@ -184,7 +185,8 @@ class PaymentInstallmentMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         payment = self.object
-        paid = self.paid_amount()
+        total = self.account.appointment_total()
+        paid = self.account.appointment_paid()
         pending = self.pending_amount()
         context.update(
             {
@@ -194,24 +196,25 @@ class PaymentInstallmentMixin:
                 if payment.fecha_cita
                 else "—",
                 "atendido_por": self.attended_by(),
-                "total": format_money(payment.monto_total_cita),
+                "total": format_money(total),
                 "pagado": format_money(paid),
                 "saldo": format_money(pending),
                 "payment_config": {
-                    "total": int(payment.monto_total_cita),
+                    "total": int(total),
                     "paid": int(paid),
                     "balance": int(pending),
                 },
                 "abonos": [
                     {
                         "when": format_date_time(item.fecha_pago),
+                        "kind": TYPE_LABELS[detail_type(item)],
                         "method": METHOD_LABELS.get(item.metodo_pago, item.metodo_pago),
                         "by": user_display_name(item.registrado_por)
                         if item.registrado_por
                         else "—",
                         "amount": format_money(item.monto_pago),
                     }
-                    for item in self.account.details
+                    for item in self.account.appointment_payments()
                 ],
             }
         )

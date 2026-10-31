@@ -48,7 +48,7 @@ Lista de deudores
         <tr>
           <th scope="col" class="text-start">Fecha cita</th>
           <th scope="col" class="text-start">Cliente</th>
-          <th scope="col" class="text-center ">Total servicio</th>
+          <th scope="col" class="text-center ">Total de la cita</th>
           <th scope="col" class="text-center ">Total Abonado</th>
           <th scope="col" class="text-center ">Total Pendiente</th>
           <th scope="col" class="text-center"></th>
@@ -93,7 +93,7 @@ Lista de deudores
         exportConfig: { url: '{{ url_debtors_export }}' },
         ajax: {
           dataSrc: (json) => {
-            $('#debtors_totals_id').text(json.monto_total_cita);
+            $('#debtors_totals_id').text(json.total_pendiente);
             $('#debtors_total_paid_id').text(json.total_abonado);
             return json.data;
           },
@@ -113,7 +113,7 @@ Lista de deudores
       columns: [
         { data: (data) => debtDetailColumn(data), className: 'fs-7 w-auto text-start' },
         { data: 'cliente_nombre', className: 'fs-7 w-auto text-start text-nowrap' },
-        { data: 'monto_total_cita_formatted', className: 'fs-7 w-auto text-center text-primary' },
+        { data: 'total_cita_formatted', className: 'fs-7 w-auto text-center text-primary' },
         { data: 'total_abonado_formatted', className: 'fs-7 w-auto text-center text-success' },
         { data: 'saldo_pendiente_formatted', className: 'fs-7 w-auto text-center' },
         { data: (data) => optionColumn(data), className: 'text-center', orderable: false, searchable: false },

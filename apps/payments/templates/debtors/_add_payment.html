@@ -94,15 +94,15 @@
           <div class="calendar-pay__this"><dt>Este abono</dt><dd data-now>—</dd></div>
           <div class="is-total"><dt>Saldo después</dt><dd data-after>{{ saldo }}</dd></div>
         </dl>
-        <h6 class="calendar-new__summary-sub">Abonos anteriores</h6>
+        <h6 class="calendar-new__summary-sub">Pagos anteriores</h6>
         <ul class="calendar-new__lines">
           {% for abono in abonos %}
           <li>
-            <span class="calendar-new__line-name">{{ abono.when }}<small>{{ abono.method }} · registró {{ abono.by }}</small></span>
+            <span class="calendar-new__line-name">{{ abono.when }}<small>{{ abono.kind }} · {{ abono.method }} · registró {{ abono.by }}</small></span>
             <strong>{{ abono.amount }}</strong>
           </li>
           {% empty %}
-          <li class="is-empty">Todavía no hay abonos.</li>
+          <li class="is-empty">Todavía no hay pagos.</li>
           {% endfor %}
         </ul>
       </aside>

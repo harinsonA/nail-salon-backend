@@ -1,14 +1,14 @@
 from bootstrap_modal_forms.generic import BSModalReadView
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import DecimalField, ExpressionWrapper, F
 from django.urls import reverse_lazy
 
 from apps.appointments.models import DetalleCita
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
-from apps.payments.choices import MetodoPago
+from apps.payments.choices import MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import net_paid
+from apps.payments.services.account import PaymentAccount, appointment_payment_filter
 
 """========================================================================="""
 # region ........ Views
@@ -37,9 +37,13 @@ class DebtDetailModalView(ProtectedView, BSModalReadView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pago = self.object
+        account = PaymentAccount(pago)
         context.update(
             {
                 "object": pago,
+                "total_cita": format_currency(account.appointment_total()),
+                "total_pagado": format_currency(account.appointment_paid()),
+                "total_pendiente": format_currency(account.balance()),
                 "appointment_id": pago.cita_id,
                 "services_detail_list_url": reverse_lazy(
                     "services_detail_list",
@@ -112,17 +116,6 @@ class ServicesDetailListView(BaseListViewAjax):
             )
         return values
 
-    @staticmethod
-    def additional_data(queryset):
-        additional_data = queryset.aggregate(
-            total_price=Sum("precio_acordado"),
-        )
-        total_price = additional_data.get("total_price") or 0
-        return {
-            "total_price_formatted": format_currency(total_price),
-            "total_price": total_price,
-        }
-
 
 class PaymentDetailListView(BaseListViewAjax):
     model = DetallePago
@@ -131,6 +124,7 @@ class PaymentDetailListView(BaseListViewAjax):
     field_list = [
         "pk",
         "fecha_pago",
+        "tipo_detalle",
         "metodo_pago",
         "referencia_pago",
         "monto_pago",
@@ -138,9 +132,10 @@ class PaymentDetailListView(BaseListViewAjax):
 
     ordering_fields = {
         "0": "fecha_pago",
-        "1": "metodo_pago",
-        "2": "referencia_pago",
-        "3": "monto_pago",
+        "1": "tipo_detalle",
+        "2": "metodo_pago",
+        "3": "referencia_pago",
+        "4": "monto_pago",
     }
 
     def get_queryset(self):
@@ -148,6 +143,7 @@ class PaymentDetailListView(BaseListViewAjax):
             super()
             .get_queryset()
             .filter(
+                appointment_payment_filter(),
                 pago_id=self.kwargs.get("pk"),
             )
         )
@@ -155,9 +151,13 @@ class PaymentDetailListView(BaseListViewAjax):
     def get_values(self, queryset):
         values = super().get_values(queryset)
         payment_method_display = dict(MetodoPago.CHOICES)
+        type_display = dict(TipoDetallePago.CHOICES)
         for item in values:
             item.update(
                 {
+                    "tipo_detalle_display": type_display[
+                        item.get("tipo_detalle") or TipoDetallePago.ABONO
+                    ],
                     "fecha_pago_display": item.get("fecha_pago").strftime(
                         "%d/%m/%Y %H:%M"
                     )
@@ -170,15 +170,6 @@ class PaymentDetailListView(BaseListViewAjax):
                 }
             )
         return values
-
-    @staticmethod
-    def additional_data(queryset):
-        additional_data = queryset.aggregate(total_paid=net_paid())
-        total_paid = additional_data.get("total_paid") or 0
-        return {
-            "total_paid_formatted": format_currency(total_paid),
-            "total_paid": total_paid,
-        }
 
 
 # endregion

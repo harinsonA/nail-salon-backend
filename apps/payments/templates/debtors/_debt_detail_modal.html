@@ -10,10 +10,10 @@
         <div class="card rounded-4 agenda-card">
           <div class="card-body px-2">
             <h6 class="card-subtitle d-flex text-body-secondary mb-2">
-              <span>Total servicio</span>
+              <span>Total de la cita</span>
             </h6>
             <h4 class="card-title text-end m-0 text-primary">
-              <b id="modal_total_service_id">0</b>
+              <b>{{ total_cita }}</b>
             </h4>
           </div>
         </div>
@@ -25,7 +25,7 @@
               <span>Total pagado</span>
             </h6>
             <h4 class="card-title text-end text-success m-0">
-              <b id="modal_total_paid_id">0</b>
+              <b>{{ total_pagado }}</b>
             </h4>
           </div>
         </div>
@@ -37,7 +37,7 @@
               <span>Total pendiente</span>
             </h6>
             <h4 class="card-title text-end m-0">
-              <b id="modal_total_pending_id">0</b>
+              <b>{{ total_pendiente }}</b>
             </h4>
           </div>
         </div>
@@ -72,6 +72,7 @@
             <thead>
               <tr>
                 <th scope="col" class="text-start">Fecha</th>
+                <th scope="col" class="text-start">Tipo</th>
                 <th scope="col" class="text-start">Metodo</th>
                 <th scope="col" class="text-end">Referencia</th>
                 <th scope="col" class="text-end text-success">Monto</th>
@@ -108,32 +109,12 @@
 {% block extra_js %}
 <script>
   $(() => {
-    const pendingAmount = {
-      totalPaid: 0,
-      totalService: 0,
-      refresh() {
-        const pendingAmount = this.totalService - this.totalPaid;
-        $('#modal_total_pending_id').text(`$ ${Math.round(pendingAmount).toLocaleString('en-US')}`);
-      },
-    }
     const serviceDetailDataTableConfig = {
       tableID: '#services_detail',
       url: '{{ services_detail_list_url }}',
       extraConfig: {
         searching: false,
         info: false,
-        ajax: {
-          dataSrc: (json) => {
-            $('#modal_total_service_id').text(json.total_price_formatted || '$0');
-            return json.data;
-          },
-        },
-        drawCallback: (settings) => {
-          console.log(settings.json);
-          const totalService = settings.json.total_price || 0;
-          pendingAmount.totalService = totalService;
-          pendingAmount.refresh();
-        },
       },
       columns: [
         { data: 'nombre_servicio', className: 'fs-7 w-auto text-start', },
@@ -153,20 +134,10 @@
       extraConfig: {
         searching: false,
         info: false,
-        ajax: {
-          dataSrc: (json) => {
-            $('#modal_total_paid_id').text(json.total_paid_formatted || '$0');
-            return json.data;
-          },
-        },
-        drawCallback: (settings) => {
-          const totalPaid = settings.json.total_paid || 0;
-          pendingAmount.totalPaid = totalPaid;
-          pendingAmount.refresh();
-        },
       },
       columns: [
         { data: 'fecha_pago_display', className: 'fs-7 w-auto text-start', orderable: false },
+        { data: 'tipo_detalle_display', className: 'fs-7 w-auto text-start', orderable: false },
         { data: 'metodo_pago_display', className: 'fs-7 w-auto text-start', orderable: false },
         { data: 'referencia_pago', className: 'fs-7 w-auto text-end', orderable: false },
         { data: 'monto_pago_formatted', className: 'fs-7 w-auto text-end', orderable: false },
