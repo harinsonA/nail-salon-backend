@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block view_title %}
-Ingresos
+Movimientos
 {% endblock %}
 
 {% block extra_css %}
@@ -12,8 +12,8 @@ Ingresos
 {% block content %}
 {% include 'common/bs_modal.html' %}
 <section>
-  <section class="row justify-content-center">
-    <div class="col-4">
+  <section class="row justify-content-center gy-3">
+    <div class="col-12 col-md-4">
       <div class="card rounded-4 agenda-card">
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
@@ -21,33 +21,33 @@ Ingresos
             <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="icon--small ms-2">
           </h6>
           <h4 class="card-title text-end text-success">
-            <b id="incomes_totals_id">0</b>
+            <b id="movements_income_id">0</b>
           </h4>
         </div>
       </div>
     </div>
-    <div class="col-4">
+    <div class="col-12 col-md-4">
       <div class="card rounded-4 agenda-card">
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
-            <span>Cantidad de pagos recibidos</span>
+            <span>Total de egresos</span>
             <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="icon--small ms-2">
           </h6>
-          <h4 class="card-title text-end text-primary">
-            <b id="incomes_count_id">0</b>
+          <h4 class="card-title text-end text-danger">
+            <b id="movements_expenses_id">0</b>
           </h4>
         </div>
       </div>
     </div>
-    <div class="col-4">
+    <div class="col-12 col-md-4">
       <div class="card rounded-4 agenda-card">
         <div class="card-body">
           <h6 class="card-subtitle d-flex text-body-secondary mb-lg-4">
-            <span>Promedio por pago</span>
+            <span>Total neto</span>
             <img src="{% static 'images/common/info.svg' %}" alt="" width="16" height="16" class="icon--small ms-2">
           </h6>
           <h4 class="card-title text-end">
-            <b id="incomes_average_id">0</b>
+            <b id="movements_net_id">0</b>
           </h4>
         </div>
       </div>
@@ -55,11 +55,19 @@ Ingresos
   </section>
 
   <section class="d-flex justify-content-between align-items-end flex-wrap gap-2 my-4">
-    <div>
-      <label class="form-check-label form-label--custom" for="{{ filter_form.payment_method.id_for_label }}">
-        {{ filter_form.payment_method.label }}
-      </label>
-      {{ filter_form.payment_method }}
+    <div class="d-flex align-items-end flex-wrap gap-2">
+      <div>
+        <label class="form-check-label form-label--custom" for="{{ filter_form.payment_method.id_for_label }}">
+          {{ filter_form.payment_method.label }}
+        </label>
+        {{ filter_form.payment_method }}
+      </div>
+      <div>
+        <label class="form-check-label form-label--custom" for="{{ filter_form.movement.id_for_label }}">
+          {{ filter_form.movement.label }}
+        </label>
+        {{ filter_form.movement }}
+      </div>
     </div>
     <div class="d-flex align-items-end flex-wrap gap-2">
       <div class="input-group" style="max-width: 240px;">
@@ -103,7 +111,8 @@ Ingresos
           <th scope="col" class="text-center">Fecha cita</th>
           <th scope="col" class="text-center">Método de pago</th>
           <th scope="col" class="text-start">Referencia</th>
-          <th scope="col" class="text-center">Monto recibido</th>
+          <th scope="col" class="text-center">Tipo de movimiento</th>
+          <th scope="col" class="text-center">Monto</th>
         </tr>
       </thead>
       <tbody>
@@ -121,11 +130,13 @@ Ingresos
     const dateFromInput = $('#{{ filter_form.date_from.id_for_label }}');
     const dateToInput = $('#{{ filter_form.date_to.id_for_label }}');
     const paymentMethodSelect = $('#{{ filter_form.payment_method.id_for_label }}');
+    const movementSelect = $('#{{ filter_form.movement.id_for_label }}');
 
     const filterData = {
       date_from: dateFromInput.val(),
       date_to: dateToInput.val(),
       payment_method: paymentMethodSelect.val(),
+      movement: movementSelect.val(),
     };
 
     initializeDatePickers({ orientation: 'bottom auto' });
@@ -143,9 +154,9 @@ Ingresos
         exportConfig: { url: '{{ url_incomes_export }}' },
         ajax: {
           dataSrc: (json) => {
-            $('#incomes_totals_id').text(json.monto_total);
-            $('#incomes_count_id').text(json.cantidad_ingresos);
-            $('#incomes_average_id').text(json.monto_promedio);
+            $('#movements_income_id').text(json.total_ingresos);
+            $('#movements_expenses_id').text(json.total_egresos);
+            $('#movements_net_id').text(json.total_neto);
             return json.data;
           },
         },
@@ -156,6 +167,7 @@ Ingresos
               '#{{ filter_form.date_from.id_for_label }}',
               '#{{ filter_form.date_to.id_for_label }}',
               '#{{ filter_form.payment_method.id_for_label }}',
+              '#{{ filter_form.movement.id_for_label }}',
             ],
             getSearchValue: () => api.search(),
           });
@@ -167,7 +179,14 @@ Ingresos
         { data: 'fecha_cita_display', className: 'fs-7 w-auto text-center' },
         { data: 'metodo_pago_display', className: 'fs-7 w-auto text-center' },
         { data: 'referencia_pago_display', className: 'fs-7 w-auto text-start' },
-        { data: 'monto_pago_formatted', className: 'fs-7 w-auto text-center text-success' },
+        { data: 'tipo_movimiento_display', className: 'fs-7 w-auto text-center' },
+        {
+          data: 'monto_movimiento_formatted',
+          className: 'fs-7 w-auto text-center',
+          createdCell: (cell, data, row) => {
+            cell.classList.add(row.es_egreso ? 'text-danger' : 'text-success');
+          },
+        },
       ],
     };
 
@@ -175,10 +194,11 @@ Ingresos
 
     DashboardCore.reloadAll(filterData);
 
-    dateFromInput.add(dateToInput).add(paymentMethodSelect).on('change', () => {
+    dateFromInput.add(dateToInput).add(paymentMethodSelect).add(movementSelect).on('change', () => {
       filterData.date_from = dateFromInput.val();
       filterData.date_to = dateToInput.val();
       filterData.payment_method = paymentMethodSelect.val();
+      filterData.movement = movementSelect.val();
       incomesTable.draw();
       DashboardCore.reloadAll(filterData);
     });

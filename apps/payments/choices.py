@@ -57,6 +57,16 @@ class TipoDetallePago:
     ]
 
 
+class TipoMovimiento:
+    INGRESO = "INGRESO"
+    EGRESO = "EGRESO"
+
+    CHOICES = [
+        (INGRESO, "Ingreso"),
+        (EGRESO, "Egreso"),
+    ]
+
+
 class EstadoDetallePago:
     VIGENTE = "VIGENTE"
     RETENIDO = "RETENIDO"
