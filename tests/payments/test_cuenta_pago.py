@@ -4,8 +4,9 @@ from decimal import Decimal
 from django.test import RequestFactory
 from django.utils import timezone
 
-from apps.appointments.models import Cita
+from apps.appointments.models import Cita, DetalleCita
 from apps.clients.models import Cliente
+from apps.payments.accounting import PaymentAccount, PaymentExpressions
 from apps.payments.choices import (
     EstadoDetallePago,
     EstadoPago,
@@ -13,10 +14,10 @@ from apps.payments.choices import (
     TipoDetallePago,
 )
 from apps.payments.models import DetallePago, Pago
-from apps.payments.accounting import PaymentAccount, PaymentExpressions
 from apps.payments.services.income_by_method import income_by_method
 from apps.payments.views.debtors.list import DebtorsListView
 from apps.payments.views.incomes.list import IncomesListView
+from apps.services.models import Categoria, Servicio
 from dashboard.services import metrics
 from dashboard.services.periods import between
 from tests.base import NegocioTestCase
@@ -187,7 +188,10 @@ class CuentaPagoTests(NegocioTestCase):
         self.fila(pago, "3000")
         self.fila(pago, "4000", Tipo.DEVOLUCION, devuelve=anticipo)
         filas = DetallePago.objects.filter(pago=pago)
-        self.assertEqual(filas.aggregate(total=PaymentExpressions.net_paid())["total"], Decimal("9000"))
+        self.assertEqual(
+            filas.aggregate(total=PaymentExpressions.net_paid())["total"],
+            Decimal("9000"),
+        )
         self.assertEqual(filas.filter(PaymentExpressions.incoming()).count(), 2)
         self.assertEqual(
             Pago.objects.filter(pk=pago.pk)
@@ -197,7 +201,9 @@ class CuentaPagoTests(NegocioTestCase):
             Decimal("9000"),
         )
         self.assertEqual(
-            DetallePago.objects.none().aggregate(total=PaymentExpressions.net_paid())["total"],
+            DetallePago.objects.none().aggregate(total=PaymentExpressions.net_paid())[
+                "total"
+            ],
             Decimal("0"),
         )
 
@@ -275,20 +281,51 @@ class CuentaPagoTests(NegocioTestCase):
         self.assertEqual(datos["transferencia"], 10000)
         self.assertEqual(datos["efectivo"], 2000)
 
-    def test_el_dashboard_cobra_neto_y_no_factura_citas_pendientes(self):
-        completada = self.pago(total="18000")
-        anticipo = self.fila(completada, "10000", Tipo.ANTICIPO, Estado.RETENIDO)
-        self.fila(completada, "4000", Tipo.DEVOLUCION, devuelve=anticipo)
+    def test_el_dashboard_factura_solo_completadas_sin_lo_retenido(self):
+        completada = self.pago(total="26000")
+        self.fila(completada, "6000", Tipo.ANTICIPO, Estado.RETENIDO_DEFINITIVO)
+        self.fila(completada, "20000")
+        cancelada = self.pago(
+            total="5000",
+            estado_cita=Cita.EstadoChoices.CANCELADA,
+            estado_pago=EstadoPago.COMPLETADO,
+            dia=21,
+        )
+        self.fila(cancelada, "5000", Tipo.ANTICIPO, Estado.RETENIDO, dia=21)
+        devuelto = self.fila(cancelada, "3000", Tipo.ANTICIPO, Estado.DEVUELTO, dia=21)
+        self.fila(cancelada, "3000", Tipo.DEVOLUCION, devuelve=devuelto, dia=21)
         pendiente = self.pago(
             total="25000", estado_cita=Cita.EstadoChoices.PENDIENTE, dia=22
         )
-        self.fila(pendiente, "5000", Tipo.ANTICIPO, Estado.VIGENTE)
+        self.fila(pendiente, "5000", Tipo.ANTICIPO, Estado.VIGENTE, dia=22)
         periodo = between(date(2026, 10, 1), date(2026, 10, 31))
         series = {
             d["key"]: d["data"]
             for d in metrics.income_billed_vs_collected(periodo)["datasets"]
         }
-        self.assertEqual(sum(series["facturado"]), 18000)
-        self.assertEqual(sum(series["cobrado"]), 11000)
+        self.assertEqual(sum(series["facturado"]), 20000)
+        self.assertEqual(sum(series["cobrado"]), 36000)
         metodos = metrics.payment_methods(periodo)["datasets"][0]
-        self.assertEqual(dict(zip(metodos["keys"], metodos["data"]))["efectivo"], 11000)
+        self.assertEqual(dict(zip(metodos["keys"], metodos["data"]))["efectivo"], 36000)
+
+    def test_categorias_y_servicios_del_dashboard_solo_cuentan_completadas(self):
+        servicio = Servicio.objects.create(
+            nombre="Manicure",
+            precio=Decimal("10000"),
+            categoria=Categoria.objects.create(nombre="Manos"),
+        )
+        for estado, dia in (
+            (Cita.EstadoChoices.COMPLETADA, 20),
+            (Cita.EstadoChoices.PENDIENTE, 21),
+            (Cita.EstadoChoices.CANCELADA, 22),
+        ):
+            DetalleCita.objects.create(
+                cita=self.pago(estado_cita=estado, dia=dia).cita,
+                servicio=servicio,
+                precio_acordado=Decimal("10000"),
+            )
+        periodo = between(date(2026, 10, 1), date(2026, 10, 31))
+        self.assertEqual(
+            metrics.income_by_category(periodo)["datasets"][0]["data"], [10000]
+        )
+        self.assertEqual(metrics.top_services(periodo)["datasets"][0]["data"], [1])

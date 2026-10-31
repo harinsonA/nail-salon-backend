@@ -1,14 +1,16 @@
+from collections import defaultdict
 from decimal import Decimal
 
 from django.db.models import Count, DateField, Sum
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
 
 from apps.appointments.models.agenda import Cita
 from apps.appointments.models.detalle_cita import DetalleCita
+from apps.payments.accounting import PaymentExpressions
 from apps.payments.choices import MetodoPago
 from apps.payments.models.detalle_pago import DetallePago
 from apps.payments.models.pago import Pago
-from apps.payments.accounting import PaymentExpressions
 
 # Todas las funciones reciben un `period` (dashboard.services.periods.Period)
 # ya resuelto por el form a partir del filtro global, y devuelven el contrato
@@ -73,18 +75,20 @@ def attended_clients(period):
 
 
 def income_billed_vs_collected(period):
-    """Facturado (Pago.monto_total_cita por fecha_cita, sin citas pendientes) vs.
+    """Facturado (total de las citas completadas sin lo retenido, por fecha_cita) vs.
     cobrado neto (DetallePago.monto_pago por fecha_pago, las devoluciones restan), por mes."""
-    billed_rows = (
+    billed_by_month = defaultdict(Decimal)
+    for moment, total in PaymentExpressions.with_appointment_summary(
         Pago.objects.filter(
+            cita__estado=Cita.EstadoChoices.COMPLETADA,
             fecha_cita__date__gte=period.start_date,
             fecha_cita__date__lt=period.end_date,
         )
-        .exclude(cita__estado=Cita.EstadoChoices.PENDIENTE)
-        .annotate(period=TruncMonth("fecha_cita", output_field=DateField()))
-        .values("period")
-        .annotate(total=Sum("monto_total_cita"))
-    )
+    ).values_list("fecha_cita", "total_cita"):
+        billed_by_month[timezone.localtime(moment).date().replace(day=1)] += total
+    billed_rows = [
+        {"period": key, "total": total} for key, total in billed_by_month.items()
+    ]
     collected_rows = (
         DetallePago.objects.filter(
             pago__is_removed=False,
@@ -161,10 +165,11 @@ def payment_methods(period):
 
 
 def top_services(period, limit=8):
-    """Servicios más solicitados (suma de cantidad) en el período, top `limit`."""
+    """Servicios más solicitados (suma de cantidad en citas completadas), top `limit`."""
     rows = (
         DetalleCita.objects.filter(
             cita__is_removed=False,
+            cita__estado=Cita.EstadoChoices.COMPLETADA,
             cita__fecha_agenda__gte=period.start_date,
             cita__fecha_agenda__lt=period.end_date,
         )
@@ -184,10 +189,11 @@ def top_services(period, limit=8):
 
 
 def income_by_category(period):
-    """Ingresos (suma de precio_acordado) agrupados por categoría en el período."""
+    """Ingresos (suma de precio_acordado de citas completadas) agrupados por categoría."""
     rows = (
         DetalleCita.objects.filter(
             cita__is_removed=False,
+            cita__estado=Cita.EstadoChoices.COMPLETADA,
             cita__fecha_agenda__gte=period.start_date,
             cita__fecha_agenda__lt=period.end_date,
         )

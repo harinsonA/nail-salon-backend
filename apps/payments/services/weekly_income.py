@@ -1,10 +1,10 @@
 from calendar import monthrange
 from decimal import Decimal
 
-from django.db.models import DateField, Sum
-from django.db.models.functions import TruncDay
+from django.utils import timezone
 
 from apps.appointments.models import Cita
+from apps.payments.accounting import PaymentExpressions
 from apps.payments.choices import EstadoPago
 from apps.payments.models import Pago
 
@@ -23,7 +23,7 @@ def _num(value):
 
 
 def weekly_income(first_day, last_day):
-    """Ingreso facturado (Pago.monto_total_cita) por semana-del-mes.
+    """Ingreso facturado (total de la cita sin lo retenido) por semana-del-mes.
 
     Recibe el rango [first_day, last_day] (datetimes) que resuelve
     PaymentsFilterForm a partir del filtro `months`, y usa exactamente los
@@ -32,32 +32,26 @@ def weekly_income(first_day, last_day):
     la card "Total de pagos".
 
     Las semanas se definen por día del mes: Sem 1 = días 1-7, Sem 2 = 8-14, …
-    (4 o 5 buckets según el mes). Se agrupa por día en SQL (barato, <=31 filas)
-    y se pliega a semanas en Python para ser independiente del motor de BD.
+    (4 o 5 buckets según el mes). El total de cada cita ya es un agregado, así
+    que se trae una fila por pago y se pliega a semanas en Python.
     """
     year, month = first_day.year, first_day.month
     days_in_month = monthrange(year, month)[1]
     n_weeks = (days_in_month - 1) // 7 + 1  # 4 o 5
 
-    rows = (
+    rows = PaymentExpressions.with_appointment_summary(
         Pago.objects.filter(
             estado_pago=EstadoPago.COMPLETADO,
             cita__estado=Cita.EstadoChoices.COMPLETADA,
             fecha_cita__gte=first_day,
             fecha_cita__lte=last_day,
         )
-        .annotate(day=TruncDay("fecha_cita", output_field=DateField()))
-        .values("day")
-        .annotate(total=Sum("monto_total_cita"))
-    )
+    ).values_list("fecha_cita", "total_cita")
 
     buckets = [0] * n_weeks
-    for row in rows:
-        day = row["day"]
-        if not day:
-            continue
-        index = (day.day - 1) // 7
-        buckets[min(index, n_weeks - 1)] += _num(row["total"])
+    for moment, total in rows:
+        index = (timezone.localtime(moment).day - 1) // 7
+        buckets[min(index, n_weeks - 1)] += _num(total)
 
     labels = ["Semana {}".format(i + 1) for i in range(n_weeks)]
     return {

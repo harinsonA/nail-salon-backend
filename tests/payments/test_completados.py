@@ -11,8 +11,13 @@ from openpyxl import load_workbook
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME
-from apps.payments.choices import EstadoPago
-from apps.payments.models import Pago
+from apps.payments.choices import (
+    EstadoDetallePago,
+    EstadoPago,
+    MetodoPago,
+    TipoDetallePago,
+)
+from apps.payments.models import DetallePago, Pago
 from apps.profiles.models import Perfil
 from tests.base import NegocioTestCase
 
@@ -68,7 +73,7 @@ class CompletadosTests(NegocioTestCase):
             [fila["cliente_nombre"] for fila in datos["data"]], ["Atendida"]
         )
         self.assertEqual(
-            (datos["monto_total_cita"], datos["monto_recibido_mes"]),
+            (datos["total_cita"], datos["monto_recibido_mes"]),
             ("$20.000", "$20.000"),
         )
 
@@ -78,6 +83,55 @@ class CompletadosTests(NegocioTestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         ).json()
         self.assertEqual(sum(grafico["datasets"][0]["data"]), 20000)
+
+    def restaurada(self):
+        pago = self.pago("Restaurada", Cita.EstadoChoices.COMPLETADA, "27000")
+        for monto, tipo, estado in (
+            ("8000", TipoDetallePago.ANTICIPO, EstadoDetallePago.RETENIDO_DEFINITIVO),
+            ("19000", None, None),
+        ):
+            DetallePago.objects.create(
+                pago=pago,
+                fecha_pago=self.momento,
+                monto_pago=Decimal(monto),
+                metodo_pago=MetodoPago.EFECTIVO,
+                tipo_detalle=tipo,
+                estado_detalle=estado,
+            )
+
+    def test_el_total_de_la_cita_no_suma_lo_retenido(self):
+        self.restaurada()
+        datos = self.navegador.get(
+            reverse("payments_list"),
+            {"draw": 1, "start": 0, "length": 10, "months": self.mes},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        ).json()
+        self.assertEqual(
+            {fila["cliente_nombre"]: fila["total_cita_formatted"] for fila in datos["data"]},
+            {"Atendida": "$20.000", "Restaurada": "$19.000"},
+        )
+        self.assertEqual(
+            (datos["total_cita"], datos["monto_recibido_mes"]),
+            ("$39.000", "$39.000"),
+        )
+        grafico = self.navegador.get(
+            reverse("payments_weekly_income_ajax"),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        ).json()
+        self.assertEqual(sum(grafico["datasets"][0]["data"]), 39000)
+        hoja = load_workbook(
+            BytesIO(
+                self.navegador.get(
+                    reverse("payments_export"), {"months": self.mes}
+                ).content
+            )
+        ).active
+        filas = list(hoja.iter_rows(values_only=True))
+        columna = filas[0].index("Total de la cita")
+        self.assertEqual(
+            {fila[1]: fila[columna] for fila in filas[1:] if fila[1]},
+            {"Atendida": "$20.000", "Restaurada": "$19.000"},
+        )
 
     def test_el_excel_no_trae_la_cancelada(self):
         hoja = load_workbook(

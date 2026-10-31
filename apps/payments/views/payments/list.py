@@ -12,6 +12,7 @@ from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_short_date_time
 from apps.common.views.base_views import ProtectedView
+from apps.payments.accounting import PaymentExpressions
 from apps.payments.models import Pago
 
 from ...choices import EstadoPago
@@ -77,7 +78,7 @@ class PaymentsListView(BaseListViewAjax):
         "fecha_cita",
         "cliente_nombre",
         "descuento_total",
-        "monto_total_cita",
+        "total_cita",
         "fecha_pago_completado",
     ]
 
@@ -85,9 +86,12 @@ class PaymentsListView(BaseListViewAjax):
         "0": "fecha_cita",
         "1": "cliente_nombre",
         "2": "descuento_total",
-        "3": "monto_total_cita",
+        "3": "total_cita",
         "4": "fecha_pago_completado",
     }
+
+    def get_queryset(self):
+        return PaymentExpressions.with_appointment_summary(super().get_queryset())
 
     def get_values(self, queryset):
         values = super().get_values(queryset)
@@ -101,28 +105,26 @@ class PaymentsListView(BaseListViewAjax):
                     "descuento_total_formatted": Money.format(
                         item.get("descuento_total")
                     ),
-                    "monto_total_cita_formatted": Money.format(
-                        item.get("monto_total_cita")
-                    ),
+                    "total_cita_formatted": Money.format(item.get("total_cita")),
                 }
             )
         return values
 
     def additional_data(self, queryset) -> dict:
         additional_data = queryset.aggregate(
-            monto_total_cita=Sum("monto_total_cita"),
+            suma_total=Sum("total_cita"),
             descuento_total=Sum("descuento_total"),
         )
-        total = additional_data.get("monto_total_cita", 0)
+        total = additional_data.get("suma_total", 0)
         discount = additional_data.get("descuento_total", 0)
         _filters = self.get_filters()
         received = queryset.filter(
             fecha_pago_completado__gte=_filters.get("fecha_cita__gte"),
             fecha_pago_completado__lte=_filters.get("fecha_cita__lte"),
-        ).aggregate(total=Sum("monto_total_cita"))
+        ).aggregate(total=Sum("total_cita"))
 
         return {
-            "monto_total_cita": Money.format(total),
+            "total_cita": Money.format(total),
             "descuento_total": Money.format(discount),
             "monto_recibido_mes": Money.format(received.get("total", 0)),
         }
@@ -138,7 +140,7 @@ class PaymentsExportView(ExcelExportMixin, PaymentsListView):
         ExcelColumn("Cliente", "cliente_nombre", width=30),
         ExcelColumn("Descuento", "descuento_total_formatted", width=16, align="right"),
         ExcelColumn(
-            "Monto pagado", "monto_total_cita_formatted", width=16, align="right"
+            "Total de la cita", "total_cita_formatted", width=16, align="right"
         ),
         ExcelColumn(
             "Fecha pago completado",
