@@ -4,6 +4,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
 
+from apps.appointments.models import Cita
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthField
 from apps.common.exports.columns import ExcelColumn
@@ -66,7 +67,10 @@ class PaymentsListView(BaseListViewAjax):
     model = Pago
     include_options_column = False
     filter_form_class = PaymentsFilterForm
-    _filters = {"estado_pago__in": [EstadoPago.COMPLETADO]}
+    _filters = {
+        "estado_pago__in": [EstadoPago.COMPLETADO],
+        "cita__estado": Cita.EstadoChoices.COMPLETADA,
+    }
 
     field_list = [
         "fecha_cita",
