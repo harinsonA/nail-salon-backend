@@ -1,9 +1,9 @@
 from decimal import Decimal
 
-from django.db.models import Case, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Case, CharField, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 
-from apps.payments.choices import EstadoDetallePago, TipoDetallePago
+from apps.payments.choices import EstadoDetallePago, TipoDetallePago, TipoMovimiento
 
 """========================================================================="""
 # region ........ Constants
@@ -39,6 +39,17 @@ def net_paid(prefix=""):
 
 def incoming(prefix=""):
     return ~Q(**{f"{prefix}tipo_detalle": TipoDetallePago.DEVOLUCION})
+
+
+def movement_kind(prefix=""):
+    return Case(
+        When(
+            **{f"{prefix}tipo_detalle": TipoDetallePago.DEVOLUCION},
+            then=Value(TipoMovimiento.EGRESO),
+        ),
+        default=Value(TipoMovimiento.INGRESO),
+        output_field=CharField(),
+    )
 
 
 # endregion

@@ -1,10 +1,12 @@
 from decimal import Decimal
 
+from django.db.models import Sum
+
 from apps.payments.choices import MetodoPago
 from apps.payments.models import DetallePago
-from apps.payments.services.account import net_paid
+from apps.payments.services.account import incoming, movement_kind
 
-# Servicio del gráfico "Ingresos por método de pago" de la página de ingresos.
+# Servicio del gráfico "Ingresos por método de pago" de la página de movimientos.
 # Devuelve el mismo contrato JSON uniforme que los gráficos del dashboard
 # (labels + datasets + meta) para poder reusar DashboardCore.renderChart.
 
@@ -19,11 +21,11 @@ def _num(value):
 
 
 def income_by_method(filters):
-    """Monto recibido neto (DetallePago.monto_pago, las devoluciones restan) agrupado por método de pago.
+    """Monto recibido (DetallePago.monto_pago, solo ingresos: los egresos no se grafican) agrupado por método de pago.
 
     Recibe el dict de filtros ORM que arma IncomesFilterForm.clean (el rango de
-    fechas y, si la usuaria eligió uno, `metodo_pago`) y lo aplica tal cual, de
-    modo que las barras siempre cuadren con la tabla y las cards de la vista.
+    fechas y, si la usuaria eligió uno, `metodo_pago` o el movimiento, ingreso o egreso) y lo aplica tal cual, de
+    modo que las barras siempre cuadren con los ingresos de la tabla y la card de ingresos.
     El `pago__is_removed=False` replica el _filters de IncomesListView.
 
     Con un método seleccionado se grafica solo esa barra; sin filtro de método
@@ -31,9 +33,10 @@ def income_by_method(filters):
     que el eje no cambie de forma entre rangos.
     """
     rows = (
-        DetallePago.objects.filter(pago__is_removed=False, **filters)
+        DetallePago.objects.annotate(tipo_movimiento=movement_kind())
+        .filter(incoming(), pago__is_removed=False, **filters)
         .values("metodo_pago")
-        .annotate(total=net_paid())
+        .annotate(total=Sum("monto_pago"))
     )
     totals = {row["metodo_pago"]: row["total"] for row in rows}
 

@@ -235,7 +235,7 @@ class CuentaPagoTests(NegocioTestCase):
             totales, {"monto_total_cita": "$ 28,000", "total_abonado": "$ 10,000"}
         )
 
-    def test_ingresos_restan_las_devoluciones_y_no_las_promedian(self):
+    def test_movimientos_separan_ingresos_egresos_y_neto(self):
         pago = self.pago()
         anticipo = self.fila(pago, "10000", Tipo.ANTICIPO, Estado.RETENIDO)
         self.fila(pago, "6000")
@@ -245,13 +245,13 @@ class CuentaPagoTests(NegocioTestCase):
         self.assertEqual(
             totales,
             {
-                "monto_total": "$ 12,000",
-                "monto_promedio": "$ 8,000",
-                "cantidad_ingresos": 2,
+                "total_ingresos": "$ 16,000",
+                "total_egresos": "$ 4,000",
+                "total_neto": "$ 12,000",
             },
         )
 
-    def test_el_grafico_por_metodo_resta_la_devolucion_en_su_metodo(self):
+    def test_el_grafico_por_metodo_muestra_solo_ingresos(self):
         pago = self.pago()
         anticipo = self.fila(
             pago,
@@ -272,7 +272,7 @@ class CuentaPagoTests(NegocioTestCase):
         datos = dict(
             zip(grafico["datasets"][0]["keys"], grafico["datasets"][0]["data"])
         )
-        self.assertEqual(datos["transferencia"], 6000)
+        self.assertEqual(datos["transferencia"], 10000)
         self.assertEqual(datos["efectivo"], 2000)
 
     def test_el_dashboard_cobra_neto_y_no_factura_citas_pendientes(self):

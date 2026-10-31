@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django import forms
-from django.db.models import Avg, Count
+from django.db.models import Sum
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -14,15 +14,28 @@ from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.common.utils.currency import format_currency
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import DetallePago
-from apps.payments.services.account import incoming, net_paid
+from apps.payments.services.account import (
+    incoming,
+    movement_kind,
+    net_paid,
+    signed_amount,
+)
 
-from ...choices import MetodoPago
+from ...choices import MetodoPago, TipoMovimiento
 
 DEFAULT_RANGE_IN_DAYS = 15
 DATE_FORMAT = "%d/%m/%Y"
 ALL_PAYMENT_METHODS = ""
 PAYMENT_METHOD_CHOICES = [(ALL_PAYMENT_METHODS, "Todos"), *MetodoPago.CHOICES]
 VALID_PAYMENT_METHODS = {value for value, _ in MetodoPago.CHOICES}
+ALL_MOVEMENTS = ""
+MOVEMENT_CHOICES = [
+    (ALL_MOVEMENTS, "Todos"),
+    (TipoMovimiento.INGRESO, "Ingresos"),
+    (TipoMovimiento.EGRESO, "Egresos"),
+]
+VALID_MOVEMENTS = {value for value, _ in TipoMovimiento.CHOICES}
+MOVEMENT_LABELS = dict(TipoMovimiento.CHOICES)
 
 """========================================================================="""
 # region ........ Helpers
@@ -31,6 +44,13 @@ VALID_PAYMENT_METHODS = {value for value, _ in MetodoPago.CHOICES}
 def get_default_date_range():
     today = timezone.localdate()
     return today - timedelta(days=DEFAULT_RANGE_IN_DAYS), today
+
+
+def movements():
+    return DetallePago.objects.annotate(
+        tipo_movimiento=movement_kind(),
+        monto_movimiento=signed_amount(),
+    )
 
 
 # endregion
@@ -58,6 +78,15 @@ class IncomesFilterForm(forms.Form):
             attrs={"class": FORM_SELECT_CLASS},
         ),
     )
+    movement = forms.CharField(
+        label="Movimiento",
+        initial=ALL_MOVEMENTS,
+        required=False,
+        widget=forms.Select(
+            choices=MOVEMENT_CHOICES,
+            attrs={"class": FORM_SELECT_CLASS},
+        ),
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -74,6 +103,9 @@ class IncomesFilterForm(forms.Form):
         payment_method = cleaned_data.get("payment_method")
         if payment_method in VALID_PAYMENT_METHODS:
             filters["metodo_pago"] = payment_method
+        movement = cleaned_data.get("movement")
+        if movement in VALID_MOVEMENTS:
+            filters["tipo_movimiento"] = movement
         return filters
 
 
@@ -107,6 +139,7 @@ class IncomesView(ProtectedView, TemplateView):
 
 class IncomesListView(BaseListViewAjax):
     model = DetallePago
+    queryset = movements()
     include_options_column = False
     filter_form_class = IncomesFilterForm
     _filters = {"pago__is_removed": False}
@@ -117,7 +150,8 @@ class IncomesListView(BaseListViewAjax):
         "pago__fecha_cita",
         "metodo_pago",
         "referencia_pago",
-        "monto_pago",
+        "tipo_movimiento",
+        "monto_movimiento",
     ]
 
     ordering_fields = {
@@ -126,7 +160,8 @@ class IncomesListView(BaseListViewAjax):
         "2": "pago__fecha_cita",
         "3": "metodo_pago",
         "4": "referencia_pago",
-        "5": "monto_pago",
+        "5": "tipo_movimiento",
+        "6": "monto_movimiento",
     }
 
     @staticmethod
@@ -135,6 +170,12 @@ class IncomesListView(BaseListViewAjax):
             return "-- --"
         return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
 
+    def get_order_by(self):
+        ordering = super().get_order_by()
+        if not ordering:
+            return ordering
+        return (*ordering, "-pk" if ordering[0].startswith("-") else "pk")
+
     def get_queryset(self):
         return super().get_queryset().select_related("pago")
 
@@ -142,6 +183,7 @@ class IncomesListView(BaseListViewAjax):
         values = super().get_values(queryset)
         payment_method_display = dict(MetodoPago.CHOICES)
         for item in values:
+            movement = item.get("tipo_movimiento")
             item.update(
                 {
                     "fecha_pago_display": self._format_datetime(item.get("fecha_pago")),
@@ -153,28 +195,32 @@ class IncomesListView(BaseListViewAjax):
                         item.get("metodo_pago"), item.get("metodo_pago")
                     ),
                     "referencia_pago_display": item.get("referencia_pago") or "—",
-                    "monto_pago_formatted": format_currency(item.get("monto_pago")),
+                    "tipo_movimiento_display": MOVEMENT_LABELS.get(movement, movement),
+                    "es_egreso": movement == TipoMovimiento.EGRESO,
+                    "monto_movimiento_formatted": format_currency(
+                        item.get("monto_movimiento")
+                    ),
                 }
             )
         return values
 
     def additional_data(self, queryset) -> dict:
         additional_data = queryset.aggregate(
-            monto_total=net_paid(),
-            monto_promedio=Avg("monto_pago", filter=incoming()),
-            cantidad_ingresos=Count("pk", filter=incoming()),
+            total_ingresos=Sum("monto_pago", filter=incoming()),
+            total_egresos=Sum("monto_pago", filter=~incoming()),
+            total_neto=net_paid(),
         )
         return {
-            "monto_total": format_currency(additional_data.get("monto_total")),
-            "monto_promedio": format_currency(additional_data.get("monto_promedio")),
-            "cantidad_ingresos": additional_data.get("cantidad_ingresos"),
+            "total_ingresos": format_currency(additional_data.get("total_ingresos")),
+            "total_egresos": format_currency(additional_data.get("total_egresos")),
+            "total_neto": format_currency(additional_data.get("total_neto")),
         }
 
 
 class IncomesExportView(ExcelExportMixin, IncomesListView):
     force_export = True
-    excel_filename = "ingresos"
-    excel_sheet_title = "Ingresos"
+    excel_filename = "movimientos"
+    excel_sheet_title = "Movimientos"
 
     excel_columns = [
         ExcelColumn("Fecha pago", "fecha_pago_display", width=20, align="center"),
@@ -182,7 +228,8 @@ class IncomesExportView(ExcelExportMixin, IncomesListView):
         ExcelColumn("Fecha cita", "fecha_cita_display", width=20, align="center"),
         ExcelColumn("Método de pago", "metodo_pago_display", width=18, align="center"),
         ExcelColumn("Referencia", "referencia_pago_display", width=22),
-        ExcelColumn("Monto recibido", "monto_pago_formatted", width=16, align="right"),
+        ExcelColumn("Tipo de movimiento", "tipo_movimiento_display", width=20, align="center"),
+        ExcelColumn("Monto", "monto_movimiento_formatted", width=16, align="right"),
     ]
 
 

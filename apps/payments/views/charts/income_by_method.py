@@ -7,10 +7,10 @@ from apps.payments.views.incomes.list import IncomesFilterForm
 
 
 class IncomeByMethodChartAjax(ProtectedAjaxView, View):
-    """Endpoint del gráfico "Ingresos por método de pago" de la página de ingresos.
+    """Endpoint del gráfico "Ingresos por método de pago" de la página de movimientos.
 
     Reusa IncomesFilterForm para resolver exactamente los mismos filtros que la
-    tabla (el rango de fechas, con su default de hoy-15, y el método si viene) y
+    tabla (el rango de fechas, con su default de hoy-15, y el método o el movimiento si vienen) y
     delega el cálculo en el servicio.
     """
 
