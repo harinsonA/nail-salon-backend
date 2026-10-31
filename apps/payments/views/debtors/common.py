@@ -149,14 +149,9 @@ class PaymentInstallmentMixin:
     model = Pago
     form_class = AddPaymentForm
 
-    def installments(self):
-        return self.object.detalles_pago.select_related("registrado_por").order_by(
-            "fecha_pago", "pk"
-        )
-
     @cached_property
     def summary(self):
-        return AppointmentPaymentSummary(self.object, self.installments())
+        return AppointmentPaymentSummary.for_payment(self.object)
 
     def pending_amount(self):
         return self.summary.pending()

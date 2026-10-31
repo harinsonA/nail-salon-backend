@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from apps.appointments.models import Cita, DetalleCita
 from apps.clients.models import Cliente
-from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
 from apps.profiles.models import Perfil
 from tests.base import NegocioTestCase
@@ -84,7 +84,7 @@ class PanelCitaTests(NegocioTestCase):
         self.assertContains(respuesta, "Pendiente sin cerrar")
         self.assertContains(respuesta, "calendar-event--vencida")
 
-    def test_la_completada_muestra_sus_abonos_y_el_saldo(self):
+    def test_la_completada_muestra_sus_pagos_y_el_saldo(self):
         cita = self.cita(estado=Cita.EstadoChoices.COMPLETADA)
         pago = Pago.objects.create(
             cita=cita,
@@ -108,6 +108,51 @@ class PanelCitaTests(NegocioTestCase):
         self.assertContains(respuesta, "$13.000")
         self.assertContains(respuesta, "7 enero 2030, 11:05")
         self.assertContains(respuesta, "Transferencia")
+        self.assertContains(respuesta, "<th>Tipo</th>")
+        self.assertEqual(
+            respuesta.context["payment"]["payments"][0]["by"], "Camila Rojas"
+        )
+
+    def test_la_completada_muestra_solo_la_cuenta_de_la_cita(self):
+        cita = self.cita(estado=Cita.EstadoChoices.COMPLETADA)
+        pago = Pago.objects.create(
+            cita=cita,
+            monto_total_cita=Decimal("26000"),
+            estado_pago=EstadoPago.PENDIENTE,
+            cliente_nombre="Paula Herrera",
+            fecha_cita=timezone.make_aware(datetime(2030, 1, 7, 10, 30)),
+        )
+
+        def fila(monto, tipo, estado, dia, devuelve=None, por=None):
+            return DetallePago.objects.create(
+                pago=pago,
+                fecha_pago=timezone.make_aware(datetime(2030, 1, dia, 9, 0)),
+                monto_pago=Decimal(monto),
+                metodo_pago=MetodoPago.EFECTIVO,
+                tipo_detalle=tipo,
+                estado_detalle=estado,
+                detalle_devuelto=devuelve,
+                registrado_por=por,
+            )
+
+        fila("8000", TipoDetallePago.ANTICIPO, EstadoDetallePago.RETENIDO_DEFINITIVO, 1, por=self.colaboradora)
+        devuelto = fila("4000", TipoDetallePago.ANTICIPO, EstadoDetallePago.DEVUELTO, 2)
+        fila("4000", TipoDetallePago.DEVOLUCION, EstadoDetallePago.VIGENTE, 3, devuelve=devuelto)
+        fila("5000", TipoDetallePago.ANTICIPO, EstadoDetallePago.VIGENTE, 4, por=self.encargada)
+        fila("10000", TipoDetallePago.ABONO, EstadoDetallePago.VIGENTE, 5)
+        pago_panel = self.abrir("agenda_see_modal", cita).context["payment"]
+        filas = {row["label"]: row["value"] for row in pago_panel["rows"]}
+        self.assertEqual(
+            (filas["Total de la cita"], filas["Pagado"], filas["Saldo pendiente"]),
+            ("$18.000", "$15.000", "$3.000"),
+        )
+        self.assertEqual(
+            [(row["kind"], row["amount"]) for row in pago_panel["payments"]],
+            [("Anticipo", "$5.000"), ("Abono", "$10.000")],
+        )
+        self.assertEqual(pago_panel["first"]["name"], "Ana Pérez (tú)")
+        self.assertEqual(pago_panel["payments"][0]["by"], "Ana Pérez")
+        self.assertTrue(pago_panel["pay_url"])
 
     def test_cancelar_muestra_el_panel_con_su_boton_y_cancela(self):
         cita = self.cita()

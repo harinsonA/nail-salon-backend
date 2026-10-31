@@ -486,6 +486,11 @@ form.calendar-detail-form {
   margin-bottom: 0;
 }
 
+.calendar-detail__payments td:nth-child(4) {
+  white-space: normal;
+  text-align: left;
+}
+
 .calendar-detail__notes {
   margin: 0;
   font-size: .82rem;
