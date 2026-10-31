@@ -3,9 +3,6 @@
 
   const PANEL_CLASS = "calendar-detail";
 
-  const fmtMoney = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
-  const money = (value) => fmtMoney.format(value);
-
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
     if (className) {
@@ -50,14 +47,14 @@
       );
       const refunded = rows.filter((row) => row.refund).reduce((sum, row) => sum + row.amount, 0);
       const total = rows.reduce((sum, row) => sum + row.amount, 0);
-      ui.refunded.textContent = money(refunded);
-      ui.retained.textContent = money(total - refunded);
+      ui.refunded.textContent = formatMoney(refunded);
+      ui.retained.textContent = formatMoney(total - refunded);
     };
 
     const rowElement = (row) => {
       const wrapper = el("div", `calendar-cancel__row${row.refund ? " is-refund" : ""}`);
       const head = el("div", "calendar-cancel__head");
-      head.append(el("span", "", `${row.methodLabel} - ${row.date}`), el("strong", "", money(row.amount)));
+      head.append(el("span", "", `${row.methodLabel} - ${row.date}`), el("strong", "", formatMoney(row.amount)));
 
       const note = el(
         "p",
@@ -138,18 +135,18 @@
       ui.field.value = JSON.stringify(rows.filter((row) => row.restore).map((row) => row.id));
       const back = rows.filter((row) => row.restore).reduce((sum, row) => sum + row.amount, 0);
       const kept = rows.reduce((sum, row) => sum + row.amount, 0) - back;
-      ui.services.textContent = money(config.servicesTotal);
+      ui.services.textContent = formatMoney(config.servicesTotal);
       ui.backRow.hidden = !back;
-      ui.back.textContent = `-${money(back)}`;
+      ui.back.textContent = `-${formatMoney(back)}`;
       ui.keptRow.hidden = !kept;
-      ui.kept.textContent = money(kept);
-      ui.remaining.textContent = money(Math.max(0, config.servicesTotal - config.prepaid - back));
+      ui.kept.textContent = formatMoney(kept);
+      ui.remaining.textContent = formatMoney(Math.max(0, config.servicesTotal - config.prepaid - back));
     };
 
     const rowElement = (row) => {
       const wrapper = el("div", `calendar-cancel__row calendar-restore__row${row.restore ? "" : " is-kept"}`);
       const head = el("div", "calendar-cancel__head");
-      head.append(el("span", "", `${row.methodLabel} - ${row.date}`), el("strong", "", money(row.amount)));
+      head.append(el("span", "", `${row.methodLabel} - ${row.date}`), el("strong", "", formatMoney(row.amount)));
 
       const note = el(
         "p",

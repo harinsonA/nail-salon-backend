@@ -109,7 +109,7 @@ Lista de pagos
 
     initializeMonthPickers();
 
-    DashboardCore.register('chart-weekly-income', 'bar');
+    DashboardCore.register('chart-weekly-income', 'bar', { money: true });
 
     const dataTableConfig = {
       tableID: '#payments_table',

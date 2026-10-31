@@ -9,10 +9,8 @@
 
   const fmtMonth = new Intl.DateTimeFormat("es-CL", { month: "long" });
   const fmtWeekday = new Intl.DateTimeFormat("es-CL", { weekday: "long" });
-  const fmtMoney = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
 
   const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
-  const money = (value) => fmtMoney.format(value);
 
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -100,7 +98,7 @@
       }
       const paid = this.paid();
       if (paid > this.total) {
-        return `Los anticipos suman ${money(paid)} y no pueden superar el total de los servicios (${money(this.total)}).`;
+        return `Los anticipos suman ${formatMoney(paid)} y no pueden superar el total de los servicios (${formatMoney(this.total)}).`;
       }
       return "";
     }
@@ -118,7 +116,7 @@
         row.removed = false;
         this.render();
       });
-      wrapper.append(el("span", "", `El anticipo de ${money(row.amount)} en ${method} del ${row.date} se quitará al guardar.`), undo);
+      wrapper.append(el("span", "", `El anticipo de ${formatMoney(row.amount)} en ${method} del ${row.date} se quitará al guardar.`), undo);
       return wrapper;
     }
 
@@ -236,8 +234,8 @@
         row.input.setAttribute("aria-invalid", String(invalid));
       });
       this.ui.summary.hidden = !paid;
-      this.ui.paid.textContent = `-${money(Math.min(paid, total))}`;
-      this.ui.balance.textContent = money(Math.max(0, total - paid));
+      this.ui.paid.textContent = `-${formatMoney(Math.min(paid, total))}`;
+      this.ui.balance.textContent = formatMoney(Math.max(0, total - paid));
       this.ui.bar.style.width = `${total ? Math.min(100, (paid / total) * 100) : 0}%`;
     }
 
@@ -417,8 +415,8 @@
       const line = this.editorLine();
       const invalid = line.discount > line.service.precio * line.quantity;
       this.ui.editorName.textContent = line.service.nombre;
-      this.ui.editorMeta.textContent = `${money(line.service.precio)} c/u · ${line.service.categoriaNombre}`;
-      this.ui.lineTotal.textContent = money(this.lineTotal(line));
+      this.ui.editorMeta.textContent = `${formatMoney(line.service.precio)} c/u · ${line.service.categoriaNombre}`;
+      this.ui.lineTotal.textContent = formatMoney(this.lineTotal(line));
       this.ui.add.disabled = invalid;
       this.ui.discountError.hidden = !invalid;
     }
@@ -443,7 +441,7 @@
           extra.push(`x${line.quantity}`);
         }
         if (line.discount) {
-          extra.push(`-${money(line.discount)}`);
+          extra.push(`-${formatMoney(line.discount)}`);
         }
         if (extra.length) {
           name.append(el("small", "", extra.join(" · ")));
@@ -457,15 +455,15 @@
           this.renderServices();
           this.renderSummary();
         });
-        item.append(name, el("strong", "", money(this.lineTotal(line))), remove);
+        item.append(name, el("strong", "", formatMoney(this.lineTotal(line))), remove);
         list.append(item);
       });
 
       const subtotal = this.lines.reduce((sum, line) => sum + line.service.precio * line.quantity, 0);
       const discounts = this.lines.reduce((sum, line) => sum + line.discount, 0);
-      this.ui.subtotal.textContent = money(subtotal);
-      this.ui.discounts.textContent = discounts ? `-${money(discounts)}` : money(0);
-      this.ui.total.textContent = money(subtotal - discounts);
+      this.ui.subtotal.textContent = formatMoney(subtotal);
+      this.ui.discounts.textContent = discounts ? `-${formatMoney(discounts)}` : formatMoney(0);
+      this.ui.total.textContent = formatMoney(subtotal - discounts);
       if (this.advances) {
         this.advances.renderTotals(subtotal - discounts);
       }
