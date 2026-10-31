@@ -41,6 +41,40 @@ def incoming(prefix=""):
     return ~Q(**{f"{prefix}tipo_detalle": TipoDetallePago.DEVOLUCION})
 
 
+def retained_amount(prefix=""):
+    retained = Q(
+        **{
+            f"{prefix}tipo_detalle__in": PREPAID_TYPES,
+            f"{prefix}estado_detalle__in": RETAINED_STATES,
+        }
+    )
+    refund_of_retained = Q(
+        **{
+            f"{prefix}tipo_detalle": TipoDetallePago.DEVOLUCION,
+            f"{prefix}detalle_devuelto__estado_detalle__in": RETAINED_STATES,
+        }
+    )
+    return Coalesce(
+        Sum(
+            Case(
+                When(retained, then=F(f"{prefix}monto_pago")),
+                When(refund_of_retained, then=-F(f"{prefix}monto_pago")),
+                default=Value(ZERO),
+                output_field=MONEY_FIELD,
+            )
+        ),
+        Value(ZERO),
+        output_field=MONEY_FIELD,
+    )
+
+
+def appointment_payment_filter(prefix=""):
+    return incoming(prefix) & (
+        Q(**{f"{prefix}estado_detalle": EstadoDetallePago.VIGENTE})
+        | Q(**{f"{prefix}estado_detalle__isnull": True})
+    )
+
+
 def movement_kind(prefix=""):
     return Case(
         When(
@@ -65,6 +99,13 @@ def detail_type(detail):
 
 def detail_status(detail):
     return detail.estado_detalle or EstadoDetallePago.VIGENTE
+
+
+def is_appointment_payment(detail):
+    return (
+        detail_type(detail) != TipoDetallePago.DEVOLUCION
+        and detail_status(detail) == EstadoDetallePago.VIGENTE
+    )
 
 
 # endregion
@@ -135,6 +176,15 @@ class PaymentAccount:
 
     def balance(self):
         return max(ZERO, self.payment.monto_total_cita - self.paid())
+
+    def appointment_total(self):
+        return self.payment.monto_total_cita - self.retained()
+
+    def appointment_paid(self):
+        return self.paid() - self.retained()
+
+    def appointment_payments(self):
+        return [detail for detail in self.details if is_appointment_payment(detail)]
 
 
 # endregion
