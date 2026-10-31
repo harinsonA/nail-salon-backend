@@ -29,9 +29,8 @@ from apps.common.utils.dates import (
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
+from apps.payments.accounting import AppointmentLedger, PaymentAccount, PaymentLabels
 from apps.payments.choices import MetodoPago
-from apps.payments.services.account import PaymentAccount
-from apps.payments.services.advances import appointment_payment, open_advances
 from apps.services.models import Categoria, Servicio
 from apps.settings.preferences import ADVANCE_MODULE
 
@@ -54,7 +53,6 @@ DISCOUNT_INVALID = (
 )
 NO_CATEGORY = "Sin categoría"
 REFERENCE_MAX_LENGTH = 100
-PAYMENT_METHODS = {value for value, _ in MetodoPago.CHOICES}
 ADVANCES_INVALID = "Los anticipos enviados no son válidos."
 ADVANCE_AMOUNT_REQUIRED = "Ingresa el monto de cada anticipo."
 ADVANCE_LOCKED_ROLE = (
@@ -208,8 +206,9 @@ class AppointmentForm(BSModalForm):
         self.instance = instance
         self.allow_advances = allow_advances
         self.can_change_saved = not is_collaborator(user)
-        self.payment = appointment_payment(instance)
-        self.saved_advances = open_advances(self.payment) if allow_advances else []
+        ledger = AppointmentLedger.for_appointment(instance)
+        self.payment = ledger.payment
+        self.saved_advances = ledger.open_advances() if allow_advances else []
         self.details = {}
         if instance:
             self.details = {detail.pk: detail for detail in instance.detalles.all()}
@@ -344,7 +343,7 @@ class AppointmentForm(BSModalForm):
             raise forms.ValidationError(ADVANCE_AMOUNT_REQUIRED)
         if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
             raise forms.ValidationError(ADVANCES_INVALID)
-        if method not in PAYMENT_METHODS or not isinstance(reference, str):
+        if method not in PaymentLabels.METHODS or not isinstance(reference, str):
             raise forms.ValidationError(ADVANCES_INVALID)
         reference = reference.strip()
         if len(reference) > REFERENCE_MAX_LENGTH:

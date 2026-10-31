@@ -10,8 +10,7 @@ from apps.appointments.models import Cita, DetalleCita
 from apps.clients.models import Cliente
 from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import net_paid
-from apps.payments.services.advances import register_advances
+from apps.payments.accounting import AppointmentPaymentService, PaymentExpressions
 from apps.profiles.models import Perfil
 from apps.services.models import Categoria, Servicio
 from tests.base import NegocioTestCase
@@ -46,7 +45,7 @@ class CitaConAnticiposBase(NegocioTestCase):
 
     def con_anticipos(self, *anticipos, cita=None):
         filas = [{"amount": monto, "method": metodo, "reference": ""} for monto, metodo in anticipos]
-        register_advances(cita or self.cita, filas, self.encargada)
+        AppointmentPaymentService(cita or self.cita, self.encargada).register_advances(filas)
         return list(DetallePago.objects.filter(pago__cita=cita or self.cita).order_by("pk"))
 
     def navegador(self, usuario=None):
@@ -121,7 +120,7 @@ class CancelarCitaConAnticiposTests(CitaConAnticiposBase):
         self.assertEqual(self.estados(), [EstadoDetallePago.RETENIDO, EstadoDetallePago.DEVUELTO])
         pago = Pago.objects.get()
         self.assertEqual((pago.estado_pago, pago.monto_total_cita), (EstadoPago.COMPLETADO, Decimal("6000")))
-        self.assertEqual(DetallePago.objects.aggregate(total=net_paid())["total"], Decimal("6000"))
+        self.assertEqual(DetallePago.objects.aggregate(total=PaymentExpressions.net_paid())["total"], Decimal("6000"))
 
     def test_reembolsar_todo_deja_el_pago_reembolsado(self):
         primera, segunda = self.con_anticipos((6000, MetodoPago.TARJETA), (4000, MetodoPago.EFECTIVO))
@@ -134,7 +133,7 @@ class CancelarCitaConAnticiposTests(CitaConAnticiposBase):
         )
         pago = Pago.objects.get()
         self.assertEqual((pago.estado_pago, pago.monto_total_cita), (EstadoPago.REEMBOLSADO, Decimal("0")))
-        self.assertEqual(DetallePago.objects.aggregate(total=net_paid())["total"], Decimal("0"))
+        self.assertEqual(DetallePago.objects.aggregate(total=PaymentExpressions.net_paid())["total"], Decimal("0"))
 
     def test_el_detalle_de_la_cita_cancelada_muestra_lo_retenido_y_reembolsado(self):
         primera, segunda = self.con_anticipos((6000, MetodoPago.TARJETA), (4000, MetodoPago.EFECTIVO))

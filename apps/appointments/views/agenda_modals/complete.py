@@ -3,7 +3,6 @@ from bootstrap_modal_forms.generic import BSModalUpdateView
 from django import forms
 from django.db import transaction
 from django.http import JsonResponse
-from django.utils import timezone
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.appointments.access import AppointmentAccessMixin
@@ -17,17 +16,15 @@ from apps.common.form_classes import (
 )
 from apps.common.form_fields import NoteField
 from apps.common.utils.currency import Money
-from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
-from apps.payments.choices import (
-    EstadoDetallePago,
-    EstadoPago,
-    MetodoPago,
-    TipoDetallePago,
+from apps.payments.accounting import (
+    ZERO,
+    AppointmentLedger,
+    AppointmentPaymentService,
+    PaymentAccount,
+    PaymentHeader,
 )
-from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import ZERO, PaymentAccount
-from apps.payments.services.advances import appointment_payment, fill_payment
+from apps.payments.choices import MetodoPago
 
 """========================================================================="""
 # region ........ Constants
@@ -102,20 +99,12 @@ class AgendaConfirmationForm(BSModalModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.payment = appointment_payment(self.instance)
-        self.services_total = self.__get_services_total()
+        self.payment = AppointmentLedger.for_appointment(self.instance).payment
+        self.services_total = PaymentHeader(self.instance).services_total()
         self.prepaid = PaymentAccount(self.payment).credit() if self.payment else ZERO
         self.remaining_payment_value = max(ZERO, self.services_total - self.prepaid)
         if self.prepaid:
             self.fields["full_payment"].label = BALANCE_PAYMENT_LABEL
-
-    def __get_services_total(self):
-        total_amount = 0
-        details = self.instance.detalles.values_list("precio_acordado")
-        for detail in details:
-            price_acorded = detail[0]
-            total_amount += price_acorded
-        return total_amount
 
     class Meta:
         model = Cita
@@ -210,43 +199,15 @@ class AgendaConfirmationModal(
             "time": self._get_time_formatted(self.object),
         }
 
-    def __save_payment(self, form, user) -> Pago:
-        payment = fill_payment(form.payment or Pago(cita=self.object), self.object)
-        payment.atendido_por = user
-        payment.atendido_por_nombre = user_display_name(user)
-        if form.prepaid + form.amount_paid_now() >= form.services_total:
-            payment.estado_pago = EstadoPago.COMPLETADO
-            payment.fecha_pago_completado = timezone.now()
-        payment.save()
-        return payment
-
-    @staticmethod
-    def __save_payment_detail(payment: Pago, form, user) -> None:
-        amount_paid = form.amount_paid_now()
-        if not amount_paid:
-            return
-        cleaned_data = form.cleaned_data
-        payment_method = cleaned_data.get("payment_method", MetodoPago.EFECTIVO)
-        payment_detail_instance = DetallePago(
-            pago=payment,
-            fecha_pago=timezone.now(),
-            monto_pago=amount_paid,
-            metodo_pago=payment_method,
-            notas_detalle=cleaned_data.get("observations", ""),
-            registrado_por=user,
-            tipo_detalle=TipoDetallePago.ABONO,
-            estado_detalle=EstadoDetallePago.VIGENTE,
-        )
-        if payment_method != MetodoPago.EFECTIVO:
-            payment_reference = cleaned_data.get("payment_reference") or None
-            payment_detail_instance.referencia_pago = payment_reference
-        payment_detail_instance.save()
-
     @transaction.atomic
     def form_valid(self, form):
-        user = self.request.user
-        payment = self.__save_payment(form, user)
-        self.__save_payment_detail(payment, form, user)
+        cleaned_data = form.cleaned_data
+        AppointmentPaymentService(self.object, self.request.user).complete(
+            amount=form.amount_paid_now(),
+            method=cleaned_data.get("payment_method", MetodoPago.EFECTIVO),
+            reference=cleaned_data.get("payment_reference"),
+            notes=cleaned_data.get("observations", ""),
+        )
         self.object.estado = Cita.EstadoChoices.COMPLETADA
         self.object.save()
         message = self.__get_message_success()

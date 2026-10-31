@@ -8,7 +8,7 @@ from apps.appointments.models.detalle_cita import DetalleCita
 from apps.payments.choices import MetodoPago
 from apps.payments.models.detalle_pago import DetallePago
 from apps.payments.models.pago import Pago
-from apps.payments.services.account import net_paid
+from apps.payments.accounting import PaymentExpressions
 
 # Todas las funciones reciben un `period` (dashboard.services.periods.Period)
 # ya resuelto por el form a partir del filtro global, y devuelven el contrato
@@ -93,7 +93,7 @@ def income_billed_vs_collected(period):
         )
         .annotate(period=TruncMonth("fecha_pago", output_field=DateField()))
         .values("period")
-        .annotate(total=net_paid())
+        .annotate(total=PaymentExpressions.net_paid())
     )
 
     billed = _monthly_series(period, billed_rows, "total")
@@ -143,7 +143,7 @@ def payment_methods(period):
             fecha_pago__date__lt=period.end_date,
         )
         .values("metodo_pago")
-        .annotate(total=net_paid())
+        .annotate(total=PaymentExpressions.net_paid())
     )
     totals = {row["metodo_pago"]: row["total"] for row in rows}
 

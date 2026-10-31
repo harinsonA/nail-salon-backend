@@ -9,8 +9,7 @@ from apps.appointments.models import Cita, DetalleCita
 from apps.clients.models import Cliente
 from apps.payments.choices import EstadoPago, MetodoPago, TipoDetallePago
 from apps.payments.models import Pago
-from apps.payments.services.account import PaymentAccount
-from apps.payments.services.advances import register_advances
+from apps.payments.accounting import AppointmentPaymentService, PaymentAccount
 from apps.profiles.models import Perfil
 from apps.services.models import Categoria, Servicio
 from tests.base import NegocioTestCase
@@ -43,7 +42,7 @@ class CompletarCitaConAnticipoTests(NegocioTestCase):
 
     def con_anticipo(self, *montos):
         anticipos = [{"amount": monto, "method": MetodoPago.EFECTIVO, "reference": ""} for monto in montos]
-        return register_advances(self.cita, anticipos, self.encargada)
+        return AppointmentPaymentService(self.cita, self.encargada).register_advances(anticipos)
 
     def navegador(self):
         navegador = Client(HTTP_HOST=self.dominio)

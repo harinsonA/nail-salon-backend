@@ -12,14 +12,10 @@ from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.common.utils.currency import Money
+from apps.common.utils.dates import format_short_date_time
 from apps.common.views.base_views import ProtectedView
+from apps.payments.accounting import PaymentExpressions, PaymentLabels
 from apps.payments.models import DetallePago
-from apps.payments.services.account import (
-    incoming,
-    movement_kind,
-    net_paid,
-    signed_amount,
-)
 
 from ...choices import MetodoPago, TipoMovimiento
 
@@ -35,7 +31,6 @@ MOVEMENT_CHOICES = [
     (TipoMovimiento.EGRESO, "Egresos"),
 ]
 VALID_MOVEMENTS = {value for value, _ in TipoMovimiento.CHOICES}
-MOVEMENT_LABELS = dict(TipoMovimiento.CHOICES)
 
 """========================================================================="""
 # region ........ Helpers
@@ -48,8 +43,8 @@ def get_default_date_range():
 
 def movements():
     return DetallePago.objects.annotate(
-        tipo_movimiento=movement_kind(),
-        monto_movimiento=signed_amount(),
+        tipo_movimiento=PaymentExpressions.movement_kind(),
+        monto_movimiento=PaymentExpressions.signed_amount(),
     )
 
 
@@ -164,12 +159,6 @@ class IncomesListView(BaseListViewAjax):
         "6": "monto_movimiento",
     }
 
-    @staticmethod
-    def _format_datetime(value) -> str:
-        if not value:
-            return "-- --"
-        return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
-
     def get_order_by(self):
         ordering = super().get_order_by()
         if not ordering:
@@ -181,21 +170,18 @@ class IncomesListView(BaseListViewAjax):
 
     def get_values(self, queryset):
         values = super().get_values(queryset)
-        payment_method_display = dict(MetodoPago.CHOICES)
         for item in values:
             movement = item.get("tipo_movimiento")
             item.update(
                 {
-                    "fecha_pago_display": self._format_datetime(item.get("fecha_pago")),
-                    "fecha_cita_display": self._format_datetime(
+                    "fecha_pago_display": format_short_date_time(item.get("fecha_pago")),
+                    "fecha_cita_display": format_short_date_time(
                         item.get("pago__fecha_cita")
                     ),
                     "cliente_nombre": item.get("pago__cliente_nombre"),
-                    "metodo_pago_display": payment_method_display.get(
-                        item.get("metodo_pago"), item.get("metodo_pago")
-                    ),
+                    "metodo_pago_display": PaymentLabels.method(item.get("metodo_pago")),
                     "referencia_pago_display": item.get("referencia_pago") or "—",
-                    "tipo_movimiento_display": MOVEMENT_LABELS.get(movement, movement),
+                    "tipo_movimiento_display": PaymentLabels.movement(movement),
                     "es_egreso": movement == TipoMovimiento.EGRESO,
                     "monto_movimiento_formatted": Money.format(
                         item.get("monto_movimiento")
@@ -206,9 +192,9 @@ class IncomesListView(BaseListViewAjax):
 
     def additional_data(self, queryset) -> dict:
         additional_data = queryset.aggregate(
-            total_ingresos=Sum("monto_pago", filter=incoming()),
-            total_egresos=Sum("monto_pago", filter=~incoming()),
-            total_neto=net_paid(),
+            total_ingresos=Sum("monto_pago", filter=PaymentExpressions.incoming()),
+            total_egresos=Sum("monto_pago", filter=~PaymentExpressions.incoming()),
+            total_neto=PaymentExpressions.net_paid(),
         )
         return {
             "total_ingresos": Money.format(additional_data.get("total_ingresos")),

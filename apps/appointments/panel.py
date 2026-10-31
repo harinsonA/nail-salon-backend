@@ -6,10 +6,9 @@ from apps.appointments.models import Cita
 from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name
-from apps.payments.choices import EstadoPago, MetodoPago, TipoDetallePago
+from apps.payments.accounting import AppointmentLedger, PaymentAccount, PaymentLabels
+from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import PaymentAccount
-from apps.payments.services.advances import open_advances, retained_advances
 
 """========================================================================="""
 # region ........ Constants
@@ -49,12 +48,6 @@ PANEL_MODES = {
         "button": "danger",
     },
 }
-
-METHOD_LABELS = dict(MetodoPago.CHOICES)
-REFUND_METHODS = [
-    (MetodoPago.EFECTIVO, METHOD_LABELS[MetodoPago.EFECTIVO]),
-    (MetodoPago.TRANSFERENCIA, METHOD_LABELS[MetodoPago.TRANSFERENCIA]),
-]
 
 
 # endregion
@@ -174,7 +167,7 @@ class AppointmentPanel:
             "installments": [
                 {
                     "when": format_date_time(item.fecha_pago),
-                    "method": METHOD_LABELS.get(item.metodo_pago, item.metodo_pago),
+                    "method": PaymentLabels.method(item.metodo_pago),
                     "by": user_display_name(item.registrado_por).split(" ")[0] if item.registrado_por else "—",
                     "amount": Money.format(item.monto_pago),
                 }
@@ -187,29 +180,25 @@ class AppointmentPanel:
         account = PaymentAccount(payment) if payment else None
         if not account or not account.details:
             return {"rows": [{"label": "Estado", "value": "Sin pago: la cita fue cancelada"}]}
-        refunded = sum(
-            (item.monto_pago for item in account.details if item.tipo_detalle == TipoDetallePago.DEVOLUCION),
-            0,
-        )
         return {
             "rows": [
                 {"label": "Estado", "value": "Cita cancelada"},
                 {"label": "Retenido", "value": Money.format(account.retained())},
-                {"label": "Reembolsado", "value": Money.format(refunded)},
+                {"label": "Reembolsado", "value": Money.format(account.refunded_total())},
             ]
         }
 
     def cancel_advances(self, payment):
         if self.mode["key"] != "cancel" or not payment:
             return None
-        rows = open_advances(payment)
+        rows = AppointmentLedger(payment).open_advances()
         if not rows:
             return None
         return {
             "locked": is_collaborator(self.viewer),
             "config": {
                 "rows": self.advance_rows(rows),
-                "refundMethods": REFUND_METHODS,
+                "refundMethods": PaymentLabels.refund_choices(),
                 "cash": MetodoPago.EFECTIVO,
                 "transfer": MetodoPago.TRANSFERENCIA,
                 "referenceMaxLength": 100,
@@ -223,7 +212,7 @@ class AppointmentPanel:
                 "id": row.pk,
                 "amount": int(row.monto_pago),
                 "method": row.metodo_pago,
-                "methodLabel": METHOD_LABELS.get(row.metodo_pago, row.metodo_pago),
+                "methodLabel": PaymentLabels.method(row.metodo_pago),
                 "date": format_date_time(row.fecha_pago),
             }
             for row in rows
@@ -232,7 +221,7 @@ class AppointmentPanel:
     def restore_advances(self, payment, total):
         if self.mode["key"] != "restore" or not payment:
             return None
-        rows = retained_advances(payment)
+        rows = AppointmentLedger(payment).retained_advances()
         if not rows:
             return None
         return {

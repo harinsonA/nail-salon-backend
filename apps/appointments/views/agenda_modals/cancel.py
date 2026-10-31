@@ -12,18 +12,16 @@ from apps.appointments.views.agenda_modals.common import (
     AgendaBaseModalView,
     AppointmentPanelMixin,
 )
-from apps.payments.choices import MetodoPago
-from apps.payments.services.advances import (
-    appointment_payment,
-    open_advances,
-    settle_cancellation,
+from apps.payments.accounting import (
+    AppointmentLedger,
+    AppointmentPaymentService,
+    PaymentLabels,
 )
 
 """========================================================================="""
 # region ........ Constants
 
 
-REFUND_METHODS = {MetodoPago.EFECTIVO, MetodoPago.TRANSFERENCIA}
 REFERENCE_MAX_LENGTH = 100
 REFUNDS_INVALID = "Los reembolsos enviados no son válidos."
 CANCEL_LOCKED = (
@@ -69,7 +67,7 @@ class CancelRefundsForm(forms.Form):
             raise forms.ValidationError(REFUNDS_INVALID) from error
         method = refund.get("metodo")
         reference = refund.get("referencia") or ""
-        if pk not in self.advances or method not in REFUND_METHODS:
+        if pk not in self.advances or method not in PaymentLabels.REFUND_METHODS:
             raise forms.ValidationError(REFUNDS_INVALID)
         if not isinstance(reference, str) or len(reference.strip()) > REFERENCE_MAX_LENGTH:
             raise forms.ValidationError(REFUNDS_INVALID)
@@ -97,7 +95,7 @@ class AgendaCancelModalView(
                 {"message": message},
                 status=HTTP_400_BAD_REQUEST,
             )
-        advances = open_advances(appointment_payment(self.object))
+        advances = AppointmentLedger.for_appointment(self.object).open_advances()
         if advances and is_collaborator(request.user):
             return JsonResponse({"message": CANCEL_LOCKED}, status=HTTP_403_FORBIDDEN)
         form = CancelRefundsForm(request.POST, advances=advances)
@@ -109,7 +107,9 @@ class AgendaCancelModalView(
         with transaction.atomic():
             self.object.estado = Cita.EstadoChoices.CANCELADA
             self.object.save()
-            settle_cancellation(self.object, form.cleaned_data["refunds"], request.user)
+            AppointmentPaymentService(self.object, request.user).cancel(
+                form.cleaned_data["refunds"]
+            )
         message = (
             "La agenda de %(client_name)s para el día %(date)s a las %(time)s fue cancelada."
         ) % {

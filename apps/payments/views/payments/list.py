@@ -10,6 +10,7 @@ from apps.common.custom_time_fields import MONTH_NUMBER_TO_NAME, CustomMonthFiel
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.utils.currency import Money
+from apps.common.utils.dates import format_short_date_time
 from apps.common.views.base_views import ProtectedView
 from apps.payments.models import Pago
 
@@ -88,19 +89,13 @@ class PaymentsListView(BaseListViewAjax):
         "4": "fecha_pago_completado",
     }
 
-    @staticmethod
-    def _format_datetime(value) -> str:
-        if not value:
-            return "-- --"
-        return value.strftime("%d/%m/%Y %H:%M")
-
     def get_values(self, queryset):
         values = super().get_values(queryset)
         for item in values:
             item.update(
                 {
-                    "fecha_cita_display": self._format_datetime(item.get("fecha_cita")),
-                    "fecha_pago_completado_display": self._format_datetime(
+                    "fecha_cita_display": format_short_date_time(item.get("fecha_cita")),
+                    "fecha_pago_completado_display": format_short_date_time(
                         item.get("fecha_pago_completado")
                     ),
                     "descuento_total_formatted": Money.format(

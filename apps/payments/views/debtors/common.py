@@ -17,14 +17,9 @@ from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
-from apps.payments.choices import (
-    EstadoDetallePago,
-    EstadoPago,
-    MetodoPago,
-    TipoDetallePago,
-)
-from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import PaymentAccount, detail_type
+from apps.payments.accounting import AppointmentPaymentSummary, InstallmentService
+from apps.payments.choices import MetodoPago
+from apps.payments.models import Pago
 
 """========================================================================="""
 # region ........ Constants
@@ -35,8 +30,6 @@ TIME_FORMAT = "%H:%M"
 AMOUNT_REQUIRED = "El monto debe ser mayor a $0."
 AMOUNT_TOO_HIGH = "No puede superar el saldo pendiente ({balance})."
 NO_BALANCE = "Este pago ya no tiene saldo pendiente."
-METHOD_LABELS = dict(MetodoPago.CHOICES)
-TYPE_LABELS = dict(TipoDetallePago.CHOICES)
 
 
 # endregion
@@ -162,14 +155,11 @@ class PaymentInstallmentMixin:
         )
 
     @cached_property
-    def account(self):
-        return PaymentAccount(self.object, self.installments())
-
-    def paid_amount(self):
-        return self.account.paid()
+    def summary(self):
+        return AppointmentPaymentSummary(self.object, self.installments())
 
     def pending_amount(self):
-        return self.account.balance()
+        return self.summary.pending()
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -185,9 +175,9 @@ class PaymentInstallmentMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         payment = self.object
-        total = self.account.appointment_total()
-        paid = self.account.appointment_paid()
-        pending = self.pending_amount()
+        total = self.summary.total()
+        paid = self.summary.paid()
+        pending = self.summary.pending()
         context.update(
             {
                 "modal_url": self.request.path,
@@ -204,48 +194,10 @@ class PaymentInstallmentMixin:
                     "paid": int(paid),
                     "balance": int(pending),
                 },
-                "abonos": [
-                    {
-                        "when": format_date_time(item.fecha_pago),
-                        "kind": TYPE_LABELS[detail_type(item)],
-                        "method": METHOD_LABELS.get(item.metodo_pago, item.metodo_pago),
-                        "by": user_display_name(item.registrado_por)
-                        if item.registrado_por
-                        else "—",
-                        "amount": Money.format(item.monto_pago),
-                    }
-                    for item in self.account.appointment_payments()
-                ],
+                "abonos": self.summary.rows(),
             }
         )
         return context
-
-    def save_installment(self, data):
-        payment_date = timezone.make_aware(
-            datetime.combine(data["payment_date"], data["payment_time"])
-        )
-        method = data["payment_method"]
-        DetallePago.objects.create(
-            pago=self.object,
-            fecha_pago=payment_date,
-            monto_pago=data["down_payment"],
-            metodo_pago=method,
-            referencia_pago=data["payment_reference"] or None
-            if method != MetodoPago.EFECTIVO
-            else None,
-            notas_detalle=data["observations"],
-            registrado_por=self.request.user,
-            tipo_detalle=TipoDetallePago.ABONO,
-            estado_detalle=EstadoDetallePago.VIGENTE,
-        )
-
-    def update_payment_status(self):
-        if self.paid_amount() < self.object.monto_total_cita:
-            return False
-        self.object.estado_pago = EstadoPago.COMPLETADO
-        self.object.fecha_pago_completado = timezone.now()
-        self.object.save()
-        return True
 
     def success_message(self, fully_paid):
         payment = self.object
@@ -255,9 +207,16 @@ class PaymentInstallmentMixin:
         return f"Abono registrado para {payment.cliente_nombre}, cita del {when}."
 
     def form_valid(self, form):
-        self.save_installment(form.cleaned_data)
-        del self.account
-        fully_paid = self.update_payment_status()
+        data = form.cleaned_data
+        fully_paid = InstallmentService(self.object, self.request.user).register(
+            amount=data["down_payment"],
+            method=data["payment_method"],
+            reference=data["payment_reference"],
+            notes=data["observations"],
+            moment=timezone.make_aware(
+                datetime.combine(data["payment_date"], data["payment_time"])
+            ),
+        )
         return JsonResponse(
             {"message": self.success_message(fully_paid)}, status=HTTP_200_OK
         )
