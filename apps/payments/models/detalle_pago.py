@@ -6,6 +6,7 @@ from django.db import models
 from model_utils.models import TimeStampedModel
 from simple_history.models import HistoricalRecords
 
+from apps.common.utils.currency import Money
 from apps.payments.choices import EstadoDetallePago, MetodoPago, TipoDetallePago
 
 
@@ -79,4 +80,4 @@ class DetallePago(TimeStampedModel):
         ordering = ["-fecha_pago"]
 
     def __str__(self):
-        return f"DetallePago {self.pk} - Pago {self.pago.pk} - ${self.monto_pago}"
+        return f"DetallePago {self.pk} - Pago {self.pago.pk} - {Money.format(self.monto_pago)}"

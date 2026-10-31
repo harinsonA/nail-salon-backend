@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from apps.appointments.access import is_collaborator
 from apps.appointments.models import Cita
-from apps.common.utils.currency import format_money
+from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name
 from apps.payments.choices import EstadoPago, MetodoPago, TipoDetallePago
@@ -117,9 +117,9 @@ class AppointmentPanel:
                 {
                     "name": detail.nombre_servicio,
                     "quantity": detail.cantidad_servicios,
-                    "price": format_money(detail.precio_servicio),
-                    "discount": format_money(-detail.descuento) if detail.descuento else "",
-                    "total": format_money(line_subtotal - detail.descuento),
+                    "price": Money.format(detail.precio_servicio),
+                    "discount": Money.format(-detail.descuento) if detail.descuento else "",
+                    "total": Money.format(line_subtotal - detail.descuento),
                 }
             )
         return rows, subtotal, discounts
@@ -138,13 +138,13 @@ class AppointmentPanel:
         if status == Cita.EstadoChoices.PENDIENTE or not payment:
             rows = [
                 {"label": "Estado", "value": "Se registra al completar la cita"},
-                {"label": "Monto estimado", "value": format_money(total)},
+                {"label": "Monto estimado", "value": Money.format(total)},
             ]
             advance = PaymentAccount(payment).credit() if payment else 0
             if advance:
                 rows += [
-                    {"label": "Anticipo", "value": format_money(advance)},
-                    {"label": "Restante por pagar", "value": format_money(max(0, total - advance))},
+                    {"label": "Anticipo", "value": Money.format(advance)},
+                    {"label": "Restante por pagar", "value": Money.format(max(0, total - advance))},
                 ]
             return {"rows": rows}
         installments = list(
@@ -154,11 +154,11 @@ class AppointmentPanel:
         paid = account.paid()
         pending = account.balance()
         rows = [
-            {"label": "Total de la cita", "value": format_money(payment.monto_total_cita)},
-            {"label": "Pagado", "value": format_money(paid)},
+            {"label": "Total de la cita", "value": Money.format(payment.monto_total_cita)},
+            {"label": "Pagado", "value": Money.format(paid)},
         ]
         if pending:
-            rows.append({"label": "Saldo pendiente", "value": format_money(pending), "debt": True})
+            rows.append({"label": "Saldo pendiente", "value": Money.format(pending), "debt": True})
         first = installments[0] if installments else None
         can_pay = pending and payment.estado_pago == EstadoPago.PENDIENTE
         return {
@@ -176,7 +176,7 @@ class AppointmentPanel:
                     "when": format_date_time(item.fecha_pago),
                     "method": METHOD_LABELS.get(item.metodo_pago, item.metodo_pago),
                     "by": user_display_name(item.registrado_por).split(" ")[0] if item.registrado_por else "—",
-                    "amount": format_money(item.monto_pago),
+                    "amount": Money.format(item.monto_pago),
                 }
                 for item in installments
             ],
@@ -194,8 +194,8 @@ class AppointmentPanel:
         return {
             "rows": [
                 {"label": "Estado", "value": "Cita cancelada"},
-                {"label": "Retenido", "value": format_money(account.retained())},
-                {"label": "Reembolsado", "value": format_money(refunded)},
+                {"label": "Retenido", "value": Money.format(account.retained())},
+                {"label": "Reembolsado", "value": Money.format(refunded)},
             ]
         }
 
@@ -258,9 +258,9 @@ class AppointmentPanel:
             "status": self.status(),
             "team": self.team(payment),
             "services": services,
-            "subtotal": format_money(subtotal),
-            "discounts": format_money(-discounts) if discounts else format_money(0),
-            "total": format_money(total),
+            "subtotal": Money.format(subtotal),
+            "discounts": Money.format(-discounts) if discounts else Money.format(0),
+            "total": Money.format(total),
             "payment": self.payment(payment, total),
             "cancel_advances": self.cancel_advances(payment),
             "restore_advances": self.restore_advances(payment, total),

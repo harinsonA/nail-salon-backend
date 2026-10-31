@@ -16,7 +16,7 @@ from apps.common.form_classes import (
     FORM_SELECT_CLASS,
 )
 from apps.common.form_fields import NoteField
-from apps.common.utils.currency import format_money
+from apps.common.utils.currency import Money
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.payments.choices import (
@@ -129,8 +129,8 @@ class AgendaConfirmationForm(BSModalModelForm):
         if self.prepaid > self.services_total:
             raise forms.ValidationError(
                 PREPAID_TOO_HIGH.format(
-                    paid=format_money(self.prepaid),
-                    total=format_money(self.services_total),
+                    paid=Money.format(self.prepaid),
+                    total=Money.format(self.services_total),
                 )
             )
         if not self.remaining_payment_value:
@@ -142,7 +142,7 @@ class AgendaConfirmationForm(BSModalModelForm):
             raise forms.ValidationError(result.err_value)
         down_payment = result.ok_value
         if down_payment >= self.remaining_payment_value:
-            total = format_money(self.remaining_payment_value)
+            total = Money.format(self.remaining_payment_value)
             label = self.fields["full_payment"].label
             raise forms.ValidationError(AMOUNT_TOO_HIGH.format(total=total, label=label))
         return down_payment
@@ -183,11 +183,11 @@ class AgendaConfirmationModal(
             {
                 "modal_url": self.request.path,
                 "services": services,
-                "subtotal": format_money(subtotal),
-                "discounts": format_money(-discounts) if discounts else format_money(0),
-                "services_total": format_money(form.services_total),
-                "prepaid": format_money(-form.prepaid) if form.prepaid else "",
-                "total": format_money(total),
+                "subtotal": Money.format(subtotal),
+                "discounts": Money.format(-discounts) if discounts else Money.format(0),
+                "services_total": Money.format(form.services_total),
+                "prepaid": Money.format(-form.prepaid) if form.prepaid else "",
+                "total": Money.format(total),
                 "total_value": int(total),
                 "complete_config": {
                     "total": int(total),

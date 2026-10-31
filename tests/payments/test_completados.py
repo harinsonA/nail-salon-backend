@@ -69,7 +69,7 @@ class CompletadosTests(NegocioTestCase):
         )
         self.assertEqual(
             (datos["monto_total_cita"], datos["monto_recibido_mes"]),
-            ("$ 20,000", "$ 20,000"),
+            ("$20.000", "$20.000"),
         )
 
     def test_el_grafico_semanal_no_suma_la_cancelada(self):

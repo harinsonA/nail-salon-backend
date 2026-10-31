@@ -73,9 +73,9 @@ class DeudoresConAnticiposTests(NegocioTestCase):
         fila = datos["data"][0]
         self.assertEqual(
             (fila["total_cita_formatted"], fila["total_abonado_formatted"], fila["saldo_pendiente_formatted"]),
-            ("$ 30,000", "$ 18,000", "$ 12,000"),
+            ("$30.000", "$18.000", "$12.000"),
         )
-        self.assertEqual((datos["total_pendiente"], datos["total_abonado"]), ("$ 12,000", "$ 18,000"))
+        self.assertEqual((datos["total_pendiente"], datos["total_abonado"]), ("$12.000", "$18.000"))
 
     def test_la_tarjeta_total_pendiente_resta_lo_abonado(self):
         otra = Pago.objects.create(
@@ -94,26 +94,26 @@ class DeudoresConAnticiposTests(NegocioTestCase):
             pago=otra, fecha_pago=timezone.now(), monto_pago=Decimal("5000"), metodo_pago=MetodoPago.EFECTIVO
         )
         datos = self.ajax("debtors_list", {"draw": 1, "start": 0, "length": 10}).json()
-        self.assertEqual((datos["total_pendiente"], datos["total_abonado"]), ("$ 27,000", "$ 23,000"))
+        self.assertEqual((datos["total_pendiente"], datos["total_abonado"]), ("$27.000", "$23.000"))
 
     def test_el_detalle_de_deuda_cuadra_con_la_lista(self):
         contexto = self.ajax("debt_detail_modal", pk=self.pago.pk).context
         self.assertEqual(
             (contexto["total_cita"], contexto["total_pagado"], contexto["total_pendiente"]),
-            ("$ 30,000", "$ 18,000", "$ 12,000"),
+            ("$30.000", "$18.000", "$12.000"),
         )
 
     def test_los_pagos_del_detalle_solo_son_reserva_anticipo_y_abono(self):
         datos = self.ajax("payment_detail_list", {"draw": 1}, pk=self.pago.pk).json()
         filas = sorted((fila["tipo_detalle_display"], fila["monto_pago_formatted"]) for fila in datos["data"])
-        self.assertEqual(filas, [("Abono", "$ 10,000"), ("Anticipo", "$ 5,000"), ("Reserva", "$ 3,000")])
+        self.assertEqual(filas, [("Abono", "$10.000"), ("Anticipo", "$5.000"), ("Reserva", "$3.000")])
 
     def test_las_filas_antiguas_sin_tipo_salen_como_abono(self):
         DetallePago.objects.create(
             pago=self.pago, fecha_pago=timezone.now(), monto_pago=Decimal("1000"), metodo_pago=MetodoPago.EFECTIVO
         )
         datos = self.ajax("payment_detail_list", {"draw": 1}, pk=self.pago.pk).json()
-        self.assertIn(("Abono", "$ 1,000"), [(f["tipo_detalle_display"], f["monto_pago_formatted"]) for f in datos["data"]])
+        self.assertIn(("Abono", "$1.000"), [(f["tipo_detalle_display"], f["monto_pago_formatted"]) for f in datos["data"]])
 
     def test_abonar_deuda_muestra_las_mismas_cifras_y_pagos(self):
         contexto = self.ajax("add_payment_modal", pk=self.pago.pk).context
@@ -144,4 +144,4 @@ class DeudoresConAnticiposTests(NegocioTestCase):
         respuesta = self.navegador.get(reverse("debtors_export"))
         hoja = load_workbook(BytesIO(respuesta.content)).active
         self.assertEqual([celda.value for celda in hoja[1]][2:], ["Total de la cita", "Total abonado", "Total pendiente"])
-        self.assertEqual(list(next(hoja.iter_rows(min_row=2, values_only=True)))[2:], ["$ 30,000", "$ 18,000", "$ 12,000"])
+        self.assertEqual(list(next(hoja.iter_rows(min_row=2, values_only=True)))[2:], ["$30.000", "$18.000", "$12.000"])

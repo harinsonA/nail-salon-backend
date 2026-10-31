@@ -91,9 +91,9 @@ class MovimientosTests(NegocioTestCase):
     def test_cada_fila_dice_si_es_ingreso_o_egreso_y_el_egreso_va_en_negativo(self):
         filas = self.filas()
         self.assertEqual(len(filas), 5)
-        egreso = filas["$ -4,000"]
+        egreso = filas["-$4.000"]
         self.assertEqual((egreso["tipo_movimiento_display"], egreso["es_egreso"]), ("Egreso", True))
-        for monto in ("$ 3,000", "$ 2,000", "$ 6,000", "$ 4,000"):
+        for monto in ("$3.000", "$2.000", "$6.000", "$4.000"):
             with self.subTest(monto=monto):
                 self.assertEqual((filas[monto]["tipo_movimiento_display"], filas[monto]["es_egreso"]), ("Ingreso", False))
 
@@ -101,24 +101,24 @@ class MovimientosTests(NegocioTestCase):
         datos = self.listar()
         self.assertEqual(
             (datos["total_ingresos"], datos["total_egresos"], datos["total_neto"]),
-            ("$ 15,000", "$ 4,000", "$ 11,000"),
+            ("$15.000", "$4.000", "$11.000"),
         )
         self.assertNotIn("cantidad_movimientos", datos)
 
     def test_filtra_ingresos_o_egresos(self):
-        self.assertEqual(sorted(self.filas(movement=Movimiento.INGRESO)), ["$ 2,000", "$ 3,000", "$ 4,000", "$ 6,000"])
+        self.assertEqual(sorted(self.filas(movement=Movimiento.INGRESO)), ["$2.000", "$3.000", "$4.000", "$6.000"])
         datos = self.listar(movement=Movimiento.EGRESO)
-        self.assertEqual([fila["monto_movimiento_formatted"] for fila in datos["data"]], ["$ -4,000"])
-        self.assertEqual((datos["total_ingresos"], datos["total_egresos"], datos["total_neto"]), ("$ 0", "$ 4,000", "$ -4,000"))
+        self.assertEqual([fila["monto_movimiento_formatted"] for fila in datos["data"]], ["-$4.000"])
+        self.assertEqual((datos["total_ingresos"], datos["total_egresos"], datos["total_neto"]), ("$0", "$4.000", "-$4.000"))
         self.assertEqual(len(self.filas(movement="OTRO")), 5)
 
     def test_combina_movimiento_con_metodo(self):
         filas = self.filas(movement=Movimiento.INGRESO, payment_method=MetodoPago.TRANSFERENCIA)
-        self.assertEqual(list(filas), ["$ 4,000"])
+        self.assertEqual(list(filas), ["$4.000"])
 
     def test_ordena_por_monto_con_signo(self):
         datos = self.listar(**{"order[0][column]": 6, "order[0][dir]": "asc"})
-        self.assertEqual(datos["data"][0]["monto_movimiento_formatted"], "$ -4,000")
+        self.assertEqual(datos["data"][0]["monto_movimiento_formatted"], "-$4.000")
 
     def test_las_filas_con_la_misma_fecha_no_se_repiten_entre_paginas(self):
         momento = timezone.now()
@@ -128,7 +128,7 @@ class MovimientosTests(NegocioTestCase):
             self.listar(start=inicio, length=2, **orden)["data"] for inicio in (0, 2, 4)
         ]
         montos = [fila["monto_movimiento_formatted"] for pagina in vistas for fila in pagina]
-        self.assertEqual(montos, ["$ -4,000", "$ 4,000", "$ 6,000", "$ 2,000", "$ 3,000"])
+        self.assertEqual(montos, ["-$4.000", "$4.000", "$6.000", "$2.000", "$3.000"])
 
     def grafico(self, **filtros):
         respuesta = self.navegador.get(
@@ -154,6 +154,6 @@ class MovimientosTests(NegocioTestCase):
         encabezados = [celda.value for celda in hoja[1]]
         self.assertEqual(encabezados[-2:], ["Tipo de movimiento", "Monto"])
         filas = {fila[-1]: fila[-2] for fila in hoja.iter_rows(min_row=2, values_only=True) if fila[-1]}
-        self.assertEqual(filas["$ -4,000"], "Egreso")
-        self.assertEqual(filas["$ 6,000"], "Ingreso")
-        self.assertEqual(filas["$ 3,000"], "Ingreso")
+        self.assertEqual(filas["-$4.000"], "Egreso")
+        self.assertEqual(filas["$6.000"], "Ingreso")
+        self.assertEqual(filas["$3.000"], "Ingreso")

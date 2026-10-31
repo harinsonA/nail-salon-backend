@@ -149,6 +149,14 @@
     });
   }
 
+  function moneyLabel(type) {
+    return function (context) {
+      var value = typeof context.parsed === "object" ? context.parsed.y : context.parsed;
+      var name = isCircular(type) ? context.label : context.dataset.label;
+      return (name ? name + ": " : "") + formatMoney(value);
+    };
+  }
+
   // Renderiza un gráfico a partir del contrato JSON uniforme
   function renderChart(canvasId, type, payload, optionsExtra, plugins) {
     var canvas = document.getElementById(canvasId);
@@ -168,13 +176,23 @@
       return null;
     }
     setState(canvas, "ok");
+    var extra = Object.assign({}, optionsExtra || {});
+    var money = extra.money;
+    delete extra.money;
     var defaults = { responsive: true, maintainAspectRatio: false };
     if (!isCircular(type)) {
       // Solo los gráficos cartesianos (line/bar) usan ejes
       defaults.interaction = { mode: "index", intersect: false };
-      defaults.scales = { y: { beginAtZero: true, ticks: { precision: 0 } } };
+      defaults.scales = {
+        y: { beginAtZero: true, ticks: money ? { callback: formatMoney } : { precision: 0 } },
+      };
     }
-    var options = Object.assign(defaults, optionsExtra || {});
+    var options = Object.assign(defaults, extra);
+    if (money) {
+      options.plugins = Object.assign({}, extra.plugins, {
+        tooltip: { callbacks: { label: moneyLabel(type) } },
+      });
+    }
     var chart = new window.Chart(canvas, {
       type: type,
       data: { labels: payload.labels, datasets: buildDatasets(payload, type) },

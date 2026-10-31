@@ -5,9 +5,6 @@
   const NOTES_MAX = 250;
   const DIALOG_CLASSES = "modal-lg modal-dialog-scrollable";
 
-  const fmtMoney = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
-  const money = (value) => fmtMoney.format(value);
-
   class PaymentForm {
     constructor(form, { total, paid, balance }) {
       this.form = form;
@@ -60,7 +57,7 @@
         return "El monto debe ser mayor a $0.";
       }
       if (amount > this.balance) {
-        return `No puede superar el saldo pendiente (${money(this.balance)}).`;
+        return `No puede superar el saldo pendiente (${formatMoney(this.balance)}).`;
       }
       return "";
     }
@@ -82,8 +79,8 @@
 
       const counted = error ? 0 : amount;
       const after = this.balance - counted;
-      ui.now.textContent = counted ? money(counted) : "—";
-      ui.after.textContent = after === 0 ? "Queda pagada" : money(after);
+      ui.now.textContent = counted ? formatMoney(counted) : "—";
+      ui.after.textContent = after === 0 ? "Queda pagada" : formatMoney(after);
       ui.after.classList.toggle("is-settled", after === 0);
       ui.barPaid.style.width = `${this.total ? (this.paid / this.total) * 100 : 0}%`;
       ui.barNow.style.width = `${this.total ? (counted / this.total) * 100 : 0}%`;

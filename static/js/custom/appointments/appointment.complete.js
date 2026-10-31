@@ -5,9 +5,6 @@
   const NOTES_MAX = 250;
   const DIALOG_CLASSES = "modal-lg modal-dialog-scrollable";
 
-  const fmtMoney = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
-  const money = (value) => fmtMoney.format(value);
-
   class AppointmentComplete {
     constructor(form, { total, prepaid = 0, servicesTotal = total, fullLabel = "Paga el total ahora" }) {
       this.form = form;
@@ -69,7 +66,7 @@
         return "El monto no puede ser negativo.";
       }
       if (this.amount() >= this.total) {
-        return `Si paga ${money(this.total)} o más, activa "${this.fullLabel}".`;
+        return `Si paga ${formatMoney(this.total)} o más, activa "${this.fullLabel}".`;
       }
       return "";
     }
@@ -90,9 +87,9 @@
 
       const counted = error ? 0 : amount;
       const debt = this.total - counted;
-      ui.now.textContent = money(counted);
+      ui.now.textContent = formatMoney(counted);
       ui.afterRow.hidden = full || !this.total;
-      ui.after.textContent = money(debt);
+      ui.after.textContent = formatMoney(debt);
       ui.after.classList.toggle("has-debt", debt > 0);
       const covered = this.prepaid + counted;
       ui.bar.style.width = `${this.servicesTotal ? Math.min(100, (covered / this.servicesTotal) * 100) : 0}%`;
