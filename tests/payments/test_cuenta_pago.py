@@ -13,7 +13,7 @@ from apps.payments.choices import (
     TipoDetallePago,
 )
 from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import PaymentAccount, incoming, net_paid
+from apps.payments.accounting import PaymentAccount, PaymentExpressions
 from apps.payments.services.income_by_method import income_by_method
 from apps.payments.views.debtors.list import DebtorsListView
 from apps.payments.views.incomes.list import IncomesListView
@@ -187,17 +187,17 @@ class CuentaPagoTests(NegocioTestCase):
         self.fila(pago, "3000")
         self.fila(pago, "4000", Tipo.DEVOLUCION, devuelve=anticipo)
         filas = DetallePago.objects.filter(pago=pago)
-        self.assertEqual(filas.aggregate(total=net_paid())["total"], Decimal("9000"))
-        self.assertEqual(filas.filter(incoming()).count(), 2)
+        self.assertEqual(filas.aggregate(total=PaymentExpressions.net_paid())["total"], Decimal("9000"))
+        self.assertEqual(filas.filter(PaymentExpressions.incoming()).count(), 2)
         self.assertEqual(
             Pago.objects.filter(pk=pago.pk)
-            .annotate(neto=net_paid("detalles_pago__"))
+            .annotate(neto=PaymentExpressions.net_paid("detalles_pago__"))
             .get()
             .neto,
             Decimal("9000"),
         )
         self.assertEqual(
-            DetallePago.objects.none().aggregate(total=net_paid())["total"],
+            DetallePago.objects.none().aggregate(total=PaymentExpressions.net_paid())["total"],
             Decimal("0"),
         )
 

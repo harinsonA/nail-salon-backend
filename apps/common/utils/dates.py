@@ -25,3 +25,9 @@ def format_long_date(date_obj) -> str:
 def format_date_time(datetime_obj) -> str:
     local = timezone.localtime(datetime_obj)
     return f"{format_plain_date(local)}, {local.strftime('%H:%M')}"
+
+
+def format_short_date_time(datetime_obj) -> str:
+    if not datetime_obj:
+        return "-- --"
+    return timezone.localtime(datetime_obj).strftime("%d/%m/%Y %H:%M")

@@ -12,11 +12,7 @@ from apps.appointments.views.agenda_modals.common import (
     AgendaBaseModalView,
     AppointmentPanelMixin,
 )
-from apps.payments.services.advances import (
-    appointment_payment,
-    reopen_payment,
-    retained_advances,
-)
+from apps.payments.accounting import AppointmentLedger, AppointmentPaymentService
 
 """========================================================================="""
 # region ........ Constants
@@ -78,7 +74,7 @@ class AgendaRestoreModalView(
                 {"message": message},
                 status=HTTP_400_BAD_REQUEST,
             )
-        advances = retained_advances(appointment_payment(self.object))
+        advances = AppointmentLedger.for_appointment(self.object).retained_advances()
         if advances and is_collaborator(request.user):
             return JsonResponse({"message": RESTORE_LOCKED}, status=HTTP_403_FORBIDDEN)
         form = RestoreAdvancesForm(request.POST, advances=advances)
@@ -90,7 +86,9 @@ class AgendaRestoreModalView(
         with transaction.atomic():
             self.object.estado = Cita.EstadoChoices.PENDIENTE
             self.object.save()
-            reopen_payment(self.object, form.cleaned_data["restored"])
+            AppointmentPaymentService(self.object, request.user).restore(
+                form.cleaned_data["restored"]
+            )
         message = (
             "La agenda de %(client_name)s para el día %(date)s a las %(time)s fue restaurada a Pendiente."
         ) % {

@@ -5,10 +5,14 @@ from django.urls import reverse_lazy
 from apps.appointments.models import DetalleCita
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.utils.currency import Money
+from apps.common.utils.dates import format_short_date_time
 from apps.common.views.base_views import ProtectedView
-from apps.payments.choices import MetodoPago, TipoDetallePago
+from apps.payments.accounting import (
+    AppointmentPaymentSummary,
+    PaymentExpressions,
+    PaymentLabels,
+)
 from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import PaymentAccount, appointment_payment_filter
 
 """========================================================================="""
 # region ........ Views
@@ -37,13 +41,13 @@ class DebtDetailModalView(ProtectedView, BSModalReadView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pago = self.object
-        account = PaymentAccount(pago)
+        summary = AppointmentPaymentSummary(pago)
         context.update(
             {
                 "object": pago,
-                "total_cita": Money.format(account.appointment_total()),
-                "total_pagado": Money.format(account.appointment_paid()),
-                "total_pendiente": Money.format(account.balance()),
+                "total_cita": Money.format(summary.total()),
+                "total_pagado": Money.format(summary.paid()),
+                "total_pendiente": Money.format(summary.pending()),
                 "appointment_id": pago.cita_id,
                 "services_detail_list_url": reverse_lazy(
                     "services_detail_list",
@@ -143,29 +147,19 @@ class PaymentDetailListView(BaseListViewAjax):
             super()
             .get_queryset()
             .filter(
-                appointment_payment_filter(),
+                PaymentExpressions.appointment_payment_filter(),
                 pago_id=self.kwargs.get("pk"),
             )
         )
 
     def get_values(self, queryset):
         values = super().get_values(queryset)
-        payment_method_display = dict(MetodoPago.CHOICES)
-        type_display = dict(TipoDetallePago.CHOICES)
         for item in values:
             item.update(
                 {
-                    "tipo_detalle_display": type_display[
-                        item.get("tipo_detalle") or TipoDetallePago.ABONO
-                    ],
-                    "fecha_pago_display": item.get("fecha_pago").strftime(
-                        "%d/%m/%Y %H:%M"
-                    )
-                    if item.get("fecha_pago")
-                    else "-- --",
-                    "metodo_pago_display": payment_method_display.get(
-                        item.get("metodo_pago"), item.get("metodo_pago")
-                    ),
+                    "tipo_detalle_display": PaymentLabels.kind(item.get("tipo_detalle")),
+                    "fecha_pago_display": format_short_date_time(item.get("fecha_pago")),
+                    "metodo_pago_display": PaymentLabels.method(item.get("metodo_pago")),
                     "monto_pago_formatted": Money.format(item.get("monto_pago")),
                 }
             )

@@ -1,4 +1,4 @@
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import Sum
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 
@@ -7,9 +7,10 @@ from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
 from apps.common.utils.currency import Money
+from apps.common.utils.dates import format_short_date_time
 from apps.common.views.base_views import ProtectedView
+from apps.payments.accounting import PaymentExpressions
 from apps.payments.models import Pago
-from apps.payments.services.account import net_paid, retained_amount
 
 from ...choices import EstadoPago
 
@@ -56,35 +57,8 @@ class DebtorsListView(BaseListViewAjax):
         "4": "saldo_pendiente",
     }
 
-    @staticmethod
-    def _format_datetime(value) -> str:
-        if not value:
-            return "-- --"
-        return value.strftime("%d/%m/%Y %H:%M")
-
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .annotate(
-                total_pagado=net_paid("detalles_pago__"),
-                total_retenido=retained_amount("detalles_pago__"),
-            )
-            .annotate(
-                total_cita=ExpressionWrapper(
-                    F("monto_total_cita") - F("total_retenido"),
-                    output_field=DecimalField(),
-                ),
-                total_abonado=ExpressionWrapper(
-                    F("total_pagado") - F("total_retenido"),
-                    output_field=DecimalField(),
-                ),
-                saldo_pendiente=ExpressionWrapper(
-                    F("monto_total_cita") - F("total_pagado"),
-                    output_field=DecimalField(),
-                ),
-            )
-        )
+        return PaymentExpressions.with_appointment_summary(super().get_queryset())
 
     def get_values(self, queryset):
         values = super().get_values(queryset)
@@ -92,7 +66,7 @@ class DebtorsListView(BaseListViewAjax):
             payment_id = item.get("pk")
             item.update(
                 {
-                    "fecha_cita_display": self._format_datetime(item.get("fecha_cita")),
+                    "fecha_cita_display": format_short_date_time(item.get("fecha_cita")),
                     "total_cita_formatted": Money.format(item.get("total_cita")),
                     "total_abonado_formatted": Money.format(
                         item.get("total_abonado")

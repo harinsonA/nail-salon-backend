@@ -6,8 +6,7 @@ from django.urls import reverse
 from apps.appointments.models import Cita
 from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
-from apps.payments.services.account import net_paid
-from apps.payments.services.advances import sync_advances
+from apps.payments.accounting import AppointmentPaymentService, PaymentExpressions
 from apps.settings.models import Preference
 from apps.settings.preferences import Scope
 from tests.appointments.test_cancelar_cita_anticipos import CitaConAnticiposBase
@@ -59,7 +58,7 @@ class RestaurarCitaConAnticiposTests(CitaConAnticiposBase):
 
     def agregar_anticipo(self, monto):
         cambio = {"row": None, "remove": False, "amount": monto, "method": MetodoPago.EFECTIVO, "reference": ""}
-        sync_advances(self.cita, [cambio], self.encargada)
+        AppointmentPaymentService(self.cita, self.encargada).sync_advances([cambio])
         return DetallePago.objects.filter(pago__cita=self.cita).latest("pk")
 
     def test_sin_anticipos_restaura_como_hoy(self):
@@ -105,7 +104,7 @@ class RestaurarCitaConAnticiposTests(CitaConAnticiposBase):
         self.assertEqual(self.completar().status_code, 200)
         pago.refresh_from_db()
         self.assertEqual((pago.estado_pago, pago.monto_total_cita), (EstadoPago.COMPLETADO, Decimal("27000")))
-        self.assertEqual(DetallePago.objects.aggregate(total=net_paid())["total"], Decimal("27000"))
+        self.assertEqual(DetallePago.objects.aggregate(total=PaymentExpressions.net_paid())["total"], Decimal("27000"))
 
     def test_restaurar_el_anticipo_lo_deja_vigente_y_descuenta(self):
         primera, segunda = self.con_anticipos((6000, MetodoPago.TARJETA), (3000, MetodoPago.EFECTIVO))

@@ -4,7 +4,7 @@ from django.db.models import Sum
 
 from apps.payments.choices import MetodoPago
 from apps.payments.models import DetallePago
-from apps.payments.services.account import incoming, movement_kind
+from apps.payments.accounting import PaymentExpressions
 
 # Servicio del gráfico "Ingresos por método de pago" de la página de movimientos.
 # Devuelve el mismo contrato JSON uniforme que los gráficos del dashboard
@@ -33,8 +33,8 @@ def income_by_method(filters):
     que el eje no cambie de forma entre rangos.
     """
     rows = (
-        DetallePago.objects.annotate(tipo_movimiento=movement_kind())
-        .filter(incoming(), pago__is_removed=False, **filters)
+        DetallePago.objects.annotate(tipo_movimiento=PaymentExpressions.movement_kind())
+        .filter(PaymentExpressions.incoming(), pago__is_removed=False, **filters)
         .values("metodo_pago")
         .annotate(total=Sum("monto_pago"))
     )
