@@ -1,10 +1,9 @@
 from datetime import datetime
 
-from django.db.models import Sum
 from django.utils import timezone
 
 from apps.payments.accounting.account import PaymentAccount
-from apps.payments.accounting.constants import ZERO
+from apps.payments.accounting.service_lines import ServiceLines
 
 
 class PaymentHeader:
@@ -17,10 +16,8 @@ class PaymentHeader:
         )
 
     def services_amounts(self):
-        totals = self.appointment.detalles.aggregate(
-            total=Sum("precio_acordado"), discounts=Sum("descuento")
-        )
-        return totals["total"] or ZERO, totals["discounts"] or ZERO
+        _, discounts, total = ServiceLines.amounts(self.appointment)
+        return total, discounts
 
     def services_total(self):
         return self.services_amounts()[0]

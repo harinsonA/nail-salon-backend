@@ -37,10 +37,14 @@ class DetalleCita(TimeStampedModel):
     def save(self, *args, **kwargs):
         if self.servicio and not self.nombre_servicio:
             self.nombre_servicio = self.servicio.nombre
-        if self.servicio and not self.precio_servicio:
+        if self.servicio and self.precio_servicio is None:
             self.precio_servicio = self.servicio.precio
         if self.servicio and not self.duracion_estimada_servicio:
             self.duracion_estimada_servicio = self.servicio.duracion_estimada
-        if not self.precio_acordado:
-            self.precio_acordado = self.precio_servicio
+        if self.precio_acordado is None:
+            from apps.payments.accounting.service_lines import ServiceLines
+
+            self.precio_acordado = ServiceLines.total(
+                self.precio_servicio, self.cantidad_servicios, self.descuento
+            )
         super().save(*args, **kwargs)

@@ -29,7 +29,12 @@ from apps.common.utils.dates import (
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from apps.payments.accounting import AppointmentLedger, PaymentAccount, PaymentLabels
+from apps.payments.accounting import (
+    AppointmentLedger,
+    PaymentAccount,
+    PaymentLabels,
+    ServiceLines,
+)
 from apps.payments.choices import MetodoPago
 from apps.services.models import Categoria, Servicio
 from apps.settings.preferences import ADVANCE_MODULE
@@ -286,15 +291,14 @@ class AppointmentForm(BSModalForm):
             raise forms.ValidationError(
                 QUANTITY_INVALID.format(name=name, max=MAX_QUANTITY)
             )
-        subtotal = price * quantity
-        if not 0 <= discount <= subtotal:
+        if not ServiceLines.accepts_discount(price, quantity, discount):
             raise forms.ValidationError(DISCOUNT_INVALID.format(name=name))
         return {
             "detail": detail,
             "service": service,
             "quantity": quantity,
             "discount": discount,
-            "total": subtotal - discount,
+            "total": ServiceLines.total(price, quantity, discount),
         }
 
     def clean_assigned_to(self):
@@ -509,30 +513,6 @@ class AgendaBaseModalView(ProtectedView):
     def _get_phone_number(object_base) -> str:
         return object_base.cliente.telefono or "Sin teléfono"
 
-    @staticmethod
-    def _get_details(object_base) -> int:
-        counts = object_base.detalles.count()
-        details = object_base.detalles.values_list(
-            "precio_acordado",
-            "descuento",
-            "cantidad_servicios",
-            "precio_servicio",
-        )
-        service_totals = 0
-        detail_totals = 0
-        discount_totals = 0
-        for detail in details:
-            total, discount, quantity, service_price = detail
-            detail_totals += total
-            discount_totals += discount
-            service_totals += service_price * quantity
-        return {
-            "services_count": counts,
-            "detail_totals": detail_totals,
-            "discount_totals": discount_totals,
-            "service_totals": service_totals,
-        }
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         object_base = context["object"]
@@ -544,7 +524,6 @@ class AgendaBaseModalView(ProtectedView):
                 "date_formatted": self._get_date_formatted(object_base),
                 "time_formatted": self._get_time_formatted(object_base),
                 "phone_number": self._get_phone_number(object_base),
-                **self._get_details(object_base),
             }
         )
         return context

@@ -185,3 +185,49 @@ class EditarCitaTests(NegocioTestCase):
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
         self.assertEqual([hora["hora"] for hora in respuesta.json()["horas"]], ["12:00"])
+
+    def test_un_descuento_del_100_por_ciento_queda_en_cero_al_editar(self):
+        respuesta = self.guardar(
+            [
+                {"detalle": self.linea_manicure.pk, "cantidad": 1, "descuento": 10000},
+                {"detalle": self.linea_diseno.pk, "cantidad": 2, "descuento": 0},
+            ]
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        self.linea_manicure.refresh_from_db()
+        self.assertEqual(self.linea_manicure.precio_acordado, Decimal("0"))
+        panel = self.navegador(self.encargada).get(
+            reverse("agenda_see_modal", args=[self.cita.pk]), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(panel.context["total"], "$6.000")
+
+    def test_un_servicio_gratis_no_toma_el_precio_del_catalogo_al_editar(self):
+        gratis = self.detalle(self.pedicure, precio=Decimal("0"), cantidad=1, descuento=Decimal("0"))
+        respuesta = self.guardar(
+            [
+                {"detalle": self.linea_manicure.pk, "cantidad": 1, "descuento": 1000},
+                {"detalle": self.linea_diseno.pk, "cantidad": 2, "descuento": 0},
+                {"detalle": gratis.pk, "cantidad": 1, "descuento": 0},
+            ]
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        gratis.refresh_from_db()
+        self.assertEqual((gratis.precio_servicio, gratis.precio_acordado), (Decimal("0"), Decimal("0")))
+
+    def test_un_servicio_nuevo_con_100_por_ciento_de_descuento_queda_en_cero(self):
+        respuesta = self.guardar(
+            [
+                {"detalle": self.linea_manicure.pk, "cantidad": 1, "descuento": 1000},
+                {"detalle": self.linea_diseno.pk, "cantidad": 2, "descuento": 0},
+                {"id": self.pedicure.pk, "cantidad": 2, "descuento": 30000},
+            ]
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        nueva = DetalleCita.objects.get(cita=self.cita, servicio=self.pedicure)
+        self.assertEqual(nueva.precio_acordado, Decimal("0"))
+
+    def test_sin_precio_acordado_se_calcula_con_cantidad_y_descuento(self):
+        linea = DetalleCita.objects.create(
+            cita=self.cita, servicio=self.pedicure, cantidad_servicios=2, descuento=Decimal("1000")
+        )
+        self.assertEqual((linea.precio_servicio, linea.precio_acordado), (Decimal("15000"), Decimal("29000")))
