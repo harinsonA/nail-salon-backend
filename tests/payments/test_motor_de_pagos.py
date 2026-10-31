@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
 from apps.common.utils.dates import format_short_date_time
-from apps.payments.accounting import PaymentAccount, PaymentLabels
+from apps.payments.accounting import PaymentAccount, PaymentExpressions, PaymentLabels
 from apps.payments.choices import EstadoPago, MetodoPago, TipoDetallePago, TipoMovimiento
 from apps.payments.models import DetallePago, Pago
 from apps.payments.views.debtors.debt_detail import PaymentDetailListView
@@ -86,7 +86,9 @@ class CuentaDeDeudoresTests(NegocioTestCase):
         self.assertEqual(deudores.get_values(deudores.get_queryset())[0]["fecha_cita_display"], local)
         detalle = self.vista(PaymentDetailListView, pk=self.pago.pk)
         self.assertEqual(detalle.get_values(detalle.get_queryset())[0]["fecha_pago_display"], local)
-        completados = self.vista(PaymentsListView).get_values(Pago.objects.filter(pk=self.pago.pk))[0]
+        completados = self.vista(PaymentsListView).get_values(
+            PaymentExpressions.with_appointment_summary(Pago.objects.filter(pk=self.pago.pk))
+        )[0]
         self.assertEqual(
             (completados["fecha_cita_display"], completados["fecha_pago_completado_display"]), (local, local)
         )
