@@ -7,6 +7,7 @@ from apps.payments.accounting.labels import PaymentLabels
 from apps.payments.accounting.ledger import AppointmentLedger
 from apps.payments.accounting.lifecycle import AppointmentPaymentService, InstallmentService
 from apps.payments.accounting.rows import PaymentRowFactory
+from apps.payments.accounting.service_lines import ServiceLines
 from apps.payments.accounting.summary import AppointmentPaymentSummary
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "PaymentHeader",
     "PaymentLabels",
     "PaymentRowFactory",
+    "ServiceLines",
 ]

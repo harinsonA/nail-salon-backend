@@ -11,6 +11,7 @@ from apps.payments.accounting import (
     AppointmentPaymentSummary,
     PaymentAccount,
     PaymentLabels,
+    ServiceLines,
 )
 from apps.payments.choices import EstadoPago, MetodoPago
 from apps.payments.models import Pago
@@ -104,23 +105,17 @@ class AppointmentPanel:
         return None if payment.is_removed else payment
 
     def services(self):
-        rows = []
-        subtotal = 0
-        discounts = 0
-        for detail in self.appointment.detalles.order_by("pk"):
-            line_subtotal = detail.precio_servicio * detail.cantidad_servicios
-            subtotal += line_subtotal
-            discounts += detail.descuento
-            rows.append(
-                {
-                    "name": detail.nombre_servicio,
-                    "quantity": detail.cantidad_servicios,
-                    "price": Money.format(detail.precio_servicio),
-                    "discount": Money.format(-detail.descuento) if detail.descuento else "",
-                    "total": Money.format(line_subtotal - detail.descuento),
-                }
-            )
-        return rows, subtotal, discounts
+        rows = [
+            {
+                "name": detail.nombre_servicio,
+                "quantity": detail.cantidad_servicios,
+                "price": Money.format(detail.precio_servicio),
+                "discount": Money.format(-detail.descuento) if detail.descuento else "",
+                "total": Money.format(detail.precio_acordado),
+            }
+            for detail in self.appointment.detalles.order_by("pk")
+        ]
+        return (rows, *ServiceLines.amounts(self.appointment))
 
     def team(self, payment):
         appointment = self.appointment
@@ -230,8 +225,7 @@ class AppointmentPanel:
     def context(self):
         appointment = self.appointment
         payment = self.payment_record()
-        services, subtotal, discounts = self.services()
-        total = subtotal - discounts
+        services, subtotal, discounts, total = self.services()
         return {
             "mode": self.mode,
             "client_name": self.client_name(),

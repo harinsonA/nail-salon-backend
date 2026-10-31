@@ -164,7 +164,7 @@ class AgendaConfirmationModal(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         form = context["form"]
-        services, subtotal, discounts = AppointmentPanel(
+        services, subtotal, discounts, _ = AppointmentPanel(
             self.object, self.request.user
         ).services()
         total = form.remaining_payment_value

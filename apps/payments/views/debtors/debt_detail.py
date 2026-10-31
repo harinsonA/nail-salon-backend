@@ -1,5 +1,4 @@
 from bootstrap_modal_forms.generic import BSModalReadView
-from django.db.models import DecimalField, ExpressionWrapper, F
 from django.urls import reverse_lazy
 
 from apps.appointments.models import DetalleCita
@@ -11,6 +10,7 @@ from apps.payments.accounting import (
     AppointmentPaymentSummary,
     PaymentExpressions,
     PaymentLabels,
+    ServiceLines,
 )
 from apps.payments.models import DetallePago, Pago
 
@@ -95,12 +95,7 @@ class ServicesDetailListView(BaseListViewAjax):
             .filter(
                 cita_id=self.kwargs.get("appointment_id"),
             )
-            .annotate(
-                total_servicio=ExpressionWrapper(
-                    F("precio_servicio") * F("cantidad_servicios"),
-                    output_field=DecimalField(max_digits=10, decimal_places=0),
-                )
-            )
+            .annotate(total_servicio=ServiceLines.subtotal_expression())
         )
 
     def get_values(self, queryset):

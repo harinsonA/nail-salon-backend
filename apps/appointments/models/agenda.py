@@ -60,11 +60,6 @@ class Cita(TimeStampedModel, SoftDeletableModel):
         return f"Cita {self.pk} - {self.fecha_agenda.strftime('%d/%m/%Y')}"
 
     @property
-    def monto_total(self):
-        """Calcula el monto total de la cita basado en los detalles"""
-        return sum(detalle.precio_acordado for detalle in self.detalles.all())
-
-    @property
     def duracion_total(self):
         """Calcula la duración total estimada de la cita"""
         total_segundos = sum(
