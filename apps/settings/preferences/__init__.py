@@ -1,6 +1,5 @@
 from apps.settings.preferences.constants import Category, Scope
 from apps.settings.preferences.registry import (
-    ADVANCE_MODULE,
     CALENDAR_DEFAULT_VIEW,
     CALENDAR_SHOW_CANCELLED,
     CALENDAR_SHOW_COMPLETED,
@@ -17,7 +16,6 @@ from apps.settings.preferences.service import (
 )
 
 __all__ = [
-    "ADVANCE_MODULE",
     "CALENDAR_DEFAULT_VIEW",
     "CALENDAR_SHOW_CANCELLED",
     "CALENDAR_SHOW_COMPLETED",

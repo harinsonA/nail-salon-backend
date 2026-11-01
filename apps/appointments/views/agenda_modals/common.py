@@ -1,5 +1,4 @@
 import json
-from functools import cached_property
 
 from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
@@ -37,7 +36,6 @@ from apps.payments.accounting import (
 )
 from apps.payments.choices import MetodoPago
 from apps.services.models import Categoria, Servicio
-from apps.settings.preferences import ADVANCE_MODULE
 
 User = get_user_model()
 
@@ -205,15 +203,14 @@ class AppointmentForm(BSModalForm):
     services = forms.CharField(required=False, widget=forms.HiddenInput)
     advances = forms.CharField(required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, instance=None, allow_advances=False, **kwargs):
+    def __init__(self, *args, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
         user = self.request.user
         self.instance = instance
-        self.allow_advances = allow_advances
         self.can_change_saved = not is_collaborator(user)
         ledger = AppointmentLedger.for_appointment(instance)
         self.payment = ledger.payment
-        self.saved_advances = ledger.open_advances() if allow_advances else []
+        self.saved_advances = ledger.open_advances()
         self.details = {}
         if instance:
             self.details = {detail.pk: detail for detail in instance.detalles.all()}
@@ -306,8 +303,6 @@ class AppointmentForm(BSModalForm):
         return user if is_collaborator(user) else self.cleaned_data["assigned_to"]
 
     def clean_advances(self):
-        if not self.allow_advances:
-            return []
         try:
             advances = json.loads(self.cleaned_data.get("advances") or "[]")
         except json.JSONDecodeError as error:
@@ -369,7 +364,7 @@ class AppointmentForm(BSModalForm):
         total = sum(line["total"] for line in lines)
         if paid > total:
             self.add_error(
-                "advances" if self.allow_advances else "services",
+                "advances",
                 ADVANCES_TOO_HIGH.format(paid=Money.format(paid), total=Money.format(total)),
             )
         return cleaned_data
@@ -399,13 +394,6 @@ class AppointmentFormMixin:
     def initial_lines(self):
         return []
 
-    @cached_property
-    def advances_enabled(self):
-        return ADVANCE_MODULE.is_enabled()
-
-    def get_form_kwargs(self):
-        return {**super().get_form_kwargs(), "allow_advances": self.advances_enabled}
-
     @staticmethod
     def advance_rows(form):
         return [
@@ -430,7 +418,6 @@ class AppointmentFormMixin:
             "modal_url": self.request.path,
             "form_title": self.form_title(),
             "save_label": self.save_label,
-            "advances_enabled": self.advances_enabled,
             "appointment_form_config": {
                 "services": [service_data(service) for service in services],
                 "categories": [
@@ -443,7 +430,6 @@ class AppointmentFormMixin:
                 "currentUser": self.request.user.pk,
                 "maxQuantity": MAX_QUANTITY,
                 "advances": {
-                    "enabled": self.advances_enabled,
                     "rows": self.advance_rows(form),
                     "canChangeSaved": form.can_change_saved,
                     "methods": MetodoPago.CHOICES,

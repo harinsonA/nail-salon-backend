@@ -7,20 +7,12 @@ from apps.appointments.models import Cita
 from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago
 from apps.payments.models import DetallePago, Pago
 from apps.payments.accounting import AppointmentPaymentService, PaymentExpressions
-from apps.settings.models import Preference
-from apps.settings.preferences import Scope
 from tests.appointments.test_cancelar_cita_anticipos import CitaConAnticiposBase
 
 
 class RestaurarCitaConAnticiposTests(CitaConAnticiposBase):
     esquema = "restaurar_cita_anticipos"
     dominio = "restaurar-cita-anticipos.localhost"
-
-    def setUp(self):
-        super().setUp()
-        Preference.objects.update_or_create(
-            scope=Scope.NEGOCIO, scope_id="", key="advance_module", defaults={"value": True}
-        )
 
     def url_restaurar(self):
         return reverse("agenda_restore_modal", args=[self.cita.pk])
