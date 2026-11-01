@@ -49,13 +49,10 @@
     }
 
     amount() {
-      return Math.max(0, parseInt(this.fields.amount.value, 10) || 0);
+      return MoneyInput.parse(this.fields.amount.value);
     }
 
     amountError(amount) {
-      if (this.fields.amount.value !== "" && amount <= 0) {
-        return "El monto debe ser mayor a $0.";
-      }
       if (amount > this.balance) {
         return `No puede superar el saldo pendiente (${formatMoney(this.balance)}).`;
       }
@@ -66,7 +63,7 @@
       const { fields, ui } = this;
       const full = fields.full.checked;
       if (full) {
-        fields.amount.value = this.balance;
+        fields.amount.value = MoneyInput.text(this.balance);
       }
       fields.amount.disabled = full;
 

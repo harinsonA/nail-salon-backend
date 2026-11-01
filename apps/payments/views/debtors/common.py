@@ -12,7 +12,7 @@ from apps.common.form_classes import (
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT_CLASS,
 )
-from apps.common.form_fields import NoteField
+from apps.common.form_fields import MoneyField, NoteField
 from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time
 from apps.common.utils.text import user_display_name
@@ -47,18 +47,7 @@ class AddPaymentForm(BSModalModelForm):
             attrs={"class": "form-check-input", "role": "switch"}
         ),
     )
-    down_payment = forms.IntegerField(
-        label="Monto abonado",
-        required=False,
-        widget=forms.NumberInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "min": "1",
-                "step": "500",
-                "inputmode": "numeric",
-            }
-        ),
-    )
+    down_payment = MoneyField(label="Monto abonado", required=False)
     payment_method = forms.ChoiceField(
         label="Método",
         choices=MetodoPago.CHOICES,

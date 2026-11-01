@@ -54,16 +54,12 @@
       if (this.fields.full.checked) {
         return this.total;
       }
-      return Math.max(0, parseInt(this.fields.amount.value, 10) || 0);
+      return MoneyInput.parse(this.fields.amount.value);
     }
 
     amountError() {
       if (this.fields.full.checked) {
         return "";
-      }
-      const raw = this.fields.amount.value;
-      if (raw !== "" && Number(raw) < 0) {
-        return "El monto no puede ser negativo.";
       }
       if (this.amount() >= this.total) {
         return `Si paga ${formatMoney(this.total)} o más, activa "${this.fullLabel}".`;

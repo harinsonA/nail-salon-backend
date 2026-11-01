@@ -37,9 +37,6 @@
   const longDate = (date) =>
     capitalize(`${fmtWeekday.format(date)} ${date.getDate()} ${fmtMonth.format(date)} ${date.getFullYear()}`);
 
-  const parseAmount = (text) => parseInt(String(text).replace(/\D/g, ""), 10) || 0;
-  const amountText = (value) => (value ? value.toLocaleString("es-CL") : "");
-
   const field = (labelText, control) => {
     const label = el("label", "calendar-new__field");
     label.append(el("span", "", labelText), control);
@@ -137,12 +134,12 @@
       amount.type = "text";
       amount.inputMode = "numeric";
       amount.placeholder = "0";
-      amount.value = amountText(row.amount);
+      amount.dataset.money = "";
+      amount.value = MoneyInput.text(row.amount);
       amount.disabled = !row.editable;
       amount.setAttribute("aria-label", `Monto del anticipo ${index + 1}`);
       amount.addEventListener("input", () => {
-        row.amount = parseAmount(amount.value);
-        amount.value = amountText(row.amount);
+        row.amount = MoneyInput.parse(amount.value);
         this.onChange();
       });
       amount.addEventListener("blur", () => {
@@ -398,7 +395,7 @@
 
     editorLine() {
       const quantity = Math.min(this.config.maxQuantity, Math.max(1, parseInt(this.ui.quantity.value, 10) || 1));
-      const discount = Math.max(0, parseInt(this.ui.discount.value, 10) || 0);
+      const discount = MoneyInput.parse(this.ui.discount.value);
       return { service: this.service, quantity, discount };
     }
 
@@ -650,7 +647,7 @@
           this.service = existing.service;
         }
         ui.quantity.value = existing ? existing.quantity : 1;
-        ui.discount.value = existing ? existing.discount : 0;
+        ui.discount.value = MoneyInput.text(existing ? existing.discount : 0);
         this.renderEditor();
       });
       ui.add.addEventListener("click", () => {

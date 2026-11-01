@@ -61,6 +61,12 @@ class CompletarCitaTests(NegocioTestCase):
         self.assertNoSeCompleta(respuesta)
         self.assertIn("El campo 'monto abonado' no puede ser negativo.", str(respuesta.json()["errors"]))
 
+    def test_el_monto_abonado_con_punto_de_miles_se_guarda_completo(self):
+        respuesta = self.completar(down_payment="4.000")
+        self.assertEqual(respuesta.status_code, 200)
+        self.cita.refresh_from_db()
+        self.assertEqual(self.cita.pago.detalles_pago.get().monto_pago, Decimal("4000"))
+
     def test_sin_pago_completo_acepta_monto_abonado_cero(self):
         respuesta = self.completar(down_payment="0")
         self.assertEqual(respuesta.status_code, 200)
