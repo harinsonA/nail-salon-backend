@@ -14,7 +14,7 @@ from apps.common.form_classes import (
     FORM_CONTROL_TEXTAREA_CLASS,
     FORM_SELECT_CLASS,
 )
-from apps.common.form_fields import NoteField
+from apps.common.form_fields import MoneyField, NoteField
 from apps.common.utils.currency import Money
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.payments.accounting import (
@@ -55,19 +55,7 @@ class AgendaConfirmationForm(BSModalModelForm):
             attrs={"class": "form-check-input", "role": "switch"}
         ),
     )
-    down_payment = forms.IntegerField(
-        label="Monto abonado",
-        initial=0,
-        required=False,
-        widget=forms.NumberInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "min": "0",
-                "step": "500",
-                "inputmode": "numeric",
-            }
-        ),
-    )
+    down_payment = MoneyField(label="Monto abonado", initial=0, required=False)
     payment_method = forms.ChoiceField(
         label="Método",
         choices=MetodoPago.CHOICES,

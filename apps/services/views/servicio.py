@@ -17,10 +17,11 @@ from apps.common.form_classes import (
     FORM_SELECT2_CLASS,
     FORM_SELECT_CLASS,
 )
-from apps.common.form_fields import AlphabeticField, NoteField
+from apps.common.form_fields import AlphabeticField, MoneyField, NoteField
 from apps.common.utils.currency import Money
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
+from apps.common.widgets import MoneyInput
 
 from ..models.categoria import Categoria
 from ..models.servicio import Servicio
@@ -115,20 +116,12 @@ class ServicesForm(BSModalForm):
             },
         ),
     )
-    price = forms.DecimalField(
+    price = MoneyField(
         label="Precio",
-        max_digits=10,
-        decimal_places=2,
         initial=0,
+        max_value=99_999_999,
         required=False,
-        widget=forms.NumberInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "15000",
-                "step": "0.01",
-                "min": "0",
-            },
-        ),
+        widget=MoneyInput(attrs={"placeholder": "15.000"}),
     )
     duration = DurationInMinutesField(
         label="Duración (minutos)",

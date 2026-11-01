@@ -135,6 +135,12 @@ class RegistrarAbonoTests(NegocioTestCase):
         self.pago.refresh_from_db()
         self.assertEqual(self.pago.estado_pago, EstadoPago.PENDIENTE)
 
+    def test_el_abono_con_punto_de_miles_se_guarda_completo(self):
+        self.assertEqual(self.abonar(down_payment="3.000").status_code, 200)
+        self.assertEqual(
+            self.pago.detalles_pago.order_by("-pk").first().monto_pago, Decimal("3000")
+        )
+
     def test_abonar_justo_el_saldo_deja_el_pago_completado(self):
         self.assertEqual(self.abonar(down_payment="13000").status_code, 200)
         self.pago.refresh_from_db()

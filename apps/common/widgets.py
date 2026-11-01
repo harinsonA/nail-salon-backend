@@ -1,6 +1,7 @@
 from django import forms
 
 from apps.common.form_classes import FORM_CONTROL_CLASS
+from apps.common.utils.currency import Money
 
 """========================================================================="""
 # region ........ functions
@@ -41,6 +42,28 @@ def password_input():
 
 def switch_input():
     return forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"})
+
+
+class MoneyInput(forms.TextInput):
+    def __init__(self, attrs=None):
+        super().__init__(
+            attrs={
+                "class": FORM_CONTROL_CLASS,
+                "placeholder": "0",
+                "inputmode": "numeric",
+                "autocomplete": "off",
+                "data-money": "",
+                **(attrs or {}),
+            }
+        )
+
+    def format_value(self, value):
+        if isinstance(value, str):
+            try:
+                value = Money.parse(value)
+            except ValueError:
+                return value
+        return Money.digits(value) if value else None
 
 
 # endregion

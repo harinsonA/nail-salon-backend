@@ -1,12 +1,17 @@
 from django import forms
 
+from apps.common.utils.currency import Money
 from apps.common.utils.utils import CommonCleaner
+from apps.common.widgets import MoneyInput
 
 """========================================================================="""
 # region ........ Constants
 
 
 NOTE_MAX_LENGTH = 250
+MONEY_INVALID = "El campo '{name}' debe ser un monto en pesos, sin decimales."
+MONEY_NEGATIVE = "El campo '{name}' no puede ser negativo."
+MONEY_TOO_LARGE = "El campo '{name}' no puede superar {limit}."
 
 
 # endregion
@@ -79,6 +84,29 @@ class NoteField(CleanedCharField):
 
     def check(self, field_name, value):
         return CommonCleaner.clean_250_characters_field(field_name, value)
+
+
+class MoneyField(forms.IntegerField):
+    widget = MoneyInput
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("min_value", 0)
+        super().__init__(*args, **kwargs)
+        if self.max_value is not None:
+            self.error_messages["max_value"] = MONEY_TOO_LARGE.format(
+                name=(self.label or "").lower(), limit=Money.format(self.max_value)
+            )
+
+    def to_python(self, value):
+        if value in self.empty_values:
+            return None
+        name = (self.label or "").lower()
+        if str(value).strip().startswith("-"):
+            raise forms.ValidationError(MONEY_NEGATIVE.format(name=name), code="min_value")
+        try:
+            return Money.parse(value)
+        except ValueError:
+            raise forms.ValidationError(MONEY_INVALID.format(name=name), code="invalid")
 
 
 # endregion

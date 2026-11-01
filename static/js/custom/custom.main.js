@@ -73,6 +73,22 @@ const formatMoney = (value) => {
   return `$${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 };
 
+const MoneyInput = {
+  parse: (text) => parseInt(String(text ?? "").replace(/\D/g, ""), 10) || 0,
+  text: (value) => (value ? formatMoney(value).slice(1) : ""),
+};
+
+document.addEventListener(
+  "input",
+  (event) => {
+    const input = event.target;
+    if (input instanceof HTMLInputElement && input.matches("[data-money]")) {
+      input.value = MoneyInput.text(MoneyInput.parse(input.value));
+    }
+  },
+  true,
+);
+
 const escapeHtml = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,

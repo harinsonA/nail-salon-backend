@@ -47,6 +47,24 @@ class PrecioServicioTests(NegocioTestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(Servicio.objects.get().precio, Decimal("0"))
 
+    def test_el_precio_con_punto_de_miles_se_guarda_completo(self):
+        self.assertEqual(self.crear("15.000").status_code, 200)
+        self.assertEqual(Servicio.objects.get().precio, Decimal("15000"))
+
+    def test_rechaza_un_precio_que_no_cabe_en_la_base(self):
+        respuesta = self.crear("100.000.000")
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("El campo 'precio' no puede superar $99.999.999.", respuesta.content.decode())
+        self.assertFalse(Servicio.objects.exists())
+
+    def test_el_detalle_muestra_el_precio_con_punto_de_miles(self):
+        servicio = Servicio.objects.create(nombre="Retiro", precio=Decimal("15000"), categoria=self.categoria)
+        respuesta = self.navegador.get(
+            reverse("service_detail_modal", kwargs={"pk": servicio.pk}),
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertContains(respuesta, 'value="15.000"')
+
     def test_rechaza_precio_negativo(self):
         respuesta = self.crear("-100")
         self.assertEqual(respuesta.status_code, 400)
