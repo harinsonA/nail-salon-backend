@@ -328,8 +328,7 @@
         total: find("total"),
         save: find("save"),
       };
-      const advances = config.advances || {};
-      this.advances = advances.enabled ? new AdvanceList(form, advances, () => this.renderSummary()) : null;
+      this.advances = new AdvanceList(form, config.advances, () => this.renderSummary());
 
       this.markCurrentUser();
       this.renderCategories();
@@ -461,15 +460,13 @@
       this.ui.subtotal.textContent = formatMoney(subtotal);
       this.ui.discounts.textContent = discounts ? `-${formatMoney(discounts)}` : formatMoney(0);
       this.ui.total.textContent = formatMoney(subtotal - discounts);
-      if (this.advances) {
-        this.advances.renderTotals(subtotal - discounts);
-      }
+      this.advances.renderTotals(subtotal - discounts);
       this.ui.save.disabled = !this.isComplete();
     }
 
     isComplete() {
       const filled = Boolean(this.fields.client.value && this.fields.date.value && this.fields.time.value && this.lines.length);
-      return filled && (!this.advances || this.advances.isValid());
+      return filled && this.advances.isValid();
     }
 
     loadBusyHours() {
@@ -534,9 +531,7 @@
 
     clearErrors() {
       ["client", "staff", "date", "time", "notes", "service"].forEach((field) => this.setError(field, ""));
-      if (this.advances) {
-        this.advances.showError("");
-      }
+      this.advances.showError("");
     }
 
     validate() {
@@ -552,7 +547,7 @@
         (this.fields[first] || this.ui.service).focus();
         return false;
       }
-      return !this.advances || this.advances.reveal();
+      return this.advances.reveal();
     }
 
     serverErrors(errors) {
@@ -567,7 +562,7 @@
       errors.forEach(({ id_element: id, error }) => {
         if (byId[id]) {
           this.setError(byId[id], error);
-        } else if (id === "id_advances" && this.advances) {
+        } else if (id === "id_advances") {
           this.advances.showError(error);
         }
       });
@@ -584,9 +579,7 @@
           descuento: line.discount,
         })),
       );
-      if (this.advances) {
-        this.advances.serialize();
-      }
+      this.advances.serialize();
       const data = Object.fromEntries(new FormData(this.form).entries());
       this.ui.save.disabled = true;
       const [response = {}, status] = await getResponseToRequest(this.form.action, data);

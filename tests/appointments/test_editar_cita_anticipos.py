@@ -7,8 +7,6 @@ from django.utils import timezone
 from apps.appointments.models import Cita
 from apps.payments.choices import EstadoDetallePago, MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
-from apps.settings.models import Preference
-from apps.settings.preferences import Scope
 from tests.appointments.test_crear_cita import FECHA, CitaBase
 
 
@@ -16,16 +14,10 @@ class EditarCitaConAnticiposTests(CitaBase):
     esquema = "editar_cita_anticipos"
     dominio = "editar-cita-anticipos.localhost"
 
-    def encender(self):
-        Preference.objects.update_or_create(
-            scope=Scope.NEGOCIO, scope_id="", key="advance_module", defaults={"value": True}
-        )
-
     def anticipo(self, monto, metodo=MetodoPago.EFECTIVO, referencia=""):
         return {"monto": monto, "metodo": metodo, "referencia": referencia}
 
     def cita_con(self, anticipos, asignada=None):
-        self.encender()
         datos = {"advances": json.dumps(anticipos)}
         if asignada:
             datos["assigned_to"] = asignada.pk
@@ -57,11 +49,6 @@ class EditarCitaConAnticiposTests(CitaBase):
             self.url_editar(cita), payload, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
         )
 
-    def test_sin_interruptor_editar_no_muestra_la_tarjeta(self):
-        self.crear()
-        respuesta = self.abrir(Cita.objects.get())
-        self.assertNotContains(respuesta, "Incluye anticipo")
-
     def test_el_modal_de_editar_trae_los_anticipos_guardados(self):
         cita = self.cita_con([self.anticipo(4000), self.anticipo(2000, MetodoPago.TRANSFERENCIA, "TRX-1")])
         respuesta = self.abrir(cita)
@@ -91,7 +78,6 @@ class EditarCitaConAnticiposTests(CitaBase):
         self.assertRegex(configuracion["rows"][0]["date"], r"^\d{1,2} \w+ \d{4}, \d{2}:\d{2}$")
 
     def test_agregar_un_anticipo_a_una_cita_sin_pago_crea_el_pago(self):
-        self.encender()
         self.crear()
         cita = Cita.objects.get()
         respuesta = self.editar(cita, [self.anticipo(3000)])
@@ -230,13 +216,6 @@ class EditarCitaConAnticiposTests(CitaBase):
             "Los anticipos suman $8.000 y no pueden superar el total de los servicios ($7.000).",
             self.errores(respuesta)["id_advances"],
         )
-
-    def test_sin_interruptor_los_servicios_tampoco_bajan_de_lo_pagado(self):
-        cita = self.cita_con([self.anticipo(8000)])
-        Preference.objects.filter(key="advance_module").update(value=False)
-        respuesta = self.editar(cita, [{"id": self.filas(cita)[0].pk, "quitar": True}], descuento=3000)
-        self.assertIn("$8.000", self.errores(respuesta)["id_services"])
-        self.assertEqual(len(self.filas(cita)), 1)
 
     def test_editar_refresca_las_fotos_y_el_total_del_pago(self):
         cita = self.cita_con([self.anticipo(4000)])

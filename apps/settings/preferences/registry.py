@@ -1,4 +1,4 @@
-from apps.settings.preferences.constants import Category, Scope
+from apps.settings.preferences.constants import Category
 from apps.settings.preferences.types import BooleanPreference, ChoicePreference
 
 
@@ -94,19 +94,6 @@ CALENDAR_SHOW_DEBT = BooleanPreference(
 )
 
 
-ADVANCE_MODULE = BooleanPreference(
-    key="advance_module",
-    label="Módulo de anticipos",
-    help_text=(
-        "Permite registrar anticipos en las citas de este negocio. "
-        "Se activa solo desde la base de datos."
-    ),
-    default=False,
-    category=Category.FUNCIONES_NUEVAS,
-    scope=Scope.NEGOCIO,
-)
-
-
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
     CALENDAR_DEFAULT_VIEW,
@@ -114,5 +101,4 @@ PREFERENCES = PreferenceRegistry(
     CALENDAR_SHOW_COMPLETED,
     CALENDAR_SHOW_CANCELLED,
     CALENDAR_SHOW_DEBT,
-    ADVANCE_MODULE,
 )
