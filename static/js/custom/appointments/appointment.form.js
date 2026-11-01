@@ -70,7 +70,7 @@
         field: form.querySelector("#id_advances"),
       };
       this.bind();
-      this.render();
+      this.draw();
     }
 
     newRow() {
@@ -212,11 +212,15 @@
       this.render();
     }
 
-    render() {
+    draw() {
       const hasSaved = this.hasSaved();
       this.ui.switchLabel.hidden = hasSaved;
       this.ui.body.hidden = !hasSaved && !this.ui.toggle.checked;
       this.ui.list.replaceChildren(...this.rows.map((row, index) => this.rowElement(row, index)));
+    }
+
+    render() {
+      this.draw();
       this.onChange();
     }
 
