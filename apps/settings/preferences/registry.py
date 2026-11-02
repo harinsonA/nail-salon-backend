@@ -1,5 +1,9 @@
-from apps.settings.preferences.constants import Category
-from apps.settings.preferences.types import BooleanPreference, ChoicePreference
+from apps.settings.preferences.constants import Category, Scope
+from apps.settings.preferences.types import (
+    BooleanPreference,
+    ChoicePreference,
+    IntegerPreference,
+)
 
 
 class PreferenceRegistry:
@@ -94,6 +98,48 @@ CALENDAR_SHOW_DEBT = BooleanPreference(
 )
 
 
+RESERVATION_MODULE = BooleanPreference(
+    key="reservation_module",
+    label="Módulo de reservas",
+    help_text=(
+        "Permite usar reservas en las citas de este negocio. "
+        "Se activa solo desde la base de datos."
+    ),
+    default=False,
+    category=Category.FUNCIONES_NUEVAS,
+    scope=Scope.NEGOCIO,
+)
+
+
+RESERVATION_ENABLED = BooleanPreference(
+    key="reserva_habilitada",
+    label="Incluir reserva en las citas",
+    default=False,
+    category=Category.AGENDA,
+    scope=Scope.NEGOCIO,
+)
+
+
+RESERVATION_DISCOUNTS_TOTAL = BooleanPreference(
+    key="reserva_descuenta_total",
+    label="Descontar la reserva del total",
+    default=False,
+    category=Category.AGENDA,
+    scope=Scope.NEGOCIO,
+)
+
+
+RESERVATION_AMOUNT = IntegerPreference(
+    key="valor_reserva",
+    label="Valor de la reserva",
+    default=0,
+    min_value=0,
+    max_value=99_999_999,
+    category=Category.AGENDA,
+    scope=Scope.NEGOCIO,
+)
+
+
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
     CALENDAR_DEFAULT_VIEW,
@@ -101,4 +147,8 @@ PREFERENCES = PreferenceRegistry(
     CALENDAR_SHOW_COMPLETED,
     CALENDAR_SHOW_CANCELLED,
     CALENDAR_SHOW_DEBT,
+    RESERVATION_MODULE,
+    RESERVATION_ENABLED,
+    RESERVATION_DISCOUNTS_TOTAL,
+    RESERVATION_AMOUNT,
 )
