@@ -4,14 +4,11 @@ from django import forms
 from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
+from apps.appointments.calendar.constants import CALENDAR_PREFERENCE_FIELDS
 from apps.appointments.calendar.settings import STATUS_PREFERENCES, calendar_settings
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from apps.settings.preferences import (
-    CALENDAR_DEFAULT_VIEW,
-    CALENDAR_SHOW_DEBT,
-    Category,
-)
+from apps.settings.preferences import CALENDAR_DEFAULT_VIEW, CALENDAR_SHOW_DEBT
 from apps.settings.preferences.forms import PreferenceFieldsMixin
 
 """========================================================================="""
@@ -19,7 +16,7 @@ from apps.settings.preferences.forms import PreferenceFieldsMixin
 
 
 class CalendarPreferencesForm(PreferenceFieldsMixin, BSModalForm):
-    preference_category = Category.AGENDA
+    preference_definitions = CALENDAR_PREFERENCE_FIELDS
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

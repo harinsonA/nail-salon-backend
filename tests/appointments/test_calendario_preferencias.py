@@ -6,6 +6,7 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.appointments.calendar.constants import CALENDAR_PREFERENCE_FIELDS
 from apps.appointments.calendar.query import CalendarQuery
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
@@ -14,6 +15,10 @@ from apps.settings.preferences import (
     CALENDAR_DEFAULT_VIEW,
     CALENDAR_SHOW_CANCELLED,
     CALENDAR_SHOW_DEBT,
+    RESERVATION_AMOUNT,
+    RESERVATION_DISCOUNTS_TOTAL,
+    RESERVATION_ENABLED,
+    RESERVATION_MODULE,
 )
 from tests.base import NegocioTestCase
 
@@ -99,6 +104,28 @@ class CalendarioPreferenciasTests(NegocioTestCase):
         self.assertContains(respuesta, "Vista al ingresar")
         self.assertContains(respuesta, 'value="mes" class="form-check-input"', html=False)
         self.assertContains(respuesta, "Mostrar saldo pendiente")
+
+    def test_el_modal_maneja_solo_los_campos_de_su_lista(self):
+        respuesta = self.navegador().get(
+            reverse("calendar_preferences"), HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(
+            respuesta.context["form"].preference_keys,
+            [preference.key for preference in CALENDAR_PREFERENCE_FIELDS],
+        )
+
+    def test_guardar_el_calendario_no_toca_las_preferencias_de_la_cita(self):
+        RESERVATION_MODULE.set(True)
+        RESERVATION_ENABLED.set(True)
+        RESERVATION_DISCOUNTS_TOTAL.set(True)
+        RESERVATION_AMOUNT.set(5000)
+        self.assertEqual(self.guardar().status_code, 200)
+        respuesta = self.guardar(self.colaboradora, reservation_module="", valor_reserva="1")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIs(RESERVATION_MODULE.get(), True)
+        self.assertIs(RESERVATION_ENABLED.get(), True)
+        self.assertIs(RESERVATION_DISCOUNTS_TOTAL.get(), True)
+        self.assertEqual(RESERVATION_AMOUNT.get(), 5000)
 
     def test_guardar_cambia_la_vista_y_oculta_estados_solo_para_esa_persona(self):
         respuesta = self.guardar(calendario_vista_inicial="semana", calendario_ver_canceladas=None)

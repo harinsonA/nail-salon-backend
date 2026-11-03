@@ -72,11 +72,6 @@ def get_preferences(keys, user=None) -> dict:
     return values
 
 
-def get_category_preferences(category, user=None) -> dict:
-    definitions = PREFERENCES.by_category(category)
-    return get_preferences([definition.key for definition in definitions], user=user)
-
-
 def set_preference(key, value, user=None):
     definition = PREFERENCES.get(key)
     value = definition.clean(value)
