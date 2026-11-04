@@ -16,7 +16,7 @@ from tests.base import NegocioTestCase
 User = get_user_model()
 Rol = Perfil.Rol
 
-FECHA = "2026-11-02"
+FECHA = "2026-11-04"
 
 
 class CitaBase(NegocioTestCase):
@@ -92,9 +92,9 @@ class CrearCitaTests(CitaBase):
         )
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(respuesta.json()["fecha"], FECHA)
-        self.assertIn("lunes 2 noviembre 2026, 10:30", respuesta.json()["message"])
+        self.assertIn("miércoles 4 noviembre 2026, 10:30", respuesta.json()["message"])
         cita = Cita.objects.get()
-        self.assertEqual((cita.fecha_agenda, cita.hora_agenda), (date(2026, 11, 2), time(10, 30)))
+        self.assertEqual((cita.fecha_agenda, cita.hora_agenda), (date(2026, 11, 4), time(10, 30)))
         self.assertEqual(cita.estado, Cita.EstadoChoices.PENDIENTE)
         self.assertEqual(cita.creado_por, self.encargada)
         self.assertEqual(cita.asignado_a, self.colaboradora)
@@ -152,7 +152,7 @@ class HorasOcupadasTests(CitaBase):
 
     def cita(self, hora, asignada, estado=Cita.EstadoChoices.PENDIENTE):
         cita = Cita.objects.create(
-            cliente=self.cliente, fecha_agenda=date(2026, 11, 2), hora_agenda=time(*hora), estado=estado, asignado_a=asignada
+            cliente=self.cliente, fecha_agenda=date(2026, 11, 4), hora_agenda=time(*hora), estado=estado, asignado_a=asignada
         )
         DetalleCita.objects.create(cita=cita, servicio=self.manicure, nombre_servicio="Manicure", precio_servicio=10000, precio_acordado=10000)
         return cita
