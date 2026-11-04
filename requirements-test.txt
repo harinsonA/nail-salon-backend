@@ -1,1 +1,2 @@
+freezegun==1.5.5
 tblib==3.2.2

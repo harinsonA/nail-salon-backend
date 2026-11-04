@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
+from freezegun import freeze_time
 
 from apps.appointments.models import Cita, DetalleCita
 from apps.clients.models import Cliente
@@ -65,6 +66,7 @@ class CrearCitaTests(CitaBase):
     esquema = "crear_cita"
     dominio = "crear-cita.localhost"
 
+    @freeze_time(f"{FECHA} 12:00:00")
     def test_abre_el_modal_con_la_fecha_del_calendario(self):
         respuesta = self.navegador(self.encargada).get(self.url(), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         self.assertTemplateUsed(respuesta, "appointments/agenda_create_modal.html")
