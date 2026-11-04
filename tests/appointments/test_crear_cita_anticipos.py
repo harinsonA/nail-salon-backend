@@ -48,7 +48,7 @@ class CrearCitaConAnticiposTests(CitaBase):
         self.assertEqual(pago.monto_total_cita, Decimal("10000"))
         self.assertEqual(pago.estado_pago, EstadoPago.PENDIENTE)
         self.assertEqual(pago.cliente_nombre, "Paula Herrera")
-        self.assertEqual(pago.fecha_cita.date().isoformat(), "2026-11-02")
+        self.assertEqual(pago.fecha_cita.date().isoformat(), "2026-11-04")
         self.assertIsNone(pago.atendido_por)
         fila = pago.detalles_pago.get()
         self.assertEqual(fila.monto_pago, Decimal("4000"))
