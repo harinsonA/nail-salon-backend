@@ -15,5 +15,13 @@ class PaymentDetail:
         return cls.kind(detail) == TipoDetallePago.DEVOLUCION
 
     @classmethod
+    def is_reservation(cls, detail):
+        return cls.kind(detail) == TipoDetallePago.RESERVA
+
+    @classmethod
     def is_appointment_payment(cls, detail):
-        return not cls.is_refund(detail) and cls.status(detail) == EstadoDetallePago.VIGENTE
+        return (
+            not cls.is_refund(detail)
+            and not cls.is_reservation(detail)
+            and cls.status(detail) == EstadoDetallePago.VIGENTE
+        )

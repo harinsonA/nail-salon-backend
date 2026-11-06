@@ -102,13 +102,15 @@ class CuentaPagoTests(NegocioTestCase):
         self.assertEqual(cuenta.paid(), Decimal("30000"))
         self.assertEqual(cuenta.balance(), Decimal("0"))
 
-    def test_la_reserva_no_se_descuenta_y_suma_al_total(self):
-        pago = self.pago(total="35000")
+    def test_la_reserva_que_suma_queda_fuera_del_total(self):
+        pago = self.pago(total="30000")
         self.fila(pago, "5000", Tipo.RESERVA, Estado.VIGENTE)
         self.fila(pago, "30000", Tipo.ABONO, Estado.VIGENTE)
         cuenta = self.cuenta(pago)
-        self.assertEqual(cuenta.total(30000), Decimal("35000"))
+        self.assertEqual(cuenta.total(30000), Decimal("30000"))
         self.assertEqual(cuenta.paid(), Decimal("35000"))
+        self.assertEqual(cuenta.reservation(), Decimal("5000"))
+        self.assertEqual(cuenta.applied(), Decimal("30000"))
         self.assertEqual(cuenta.balance(), Decimal("0"))
 
     def test_cancelada_con_todo_devuelto_queda_en_cero(self):
@@ -175,7 +177,9 @@ class CuentaPagoTests(NegocioTestCase):
         cuenta = self.cuenta(pago)
         self.assertEqual(cuenta.refunded(reserva), Decimal("3000"))
         self.assertEqual(cuenta.refundable(reserva), Decimal("2000"))
-        self.assertEqual(cuenta.charges(), Decimal("2000"))
+        self.assertEqual(cuenta.reservation(), Decimal("2000"))
+        self.assertEqual(cuenta.retained(), Decimal("2000"))
+        self.assertEqual(cuenta.charges(), Decimal("0"))
 
     def test_un_abono_no_es_devolvible(self):
         pago = self.pago()
