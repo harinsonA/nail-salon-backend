@@ -45,12 +45,14 @@ class EstadoPago:
 
 class TipoDetallePago:
     RESERVA = "RESERVA"
+    RESERVA_DESCONTABLE = "RESERVA_DESCONTABLE"
     ANTICIPO = "ANTICIPO"
     ABONO = "ABONO"
     DEVOLUCION = "DEVOLUCION"
 
     CHOICES = [
         (RESERVA, "Reserva"),
+        (RESERVA_DESCONTABLE, "Reserva"),
         (ANTICIPO, "Anticipo"),
         (ABONO, "Abono"),
         (DEVOLUCION, "Devolución"),

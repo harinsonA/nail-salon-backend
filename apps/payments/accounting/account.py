@@ -1,8 +1,12 @@
 from decimal import Decimal
 
-from apps.payments.accounting.constants import PREPAID_TYPES, RETAINED_STATES, ZERO
+from apps.payments.accounting.constants import (
+    PREPAID_TYPES,
+    RETAINED_STATES,
+    SERVICE_PREPAID_TYPES,
+    ZERO,
+)
 from apps.payments.accounting.detail import PaymentDetail
-from apps.payments.choices import TipoDetallePago
 
 
 class PaymentAccount:
@@ -52,34 +56,50 @@ class PaymentAccount:
             ZERO,
         )
 
-    def charges(self):
-        total = ZERO
-        for detail in self.details:
-            kind = PaymentDetail.kind(detail)
-            if kind == TipoDetallePago.RESERVA or (
-                kind == TipoDetallePago.ANTICIPO
+    def reservation(self):
+        return sum(
+            (
+                self.refundable(detail)
+                for detail in self.details
+                if PaymentDetail.is_reservation(detail)
+            ),
+            ZERO,
+        )
+
+    def applied(self):
+        return self.paid() - self.reservation()
+
+    def service_retained(self):
+        return sum(
+            (
+                self.refundable(detail)
+                for detail in self.details
+                if PaymentDetail.kind(detail) in SERVICE_PREPAID_TYPES
                 and PaymentDetail.status(detail) in RETAINED_STATES
-            ):
-                total += self.refundable(detail)
-        return total
+            ),
+            ZERO,
+        )
+
+    def charges(self):
+        return self.service_retained()
 
     def credit(self):
-        return self.paid() - self.charges()
+        return self.applied() - self.charges()
 
     def total(self, services_amount, cancelled=False):
         return (ZERO if cancelled else Decimal(services_amount)) + self.charges()
 
     def balance(self):
-        return max(ZERO, self.payment.monto_total_cita - self.paid())
+        return max(ZERO, self.payment.monto_total_cita - self.applied())
 
     def is_settled(self):
-        return self.paid() >= self.payment.monto_total_cita
+        return self.applied() >= self.payment.monto_total_cita
 
     def appointment_total(self):
-        return self.payment.monto_total_cita - self.retained()
+        return self.payment.monto_total_cita - self.service_retained()
 
     def appointment_paid(self):
-        return self.paid() - self.retained()
+        return self.applied() - self.service_retained()
 
     def appointment_payments(self):
         return [
