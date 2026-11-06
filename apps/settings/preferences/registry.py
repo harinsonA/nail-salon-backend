@@ -1,3 +1,4 @@
+from apps.payments.choices import MetodoPago
 from apps.settings.preferences.constants import Category, Scope
 from apps.settings.preferences.types import (
     BooleanPreference,
@@ -140,6 +141,16 @@ RESERVATION_AMOUNT = IntegerPreference(
 )
 
 
+RESERVATION_PAYMENT_METHOD = ChoicePreference(
+    key="reserva_metodo_pago",
+    label="Método de pago de la reserva",
+    default=MetodoPago.EFECTIVO,
+    choices=MetodoPago.CHOICES,
+    category=Category.AGENDA,
+    scope=Scope.NEGOCIO,
+)
+
+
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
     CALENDAR_DEFAULT_VIEW,
@@ -151,4 +162,5 @@ PREFERENCES = PreferenceRegistry(
     RESERVATION_ENABLED,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_AMOUNT,
+    RESERVATION_PAYMENT_METHOD,
 )

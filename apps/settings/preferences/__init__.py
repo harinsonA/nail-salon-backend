@@ -10,6 +10,7 @@ from apps.settings.preferences.registry import (
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_ENABLED,
     RESERVATION_MODULE,
+    RESERVATION_PAYMENT_METHOD,
     SESSION_IDLE_MINUTES,
 )
 from apps.settings.preferences.service import (
@@ -29,6 +30,7 @@ __all__ = [
     "RESERVATION_DISCOUNTS_TOTAL",
     "RESERVATION_ENABLED",
     "RESERVATION_MODULE",
+    "RESERVATION_PAYMENT_METHOD",
     "SESSION_IDLE_MINUTES",
     "Category",
     "Scope",

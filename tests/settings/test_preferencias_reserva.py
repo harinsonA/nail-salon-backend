@@ -5,6 +5,7 @@ from apps.appointments.calendar.constants import (
     APPOINTMENT_PREFERENCE_FIELDS,
     CALENDAR_PREFERENCE_FIELDS,
 )
+from apps.payments.choices import MetodoPago
 from apps.settings.models import Preference
 from apps.settings.preferences import (
     PREFERENCES,
@@ -12,6 +13,7 @@ from apps.settings.preferences import (
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_ENABLED,
     RESERVATION_MODULE,
+    RESERVATION_PAYMENT_METHOD,
     Category,
     Scope,
 )
@@ -24,6 +26,7 @@ RESERVA = (
     RESERVATION_ENABLED,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_AMOUNT,
+    RESERVATION_PAYMENT_METHOD,
 )
 
 
@@ -35,6 +38,7 @@ class PreferenciasReservaTests(NegocioTestCase):
         self.assertIs(RESERVATION_ENABLED.get(), False)
         self.assertIs(RESERVATION_DISCOUNTS_TOTAL.get(), False)
         self.assertEqual(RESERVATION_AMOUNT.get(), 0)
+        self.assertEqual(RESERVATION_PAYMENT_METHOD.get(), MetodoPago.EFECTIVO)
 
     def test_guardan_y_vuelven_con_su_tipo(self):
         RESERVATION_MODULE.set(True)
@@ -45,6 +49,8 @@ class PreferenciasReservaTests(NegocioTestCase):
         self.assertIs(RESERVATION_ENABLED.is_enabled(), True)
         self.assertIs(RESERVATION_DISCOUNTS_TOTAL.is_enabled(), True)
         self.assertEqual(RESERVATION_AMOUNT.get(), 5000)
+        RESERVATION_PAYMENT_METHOD.set(MetodoPago.TRANSFERENCIA)
+        self.assertEqual(RESERVATION_PAYMENT_METHOD.get(), MetodoPago.TRANSFERENCIA)
 
     def test_volver_a_cero_actualiza_la_misma_fila(self):
         RESERVATION_AMOUNT.set(5000)
@@ -55,7 +61,8 @@ class PreferenciasReservaTests(NegocioTestCase):
     def test_son_del_negocio_y_no_de_cada_usuario(self):
         ana = User.objects.create_user(username="ana", password="clave-de-prueba")
         camila = User.objects.create_user(username="camila", password="clave-de-prueba")
-        for preference, value in zip(RESERVA, (True, True, True, 5000)):
+        valores = (True, True, True, 5000, MetodoPago.TARJETA)
+        for preference, value in zip(RESERVA, valores):
             preference.set(value, user=ana)
             self.assertEqual(preference.get(user=camila), value)
             guardada = Preference.objects.get(key=preference.key)
@@ -67,6 +74,17 @@ class PreferenciasReservaTests(NegocioTestCase):
             with self.assertRaises(ValidationError):
                 RESERVATION_AMOUNT.set(invalido)
         self.assertFalse(Preference.objects.filter(key=RESERVATION_AMOUNT.key).exists())
+
+    def test_el_metodo_solo_acepta_los_metodos_de_pago(self):
+        with self.assertRaises(ValidationError):
+            RESERVATION_PAYMENT_METHOD.set("BITCOIN")
+        self.assertFalse(
+            Preference.objects.filter(key=RESERVATION_PAYMENT_METHOD.key).exists()
+        )
+        self.assertCountEqual(
+            RESERVATION_PAYMENT_METHOD.valid_values,
+            [metodo for metodo, _ in MetodoPago.CHOICES],
+        )
 
     def test_el_modulo_se_activa_desde_la_base_para_todo_el_negocio(self):
         ana = User.objects.create_user(username="ana", password="clave-de-prueba")
