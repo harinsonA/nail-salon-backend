@@ -47,8 +47,8 @@ class AgendaCreateView(AppointmentFormMixin, ProtectedView, BSModalFormView):
         DetalleCita.objects.bulk_create(
             build_detail(appointment, line) for line in data["services"]
         )
-        AppointmentPaymentService(appointment, self.request.user).register_advances(
-            data["advances"]
+        AppointmentPaymentService(appointment, self.request.user).save_payments(
+            data["advances"], data["reservation"]
         )
         return appointment
 

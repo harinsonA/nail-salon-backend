@@ -2,7 +2,7 @@ from django.utils import timezone
 
 from apps.common.utils.text import user_display_name
 from apps.payments.accounting.account import PaymentAccount
-from apps.payments.accounting.constants import ZERO
+from apps.payments.accounting.constants import ZERO, ReservationAction
 from apps.payments.accounting.header import PaymentHeader
 from apps.payments.accounting.ledger import AppointmentLedger
 from apps.payments.accounting.rows import PaymentRowFactory
@@ -22,39 +22,48 @@ class AppointmentPaymentService:
     def row_factory(self, moment=None):
         return PaymentRowFactory(self.user, moment or timezone.now())
 
-    def register_advances(self, advances):
-        if not advances:
+    def save_payments(self, advances, reservation=None):
+        reservation = reservation or {}
+        payment = self.ledger().payment
+        added = [change for change in advances if change.get("row") is None]
+        creates_reservation = reservation.get("action") == ReservationAction.CREATE
+        if payment is None and not added and not creates_reservation:
             return None
-        payment = Pago(cita=self.appointment)
+        if payment is not None:
+            self.change_saved(advances, reservation)
+        payment = payment or Pago(cita=self.appointment)
         factory = self.row_factory()
-        rows = [factory.advance(payment, advance) for advance in advances]
+        rows = [factory.advance(payment, change) for change in added]
+        if creates_reservation:
+            rows.insert(0, factory.reservation(payment, reservation))
+        if payment.pk:
+            for row in rows:
+                row.save()
+            self.header.fill(payment).save()
+            return payment
         self.header.fill(payment, details=rows)
         payment.save()
         for row in rows:
             row.save()
         return payment
 
-    def sync_advances(self, changes):
-        added = [change for change in changes if change["row"] is None]
-        payment = self.ledger().payment
-        if payment is None:
-            return self.register_advances(added)
-        for change in changes:
-            row = change["row"]
+    def change_saved(self, advances, reservation):
+        for change in advances:
+            row = change.get("row")
             if row is None:
                 continue
             if change["remove"]:
                 row.delete()
             else:
-                self.update_advance(row, change)
-        factory = self.row_factory()
-        for change in added:
-            factory.advance(payment, change).save()
-        self.header.fill(payment).save()
-        return payment
+                self.update_row(row, change)
+        action = reservation.get("action")
+        if action == ReservationAction.REMOVE:
+            reservation["row"].delete()
+        elif action == ReservationAction.UPDATE:
+            self.update_row(reservation["row"], reservation)
 
     @staticmethod
-    def update_advance(row, change):
+    def update_row(row, change):
         values = {
             "monto_pago": change["amount"],
             "metodo_pago": change["method"],

@@ -42,7 +42,7 @@ class CompletarCitaConAnticipoTests(NegocioTestCase):
 
     def con_anticipo(self, *montos):
         anticipos = [{"amount": monto, "method": MetodoPago.EFECTIVO, "reference": ""} for monto in montos]
-        return AppointmentPaymentService(self.cita, self.encargada).register_advances(anticipos)
+        return AppointmentPaymentService(self.cita, self.encargada).save_payments(anticipos)
 
     def navegador(self):
         navegador = Client(HTTP_HOST=self.dominio)

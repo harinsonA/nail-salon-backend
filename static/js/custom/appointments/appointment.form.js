@@ -56,6 +56,7 @@
       }));
       this.touched = false;
       this.total = 0;
+      this.credit = 0;
       this.ui = {
         switchLabel: find("advance-switch-label"),
         toggle: find("advance-switch"),
@@ -63,10 +64,6 @@
         list: find("advance-list"),
         add: find("advance-add"),
         error: find("advance-error"),
-        summary: find("advance-summary"),
-        bar: find("advance-bar"),
-        paid: find("advance-paid"),
-        balance: find("advance-balance"),
         field: form.querySelector("#id_advances"),
       };
       this.bind();
@@ -89,15 +86,20 @@
       return this.activeRows().reduce((sum, row) => sum + row.amount, 0);
     }
 
+    excessMessage() {
+      const paid = this.paid() + this.credit;
+      if (paid <= this.total) {
+        return "";
+      }
+      const subject = this.credit ? "La reserva y los anticipos" : "Los anticipos";
+      return `${subject} suman ${formatMoney(paid)} y no pueden superar el total de los servicios (${formatMoney(this.total)}).`;
+    }
+
     errorMessage() {
       if (this.activeRows().some((row) => row.editable && !row.amount)) {
         return "Ingresa el monto de cada anticipo.";
       }
-      const paid = this.paid();
-      if (paid > this.total) {
-        return `Los anticipos suman ${formatMoney(paid)} y no pueden superar el total de los servicios (${formatMoney(this.total)}).`;
-      }
-      return "";
+      return this.excessMessage();
     }
 
     isValid() {
@@ -224,20 +226,17 @@
       this.onChange();
     }
 
-    renderTotals(total) {
+    renderTotals(total, credit) {
       this.total = total;
-      const paid = this.paid();
-      const message = this.errorMessage();
-      this.showError(this.touched ? message : "");
-      this.activeRows().forEach((row) => {
-        const invalid = this.touched && row.editable && (!row.amount || paid > total);
+      this.credit = credit;
+      const rows = this.activeRows();
+      const excess = this.paid() + credit > total;
+      this.showError(this.touched && rows.length ? this.errorMessage() : "");
+      rows.forEach((row) => {
+        const invalid = this.touched && row.editable && (!row.amount || excess);
         row.input.classList.toggle("is-invalid", invalid);
         row.input.setAttribute("aria-invalid", String(invalid));
       });
-      this.ui.summary.hidden = !paid;
-      this.ui.paid.textContent = `-${formatMoney(Math.min(paid, total))}`;
-      this.ui.balance.textContent = formatMoney(Math.max(0, total - paid));
-      this.ui.bar.style.width = `${total ? Math.min(100, (paid / total) * 100) : 0}%`;
     }
 
     showError(message) {
@@ -289,6 +288,91 @@
     }
   }
 
+  class ReservationCard {
+    constructor(form, config, cash, onChange) {
+      const find = (name) => form.querySelector(`[data-${name}]`);
+      this.config = config;
+      this.cash = cash;
+      this.onChange = onChange;
+      this.field = form.querySelector("#id_reservation");
+      this.ui = {
+        toggle: find("reservation-switch"),
+        pending: find("reservation-pending"),
+        pendingText: find("reservation-pending-text"),
+        body: find("reservation-body"),
+        amount: find("reservation-amount"),
+        method: find("reservation-method"),
+        reference: find("reservation-reference"),
+        referenceInput: find("reservation-reference-input"),
+        removed: find("reservation-removed"),
+        removedText: find("reservation-removed-text"),
+        error: find("reservation-error"),
+      };
+      if (!config) {
+        return;
+      }
+      this.bind();
+      this.draw();
+    }
+
+    isActive() {
+      return Boolean(this.config) && this.ui.toggle.checked;
+    }
+
+    discounted() {
+      return this.isActive() && this.config.discounts ? this.config.amount : 0;
+    }
+
+    separate() {
+      return this.isActive() && !this.config.discounts ? this.config.amount : 0;
+    }
+
+    methodLabel(value) {
+      const option = [...this.ui.method.options].find((item) => item.value === value);
+      return option ? option.textContent.toLowerCase() : "";
+    }
+
+    draw() {
+      const { config, ui } = this;
+      const on = ui.toggle.checked;
+      const amount = formatMoney(config.amount);
+      ui.amount.textContent = amount;
+      ui.body.hidden = !on;
+      ui.reference.hidden = ui.method.value === this.cash;
+      ui.pending.hidden = on || config.saved;
+      ui.pendingText.textContent = `Reserva de ${amount} sin pagar`;
+      ui.removed.hidden = !(config.saved && !on);
+      ui.removedText.textContent = `El pago de la reserva de ${amount} en ${this.methodLabel(config.method)} se quitará al guardar y quedará sin pagar.`;
+    }
+
+    showError(message) {
+      if (this.ui.error) {
+        this.ui.error.textContent = message || "";
+      }
+    }
+
+    serialize() {
+      if (!this.config || this.config.locked) {
+        this.field.value = "";
+        return;
+      }
+      const method = this.ui.method.value;
+      this.field.value = JSON.stringify({
+        activa: this.ui.toggle.checked,
+        metodo: method,
+        referencia: method === this.cash ? "" : this.ui.referenceInput.value.trim(),
+      });
+    }
+
+    bind() {
+      this.ui.toggle.addEventListener("change", () => {
+        this.draw();
+        this.onChange();
+      });
+      this.ui.method.addEventListener("change", () => this.draw());
+    }
+  }
+
   class AppointmentForm {
     constructor(form, config) {
       this.form = form;
@@ -330,9 +414,17 @@
         subtotal: find("subtotal"),
         discounts: find("discounts"),
         total: find("total"),
+        paySummary: find("pay-summary"),
+        payBar: find("pay-bar"),
+        payBalance: find("pay-balance"),
+        reservationLine: find("reservation-line"),
+        reservationPaid: find("reservation-paid"),
+        advanceLine: find("advance-line"),
+        advancePaid: find("advance-paid"),
         save: find("save"),
       };
       this.advances = new AdvanceList(form, config.advances, () => this.renderSummary());
+      this.reservation = new ReservationCard(form, config.reservation, config.advances.cash, () => this.renderSummary());
 
       this.markCurrentUser();
       this.renderCategories();
@@ -464,8 +556,26 @@
       this.ui.subtotal.textContent = formatMoney(subtotal);
       this.ui.discounts.textContent = discounts ? `-${formatMoney(discounts)}` : formatMoney(0);
       this.ui.total.textContent = formatMoney(subtotal - discounts);
-      this.advances.renderTotals(subtotal - discounts);
+      this.renderPayments(subtotal - discounts);
       this.ui.save.disabled = !this.isComplete();
+    }
+
+    renderPayments(total) {
+      const { ui } = this;
+      const credit = this.reservation.discounted();
+      const separate = this.reservation.separate();
+      this.advances.renderTotals(total, credit);
+      const advancePaid = this.advances.paid();
+      const paid = credit + advancePaid;
+      const alone = !this.advances.activeRows().length && this.lines.length;
+      this.reservation.showError(alone ? this.advances.excessMessage() : "");
+      ui.paySummary.hidden = !(credit || separate || advancePaid);
+      ui.reservationLine.hidden = !(credit || separate);
+      ui.reservationPaid.textContent = credit ? `-${formatMoney(credit)}` : formatMoney(separate);
+      ui.advanceLine.hidden = !advancePaid;
+      ui.advancePaid.textContent = `-${formatMoney(Math.min(advancePaid, total))}`;
+      ui.payBalance.textContent = formatMoney(Math.max(0, total - paid));
+      ui.payBar.style.width = `${total ? Math.min(100, (paid / total) * 100) : 0}%`;
     }
 
     isComplete() {
@@ -536,6 +646,7 @@
     clearErrors() {
       ["client", "staff", "date", "time", "notes", "service"].forEach((field) => this.setError(field, ""));
       this.advances.showError("");
+      this.reservation.showError("");
     }
 
     validate() {
@@ -568,6 +679,8 @@
           this.setError(byId[id], error);
         } else if (id === "id_advances") {
           this.advances.showError(error);
+        } else if (id === "id_reservation") {
+          this.reservation.showError(error);
         }
       });
     }
@@ -584,6 +697,7 @@
         })),
       );
       this.advances.serialize();
+      this.reservation.serialize();
       const data = Object.fromEntries(new FormData(this.form).entries());
       this.ui.save.disabled = true;
       const [response = {}, status] = await getResponseToRequest(this.form.action, data);

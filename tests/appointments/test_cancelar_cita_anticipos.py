@@ -45,7 +45,7 @@ class CitaConAnticiposBase(NegocioTestCase):
 
     def con_anticipos(self, *anticipos, cita=None):
         filas = [{"amount": monto, "method": metodo, "reference": ""} for monto, metodo in anticipos]
-        AppointmentPaymentService(cita or self.cita, self.encargada).register_advances(filas)
+        AppointmentPaymentService(cita or self.cita, self.encargada).save_payments(filas)
         return list(DetallePago.objects.filter(pago__cita=cita or self.cita).order_by("pk"))
 
     def navegador(self, usuario=None):

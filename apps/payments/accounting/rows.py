@@ -33,6 +33,15 @@ class PaymentRowFactory:
             advance["reference"],
         )
 
+    def reservation(self, payment, reservation):
+        return self.build(
+            payment,
+            reservation["kind"],
+            reservation["amount"],
+            reservation["method"],
+            reservation["reference"],
+        )
+
     def refund(self, row, refund):
         return self.build(
             row.pago,

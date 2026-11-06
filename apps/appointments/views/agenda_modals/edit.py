@@ -62,8 +62,8 @@ class AgendaUpdateModalView(
                     "modified",
                 ]
             )
-        AppointmentPaymentService(appointment, self.request.user).sync_advances(
-            data["advances"]
+        AppointmentPaymentService(appointment, self.request.user).save_payments(
+            data["advances"], data["reservation"]
         )
         return appointment
 

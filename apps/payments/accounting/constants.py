@@ -12,4 +12,11 @@ PREPAID_TYPES = (
     TipoDetallePago.RESERVA_DESCONTABLE,
 )
 SERVICE_PREPAID_TYPES = (TipoDetallePago.ANTICIPO, TipoDetallePago.RESERVA_DESCONTABLE)
+RESERVATION_TYPES = (TipoDetallePago.RESERVA, TipoDetallePago.RESERVA_DESCONTABLE)
 RETAINED_STATES = (EstadoDetallePago.RETENIDO, EstadoDetallePago.RETENIDO_DEFINITIVO)
+
+
+class ReservationAction:
+    CREATE = "create"
+    UPDATE = "update"
+    REMOVE = "remove"

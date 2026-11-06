@@ -12,6 +12,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from apps.appointments.access import is_collaborator
 from apps.appointments.models.detalle_cita import DetalleCita
 from apps.appointments.panel import AppointmentPanel
+from apps.appointments.reservation import AppointmentReservation
 from apps.clients.models import Cliente
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
@@ -32,9 +33,11 @@ from apps.payments.accounting import (
     AppointmentLedger,
     PaymentAccount,
     PaymentLabels,
+    PaymentRowFactory,
     ServiceLines,
 )
-from apps.payments.choices import MetodoPago
+from apps.payments.accounting.constants import ReservationAction
+from apps.payments.choices import MetodoPago, TipoDetallePago
 from apps.services.models import Categoria, Servicio
 
 User = get_user_model()
@@ -64,6 +67,14 @@ ADVANCE_LOCKED_ROLE = (
 ADVANCES_TOO_HIGH = (
     "Los anticipos suman {paid} y no pueden superar el total de los servicios "
     "({total})."
+)
+RESERVATION_INVALID = "La reserva enviada no es válida."
+RESERVATION_LOCKED_ROLE = (
+    "Solo la propietaria o la encargada pueden cambiar o quitar una reserva guardada."
+)
+RESERVATION_TOO_HIGH = (
+    "La reserva y los anticipos suman {paid} y no pueden superar el total de los "
+    "servicios ({total})."
 )
 
 
@@ -202,6 +213,7 @@ class AppointmentForm(BSModalForm):
     )
     services = forms.CharField(required=False, widget=forms.HiddenInput)
     advances = forms.CharField(required=False, widget=forms.HiddenInput)
+    reservation = forms.CharField(required=False, widget=forms.HiddenInput)
 
     def __init__(self, *args, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -211,6 +223,7 @@ class AppointmentForm(BSModalForm):
         ledger = AppointmentLedger.for_appointment(instance)
         self.payment = ledger.payment
         self.saved_advances = ledger.open_advances()
+        self.reservation = AppointmentReservation(ledger, creating=instance is None)
         self.details = {}
         if instance:
             self.details = {detail.pk: detail for detail in instance.detalles.all()}
@@ -349,24 +362,95 @@ class AppointmentForm(BSModalForm):
             raise forms.ValidationError(ADVANCES_INVALID)
         return {"row": row, "remove": False, "amount": amount, "method": method, "reference": reference}
 
+    def clean_reservation(self):
+        offer = self.reservation
+        raw = self.cleaned_data.get("reservation")
+        if not offer.available or not raw:
+            return {}
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as error:
+            raise forms.ValidationError(RESERVATION_INVALID) from error
+        if not isinstance(data, dict) or not isinstance(data.get("activa"), bool):
+            raise forms.ValidationError(RESERVATION_INVALID)
+        saved = offer.saved
+        if not data["activa"]:
+            return self.saved_reservation_change(ReservationAction.REMOVE) if saved else {}
+        method = data.get("metodo")
+        reference = data.get("referencia") or ""
+        if method not in PaymentLabels.METHODS or not isinstance(reference, str):
+            raise forms.ValidationError(RESERVATION_INVALID)
+        reference = reference.strip()
+        if len(reference) > REFERENCE_MAX_LENGTH:
+            raise forms.ValidationError(RESERVATION_INVALID)
+        change = {
+            "row": saved,
+            "amount": offer.amount(),
+            "kind": offer.kind(),
+            "method": method,
+            "reference": reference,
+        }
+        if not saved:
+            return {**change, "action": ReservationAction.CREATE}
+        unchanged = saved.metodo_pago == method and (
+            saved.referencia_pago or None
+        ) == PaymentRowFactory.reference(method, reference)
+        if unchanged:
+            return {}
+        return self.saved_reservation_change(ReservationAction.UPDATE, change)
+
+    def saved_reservation_change(self, action, change=None):
+        if not self.can_change_saved:
+            raise forms.ValidationError(RESERVATION_LOCKED_ROLE)
+        return {**(change or {"row": self.reservation.saved}), "action": action}
+
     def paid_after(self, changes):
         touched = {change["row"].pk for change in changes if change["row"]}
         paid = PaymentAccount(self.payment).credit() if self.payment else 0
         paid -= sum(row.monto_pago for row in self.saved_advances if row.pk in touched)
         return paid + sum(change["amount"] for change in changes if not change["remove"])
 
+    def saved_discounts(self):
+        saved = self.reservation.saved
+        return bool(saved) and saved.tipo_detalle == TipoDetallePago.RESERVA_DESCONTABLE
+
+    def reservation_delta(self, reservation):
+        action = reservation.get("action")
+        if action == ReservationAction.CREATE and self.reservation.discounts():
+            return reservation["amount"]
+        if action == ReservationAction.REMOVE and self.saved_discounts():
+            return -self.reservation.saved.monto_pago
+        return 0
+
+    def reservation_counts(self, reservation):
+        action = reservation.get("action")
+        if action == ReservationAction.CREATE:
+            return self.reservation.discounts()
+        return self.saved_discounts() and action != ReservationAction.REMOVE
+
+    def keeps_advances(self, changes):
+        removed = {change["row"].pk for change in changes if change["remove"]}
+        kept = [row for row in self.saved_advances if row.pk not in removed]
+        return bool(kept) or any(change["row"] is None for change in changes)
+
     def clean(self):
         cleaned_data = super().clean()
         lines = cleaned_data.get("services")
-        if not lines or "advances" not in cleaned_data:
+        if not lines or "advances" not in cleaned_data or "reservation" not in cleaned_data:
             return cleaned_data
-        paid = self.paid_after(cleaned_data["advances"])
+        advances = cleaned_data["advances"]
+        reservation = cleaned_data["reservation"]
+        paid = self.paid_after(advances) + self.reservation_delta(reservation)
         total = sum(line["total"] for line in lines)
-        if paid > total:
-            self.add_error(
-                "advances",
-                ADVANCES_TOO_HIGH.format(paid=Money.format(paid), total=Money.format(total)),
-            )
+        if paid <= total:
+            return cleaned_data
+        amounts = {"paid": Money.format(paid), "total": Money.format(total)}
+        if not self.reservation_counts(reservation):
+            self.add_error("advances", ADVANCES_TOO_HIGH.format(**amounts))
+        elif self.keeps_advances(advances):
+            self.add_error("advances", RESERVATION_TOO_HIGH.format(**amounts))
+        else:
+            self.add_error("reservation", RESERVATION_TOO_HIGH.format(**amounts))
         return cleaned_data
 
 
@@ -411,6 +495,7 @@ class AppointmentFormMixin:
         appointment = getattr(self, "object", None)
         context = super().get_context_data(**kwargs)
         form = context["form"]
+        reservation = form.reservation.config(form.can_change_saved)
         services = Servicio.activos.select_related("categoria").order_by("nombre")
         categories = Categoria.activos.order_by("nombre").values("pk", "nombre")
         return {
@@ -436,7 +521,11 @@ class AppointmentFormMixin:
                     "cash": MetodoPago.EFECTIVO,
                     "referenceMaxLength": REFERENCE_MAX_LENGTH,
                 },
+                "reservation": reservation,
             },
+            "reservation": reservation,
+            "payment_methods": MetodoPago.CHOICES,
+            "reference_max_length": REFERENCE_MAX_LENGTH,
         }
 
     def success_message(self, appointment):
