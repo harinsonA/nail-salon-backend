@@ -50,7 +50,7 @@ class RestaurarCitaConAnticiposTests(CitaConAnticiposBase):
 
     def agregar_anticipo(self, monto):
         cambio = {"row": None, "remove": False, "amount": monto, "method": MetodoPago.EFECTIVO, "reference": ""}
-        AppointmentPaymentService(self.cita, self.encargada).sync_advances([cambio])
+        AppointmentPaymentService(self.cita, self.encargada).save_payments([cambio])
         return DetallePago.objects.filter(pago__cita=self.cita).latest("pk")
 
     def test_sin_anticipos_restaura_como_hoy(self):
