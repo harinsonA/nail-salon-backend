@@ -751,6 +751,123 @@ form.calendar-detail-form {
   font-weight: 600;
 }
 
+.calendar-advance__paid[hidden] {
+  display: none;
+}
+
+.calendar-reservation {
+  margin: -2px 0 14px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--cream-100);
+}
+
+.calendar-reservation__body[hidden],
+.calendar-reservation__pending[hidden],
+.calendar-reservation__notice[hidden],
+.calendar-reservation__reference[hidden] {
+  display: none;
+}
+
+.calendar-reservation__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendar-reservation__title {
+  margin: 0;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.calendar-reservation__switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding-left: 0;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.calendar-reservation__switch .form-check-input {
+  float: none;
+  margin: 0;
+}
+
+.calendar-reservation__pending {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: .76rem;
+  color: var(--text-muted);
+}
+
+.calendar-reservation__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.calendar-reservation__amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.calendar-reservation__amount strong {
+  font-size: .9rem;
+  color: var(--text-strong);
+}
+
+.calendar-reservation__date {
+  color: var(--text-strong);
+}
+
+.calendar-reservation .form-label {
+  margin-bottom: 2px;
+  font-size: .74rem;
+}
+
+.calendar-reservation .form-select,
+.calendar-reservation .form-control {
+  height: 32px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: .82rem;
+}
+
+.calendar-reservation__notice {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: .74rem;
+  line-height: 1.35;
+}
+
+.calendar-reservation__notice.is-locked {
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+}
+
+.calendar-reservation__notice.is-removed {
+  border: 1px dashed var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
 @container (max-width: 559.98px) {
   .calendar-advance__fields {
     grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) 24px;

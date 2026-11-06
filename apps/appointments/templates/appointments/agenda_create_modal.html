@@ -126,6 +126,56 @@
       </div>
 
       <aside class="calendar-new__summary" aria-labelledby="appointment-summary">
+        {% if reservation %}
+        <section class="calendar-reservation" aria-labelledby="appointment-reservation" data-reservation>
+          <div class="calendar-reservation__head">
+            <h6 class="calendar-reservation__title" id="appointment-reservation">Reserva</h6>
+            <label class="form-check form-switch calendar-reservation__switch">
+              <span>Pagada</span>
+              <input type="checkbox" class="form-check-input" role="switch" data-reservation-switch{% if reservation.on %} checked{% endif %}{% if reservation.locked %} disabled{% endif %}>
+            </label>
+          </div>
+          <p class="calendar-reservation__pending" data-reservation-pending hidden>
+            <span class="material-symbols-outlined icon--small" aria-hidden="true">schedule</span>
+            <span data-reservation-pending-text></span>
+          </p>
+          <div class="calendar-reservation__body" data-reservation-body>
+            <div class="calendar-reservation__amount">
+              <span>{{ reservation.modeLabel }}</span>
+              <strong data-reservation-amount></strong>
+            </div>
+            {% if reservation.date %}
+            <div class="calendar-reservation__amount">
+              <span>Fecha</span>
+              <span class="calendar-reservation__date">{{ reservation.date }}</span>
+            </div>
+            {% endif %}
+            <div>
+              <label for="appointment-reservation-method" class="form-label form-label--custom">Método de pago</label>
+              <select id="appointment-reservation-method" class="form-select form-select--custom" data-reservation-method{% if reservation.locked %} disabled{% endif %}>
+                {% for value, label in payment_methods %}
+                <option value="{{ value }}"{% if value == reservation.method %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="calendar-reservation__reference" data-reservation-reference>
+              <label for="appointment-reservation-reference" class="form-label form-label--custom">Referencia (opcional)</label>
+              <input id="appointment-reservation-reference" type="text" class="form-control form-control--custom" maxlength="{{ reference_max_length }}" placeholder="N° de operación" value="{{ reservation.reference }}" data-reservation-reference-input{% if reservation.locked %} disabled{% endif %}>
+            </div>
+          </div>
+          {% if reservation.locked %}
+          <p class="calendar-reservation__notice is-locked">
+            <span class="material-symbols-outlined icon--small" aria-hidden="true">lock</span>
+            <span>Solo la propietaria o la encargada pueden cambiar o quitar una reserva guardada.</span>
+          </p>
+          {% endif %}
+          <p class="calendar-reservation__notice is-removed" data-reservation-removed hidden>
+            <span class="material-symbols-outlined icon--small" aria-hidden="true">info</span>
+            <span data-reservation-removed-text></span>
+          </p>
+          <p class="calendar-new__error {{ form.reservation.id_for_label }}" aria-live="polite" data-reservation-error></p>
+        </section>
+        {% endif %}
         <h6 class="calendar-new__summary-title" id="appointment-summary">Resumen</h6>
         <dl class="calendar-new__facts">
           <div><dt>Cliente</dt><dd data-sum-client>—</dd></div>
@@ -140,19 +190,21 @@
           <div><dt>Descuentos</dt><dd data-discounts>$0</dd></div>
           <div class="is-total"><dt>Total</dt><dd data-total>$0</dd></div>
         </dl>
-        <div class="calendar-advance__totals" data-advance-summary hidden>
+        <div class="calendar-advance__totals" data-pay-summary hidden>
           <div class="calendar-pay__progress" aria-hidden="true">
-            <span class="calendar-pay__progress-paid" data-advance-bar></span>
+            <span class="calendar-pay__progress-paid" data-pay-bar></span>
           </div>
           <dl class="calendar-new__totals">
-            <div class="calendar-advance__paid"><dt>Anticipo</dt><dd data-advance-paid></dd></div>
-            <div class="is-total"><dt>Restante por pagar</dt><dd data-advance-balance></dd></div>
+            <div class="calendar-advance__paid" data-reservation-line hidden><dt>Reserva</dt><dd data-reservation-paid></dd></div>
+            <div class="calendar-advance__paid" data-advance-line hidden><dt>Anticipo</dt><dd data-advance-paid></dd></div>
+            <div class="is-total"><dt>Restante por pagar</dt><dd data-pay-balance></dd></div>
           </dl>
         </div>
       </aside>
     </div>
     {{ form.services }}
     {{ form.advances }}
+    {{ form.reservation }}
   </div>
   <div class="modal-footer modal-footer-soft">
     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
