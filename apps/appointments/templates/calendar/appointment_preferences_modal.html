@@ -1,0 +1,59 @@
+<form id="appointment-preferences" class="calendar-config-form" action="{{ modal_url }}" method="post" novalidate>
+  {% csrf_token %}
+  <div class="modal-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5 class="modal-title" id="appointment-preferences-title">Configuración de las citas</h5>
+      <button type="button" class="calendar-settings__help" aria-label="Se aplica a las citas nuevas de todo el negocio"
+        data-bs-title="Se aplica a las citas nuevas de todo el negocio" data-bs-placement="bottom">
+        <span class="material-symbols-outlined icon--small" aria-hidden="true">info</span>
+      </button>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    <ul class="nav calendar-config__tabs" role="tablist" aria-orientation="vertical">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="appointment-tab-reservation" data-bs-toggle="tab"
+          data-bs-target="#appointment-pane-reservation" type="button" role="tab"
+          aria-controls="appointment-pane-reservation" aria-selected="true">Reserva</button>
+      </li>
+    </ul>
+    <div class="tab-content calendar-config__content">
+      <section class="tab-pane fade show active calendar-config__pane" id="appointment-pane-reservation" role="tabpanel"
+        aria-labelledby="appointment-tab-reservation" tabindex="0">
+        <p class="calendar-config__hint">Elige si las citas nuevas incluyen una reserva.</p>
+        <div class="calendar-config__row" data-reservation-enabled>
+          <label class="form-check form-switch calendar-config__choice">
+            {{ form.enabled_field }}
+            <span>{{ form.enabled_field.label }}</span>
+          </label>
+        </div>
+        <div data-reservation-details{% if not form.enabled_field.value %} hidden{% endif %}>
+          <div class="calendar-config__row calendar-config__field">
+            <label class="form-check form-switch calendar-config__choice">
+              {{ form.discounts_field }}
+              <span>{{ form.discounts_field.label }}</span>
+            </label>
+          </div>
+          <div class="calendar-config__field">
+            <label class="form-label" for="{{ form.amount_field.id_for_label }}">{{ form.amount_field.label }}</label>
+            {{ form.amount_field }}
+            <div class="invalid-feedback field_errors {{ form.amount_field.id_for_label }}"></div>
+          </div>
+          <div class="calendar-config__field">
+            <label class="form-label" for="{{ form.method_field.id_for_label }}">{{ form.method_field.label }}</label>
+            {{ form.method_field }}
+            <div class="invalid-feedback field_errors {{ form.method_field.id_for_label }}"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="modal-footer modal-footer-soft">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+  </div>
+</form>
+<script>
+  initAppointmentPreferences(document.getElementById("appointment-preferences"));
+</script>

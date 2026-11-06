@@ -48,11 +48,23 @@ Calendario
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">search</span>
         <input type="search" data-calendar-search placeholder="Buscar cliente" autocomplete="off" maxlength="100">
       </label>
-      <button type="button" class="calendar-settings-btn canvas-modal{% if calendar_filtered %} is-filtered{% endif %}" data-calendar-settings
-        data-form-url="{{ preferences_url }}" title="Configurar el calendario" aria-haspopup="dialog"
-        aria-label="{% if calendar_filtered %}Configurar el calendario (hay estados ocultos){% else %}Configurar el calendario{% endif %}">
-        <span class="material-symbols-outlined icon--field" aria-hidden="true">settings</span>
-      </button>
+      <div class="dropdown calendar-settings">
+        <button type="button" class="calendar-settings-btn{% if calendar_filtered %} is-filtered{% endif %}" data-calendar-settings
+          data-bs-toggle="dropdown" aria-expanded="false" title="Configurar el calendario" aria-haspopup="true"
+          aria-label="{% if calendar_filtered %}Configurar el calendario (hay estados ocultos){% else %}Configurar el calendario{% endif %}">
+          <span class="material-symbols-outlined icon--field" aria-hidden="true">settings</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" data-calendar-settings-menu>
+          <li>
+            <button type="button" class="dropdown-item canvas-modal" data-form-url="{{ preferences_url }}" aria-haspopup="dialog">Calendario</button>
+          </li>
+          {% if appointment_preferences_url %}
+          <li>
+            <button type="button" class="dropdown-item canvas-modal" data-form-url="{{ appointment_preferences_url }}" aria-haspopup="dialog">Cita</button>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
   </header>
 

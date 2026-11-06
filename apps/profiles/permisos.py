@@ -51,6 +51,7 @@ SOLO_ADMINISTRACION = {
     "equipo_activar",
     "equipo_restablecer_clave",
     "equipo_desbloquear",
+    "appointment_preferences",
 }
 
 PARA_TODO_EL_EQUIPO = {

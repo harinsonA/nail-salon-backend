@@ -9,7 +9,10 @@ from apps.appointments.views.agenda_modals.detail import AgendaSeeModalView
 from apps.appointments.views.agenda_modals.edit import AgendaUpdateModalView
 from apps.appointments.views.agenda_modals.payment import AgendaPaymentModalView
 from apps.appointments.views.agenda_modals.restore import AgendaRestoreModalView
-from apps.appointments.views.calendar.preferences import CalendarPreferencesModalView
+from apps.appointments.views.calendar.preferences import (
+    AppointmentPreferencesModalView,
+    CalendarPreferencesModalView,
+)
 from apps.appointments.views.calendar.view import CalendarDataView, CalendarView
 
 urlpatterns = [
@@ -27,6 +30,11 @@ urlpatterns = [
         "calendario/preferencias/",
         CalendarPreferencesModalView.as_view(),
         name="calendar_preferences",
+    ),
+    path(
+        "calendario/preferencias/cita/",
+        AppointmentPreferencesModalView.as_view(),
+        name="appointment_preferences",
     ),
     path(
         "calendario/agenda/<str:date>/crear/",

@@ -42,7 +42,7 @@
       document.addEventListener(window.APPOINTMENT_CHANGED_EVENT, showDate);
       document.addEventListener(window.APPOINTMENT_CREATED_EVENT, showDate);
       this.settingsButton = find("settings");
-      initializeCanvasBSModals(this.settingsButton);
+      initializeAllCanvasBSModals("[data-calendar-settings-menu] .canvas-modal");
       document.addEventListener(HiCalendar.PREFERENCES_EVENT, ({ detail }) => this.applySettings(detail));
       this.loader = find("loader");
       if (typeof processingLoaderTemplate === "function") {
