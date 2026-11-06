@@ -906,6 +906,10 @@ button.calendar-event:hover {
   }
 }
 
+.calendar-settings {
+  flex: none;
+}
+
 .calendar-settings-btn {
   position: relative;
   flex: none;
@@ -1049,6 +1053,16 @@ form.calendar-config-form {
 .calendar-config__choice .calendar-dot {
   width: 7px;
   height: 7px;
+}
+
+.calendar-config__field {
+  margin-top: 12px;
+  font-size: .78rem;
+}
+
+.calendar-config__field .form-label {
+  margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .calendar-settings__help {

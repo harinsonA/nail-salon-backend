@@ -6,7 +6,7 @@
   const CHANGED_EVENT = "calendar:preferences";
   const MODAL_CLASS = "calendar-config";
 
-  const initCalendarPreferences = (form) => {
+  const prepareModal = (form) => {
     const modal = $(form).closest(".modal");
     const help = form.querySelector(".calendar-settings__help");
     const tooltip = help && window.bootstrap ? new window.bootstrap.Tooltip(help, { container: "body" }) : null;
@@ -18,6 +18,11 @@
       modal.removeClass(MODAL_CLASS);
       modal.find(".modal-content").empty();
     });
+    return modal;
+  };
+
+  const initCalendarPreferences = (form) => {
+    prepareModal(form);
 
     const save = async () => {
       const data = Object.fromEntries(new FormData(form).entries());
@@ -36,6 +41,26 @@
     form.querySelectorAll("input").forEach((input) => input.addEventListener("change", save));
   };
 
+  const initAppointmentPreferences = (form) => {
+    const modal = prepareModal(form);
+    const enabled = form.querySelector("[data-reservation-enabled] input");
+    const details = form.querySelector("[data-reservation-details]");
+
+    enabled.addEventListener("change", () => {
+      details.hidden = !enabled.checked;
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const [, status] = await submitRequestBSModal(form);
+      if (status === 200) {
+        modal.modal("hide");
+      }
+    });
+  };
+
   HiCalendar.PREFERENCES_EVENT = CHANGED_EVENT;
   window.initCalendarPreferences = initCalendarPreferences;
+  window.initAppointmentPreferences = initAppointmentPreferences;
 })(window, jQuery);
