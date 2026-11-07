@@ -42,6 +42,19 @@ class PaymentAccount:
             ZERO,
         )
 
+    def refunded_of(self, kinds):
+        rows = {detail.pk: detail for detail in self.details}
+        return sum(
+            (
+                item.monto_pago
+                for item in self.details
+                if PaymentDetail.is_refund(item)
+                and item.detalle_devuelto_id in rows
+                and PaymentDetail.kind(rows[item.detalle_devuelto_id]) in kinds
+            ),
+            ZERO,
+        )
+
     def refundable(self, detail):
         if PaymentDetail.kind(detail) not in PREPAID_TYPES:
             return ZERO

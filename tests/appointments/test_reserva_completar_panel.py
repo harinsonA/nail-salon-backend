@@ -138,14 +138,34 @@ class PanelYDeudasConReservaTests(ReservaPanelBase):
         self.assertEqual([fila["kind"] for fila in pago["payments"]], ["Reserva", "Abono"])
         self.assertEqual(pago["reservations"], [])
 
-    def test_cancelada_muestra_la_reserva_retenida_o_reembolsada(self):
-        reserva = self.con_reserva()[0]
+    def test_cancelada_muestra_la_reserva_retenida(self):
+        self.con_reserva()
         self.cancelar([])
         self.assertContains(self.abrir_detalle(), "Reserva $5.000 · Retenida")
-        reserva.refresh_from_db()
-        reserva.estado_detalle = "DEVUELTO"
-        reserva.save()
-        self.assertContains(self.abrir_detalle(), "Reserva $5.000 · Reembolsada")
+        self.assertEqual(self.filas_del_panel()["Reembolsado"], "$0")
+
+    def test_cancelada_separa_reserva_y_anticipos_reembolsados(self):
+        reserva, anticipo = self.con_reserva(descuenta=True, anticipos=[3000])
+        self.cancelar([self.reembolso(reserva), self.reembolso(anticipo)])
+        respuesta = self.abrir_detalle()
+        filas = {fila["label"]: fila["value"] for fila in respuesta.context["payment"]["rows"]}
+        self.assertEqual(
+            filas,
+            {
+                "Estado": "Cita cancelada",
+                "Retenido": "$0",
+                "Reserva reembolsada": "$5.000",
+                "Anticipos reembolsados": "$3.000",
+            },
+        )
+        self.assertNotContains(respuesta, "· Reembolsada")
+
+    def test_cancelada_con_la_reserva_que_no_descuenta_reembolsada(self):
+        reserva = self.con_reserva()[0]
+        self.cancelar([self.reembolso(reserva)])
+        filas = self.filas_del_panel()
+        self.assertEqual(filas["Reserva reembolsada"], "$5.000")
+        self.assertNotIn("Anticipos reembolsados", filas)
 
     def test_deudas_muestra_la_reserva_aparte(self):
         self.con_reserva()
