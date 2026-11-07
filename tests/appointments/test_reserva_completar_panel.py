@@ -156,3 +156,30 @@ class PanelYDeudasConReservaTests(ReservaPanelBase):
         self.assertContains(abono, "Reserva $5.000 · Pagada")
         self.assertEqual(abono.context["abonos"], [])
         self.assertEqual(abono.context["saldo"], "$20.000")
+
+    def con_reserva_antigua(self, estado="RETENIDO_DEFINITIVO"):
+        antigua = self.con_reserva(monto=3000)[0]
+        antigua.estado_detalle = estado
+        antigua.save()
+        return antigua
+
+    def test_pendiente_solo_muestra_la_reserva_pagada(self):
+        self.con_reserva_antigua()
+        self.con_reserva()
+        respuesta = self.abrir_detalle()
+        self.assertEqual(respuesta.context["payment"]["reservations"], [{"amount": "$5.000", "status": "Pagada"}])
+        self.assertNotContains(respuesta, "Retenida")
+
+    def test_completada_solo_muestra_la_reserva_pagada(self):
+        self.con_reserva_antigua("DEVUELTO")
+        self.con_reserva()
+        pago = self.completar(pago_total=False)
+        self.assertEqual(self.pago_del_panel()["reservations"], [{"amount": "$5.000", "status": "Pagada"}])
+        abono = self.navegador().get(reverse("add_payment_modal", args=[pago.pk]), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(abono.context["reservas"], [{"amount": "$5.000", "status": "Pagada"}])
+
+    def test_cancelada_no_muestra_las_retenidas_definitivas_anteriores(self):
+        self.con_reserva_antigua()
+        self.con_reserva()
+        self.cancelar([])
+        self.assertEqual(self.pago_del_panel()["reservations"], [{"amount": "$5.000", "status": "Retenida"}])
