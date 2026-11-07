@@ -8,6 +8,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN
 
 from apps.appointments.access import AppointmentAccessMixin, is_collaborator
 from apps.appointments.models import Cita
+from apps.appointments.prepaid import PrepaidCard
 from apps.appointments.views.agenda_modals.common import (
     AgendaBaseModalView,
     AppointmentPanelMixin,
@@ -24,9 +25,6 @@ from apps.payments.accounting import (
 
 REFERENCE_MAX_LENGTH = 100
 REFUNDS_INVALID = "Los reembolsos enviados no son válidos."
-CANCEL_LOCKED = (
-    "Esta cita tiene anticipos. Solo la propietaria o la encargada pueden cancelarla."
-)
 
 
 # endregion
@@ -39,9 +37,9 @@ CANCEL_LOCKED = (
 class CancelRefundsForm(forms.Form):
     refunds = forms.CharField(required=False)
 
-    def __init__(self, *args, advances=(), **kwargs):
+    def __init__(self, *args, rows=(), **kwargs):
         super().__init__(*args, **kwargs)
-        self.advances = {row.pk: row for row in advances}
+        self.rows = {row.pk: row for row in rows}
 
     def clean_refunds(self):
         try:
@@ -67,7 +65,7 @@ class CancelRefundsForm(forms.Form):
             raise forms.ValidationError(REFUNDS_INVALID) from error
         method = refund.get("metodo")
         reference = refund.get("referencia") or ""
-        if pk not in self.advances or method not in PaymentLabels.REFUND_METHODS:
+        if pk not in self.rows or method not in PaymentLabels.REFUND_METHODS:
             raise forms.ValidationError(REFUNDS_INVALID)
         if not isinstance(reference, str) or len(reference.strip()) > REFERENCE_MAX_LENGTH:
             raise forms.ValidationError(REFUNDS_INVALID)
@@ -95,10 +93,13 @@ class AgendaCancelModalView(
                 {"message": message},
                 status=HTTP_400_BAD_REQUEST,
             )
-        advances = AppointmentLedger.for_appointment(self.object).open_advances()
-        if advances and is_collaborator(request.user):
-            return JsonResponse({"message": CANCEL_LOCKED}, status=HTTP_403_FORBIDDEN)
-        form = CancelRefundsForm(request.POST, advances=advances)
+        rows = AppointmentLedger.for_appointment(self.object).open_prepaid()
+        if rows and is_collaborator(request.user):
+            return JsonResponse(
+                {"message": PrepaidCard(rows).cancel_locked()},
+                status=HTTP_403_FORBIDDEN,
+            )
+        form = CancelRefundsForm(request.POST, rows=rows)
         if not form.is_valid():
             return JsonResponse(
                 {"message": form.errors["refunds"][0]},
