@@ -620,6 +620,23 @@ form.calendar-detail-form {
   color: var(--calendar-completada-text);
 }
 
+.calendar-done__reservation {
+  margin: 12px 0 14px;
+}
+
+.calendar-done__reservation-state {
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+.calendar-reservation__amount strong.is-discount {
+  color: var(--color-danger-text);
+}
+
+.calendar-reservation__amount strong.is-separate {
+  color: var(--calendar-completada-text);
+}
+
 .calendar-done__full {
   margin: 0 0 4px;
 }

@@ -48,6 +48,7 @@ class DebtDetailModalView(ProtectedView, BSModalReadView):
                 "total_cita": Money.format(summary.total()),
                 "total_pagado": Money.format(summary.paid()),
                 "total_pendiente": Money.format(summary.pending()),
+                "reservas": summary.reservation_lines(),
                 "appointment_id": pago.cita_id,
                 "services_detail_list_url": reverse_lazy(
                     "services_detail_list",

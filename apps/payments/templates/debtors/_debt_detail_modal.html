@@ -82,6 +82,9 @@
             </tbody>
           </table>
         </section>
+        {% for reserva in reservas %}
+        <p class="small text-muted mb-1">Reserva {{ reserva.amount }} · {{ reserva.status }}</p>
+        {% endfor %}
       </section>
     </section>
     <section class="mt-3">

@@ -179,6 +179,7 @@ class PaymentInstallmentMixin:
                     "balance": int(pending),
                 },
                 "abonos": self.summary.rows(),
+                "reservas": self.summary.reservation_lines(),
             }
         )
         return context

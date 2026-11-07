@@ -134,13 +134,15 @@ class AppointmentPanel:
                 {"label": "Estado", "value": "Se registra al completar la cita"},
                 {"label": "Monto estimado", "value": Money.format(total)},
             ]
-            advance = PaymentAccount(payment).credit() if payment else 0
-            if advance:
-                rows += [
-                    {"label": "Anticipo", "value": Money.format(advance)},
-                    {"label": "Restante por pagar", "value": Money.format(max(0, total - advance))},
-                ]
-            return {"rows": rows}
+            if not payment:
+                return {"rows": rows}
+            summary = AppointmentPaymentSummary(payment)
+            parts = summary.credit_parts()
+            rows += [{"label": label, "value": Money.format(amount)} for label, amount in parts]
+            if parts:
+                credit = sum(amount for _, amount in parts)
+                rows.append({"label": "Restante por pagar", "value": Money.format(max(0, total - credit))})
+            return {"rows": rows, "reservations": summary.reservation_lines()}
         summary = AppointmentPaymentSummary.for_payment(payment)
         pending = summary.pending()
         rows = [
@@ -163,6 +165,7 @@ class AppointmentPanel:
             if first
             else None,
             "payments": summary.rows(),
+            "reservations": summary.reservation_lines(),
         }
 
     @staticmethod
@@ -175,7 +178,8 @@ class AppointmentPanel:
                 {"label": "Estado", "value": "Cita cancelada"},
                 {"label": "Retenido", "value": Money.format(account.retained())},
                 {"label": "Reembolsado", "value": Money.format(account.refunded_total())},
-            ]
+            ],
+            "reservations": AppointmentPaymentSummary(payment, account.details).reservation_lines(),
         }
 
     def cancel_advances(self, payment):

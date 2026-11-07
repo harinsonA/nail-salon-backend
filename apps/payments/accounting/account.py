@@ -7,6 +7,7 @@ from apps.payments.accounting.constants import (
     ZERO,
 )
 from apps.payments.accounting.detail import PaymentDetail
+from apps.payments.choices import EstadoDetallePago, TipoDetallePago
 
 
 class PaymentAccount:
@@ -65,6 +66,20 @@ class PaymentAccount:
             ),
             ZERO,
         )
+
+    def reservation_credit(self):
+        return sum(
+            (
+                self.refundable(detail)
+                for detail in self.details
+                if PaymentDetail.kind(detail) == TipoDetallePago.RESERVA_DESCONTABLE
+                and PaymentDetail.status(detail) == EstadoDetallePago.VIGENTE
+            ),
+            ZERO,
+        )
+
+    def separate_reservations(self):
+        return [detail for detail in self.details if PaymentDetail.is_reservation(detail)]
 
     def applied(self):
         return self.paid() - self.reservation()

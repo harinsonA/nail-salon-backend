@@ -16,7 +16,7 @@
           <h6 class="calendar-new__card-title" id="appointment-complete-settled">
             <span class="calendar-new__step">1</span> Pago de hoy
           </h6>
-          <p class="calendar-config__hint mb-0">El anticipo ya cubre el total de la cita. Al completarla queda pagada y hoy no hay nada que cobrar.</p>
+          <p class="calendar-config__hint mb-0">{{ settled_hint }}</p>
         </section>
         {% endif %}
         <section class="calendar-new__card" aria-labelledby="appointment-complete-amount"{% if not total_value %} hidden{% endif %}>
@@ -73,6 +73,18 @@
           <span>{% if prepaid %}Saldo a pagar{% else %}Total a pagar{% endif %}</span>
           <strong>{{ total }}</strong>
         </div>
+        {% if reservation %}
+        <section class="calendar-reservation calendar-done__reservation" aria-labelledby="appointment-complete-reservation">
+          <div class="calendar-reservation__head">
+            <h6 class="calendar-reservation__title" id="appointment-complete-reservation">Reserva</h6>
+            <span class="calendar-done__reservation-state">Pagada</span>
+          </div>
+          <div class="calendar-reservation__amount">
+            <span>{{ reservation.label }}</span>
+            <strong class="{% if reservation.discounts %}is-discount{% else %}is-separate{% endif %}">{{ reservation.amount }}</strong>
+          </div>
+        </section>
+        {% endif %}
         <h6 class="calendar-new__summary-title" id="appointment-complete-summary">Resumen</h6>
         <dl class="calendar-new__facts">
           <div><dt>Cita</dt><dd>{{ date_formatted }}, {{ time_formatted }}</dd></div>
@@ -93,8 +105,8 @@
           <div><dt>Subtotal</dt><dd>{{ subtotal }}</dd></div>
           <div><dt>Descuentos</dt><dd>{{ discounts }}</dd></div>
           <div><dt>Total</dt><dd>{{ services_total }}</dd></div>
-          {% if prepaid %}
-          <div class="calendar-advance__paid"><dt>Anticipo</dt><dd>{{ prepaid }}</dd></div>
+          {% if advance %}
+          <div class="calendar-advance__paid"><dt>Anticipo</dt><dd>{{ advance }}</dd></div>
           {% endif %}
         </dl>
         <div class="calendar-pay__progress" aria-hidden="true">

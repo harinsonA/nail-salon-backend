@@ -105,6 +105,9 @@
           <li class="is-empty">Todavía no hay pagos.</li>
           {% endfor %}
         </ul>
+        {% for reserva in reservas %}
+        <p class="calendar-config__hint mt-2 mb-0">Reserva {{ reserva.amount }} · {{ reserva.status }}</p>
+        {% endfor %}
       </aside>
     </div>
   </div>
