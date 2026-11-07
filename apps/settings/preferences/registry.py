@@ -99,19 +99,6 @@ CALENDAR_SHOW_DEBT = BooleanPreference(
 )
 
 
-RESERVATION_MODULE = BooleanPreference(
-    key="reservation_module",
-    label="Módulo de reservas",
-    help_text=(
-        "Permite usar reservas en las citas de este negocio. "
-        "Se activa solo desde la base de datos."
-    ),
-    default=False,
-    category=Category.FUNCIONES_NUEVAS,
-    scope=Scope.NEGOCIO,
-)
-
-
 RESERVATION_ENABLED = BooleanPreference(
     key="reserva_habilitada",
     label="Incluir reserva en las citas",
@@ -158,7 +145,6 @@ PREFERENCES = PreferenceRegistry(
     CALENDAR_SHOW_COMPLETED,
     CALENDAR_SHOW_CANCELLED,
     CALENDAR_SHOW_DEBT,
-    RESERVATION_MODULE,
     RESERVATION_ENABLED,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_AMOUNT,

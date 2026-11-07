@@ -18,7 +18,6 @@ from apps.settings.preferences import (
     RESERVATION_AMOUNT,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_ENABLED,
-    RESERVATION_MODULE,
 )
 from tests.base import NegocioTestCase
 
@@ -115,14 +114,12 @@ class CalendarioPreferenciasTests(NegocioTestCase):
         )
 
     def test_guardar_el_calendario_no_toca_las_preferencias_de_la_cita(self):
-        RESERVATION_MODULE.set(True)
         RESERVATION_ENABLED.set(True)
         RESERVATION_DISCOUNTS_TOTAL.set(True)
         RESERVATION_AMOUNT.set(5000)
         self.assertEqual(self.guardar().status_code, 200)
-        respuesta = self.guardar(self.colaboradora, reservation_module="", valor_reserva="1")
+        respuesta = self.guardar(self.colaboradora, valor_reserva="1")
         self.assertEqual(respuesta.status_code, 200)
-        self.assertIs(RESERVATION_MODULE.get(), True)
         self.assertIs(RESERVATION_ENABLED.get(), True)
         self.assertIs(RESERVATION_DISCOUNTS_TOTAL.get(), True)
         self.assertEqual(RESERVATION_AMOUNT.get(), 5000)

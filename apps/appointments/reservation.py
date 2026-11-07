@@ -4,7 +4,6 @@ from apps.settings.preferences import (
     RESERVATION_AMOUNT,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_ENABLED,
-    RESERVATION_MODULE,
     RESERVATION_PAYMENT_METHOD,
     get_preferences,
 )
@@ -18,18 +17,15 @@ class AppointmentReservation:
         self.creating = creating
         settings = get_preferences(
             [
-                RESERVATION_MODULE.key,
                 RESERVATION_ENABLED.key,
                 RESERVATION_DISCOUNTS_TOTAL.key,
                 RESERVATION_AMOUNT.key,
                 RESERVATION_PAYMENT_METHOD.key,
             ]
         )
-        self.module = settings[RESERVATION_MODULE.key] is True
-        self.saved = ledger.open_reservation() if self.module else None
+        self.saved = ledger.open_reservation()
         self.enabled = (
-            self.module
-            and settings[RESERVATION_ENABLED.key] is True
+            settings[RESERVATION_ENABLED.key] is True
             and settings[RESERVATION_AMOUNT.key] > 0
         )
         self.settings = settings

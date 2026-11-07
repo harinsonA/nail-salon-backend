@@ -8,14 +8,13 @@ from apps.payments.accounting import AppointmentLedger, AppointmentPaymentServic
 from apps.payments.accounting.constants import ReservationAction
 from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
-from apps.settings.preferences import RESERVATION_ENABLED, RESERVATION_MODULE
+from apps.settings.preferences import RESERVATION_ENABLED
 from tests.appointments.test_cancelar_cita_anticipos import CitaConAnticiposBase
 
 
 class ReservaCicloBase(CitaConAnticiposBase):
     def setUp(self):
         super().setUp()
-        RESERVATION_MODULE.set(True)
         RESERVATION_ENABLED.set(True)
 
     def con_reserva(self, descuenta=False, monto=5000, anticipos=()):
@@ -97,13 +96,6 @@ class CancelarCitaConReservaTests(ReservaCicloBase):
         self.assertEqual(self.cita.estado, Cita.EstadoChoices.PENDIENTE)
         self.assertEqual(self.fila(reserva).estado_detalle, EstadoDetallePago.VIGENTE)
 
-    def test_con_el_modulo_apagado_igual_pregunta_por_la_reserva(self):
-        reserva = self.con_reserva()[0]
-        RESERVATION_MODULE.set(False)
-        self.assertContains(self.abrir(), "¿Qué hacemos con la reserva?")
-        self.assertEqual(self.cancelar([self.reembolso(reserva)]).status_code, 200)
-        self.assertEqual(self.fila(reserva).estado_detalle, EstadoDetallePago.DEVUELTO)
-
     def test_una_reserva_ya_reembolsada_no_se_pregunta(self):
         reserva = self.con_reserva()[0]
         reserva.estado_detalle = EstadoDetallePago.DEVUELTO
@@ -176,14 +168,6 @@ class RestaurarCitaConReservaTests(ReservaCicloBase):
         respuesta = self.restaurar(reserva, usuario=self.colaboradora)
         self.assertEqual((respuesta.status_code, respuesta.json()["message"]), (403, aviso))
         self.assertEqual(self.fila(reserva).estado_detalle, EstadoDetallePago.RETENIDO)
-
-    def test_con_el_modulo_apagado_igual_pregunta_por_la_reserva(self):
-        reserva = self.con_reserva()[0]
-        self.cancelar([])
-        RESERVATION_MODULE.set(False)
-        self.assertContains(self.abrir_restaurar(), "¿Restauramos también la reserva retenida?")
-        self.assertEqual(self.restaurar(reserva).status_code, 200)
-        self.assertEqual(self.fila(reserva).estado_detalle, EstadoDetallePago.VIGENTE)
 
     def test_rechaza_una_fila_que_no_es_retenida(self):
         reserva = self.con_reserva()[0]
