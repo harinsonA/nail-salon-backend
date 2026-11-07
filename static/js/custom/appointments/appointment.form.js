@@ -91,7 +91,7 @@
       if (paid <= this.total) {
         return "";
       }
-      const subject = this.credit ? "La reserva y los anticipos" : "Los anticipos";
+      const subject = this.credit ? "La reserva o los anticipos" : "Los anticipos";
       return `${subject} suman ${formatMoney(paid)} y no pueden superar el total de los servicios (${formatMoney(this.total)}).`;
     }
 

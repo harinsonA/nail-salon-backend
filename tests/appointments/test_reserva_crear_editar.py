@@ -173,7 +173,7 @@ class CrearCitaConReservaTests(ReservaBase):
         errores = self.errores(self.crear(reservation=self.reserva(), advances=anticipos))
         self.assertEqual(
             errores["id_advances"],
-            "La reserva y los anticipos suman $11.000 y no pueden superar el total de los servicios ($10.000).",
+            "La reserva o los anticipos suman $11.000 y no pueden superar el total de los servicios ($10.000).",
         )
         self.assertFalse(Cita.objects.exists())
 
@@ -183,7 +183,7 @@ class CrearCitaConReservaTests(ReservaBase):
         errores = self.errores(self.crear(servicios=servicios, reservation=self.reserva()))
         self.assertEqual(
             errores["id_reservation"],
-            "La reserva y los anticipos suman $5.000 y no pueden superar el total de los servicios ($3.000).",
+            "La reserva o los anticipos suman $5.000 y no pueden superar el total de los servicios ($3.000).",
         )
 
     def test_la_que_no_descuenta_no_cuenta_para_el_tope(self):
@@ -313,7 +313,7 @@ class EditarCitaConReservaTests(ReservaBase):
         cita = self.cita_con_reserva()
         anticipos = json.dumps([{"monto": 6000, "metodo": MetodoPago.EFECTIVO, "referencia": ""}])
         errores = self.errores(self.editar(cita, reservation=self.reserva(), advances=anticipos))
-        self.assertIn("La reserva y los anticipos suman $11.000", errores["id_advances"])
+        self.assertIn("La reserva o los anticipos suman $11.000", errores["id_advances"])
         respuesta = self.editar(cita, reservation=self.reserva(activa=False), advances=anticipos)
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual([fila.tipo_detalle for fila in self.filas(cita)], [TipoDetallePago.ANTICIPO])

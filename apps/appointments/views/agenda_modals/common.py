@@ -73,7 +73,7 @@ RESERVATION_LOCKED_ROLE = (
     "Solo la propietaria o la encargada pueden cambiar o quitar una reserva guardada."
 )
 RESERVATION_TOO_HIGH = (
-    "La reserva y los anticipos suman {paid} y no pueden superar el total de los "
+    "La reserva o los anticipos suman {paid} y no pueden superar el total de los "
     "servicios ({total})."
 )
 
