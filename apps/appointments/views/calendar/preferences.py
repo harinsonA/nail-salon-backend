@@ -1,7 +1,7 @@
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.appointments.calendar.constants import (
@@ -18,7 +18,6 @@ from apps.settings.preferences import (
     RESERVATION_AMOUNT,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_ENABLED,
-    RESERVATION_MODULE,
     RESERVATION_PAYMENT_METHOD,
 )
 from apps.settings.preferences.forms import PreferenceFieldsMixin
@@ -32,20 +31,6 @@ RESERVATION_AMOUNT_REQUIRED = (
 )
 APPOINTMENT_PREFERENCES_SAVED = "La configuración de las citas se guardó."
 APPOINTMENT_PREFERENCES_INVALID = "Revisa los campos marcados."
-
-
-# endregion
-"""========================================================================="""
-
-"""========================================================================="""
-# region ........ Mixins
-
-
-class ReservationModuleRequiredMixin:
-    def dispatch(self, request, *args, **kwargs):
-        if not RESERVATION_MODULE.is_enabled():
-            raise Http404
-        return super().dispatch(request, *args, **kwargs)
 
 
 # endregion
@@ -168,9 +153,7 @@ class CalendarPreferencesModalView(ProtectedView, BSModalFormView):
         return JsonResponse({"errors": errors}, status=HTTP_400_BAD_REQUEST)
 
 
-class AppointmentPreferencesModalView(
-    ProtectedView, ReservationModuleRequiredMixin, BSModalFormView
-):
+class AppointmentPreferencesModalView(ProtectedView, BSModalFormView):
     template_name = "calendar/appointment_preferences_modal.html"
     form_class = AppointmentPreferencesForm
 

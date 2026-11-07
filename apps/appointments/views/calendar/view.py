@@ -13,7 +13,6 @@ from apps.clients.models import Cliente
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
 from apps.profiles.permisos import administra_el_negocio
 from apps.services.models import Servicio
-from apps.settings.preferences import RESERVATION_MODULE
 
 """========================================================================="""
 # region ........ Constants
@@ -63,8 +62,6 @@ class CalendarView(ProtectedView, TemplateView):
 
     def appointment_preferences_url(self):
         if not administra_el_negocio(self.request.user):
-            return None
-        if not RESERVATION_MODULE.is_enabled():
             return None
         return reverse("appointment_preferences")
 

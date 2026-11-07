@@ -10,7 +10,6 @@ from apps.settings.preferences import (
     RESERVATION_AMOUNT,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_ENABLED,
-    RESERVATION_MODULE,
     RESERVATION_PAYMENT_METHOD,
 )
 from tests.appointments.test_crear_cita import FECHA, CitaBase
@@ -19,7 +18,6 @@ from tests.appointments.test_crear_cita import FECHA, CitaBase
 class ReservaBase(CitaBase):
     def setUp(self):
         super().setUp()
-        RESERVATION_MODULE.set(True)
         self.configurar()
 
     def configurar(self, habilitada=True, monto=5000, descuenta=False, metodo=MetodoPago.EFECTIVO):
@@ -71,14 +69,6 @@ class ReservaBase(CitaBase):
 class CrearCitaConReservaTests(ReservaBase):
     esquema = "crear_cita_reserva"
     dominio = "crear-cita-reserva.localhost"
-
-    def test_con_el_modulo_apagado_no_aparece_ni_se_crea(self):
-        RESERVATION_MODULE.set(False)
-        respuesta = self.abrir_crear()
-        self.assertNotContains(respuesta, "data-reservation-switch")
-        self.assertIsNone(self.configuracion(respuesta))
-        self.assertEqual(self.crear(reservation=self.reserva()).status_code, 200)
-        self.assertFalse(Pago.objects.exists())
 
     def test_con_incluir_reserva_apagada_no_aparece_ni_se_crea(self):
         self.configurar(habilitada=False)
@@ -284,13 +274,6 @@ class EditarCitaConReservaTests(ReservaBase):
         self.assertIsNone(self.configuracion(self.abrir_editar(cita)))
         self.assertEqual(self.editar(cita, reservation=self.reserva()).status_code, 200)
         self.assertFalse(Pago.objects.exists())
-
-    def test_con_el_modulo_apagado_lo_guardado_no_se_toca(self):
-        cita = self.cita_con_reserva()
-        RESERVATION_MODULE.set(False)
-        self.assertIsNone(self.configuracion(self.abrir_editar(cita)))
-        self.assertEqual(self.editar(cita, reservation=self.reserva(activa=False)).status_code, 200)
-        self.assertEqual(len(self.filas(cita)), 1)
 
     def test_una_reserva_retenida_definitiva_no_se_toca(self):
         cita = self.cita_con_reserva()

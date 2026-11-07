@@ -12,7 +12,6 @@ from apps.settings.preferences import (
     RESERVATION_AMOUNT,
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_ENABLED,
-    RESERVATION_MODULE,
     RESERVATION_PAYMENT_METHOD,
 )
 from tests.base import NegocioTestCase
@@ -30,7 +29,6 @@ class ConfiguracionCitaTests(NegocioTestCase):
         self.propietaria = self.crear_usuario("propietaria", Rol.PROPIETARIO)
         self.encargada = self.crear_usuario("encargada", Rol.ENCARGADO)
         self.colaboradora = self.crear_usuario("colaboradora", Rol.COLABORADOR)
-        RESERVATION_MODULE.set(True)
 
     def crear_usuario(self, usuario, rol):
         user = User.objects.create_user(username=usuario, email=f"{usuario}@correo.cl", password="x")
@@ -75,15 +73,6 @@ class ConfiguracionCitaTests(NegocioTestCase):
         self.assertContains(respuesta, 'data-bs-toggle="dropdown"')
         self.assertContains(respuesta, f'data-form-url="{reverse("calendar_preferences")}"')
         self.assertContains(respuesta, f'data-form-url="{reverse("appointment_preferences")}"')
-
-    def test_con_el_modulo_apagado_no_aparece_cita_y_la_ruta_se_rechaza(self):
-        RESERVATION_MODULE.set(False)
-        respuesta = self.calendario()
-        self.assertContains(respuesta, f'data-form-url="{reverse("calendar_preferences")}"')
-        self.assertNotContains(respuesta, reverse("appointment_preferences"))
-        self.assertEqual(self.abrir().status_code, 404)
-        self.assertEqual(self.guardar().status_code, 404)
-        self.assertFalse(Preference.objects.filter(key=RESERVATION_AMOUNT.key).exists())
 
     def test_la_colaboradora_no_ve_cita_y_el_servidor_se_lo_impide(self):
         respuesta = self.calendario(self.colaboradora)
@@ -185,12 +174,11 @@ class ConfiguracionCitaTests(NegocioTestCase):
         CALENDAR_DEFAULT_VIEW.set("semana", user=self.encargada)
         CALENDAR_SHOW_CANCELLED.set(False, user=self.encargada)
         respuesta = self.guardar(
-            calendario_vista_inicial="mes", calendario_ver_canceladas="on", reservation_module=""
+            calendario_vista_inicial="mes", calendario_ver_canceladas="on"
         )
         self.assertEqual(respuesta.status_code, 200)
         self.assertEqual(CALENDAR_DEFAULT_VIEW.get(self.encargada), "semana")
         self.assertIs(CALENDAR_SHOW_CANCELLED.get(self.encargada), False)
-        self.assertIs(RESERVATION_MODULE.get(), True)
 
     def test_guardar_el_calendario_no_altera_la_cita(self):
         self.guardar(reserva_descuenta_total="on")
