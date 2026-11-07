@@ -153,6 +153,11 @@
       {% else %}
       <p class="calendar-detail__notes">Sin pagos registrados.</p>
       {% endif %}
+      {% endif %}
+      {% for line in payment.reservations %}
+      <p class="calendar-detail__notes">Reserva {{ line.amount }} · {{ line.status }}</p>
+      {% endfor %}
+      {% if payment.badge %}
       {% if payment.pay_url %}
       <button type="button" class="btn btn-sm btn-success bg-gradient calendar-detail__pay-btn" data-panel-payment="{{ payment.pay_url }}">
         <span class="material-symbols-outlined icon--small" aria-hidden="true">payments</span>
