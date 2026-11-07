@@ -1,6 +1,6 @@
 from django.db.models import Exists, OuterRef
 
-from apps.payments.accounting.constants import RESERVATION_TYPES
+from apps.payments.accounting.constants import PREPAID_TYPES, RESERVATION_TYPES
 from apps.payments.accounting.detail import PaymentDetail
 from apps.payments.choices import EstadoDetallePago, TipoDetallePago
 from apps.payments.models import DetallePago, Pago
@@ -44,9 +44,15 @@ class AppointmentLedger:
     def open_reservation(self):
         return next(iter(self.open_rows(self.rows_of(RESERVATION_TYPES))), None)
 
-    def retained_advances(self):
+    def prepaid(self):
+        return self.rows_of(PREPAID_TYPES)
+
+    def open_prepaid(self):
+        return self.open_rows(self.prepaid())
+
+    def retained_prepaid(self):
         return [
             row
-            for row in self.advances()
+            for row in self.prepaid()
             if row.estado_detalle == EstadoDetallePago.RETENIDO
         ]

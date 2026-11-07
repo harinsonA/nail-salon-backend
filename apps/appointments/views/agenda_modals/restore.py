@@ -8,6 +8,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN
 
 from apps.appointments.access import AppointmentAccessMixin, is_collaborator
 from apps.appointments.models import Cita
+from apps.appointments.prepaid import PrepaidCard
 from apps.appointments.views.agenda_modals.common import (
     AgendaBaseModalView,
     AppointmentPanelMixin,
@@ -18,11 +19,7 @@ from apps.payments.accounting import AppointmentLedger, AppointmentPaymentServic
 # region ........ Constants
 
 
-RESTORED_INVALID = "Los anticipos a restaurar no son válidos."
-RESTORE_LOCKED = (
-    "Esta cita tiene anticipos retenidos. Solo la propietaria o la encargada "
-    "pueden restaurarla."
-)
+RESTORED_INVALID = "Los pagos a restaurar no son válidos."
 
 
 # endregion
@@ -32,12 +29,12 @@ RESTORE_LOCKED = (
 # region ........ Forms
 
 
-class RestoreAdvancesForm(forms.Form):
+class RestorePrepaidForm(forms.Form):
     restored = forms.CharField(required=False)
 
-    def __init__(self, *args, advances=(), **kwargs):
+    def __init__(self, *args, rows=(), **kwargs):
         super().__init__(*args, **kwargs)
-        self.advances = {row.pk for row in advances}
+        self.rows = {row.pk for row in rows}
 
     def clean_restored(self):
         try:
@@ -48,7 +45,7 @@ class RestoreAdvancesForm(forms.Form):
             raise forms.ValidationError(RESTORED_INVALID)
         if any(isinstance(pk, bool) or not isinstance(pk, int) for pk in restored):
             raise forms.ValidationError(RESTORED_INVALID)
-        if len(restored) != len(set(restored)) or not set(restored) <= self.advances:
+        if len(restored) != len(set(restored)) or not set(restored) <= self.rows:
             raise forms.ValidationError(RESTORED_INVALID)
         return set(restored)
 
@@ -74,10 +71,13 @@ class AgendaRestoreModalView(
                 {"message": message},
                 status=HTTP_400_BAD_REQUEST,
             )
-        advances = AppointmentLedger.for_appointment(self.object).retained_advances()
-        if advances and is_collaborator(request.user):
-            return JsonResponse({"message": RESTORE_LOCKED}, status=HTTP_403_FORBIDDEN)
-        form = RestoreAdvancesForm(request.POST, advances=advances)
+        rows = AppointmentLedger.for_appointment(self.object).retained_prepaid()
+        if rows and is_collaborator(request.user):
+            return JsonResponse(
+                {"message": PrepaidCard(rows).restore_locked()},
+                status=HTTP_403_FORBIDDEN,
+            )
+        form = RestorePrepaidForm(request.POST, rows=rows)
         if not form.is_valid():
             return JsonResponse(
                 {"message": form.errors["restored"][0]},

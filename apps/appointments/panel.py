@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from apps.appointments.access import is_collaborator
 from apps.appointments.models import Cita
+from apps.appointments.prepaid import PrepaidCard
 from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name
@@ -180,13 +181,17 @@ class AppointmentPanel:
     def cancel_advances(self, payment):
         if self.mode["key"] != "cancel" or not payment:
             return None
-        rows = AppointmentLedger(payment).open_advances()
+        rows = AppointmentLedger(payment).open_prepaid()
         if not rows:
             return None
+        card = PrepaidCard(rows)
         return {
             "locked": is_collaborator(self.viewer),
+            "title": card.cancel_title(),
+            "hint": card.cancel_hint(),
+            "locked_message": card.cancel_locked(),
             "config": {
-                "rows": self.advance_rows(rows),
+                "rows": card.rows_config(),
                 "refundMethods": PaymentLabels.refund_choices(),
                 "cash": MetodoPago.EFECTIVO,
                 "transfer": MetodoPago.TRANSFERENCIA,
@@ -194,29 +199,21 @@ class AppointmentPanel:
             },
         }
 
-    @staticmethod
-    def advance_rows(rows):
-        return [
-            {
-                "id": row.pk,
-                "amount": int(row.monto_pago),
-                "method": row.metodo_pago,
-                "methodLabel": PaymentLabels.method(row.metodo_pago),
-                "date": format_date_time(row.fecha_pago),
-            }
-            for row in rows
-        ]
-
     def restore_advances(self, payment, total):
         if self.mode["key"] != "restore" or not payment:
             return None
-        rows = AppointmentLedger(payment).retained_advances()
+        rows = AppointmentLedger(payment).retained_prepaid()
         if not rows:
             return None
+        card = PrepaidCard(rows)
         return {
             "locked": is_collaborator(self.viewer),
+            "title": card.restore_title(),
+            "hint": card.restore_hint(),
+            "locked_message": card.restore_locked(),
+            "back_label": card.back_label(),
             "config": {
-                "rows": self.advance_rows(rows),
+                "rows": card.rows_config(),
                 "servicesTotal": int(total),
                 "prepaid": int(PaymentAccount(payment).credit()),
             },

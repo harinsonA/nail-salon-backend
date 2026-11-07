@@ -157,7 +157,7 @@ class RestaurarCitaConAnticiposTests(CitaConAnticiposBase):
             with self.subTest(restaurados=restaurados):
                 respuesta = self.restaurar(datos={"restored": restaurados})
                 self.assertEqual(respuesta.status_code, 400)
-                self.assertEqual(respuesta.json()["message"], "Los anticipos a restaurar no son válidos.")
+                self.assertEqual(respuesta.json()["message"], "Los pagos a restaurar no son válidos.")
         self.cita.refresh_from_db()
         self.assertEqual(self.cita.estado, Cita.EstadoChoices.CANCELADA)
         self.assertEqual(self.estados(), [EstadoDetallePago.RETENIDO])

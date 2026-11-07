@@ -104,7 +104,7 @@ class AppointmentPaymentService:
         if payment is None:
             return None
         factory = self.row_factory()
-        for row in ledger.open_advances():
+        for row in ledger.open_prepaid():
             refund = refunds.get(row.pk)
             if refund:
                 factory.refund(row, refund).save()
@@ -126,7 +126,7 @@ class AppointmentPaymentService:
         payment = ledger.payment
         if payment is None:
             return None
-        for row in ledger.retained_advances():
+        for row in ledger.retained_prepaid():
             if row.pk in restored:
                 row.estado_detalle = EstadoDetallePago.VIGENTE
             else:
