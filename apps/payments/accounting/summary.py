@@ -4,6 +4,7 @@ from apps.common.utils.text import user_display_name
 from apps.payments.accounting.account import PaymentAccount
 from apps.payments.accounting.detail import PaymentDetail
 from apps.payments.accounting.labels import PaymentLabels
+from apps.payments.choices import EstadoDetallePago
 
 
 class AppointmentPaymentSummary:
@@ -35,13 +36,14 @@ class AppointmentPaymentSummary:
         parts = (("Reserva", reservation), ("Anticipo", self.account.credit() - reservation))
         return [(label, amount) for label, amount in parts if amount]
 
-    def reservation_lines(self):
+    def reservation_lines(self, states=(EstadoDetallePago.VIGENTE,)):
         return [
             {
                 "amount": Money.format(detail.monto_pago),
                 "status": PaymentLabels.reservation_status(PaymentDetail.status(detail)),
             }
             for detail in self.account.separate_reservations()
+            if PaymentDetail.status(detail) in states
         ]
 
     def rows(self):

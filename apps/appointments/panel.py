@@ -14,7 +14,7 @@ from apps.payments.accounting import (
     PaymentLabels,
     ServiceLines,
 )
-from apps.payments.choices import EstadoPago, MetodoPago
+from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago
 from apps.payments.models import Pago
 
 """========================================================================="""
@@ -22,6 +22,7 @@ from apps.payments.models import Pago
 
 
 OVERDUE_STATUS = "vencida"
+CANCELLED_RESERVATION_STATES = (EstadoDetallePago.RETENIDO, EstadoDetallePago.DEVUELTO)
 
 STATUS_LABELS = {
     Cita.EstadoChoices.PENDIENTE: "Pendiente",
@@ -179,7 +180,9 @@ class AppointmentPanel:
                 {"label": "Retenido", "value": Money.format(account.retained())},
                 {"label": "Reembolsado", "value": Money.format(account.refunded_total())},
             ],
-            "reservations": AppointmentPaymentSummary(payment, account.details).reservation_lines(),
+            "reservations": AppointmentPaymentSummary(payment, account.details).reservation_lines(
+                CANCELLED_RESERVATION_STATES
+            ),
         }
 
     def cancel_advances(self, payment):
