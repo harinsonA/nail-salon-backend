@@ -1,4 +1,4 @@
-from apps.payments.choices import MetodoPago, TipoDetallePago, TipoMovimiento
+from apps.payments.choices import EstadoDetallePago, MetodoPago, TipoDetallePago, TipoMovimiento
 
 
 class PaymentLabels:
@@ -6,6 +6,12 @@ class PaymentLabels:
     KINDS = dict(TipoDetallePago.CHOICES)
     MOVEMENTS = dict(TipoMovimiento.CHOICES)
     REFUND_METHODS = (MetodoPago.EFECTIVO, MetodoPago.TRANSFERENCIA)
+    RESERVATION_STATUS = {
+        EstadoDetallePago.VIGENTE: "Pagada",
+        EstadoDetallePago.RETENIDO: "Retenida",
+        EstadoDetallePago.RETENIDO_DEFINITIVO: "Retenida",
+        EstadoDetallePago.DEVUELTO: "Reembolsada",
+    }
 
     @classmethod
     def method(cls, code):
@@ -18,6 +24,10 @@ class PaymentLabels:
     @classmethod
     def movement(cls, code):
         return cls.MOVEMENTS.get(code, code)
+
+    @classmethod
+    def reservation_status(cls, code):
+        return cls.RESERVATION_STATUS[code or EstadoDetallePago.VIGENTE]
 
     @classmethod
     def refund_choices(cls):

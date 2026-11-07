@@ -8,6 +8,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from apps.appointments.access import AppointmentAccessMixin
 from apps.appointments.models import Cita
 from apps.appointments.panel import AppointmentPanel, person_name
+from apps.appointments.reservation import AppointmentReservation
 from apps.appointments.views.agenda_modals.common import AgendaBaseModalView
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
@@ -21,10 +22,11 @@ from apps.payments.accounting import (
     ZERO,
     AppointmentLedger,
     AppointmentPaymentService,
+    AppointmentPaymentSummary,
     PaymentAccount,
     PaymentHeader,
 )
-from apps.payments.choices import MetodoPago
+from apps.payments.choices import MetodoPago, TipoDetallePago
 
 """========================================================================="""
 # region ........ Constants
@@ -33,6 +35,13 @@ from apps.payments.choices import MetodoPago
 FULL_PAYMENT_LABEL = "Paga el total ahora"
 BALANCE_PAYMENT_LABEL = "Paga el saldo ahora"
 AMOUNT_TOO_HIGH = 'Si paga {total} o más, activa "{label}".'
+SETTLED_SUBJECTS = {
+    ("Anticipo",): "El anticipo ya cubre",
+    ("Reserva",): "La reserva ya cubre",
+    ("Reserva", "Anticipo"): "La reserva y el anticipo ya cubren",
+}
+SETTLED_HINT = "{subject} el total de la cita. Al completarla queda pagada y hoy no hay nada que cobrar."
+NOTHING_TO_CHARGE = "La cita no tiene monto por cobrar. Al completarla queda pagada."
 PREPAID_TOO_HIGH = (
     "Lo pagado antes ({paid}) supera el total de los servicios ({total}). "
     "Edita la cita antes de completarla."
@@ -89,6 +98,7 @@ class AgendaConfirmationForm(BSModalModelForm):
         super().__init__(*args, **kwargs)
         self.payment = AppointmentLedger.for_appointment(self.instance).payment
         self.services_total = PaymentHeader(self.instance).services_total()
+        self.summary = AppointmentPaymentSummary(self.payment) if self.payment else None
         self.prepaid = PaymentAccount(self.payment).credit() if self.payment else ZERO
         self.remaining_payment_value = max(ZERO, self.services_total - self.prepaid)
         if self.prepaid:
@@ -123,6 +133,33 @@ class AgendaConfirmationForm(BSModalModelForm):
             label = self.fields["full_payment"].label
             raise forms.ValidationError(AMOUNT_TOO_HIGH.format(total=total, label=label))
         return down_payment
+
+    def credit_parts(self):
+        return self.summary.credit_parts() if self.summary else []
+
+    def settled_hint(self):
+        labels = tuple(label for label, _ in self.credit_parts())
+        if not labels:
+            return NOTHING_TO_CHARGE
+        return SETTLED_HINT.format(subject=SETTLED_SUBJECTS[labels])
+
+    def advance_part(self):
+        return dict(self.credit_parts()).get("Anticipo", ZERO)
+
+    def reservation_card(self):
+        row = AppointmentLedger(self.payment).open_reservation() if self.payment else None
+        if row is None:
+            return None
+        discounts = row.tipo_detalle == TipoDetallePago.RESERVA_DESCONTABLE
+        return {
+            "label": (
+                AppointmentReservation.DISCOUNTS_LABEL
+                if discounts
+                else AppointmentReservation.SEPARATE_LABEL
+            ),
+            "amount": Money.format(-row.monto_pago if discounts else row.monto_pago),
+            "discounts": discounts,
+        }
 
     def amount_paid_now(self):
         if not self.remaining_payment_value:
@@ -164,6 +201,9 @@ class AgendaConfirmationModal(
                 "discounts": Money.format(-discounts) if discounts else Money.format(0),
                 "services_total": Money.format(form.services_total),
                 "prepaid": Money.format(-form.prepaid) if form.prepaid else "",
+                "advance": Money.format(-form.advance_part()) if form.advance_part() else "",
+                "reservation": form.reservation_card(),
+                "settled_hint": form.settled_hint(),
                 "total": Money.format(total),
                 "total_value": int(total),
                 "complete_config": {
