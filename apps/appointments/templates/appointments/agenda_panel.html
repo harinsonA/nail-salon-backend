@@ -75,15 +75,15 @@
     <section class="calendar-new__card calendar-cancel__card" aria-labelledby="cancel-advances" data-cancel-advances>
       <h6 class="calendar-new__card-title" id="cancel-advances">
         <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">payments</span>
-        <span>¿Qué hacemos con los anticipos?</span>
+        <span>{{ cancel_advances.title }}</span>
       </h6>
       {% if cancel_advances.locked %}
       <div class="calendar-cancel__locked">
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">lock</span>
-        <span>Esta cita tiene anticipos. Solo la propietaria o la encargada pueden cancelarla.</span>
+        <span>{{ cancel_advances.locked_message }}</span>
       </div>
       {% else %}
-      <p class="calendar-cancel__hint">Elige qué pasa con cada anticipo. Lo que retengas queda para el negocio y vuelve a contar como anticipo si después restauras la cita.</p>
+      <p class="calendar-cancel__hint">{{ cancel_advances.hint }}</p>
       <div class="calendar-cancel__list" data-cancel-list></div>
       <dl class="calendar-new__totals calendar-cancel__totals">
         <div class="is-retained"><dt>Se retiene</dt><dd data-cancel-retained></dd></div>
@@ -97,19 +97,19 @@
     <section class="calendar-new__card calendar-cancel__card" aria-labelledby="restore-advances" data-restore-advances>
       <h6 class="calendar-new__card-title" id="restore-advances">
         <span class="material-symbols-outlined icon--inline calendar-detail__icon" aria-hidden="true">payments</span>
-        <span>¿Restauramos también los anticipos retenidos?</span>
+        <span>{{ restore_advances.title }}</span>
       </h6>
       {% if restore_advances.locked %}
       <div class="calendar-cancel__locked">
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">lock</span>
-        <span>Esta cita tiene anticipos retenidos. Solo la propietaria o la encargada pueden restaurarla.</span>
+        <span>{{ restore_advances.locked_message }}</span>
       </div>
       {% else %}
-      <p class="calendar-cancel__hint">Al cancelar, el negocio se quedó con este dinero. Elige cuáles se restauran junto con la cita; los que no, quedan para el negocio de forma definitiva.</p>
+      <p class="calendar-cancel__hint">{{ restore_advances.hint }}</p>
       <div class="calendar-cancel__list" data-restore-list></div>
       <dl class="calendar-new__totals calendar-cancel__totals calendar-restore__totals">
         <div><dt>Total de los servicios</dt><dd data-restore-services></dd></div>
-        <div class="is-back" data-restore-back-row><dt>Anticipo restaurado</dt><dd data-restore-back></dd></div>
+        <div class="is-back" data-restore-back-row><dt>{{ restore_advances.back_label }}</dt><dd data-restore-back></dd></div>
         <div data-restore-kept-row><dt>Queda para el negocio</dt><dd data-restore-kept></dd></div>
         <div class="is-total"><dt>Restante por pagar</dt><dd data-restore-remaining></dd></div>
       </dl>

@@ -54,7 +54,7 @@
     const rowElement = (row) => {
       const wrapper = el("div", `calendar-cancel__row${row.refund ? " is-refund" : ""}`);
       const head = el("div", "calendar-cancel__head");
-      head.append(el("span", "", `${row.methodLabel} - ${row.date}`), el("strong", "", formatMoney(row.amount)));
+      head.append(el("span", "", `${row.kind} · ${row.methodLabel} - ${row.date}`), el("strong", "", formatMoney(row.amount)));
 
       const note = el(
         "p",
@@ -71,7 +71,7 @@
         row.refund = input.checked;
         render();
       });
-      toggle.append(input, el("span", "", "Reembolsar"));
+      toggle.append(input, el("span", "", row.reservation ? "Reembolsar reserva" : "Reembolsar anticipo"));
 
       const refund = el("div", "calendar-cancel__refund");
       refund.hidden = !row.refund;
@@ -133,8 +133,9 @@
 
     const serialize = () => {
       ui.field.value = JSON.stringify(rows.filter((row) => row.restore).map((row) => row.id));
-      const back = rows.filter((row) => row.restore).reduce((sum, row) => sum + row.amount, 0);
-      const kept = rows.reduce((sum, row) => sum + row.amount, 0) - back;
+      const restored = rows.filter((row) => row.restore);
+      const back = restored.filter((row) => row.discounts).reduce((sum, row) => sum + row.amount, 0);
+      const kept = rows.reduce((sum, row) => sum + row.amount, 0) - restored.reduce((sum, row) => sum + row.amount, 0);
       ui.services.textContent = formatMoney(config.servicesTotal);
       ui.backRow.hidden = !back;
       ui.back.textContent = `-${formatMoney(back)}`;
@@ -146,12 +147,15 @@
     const rowElement = (row) => {
       const wrapper = el("div", `calendar-cancel__row calendar-restore__row${row.restore ? "" : " is-kept"}`);
       const head = el("div", "calendar-cancel__head");
-      head.append(el("span", "", `${row.methodLabel} - ${row.date}`), el("strong", "", formatMoney(row.amount)));
+      head.append(el("span", "", `${row.kind} · ${row.methodLabel} - ${row.date}`), el("strong", "", formatMoney(row.amount)));
 
+      const restoredNote = row.discounts
+        ? "Se descuenta al completar la cita."
+        : "Vuelve a la cita como reserva pagada. No descuenta del total.";
       const note = el(
         "p",
         `calendar-restore__note${row.restore ? "" : " is-kept"}`,
-        row.restore ? "Se descuenta al completar la cita." : "El negocio se queda con este dinero.",
+        row.restore ? restoredNote : "El negocio se queda con este dinero.",
       );
 
       const toggle = el("label", "form-check form-switch calendar-pay__full calendar-cancel__toggle");
@@ -163,7 +167,7 @@
         row.restore = input.checked;
         render();
       });
-      toggle.append(input, el("span", "", "Restaurar anticipo"));
+      toggle.append(input, el("span", "", row.reservation ? "Restaurar reserva" : "Restaurar anticipo"));
 
       wrapper.append(head, note, toggle);
       return wrapper;
