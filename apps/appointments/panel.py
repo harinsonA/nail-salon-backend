@@ -14,7 +14,13 @@ from apps.payments.accounting import (
     PaymentLabels,
     ServiceLines,
 )
-from apps.payments.choices import EstadoDetallePago, EstadoPago, MetodoPago
+from apps.payments.accounting.constants import RESERVATION_TYPES
+from apps.payments.choices import (
+    EstadoDetallePago,
+    EstadoPago,
+    MetodoPago,
+    TipoDetallePago,
+)
 from apps.payments.models import Pago
 
 """========================================================================="""
@@ -22,7 +28,11 @@ from apps.payments.models import Pago
 
 
 OVERDUE_STATUS = "vencida"
-CANCELLED_RESERVATION_STATES = (EstadoDetallePago.RETENIDO, EstadoDetallePago.DEVUELTO)
+CANCELLED_RESERVATION_STATES = (EstadoDetallePago.RETENIDO,)
+REFUNDED_LABELS = (
+    ("Reserva reembolsada", RESERVATION_TYPES),
+    ("Anticipos reembolsados", (TipoDetallePago.ANTICIPO,)),
+)
 
 STATUS_LABELS = {
     Cita.EstadoChoices.PENDIENTE: "Pendiente",
@@ -32,7 +42,11 @@ STATUS_LABELS = {
 }
 
 PANEL_MODES = {
-    "detail": {"variant": "primary", "icon": "calendar_month.svg", "title": "Detalle de cita"},
+    "detail": {
+        "variant": "primary",
+        "icon": "calendar_month.svg",
+        "title": "Detalle de cita",
+    },
     "cancel": {
         "variant": "secondary",
         "light": True,
@@ -66,7 +80,9 @@ PANEL_MODES = {
 
 
 def is_unclosed(status, day, hour, now):
-    return status == Cita.EstadoChoices.PENDIENTE and (day < now.date() or (day == now.date() and hour < now.time()))
+    return status == Cita.EstadoChoices.PENDIENTE and (
+        day < now.date() or (day == now.date() and hour < now.time())
+    )
 
 
 def person_name(person, viewer):
@@ -95,7 +111,12 @@ class AppointmentPanel:
 
     def status(self):
         appointment = self.appointment
-        unclosed = is_unclosed(appointment.estado, appointment.fecha_agenda, appointment.hora_agenda, timezone.localtime())
+        unclosed = is_unclosed(
+            appointment.estado,
+            appointment.fecha_agenda,
+            appointment.hora_agenda,
+            timezone.localtime(),
+        )
         key = OVERDUE_STATUS if unclosed else appointment.estado
         return {"key": key, "label": STATUS_LABELS[key]}
 
@@ -121,10 +142,20 @@ class AppointmentPanel:
 
     def team(self, payment):
         appointment = self.appointment
-        if appointment.estado == Cita.EstadoChoices.COMPLETADA and payment and payment.atendido_por_id:
-            attended = person_name(payment.atendido_por, self.viewer) or payment.atendido_por_nombre
+        if (
+            appointment.estado == Cita.EstadoChoices.COMPLETADA
+            and payment
+            and payment.atendido_por_id
+        ):
+            attended = (
+                person_name(payment.atendido_por, self.viewer)
+                or payment.atendido_por_nombre
+            )
             return {"label": "Atendió", "name": attended}
-        return {"label": "Asignada a", "name": person_name(appointment.asignado_a, self.viewer) or "Sin asignar"}
+        return {
+            "label": "Asignada a",
+            "name": person_name(appointment.asignado_a, self.viewer) or "Sin asignar",
+        }
 
     def payment(self, payment, total):
         status = self.appointment.estado
@@ -139,10 +170,18 @@ class AppointmentPanel:
                 return {"rows": rows}
             summary = AppointmentPaymentSummary(payment)
             parts = summary.credit_parts()
-            rows += [{"label": label, "value": Money.format(amount)} for label, amount in parts]
+            rows += [
+                {"label": label, "value": Money.format(amount)}
+                for label, amount in parts
+            ]
             if parts:
                 credit = sum(amount for _, amount in parts)
-                rows.append({"label": "Restante por pagar", "value": Money.format(max(0, total - credit))})
+                rows.append(
+                    {
+                        "label": "Restante por pagar",
+                        "value": Money.format(max(0, total - credit)),
+                    }
+                )
             return {"rows": rows, "reservations": summary.reservation_lines()}
         summary = AppointmentPaymentSummary.for_payment(payment)
         pending = summary.pending()
@@ -151,13 +190,23 @@ class AppointmentPanel:
             {"label": "Pagado", "value": Money.format(summary.paid())},
         ]
         if pending:
-            rows.append({"label": "Saldo pendiente", "value": Money.format(pending), "debt": True})
+            rows.append(
+                {
+                    "label": "Saldo pendiente",
+                    "value": Money.format(pending),
+                    "debt": True,
+                }
+            )
         payments = summary.payments()
         first = payments[0] if payments else None
         can_pay = pending and payment.estado_pago == EstadoPago.PENDIENTE
         return {
-            "pay_url": reverse("agenda_payment_modal", args=[payment.pk]) if can_pay else "",
-            "badge": {"label": "Pago incompleto", "debt": True} if pending else {"label": "Pagado", "debt": False},
+            "pay_url": reverse("agenda_payment_modal", args=[payment.pk])
+            if can_pay
+            else "",
+            "badge": {"label": "Pago incompleto", "debt": True}
+            if pending
+            else {"label": "Pagado", "debt": False},
             "rows": rows,
             "first": {
                 "name": person_name(first.registrado_por, self.viewer) or "—",
@@ -173,16 +222,25 @@ class AppointmentPanel:
     def cancelled_payment(payment):
         account = PaymentAccount(payment) if payment else None
         if not account or not account.details:
-            return {"rows": [{"label": "Estado", "value": "Sin pago: la cita fue cancelada"}]}
+            return {
+                "rows": [
+                    {"label": "Estado", "value": "Sin pago: la cita fue cancelada"}
+                ]
+            }
+        refunds = [
+            {"label": label, "value": Money.format(amount)}
+            for label, kinds in REFUNDED_LABELS
+            if (amount := account.refunded_of(kinds))
+        ]
         return {
             "rows": [
                 {"label": "Estado", "value": "Cita cancelada"},
                 {"label": "Retenido", "value": Money.format(account.retained())},
-                {"label": "Reembolsado", "value": Money.format(account.refunded_total())},
+                *(refunds or [{"label": "Reembolsado", "value": Money.format(0)}]),
             ],
-            "reservations": AppointmentPaymentSummary(payment, account.details).reservation_lines(
-                CANCELLED_RESERVATION_STATES
-            ),
+            "reservations": AppointmentPaymentSummary(
+                payment, account.details
+            ).reservation_lines(CANCELLED_RESERVATION_STATES),
         }
 
     def cancel_advances(self, payment):
