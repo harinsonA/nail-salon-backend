@@ -26,6 +26,13 @@
           {% if business %}Direcciones{% else %}Dirección{% endif %}
           <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
         </button>
+        <button class="nav-link{% if active == 'users' %} active{% endif %}{% if 'users' in sections_with_errors %} has-errors{% endif %}"
+          id="business-tab-users" data-bs-toggle="pill" data-bs-target="#business-pane-users" type="button"
+          role="tab" aria-controls="business-pane-users" aria-selected="{% if active == 'users' %}true{% else %}false{% endif %}">
+          <span class="material-symbols-outlined" aria-hidden="true">group</span>
+          Usuarios
+          <span class="material-symbols-outlined side-tab-error" aria-hidden="true">error</span>
+        </button>
         <button class="nav-link{% if active == 'notes' %} active{% endif %}{% if 'notes' in sections_with_errors %} has-errors{% endif %}"
           id="business-tab-notes" data-bs-toggle="pill" data-bs-target="#business-pane-notes" type="button"
           role="tab" aria-controls="business-pane-notes" aria-selected="{% if active == 'notes' %}true{% else %}false{% endif %}">
@@ -206,6 +213,41 @@
           {% include 'common/address_fields.html' with form=addresses %}
           {% endif %}
         </div>
+        <div class="tab-pane fade{% if active == 'users' %} show active{% endif %}" id="business-pane-users" role="tabpanel"
+          aria-labelledby="business-tab-users">
+          <h6 class="side-tab-title">Usuarios</h6>
+          <p class="side-tab-subtitle">Cuántas cuentas activas puede tener el negocio.</p>
+          {% if user_limit %}
+          <div class="readonly-info readonly-info--grid mt-0 mb-3">
+            <div class="readonly-info__item">
+              <span class="material-symbols-outlined" aria-hidden="true">group</span>
+              <div>
+                <span class="readonly-info__label">Cuentas activas</span>
+                <span class="readonly-info__value">{{ user_limit.active_count }}</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          <div class="row g-2">
+            <div class="col-12 col-sm-6 mb-2">
+              {% include 'common/form_field.html' with field=form.limite_usuarios %}
+            </div>
+            <div class="col-12 col-sm-6 mb-2 d-flex align-items-center">
+              <div class="form-check m-0">
+                {{ form.sin_limite }}
+                <label class="form-check-label form-label--custom" for="{{ form.sin_limite.id_for_label }}">
+                  {{ form.sin_limite.label }}
+                </label>
+              </div>
+            </div>
+          </div>
+          {% if user_limit %}
+          <div id="user-limit-warning" class="profile-note d-none" data-active-count="{{ user_limit.active_count }}" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+            <span>Tiene {{ user_limit.active_count }} cuenta{{ user_limit.active_count|pluralize }} activa{{ user_limit.active_count|pluralize }}. Al guardar, solo la propietaria podrá entrar hasta que desactive <b data-user-limit-excess></b>.</span>
+          </div>
+          {% endif %}
+        </div>
         <div class="tab-pane fade{% if active == 'notes' %} show active{% endif %}" id="business-pane-notes" role="tabpanel"
           aria-labelledby="business-tab-notes">
           <h6 class="side-tab-title">Notas internas</h6>
@@ -258,6 +300,22 @@
     initializeAllBSModals();
     initializeAllBSXLModals();
     initializeActionModal('#modal', { onDone: () => window.location.reload() });
+    const userLimit = document.getElementById('{{ form.limite_usuarios.id_for_label }}');
+    const unlimited = document.getElementById('{{ form.sin_limite.id_for_label }}');
+    const limitWarning = document.getElementById('user-limit-warning');
+    const syncUserLimit = () => {
+      userLimit.disabled = unlimited.checked;
+      if (unlimited.checked) userLimit.value = '';
+      if (!limitWarning) return;
+      const excess = Number(limitWarning.dataset.activeCount) - Number(userLimit.value);
+      const showWarning = !unlimited.checked && userLimit.value !== '' && excess > 0;
+      limitWarning.classList.toggle('d-none', !showWarning);
+      limitWarning.querySelector('[data-user-limit-excess]').textContent =
+        excess === 1 ? '1 cuenta' : `${excess} cuentas`;
+    };
+    userLimit.addEventListener('input', syncUserLimit);
+    unlimited.addEventListener('change', syncUserLimit);
+    syncUserLimit();
     const subdomain = document.getElementById('{{ form.subdominio.id_for_label }}');
     const schema = document.getElementById('{{ form.esquema.id_for_label }}');
     if (!subdomain || !schema) return;

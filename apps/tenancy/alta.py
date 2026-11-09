@@ -25,6 +25,7 @@ def dar_de_alta(datos, creado_por, direccion=None):
             pais=datos["pais"],
             zona_horaria=datos["zona_horaria"],
             notas_internas=datos.get("notas_internas") or None,
+            limite_usuarios=datos.get("limite_usuarios"),
             creado_por=creado_por,
             estado=Negocio.Estado.PREPARANDO,
         )

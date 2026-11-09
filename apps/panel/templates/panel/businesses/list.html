@@ -87,6 +87,7 @@ Negocios
           <th scope="col">Nombre</th>
           <th scope="col">Dominio</th>
           <th scope="col">Estado</th>
+          <th scope="col">Usuarios</th>
           <th scope="col">Titular</th>
           <th scope="col">Rubro</th>
           <th scope="col">Creado</th>
@@ -113,6 +114,11 @@ Negocios
     const statusColumn = ({ status_key, status_label }) =>
       `<span class="badge rounded-pill ${statusBadges[status_key] || 'text-bg-light'}">${status_label}</span>`;
 
+    const usersColumn = ({ users_label, over_limit }) =>
+      over_limit
+        ? `<span class="badge rounded-pill text-bg-warning" title="Tiene más cuentas activas que su límite">${users_label}</span>`
+        : users_label;
+
     const filterData = {
       status: $('#{{ filter_form.status.id_for_label }}').val(),
       industry: $('#{{ filter_form.industry.id_for_label }}').val(),
@@ -125,6 +131,7 @@ Negocios
         { data: 'nombre', className: 'fs-7 w-auto text-nowrap' },
         { data: 'domain', className: 'fs-7 w-auto text-nowrap' },
         { data: (row) => statusColumn(row), className: 'fs-7 w-auto text-center' },
+        { data: (row) => usersColumn(row), className: 'fs-7 w-auto text-center text-nowrap', orderable: false },
         { data: 'owner_name', className: 'fs-7 w-auto text-nowrap' },
         { data: 'industry_name', className: 'fs-7 w-auto text-nowrap' },
         { data: 'created', className: 'fs-7 w-auto text-nowrap' },
