@@ -129,6 +129,7 @@ class BusinessEditTests(TestCase):
             "rubro": self.barber.pk,
             "pais": "CL",
             "zona_horaria": "America/Santiago",
+            "sin_limite": "on",
             "notas_internas": "Cliente desde 2025",
             **changes,
             **address_rows("direcciones", rows),

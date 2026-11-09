@@ -50,9 +50,9 @@ def related_label(field, value):
     return str(related) if related else f"#{value}"
 
 
-def display_value(model, field_name, value):
+def display_value(model, field_name, value, empty=EMPTY):
     if value in (None, ""):
-        return EMPTY
+        return empty
     field = model._meta.get_field(field_name)
     if field.choices:
         return str(dict(field.flatchoices).get(value, value))
@@ -71,7 +71,7 @@ def field_label(model, field_name, field_labels):
     return str(model._meta.get_field(field_name).verbose_name).capitalize()
 
 
-def record_changes(model, record, ignored_fields, field_labels):
+def record_changes(model, record, ignored_fields, field_labels, empty_labels):
     if record.history_type != "~":
         return []
     previous = record.prev_record
@@ -81,14 +81,18 @@ def record_changes(model, record, ignored_fields, field_labels):
     return [
         {
             "field": field_label(model, change.field, field_labels),
-            "old": display_value(model, change.field, change.old),
-            "new": display_value(model, change.field, change.new),
+            "old": display_value(
+                model, change.field, change.old, empty_labels.get(change.field, EMPTY)
+            ),
+            "new": display_value(
+                model, change.field, change.new, empty_labels.get(change.field, EMPTY)
+            ),
         }
         for change in delta.changes
     ]
 
 
-def history_row(model, record, ignored_fields, field_labels):
+def history_row(model, record, ignored_fields, field_labels, empty_labels):
     action_key, action_label = HISTORY_ACTIONS.get(record.history_type, ("updated", "Modificado"))
     return {
         "pk": record.pk,
@@ -97,7 +101,9 @@ def history_row(model, record, ignored_fields, field_labels):
         "action_key": action_key,
         "action": action_label,
         "reason": record.history_change_reason or EMPTY,
-        "changes": record_changes(model, record, ignored_fields, field_labels),
+        "changes": record_changes(
+            model, record, ignored_fields, field_labels, empty_labels
+        ),
     }
 
 
@@ -117,6 +123,7 @@ def summary_of(record):
 class HistoryObjectMixin:
     ignored_fields = DEFAULT_IGNORED_FIELDS
     field_labels = {}
+    empty_labels = {}
 
     def has_model_permission(self, request):
         return self.model_admin.has_view_permission(request, self.get_object())
@@ -197,7 +204,12 @@ class HistoryListAjaxView(HistoryObjectMixin, PanelListViewAjax):
 
     def get_values(self, queryset):
         model = self.model_admin.model
-        return [history_row(model, record, self.ignored_fields, self.field_labels) for record in queryset]
+        return [
+            history_row(
+                model, record, self.ignored_fields, self.field_labels, self.empty_labels
+            )
+            for record in queryset
+        ]
 
 
 # endregion

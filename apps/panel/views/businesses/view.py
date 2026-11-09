@@ -24,6 +24,7 @@ from apps.common.form_classes import (
 from apps.common.form_fields import (
     AlphabeticField,
     NoteField,
+    NumericField,
     SchemaField,
     SubdomainField,
 )
@@ -65,6 +66,14 @@ from apps.tenancy.propietario import (
     unlock_owner,
 )
 from apps.tenancy.tasks import preparar_negocio
+from apps.tenancy.user_limit import UserLimit
+from apps.tenancy.user_limit.messages import (
+    LIMIT_REQUIRED,
+    LIMIT_TOO_LARGE,
+    LIMIT_TOO_SMALL,
+    OVER_LIMIT_NOTICE,
+    accounts,
+)
 
 """========================================================================="""
 # region ........ Constants
@@ -100,6 +109,9 @@ TIME_ZONES = [
     ("America/Montevideo", "Uruguay (Montevideo)"),
     ("America/Caracas", "Venezuela (Caracas)"),
 ]
+DEFAULT_USER_LIMIT = 1
+USER_LIMIT_MAXIMUM = 32767
+USER_LIMIT_FIELDS = ("limite_usuarios", "sin_limite")
 CODE_INPUT_ATTRS = {
     "autocapitalize": "none",
     "autocomplete": "off",
@@ -222,7 +234,11 @@ class BusinessFormMixin(RelatedFormsMixin):
         if not form.is_bound:
             return []
         sections = {
-            "basic": any(name != "notas_internas" for name in form.errors),
+            "basic": any(
+                name not in ("notas_internas", *USER_LIMIT_FIELDS)
+                for name in form.errors
+            ),
+            "users": any(name in USER_LIMIT_FIELDS for name in form.errors),
             "addresses": has_errors(self.related_forms()["addresses"]),
             "notes": "notas_internas" in form.errors,
         }
@@ -389,6 +405,18 @@ class BusinessSettingsForm(forms.Form):
         initial=DEFAULT_TIME_ZONE,
         widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
     )
+    limite_usuarios = NumericField(
+        label="Límite de usuarios",
+        required=False,
+        max_length=5,
+        help_text="La propietaria cuenta. Con 1, el negocio no tiene sección Equipo.",
+        widget=text_input("1", inputmode="numeric", autocomplete="off"),
+    )
+    sin_limite = forms.BooleanField(
+        label="Sin límite",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
     notas_internas = NoteField(
         label="Notas internas",
         required=False,
@@ -402,6 +430,30 @@ class BusinessSettingsForm(forms.Form):
         ),
     )
 
+    def clean_limite_usuarios(self):
+        value = self.cleaned_data["limite_usuarios"]
+        if not value:
+            return None
+        limit = int(value)
+        if limit < 1:
+            raise forms.ValidationError(LIMIT_TOO_SMALL)
+        if limit > USER_LIMIT_MAXIMUM:
+            raise forms.ValidationError(
+                LIMIT_TOO_LARGE.format(maximum=f"{USER_LIMIT_MAXIMUM:,}".replace(",", "."))
+            )
+        return limit
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("sin_limite"):
+            cleaned_data["limite_usuarios"] = None
+        elif (
+            "limite_usuarios" not in self.errors
+            and cleaned_data.get("limite_usuarios") is None
+        ):
+            self.add_error("limite_usuarios", LIMIT_REQUIRED)
+        return cleaned_data
+
 
 class BusinessCreateForm(BusinessSettingsForm):
     field_order = [
@@ -413,6 +465,8 @@ class BusinessCreateForm(BusinessSettingsForm):
         "correo",
         "pais",
         "zona_horaria",
+        "limite_usuarios",
+        "sin_limite",
         "notas_internas",
     ]
 
@@ -453,6 +507,7 @@ class BusinessCreateForm(BusinessSettingsForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["limite_usuarios"].initial = DEFAULT_USER_LIMIT
         self.fields["subdominio"].help_text = (
             "Minúsculas sin tilde separadas con guion. Será la dirección del negocio: "
             f"subdominio.{settings.DOMINIO_BASE}"
@@ -501,6 +556,8 @@ class BusinessUpdateForm(BusinessSettingsForm):
                 "pais": instance.pais or DEFAULT_COUNTRY,
                 "zona_horaria": instance.zona_horaria,
                 "notas_internas": instance.notas_internas or "",
+                "limite_usuarios": instance.limite_usuarios or "",
+                "sin_limite": instance.limite_usuarios is None,
             }
         )
 
@@ -510,6 +567,7 @@ class BusinessUpdateForm(BusinessSettingsForm):
         business.pais = self.cleaned_data["pais"]
         business.zona_horaria = self.cleaned_data["zona_horaria"]
         business.notas_internas = self.cleaned_data["notas_internas"] or None
+        business.limite_usuarios = self.cleaned_data["limite_usuarios"]
         business._change_reason = "Edición desde el panel"
         business.save()
         return business
@@ -571,9 +629,9 @@ class BusinessListAjaxView(PanelListViewAjax):
         "0": "nombre",
         "1": "domain",
         "2": "estado",
-        "3": "owner_name",
-        "4": "industry_name",
-        "5": "created",
+        "4": "owner_name",
+        "5": "industry_name",
+        "6": "created",
     }
 
     def get_queryset(self):
@@ -614,7 +672,11 @@ class BusinessListAjaxView(PanelListViewAjax):
             FAILED_STATUS_KEY: FAILED_STATUS_LABEL,
         }
         values = super().get_values(queryset)
+        rows = Negocio.objects.in_bulk([value["pk"] for value in values])
         for value in values:
+            user_limit = UserLimit.of(rows[value["pk"]])
+            value["users_label"] = user_limit.usage_label if user_limit else EMPTY
+            value["over_limit"] = bool(user_limit and user_limit.is_over_limit)
             value["status_label"] = labels.get(value["status_key"], value["status_key"])
             value["domain"] = value["domain"] or EMPTY
             value["industry_name"] = value["industry_name"] or EMPTY
@@ -743,6 +805,7 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
         owner_access = self.owner_access(business)
         return {
             **super().get_context_data(**kwargs),
+            "user_limit": UserLimit.of(business),
             "title": f"Editar negocio · {business.nombre}",
             "business": business,
             "domain": domain.domain if domain else EMPTY,
@@ -786,6 +849,14 @@ class BusinessUpdateView(BusinessFormMixin, PanelView, FormView):
         messages.success(
             self.request, f"«{business.nombre}» se actualizó exitosamente."
         )
+        user_limit = UserLimit.of(business)
+        if user_limit and user_limit.is_over_limit:
+            messages.warning(
+                self.request,
+                f"«{business.nombre}» tiene {accounts(user_limit.active_count)} activas "
+                f"y su límite es {user_limit.limit}. "
+                + OVER_LIMIT_NOTICE.format(excess=accounts(user_limit.excess)),
+            )
         return redirect("admin:tenancy_negocio_change", business.pk)
 
 
@@ -943,8 +1014,10 @@ class BusinessHistoryListAjaxView(HistoryListAjaxView):
         "zona_horaria": "Zona horaria",
         "error_preparacion": "Error de preparación",
         "notas_internas": "Notas internas",
+        "limite_usuarios": "Límite de usuarios",
         "creado_por": "Creado por",
     }
+    empty_labels = {"limite_usuarios": "Sin límite"}
 
 
 # endregion

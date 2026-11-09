@@ -59,6 +59,7 @@ class PanelYAltaTests(TestCase):
             "rubro": Rubro.objects.get(codigo="barberia").pk,
             "pais": "CL",
             "zona_horaria": "America/Santiago",
+            "limite_usuarios": "1",
             "notas_internas": "",
             "address-calle": "",
             "address-numero": "",
