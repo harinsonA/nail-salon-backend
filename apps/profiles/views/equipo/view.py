@@ -33,6 +33,8 @@ from apps.seguridad.access import (
     unlock,
     with_lock_level,
 )
+from apps.tenancy.user_limit import UserLimit
+from apps.tenancy.user_limit.messages import seat_refusal
 
 """========================================================================="""
 # region ........ Constants
@@ -64,7 +66,19 @@ def assign_temporary_password(member):
     return password
 
 
-def member_options(item):
+def deactivate_option(item):
+    return {
+        "label": "Desactivar",
+        "link": reverse("equipo_activar", args=[item["pk"]]),
+        "bsModal": True,
+        "icon": "person_off",
+        "className": "bs-modal text-color-destructive",
+    }
+
+
+def member_options(item, over_limit=False):
+    if over_limit:
+        return [deactivate_option(item)] if item["is_active"] else []
     options = [
         {
             "label": "Editar",
@@ -93,16 +107,14 @@ def member_options(item):
                 "icon": "key",
                 "className": "bs-modal",
             },
-            {
-                "label": "Desactivar" if item["is_active"] else "Reactivar",
+            deactivate_option(item)
+            if item["is_active"]
+            else {
+                "label": "Reactivar",
                 "link": reverse("equipo_activar", args=[item["pk"]]),
                 "bsModal": True,
-                "icon": "person_off" if item["is_active"] else "person_check",
-                "className": (
-                    "bs-modal text-color-destructive"
-                    if item["is_active"]
-                    else "bs-modal"
-                ),
+                "icon": "person_check",
+                "className": "bs-modal",
             },
         ]
     )
@@ -114,6 +126,25 @@ def member_options(item):
 
 """========================================================================="""
 # region ........ Mixins
+
+
+class UserLimitMixin:
+    def user_limit(self):
+        if not hasattr(self, "_user_limit"):
+            self._user_limit = UserLimit.for_request(self.request)
+        return self._user_limit
+
+
+class WithinUserLimitMixin(UserLimitMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and self.user_limit().is_over_limit:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"message": seat_refusal(self.user_limit())},
+                    status=HTTP_400_BAD_REQUEST,
+                )
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
 
 class ManagedMemberMixin:
@@ -259,7 +290,7 @@ class TeamFilterForm(forms.Form):
 # region ........ Views
 
 
-class TeamView(ProtectedView, TemplateView):
+class TeamView(UserLimitMixin, ProtectedView, TemplateView):
     template_name = "equipo/lista.html"
 
     def get_context_data(self, **kwargs):
@@ -269,12 +300,16 @@ class TeamView(ProtectedView, TemplateView):
                 "filter_form": TeamFilterForm(),
                 "list_url": reverse("equipo_lista"),
                 "can_create": bool(roles_que_puede_crear(self.request.user)),
+                "user_limit": self.user_limit(),
+                "seat_refusal": ""
+                if self.user_limit().has_free_seat
+                else seat_refusal(self.user_limit()),
             }
         )
         return context
 
 
-class TeamListView(BaseListViewAjax):
+class TeamListView(UserLimitMixin, BaseListViewAjax):
     model = User
     filter_form_class = TeamFilterForm
     field_list = [
@@ -321,21 +356,27 @@ class TeamListView(BaseListViewAjax):
         members = User.objects.select_related("perfil").in_bulk(
             [item["pk"] for item in data]
         )
+        over_limit = self.user_limit().is_over_limit
         for item in data:
             item["options"] = (
-                member_options(item)
+                member_options(item, over_limit)
                 if puede_gestionar(self.request.user, members[item["pk"]])
                 else []
             )
         return data
 
-    @staticmethod
-    def additional_data(queryset):
-        return User.objects.aggregate(
-            active_members=Count("pk", filter=Q(is_active=True)),
-            inactive_members=Count("pk", filter=Q(is_active=False)),
-            locked_members=Count("pk", filter=locked_users_filter(timezone.now())),
-        )
+    def additional_data(self, queryset):
+        user_limit = self.user_limit()
+        return {
+            **User.objects.aggregate(
+                active_members=Count("pk", filter=Q(is_active=True)),
+                inactive_members=Count("pk", filter=Q(is_active=False)),
+                locked_members=Count("pk", filter=locked_users_filter(timezone.now())),
+            ),
+            "seat_counter": user_limit.counter_label,
+            "has_free_seat": user_limit.has_free_seat,
+            "seat_refusal": "" if user_limit.has_free_seat else seat_refusal(user_limit),
+        }
 
 
 class MemberFormModalView(ProtectedView, BSModalFormView):
@@ -351,15 +392,27 @@ class MemberFormModalView(ProtectedView, BSModalFormView):
         )
 
 
-class MemberCreateModalView(MemberFormModalView):
+class MemberCreateModalView(UserLimitMixin, MemberFormModalView):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and not roles_que_puede_crear(request.user):
+            raise PermissionDenied
+        if (
+            request.user.is_authenticated
+            and request.method == "GET"
+            and not self.user_limit().has_free_seat
+        ):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        member = form.save()
-        password = assign_temporary_password(member)
+        with transaction.atomic():
+            user_limit = self.user_limit().lock()
+            if not user_limit.has_free_seat:
+                return JsonResponse(
+                    {"message": seat_refusal(user_limit)}, status=HTTP_400_BAD_REQUEST
+                )
+            member = form.save()
+            password = assign_temporary_password(member)
         response = JsonResponse(
             {
                 "message": f"{user_display_name(member)} quedó creado.",
@@ -371,7 +424,9 @@ class MemberCreateModalView(MemberFormModalView):
         return response
 
 
-class MemberUpdateModalView(ManagedMemberMixin, MemberFormModalView):
+class MemberUpdateModalView(
+    WithinUserLimitMixin, ManagedMemberMixin, MemberFormModalView
+):
     def get_form_kwargs(self):
         return {**super().get_form_kwargs(), "instance": self.get_member()}
 
@@ -400,18 +455,33 @@ class MemberActionModalView(ProtectedView, ManagedMemberMixin, TemplateView):
         }
 
 
-class MemberActiveModalView(MemberActionModalView):
+class MemberActiveModalView(UserLimitMixin, MemberActionModalView):
     template_name = "equipo/active_modal.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_limit = self.user_limit()
+        if not context["member"].is_active and not user_limit.has_free_seat:
+            context["seat_refusal"] = seat_refusal(user_limit)
+        return context
 
     def post(self, request, *args, **kwargs):
         member = self.get_member()
-        member.is_active = not member.is_active
-        member.save(update_fields=["is_active"])
+        with transaction.atomic():
+            if not member.is_active:
+                user_limit = self.user_limit().lock()
+                if not user_limit.has_free_seat:
+                    return JsonResponse(
+                        {"message": seat_refusal(user_limit)},
+                        status=HTTP_400_BAD_REQUEST,
+                    )
+            member.is_active = not member.is_active
+            member.save(update_fields=["is_active"])
         action = "reactivado" if member.is_active else "desactivado"
         return JsonResponse({"message": f"{user_display_name(member)} quedó {action}."})
 
 
-class MemberUnlockModalView(MemberActionModalView):
+class MemberUnlockModalView(WithinUserLimitMixin, MemberActionModalView):
     template_name = "equipo/unlock_modal.html"
 
     def get_context_data(self, **kwargs):
@@ -432,7 +502,7 @@ class MemberUnlockModalView(MemberActionModalView):
         )
 
 
-class MemberPasswordResetModalView(MemberActionModalView):
+class MemberPasswordResetModalView(WithinUserLimitMixin, MemberActionModalView):
     template_name = "equipo/password_modal.html"
 
     def post(self, request, *args, **kwargs):

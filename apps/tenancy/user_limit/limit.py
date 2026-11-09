@@ -5,7 +5,7 @@ from django_tenants.utils import schema_context, schema_exists
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import rol_de
 from apps.tenancy.models import Negocio
-from apps.tenancy.user_limit.messages import UNLIMITED_LABEL
+from apps.tenancy.user_limit.messages import UNLIMITED_LABEL, active_accounts
 
 
 class UserLimit:
@@ -60,8 +60,14 @@ class UserLimit:
         limit = UNLIMITED_LABEL if self.is_unlimited else self.limit
         return f"{self.active_count} / {limit}"
 
+    @property
+    def counter_label(self):
+        if self.is_unlimited:
+            return f"{active_accounts(self.active_count)} · {UNLIMITED_LABEL}"
+        return f"{self.active_count} de {active_accounts(self.limit)}"
+
     def lets_in(self, user):
-        return not self.is_over_limit or rol_de(user) == Perfil.Rol.PROPIETARIO
+        return rol_de(user) == Perfil.Rol.PROPIETARIO or not self.is_over_limit
 
     def lock(self):
         self.negocio = Negocio.objects.select_for_update().get(pk=self.negocio.pk)

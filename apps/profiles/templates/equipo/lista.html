@@ -11,12 +11,13 @@ Equipo
   {% if can_create %}
   <section class="d-inline-flex align-items-center gap-2">
     <a id="member-create-btn" data-form-url="{% url 'equipo_crear' %}"
-      class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+      class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2{% if not user_limit.has_free_seat %} d-none{% endif %}" role="button">
       Miembro
       <img src="{% static 'images/common/add.svg' %}" alt="" width="16" height="16" class="icon--small">
     </a>
   </section>
   {% endif %}
+  <p id="seat_counter_id" class="text-body-secondary fs-7 mt-2 mb-2">{{ user_limit.counter_label }}</p>
   <section class="row justify-content-center">
     <div class="col-3">
       <div class="card rounded-4 agenda-card">
@@ -65,6 +66,10 @@ Equipo
     </div>
     {% endfor %}
   </section>
+  <div id="seat_refusal_note" class="profile-note mt-3 mb-0{% if user_limit.has_free_seat %} d-none{% endif %}" role="status">
+    <span class="material-symbols-outlined" aria-hidden="true">group_off</span>
+    <span id="seat_refusal_id">{{ seat_refusal }}</span>
+  </div>
   <div class="profile-note mt-3 mb-0" role="note">
     <span class="material-symbols-outlined" aria-hidden="true">info</span>
     <span>Los miembros no se borran: se desactivan, para que el historial conserve quién hizo cada cambio.</span>
@@ -120,6 +125,10 @@ Equipo
             $('#active_members_id').text(json.active_members);
             $('#inactive_members_id').text(json.inactive_members);
             $('#locked_members_id').text(json.locked_members);
+            $('#seat_counter_id').text(json.seat_counter);
+            $('#seat_refusal_id').text(json.seat_refusal);
+            $('#seat_refusal_note').toggleClass('d-none', json.has_free_seat);
+            $('#member-create-btn').toggleClass('d-none', !json.has_free_seat);
             return json.data;
           },
         },
