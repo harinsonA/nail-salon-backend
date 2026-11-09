@@ -54,6 +54,16 @@ SOLO_ADMINISTRACION = {
     "appointment_preferences",
 }
 
+SOLO_CON_EQUIPO = {
+    "equipo",
+    "equipo_lista",
+    "equipo_crear",
+    "equipo_editar",
+    "equipo_activar",
+    "equipo_restablecer_clave",
+    "equipo_desbloquear",
+}
+
 PARA_TODO_EL_EQUIPO = {
     "calendar",
     "calendar_data",

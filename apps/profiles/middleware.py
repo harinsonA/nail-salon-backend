@@ -6,7 +6,13 @@ from django.urls import reverse
 from django_tenants.utils import get_public_schema_name
 
 from apps.profiles.models import Perfil
-from apps.profiles.permisos import SOLO_ADMINISTRACION, administra_el_negocio
+from apps.profiles.permisos import (
+    SOLO_ADMINISTRACION,
+    SOLO_CON_EQUIPO,
+    administra_el_negocio,
+)
+from apps.tenancy.user_limit import UserLimit
+from apps.tenancy.user_limit.messages import TEAM_DISABLED
 
 RUTAS_PERMITIDAS = {"cambiar_clave", "logout", "session_ping"}
 
@@ -48,8 +54,14 @@ class PermisosPorRolMiddleware:
     def process_view(self, request, view_func, view_args, view_kwargs):
         if connection.schema_name == get_public_schema_name() or not request.user.is_authenticated:
             return None
-        if request.resolver_match.url_name not in SOLO_ADMINISTRACION or administra_el_negocio(request.user):
-            return None
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"message": "Esta sección es solo para el propietario y los encargados."}, status=403)
-        raise PermissionDenied
+        url_name = request.resolver_match.url_name
+        if url_name in SOLO_ADMINISTRACION and not administra_el_negocio(request.user):
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"message": "Esta sección es solo para el propietario y los encargados."}, status=403)
+            raise PermissionDenied
+        if url_name in SOLO_CON_EQUIPO and not UserLimit.for_request(request).team_enabled:
+            destino = reverse("calendar")
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"message": TEAM_DISABLED, "redirect": destino}, status=403)
+            return redirect(destino)
+        return None
