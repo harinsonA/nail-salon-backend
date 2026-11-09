@@ -64,9 +64,10 @@ class LimiteDeUsuariosEnElNegocioTests(NegocioTestCase):
         self.assertContains(navegador.get(reverse("calendar")), f'href="{reverse("equipo")}"')
         datos = self.lista(navegador)
         self.assertEqual(
-            (datos["seat_counter"], datos["has_free_seat"]),
-            ("3 cuentas activas · sin límite", True),
+            (datos["active_members_label"], datos["has_free_seat"]),
+            ("3", True),
         )
+        self.assertNotContains(navegador.get(reverse("equipo")), 'class="info-help"')
         self.assertEqual(navegador.get(reverse("equipo_crear")).status_code, 200)
         self.assertEqual(self.crear_miembro(navegador).status_code, 200)
 
@@ -101,13 +102,17 @@ class LimiteDeUsuariosEnElNegocioTests(NegocioTestCase):
         navegador = self.navegador_de(self.maria)
         datos = self.lista(navegador)
         self.assertEqual(
-            (datos["seat_counter"], datos["has_free_seat"]),
-            ("3 de 3 cuentas activas", False),
+            (datos["active_members_label"], datos["has_free_seat"]),
+            ("3 / 3", False),
         )
-        self.assertIn("Llegaste al límite de 3 cuentas activas", datos["seat_refusal"])
         pagina = navegador.get(reverse("equipo"))
-        self.assertContains(pagina, "3 de 3 cuentas activas")
-        self.assertContains(pagina, "Llegaste al límite de 3 cuentas activas")
+        self.assertContains(pagina, '<b id="active_members_id">3 / 3</b>')
+        self.assertNotContains(pagina, "seat_counter_id")
+        self.assertNotContains(pagina, "Llegaste al límite")
+        self.assertContains(
+            pagina,
+            'data-bs-title="Tu negocio puede tener hasta 3 cuentas activas. Si necesitas más, pide a Hi Agenda ampliar el límite."',
+        )
         self.assertEqual(navegador.get(reverse("equipo_crear")).status_code, 403)
         respuesta = self.crear_miembro(navegador)
         self.assertEqual(respuesta.status_code, 400)
@@ -117,12 +122,12 @@ class LimiteDeUsuariosEnElNegocioTests(NegocioTestCase):
     def test_con_cupo_crea_y_el_contador_sube(self):
         self.limite(4)
         navegador = self.navegador_de(self.maria)
-        self.assertEqual(self.lista(navegador)["seat_counter"], "3 de 4 cuentas activas")
+        self.assertEqual(self.lista(navegador)["active_members_label"], "3 / 4")
         self.assertEqual(self.crear_miembro(navegador).status_code, 200)
         datos = self.lista(navegador)
         self.assertEqual(
-            (datos["seat_counter"], datos["has_free_seat"]),
-            ("4 de 4 cuentas activas", False),
+            (datos["active_members_label"], datos["has_free_seat"]),
+            ("4 / 4", False),
         )
 
     def test_reactivar_necesita_cupo_y_desactivar_siempre_se_puede(self):

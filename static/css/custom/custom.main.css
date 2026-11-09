@@ -1267,3 +1267,26 @@ input.monthpicker {
 	}
 }
 /**** End Loader de bloqueo ****/
+
+/**** Ícono de ayuda con tooltip ****/
+.info-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  vertical-align: middle;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.info-help:hover,
+.info-help:focus-visible {
+  background: var(--color-primary-soft);
+  color: var(--text-strong);
+}
+/**** End Ícono de ayuda con tooltip ****/

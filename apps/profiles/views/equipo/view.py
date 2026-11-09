@@ -34,7 +34,7 @@ from apps.seguridad.access import (
     with_lock_level,
 )
 from apps.tenancy.user_limit import UserLimit
-from apps.tenancy.user_limit.messages import seat_refusal
+from apps.tenancy.user_limit.messages import capacity_help, seat_refusal
 
 """========================================================================="""
 # region ........ Constants
@@ -301,9 +301,7 @@ class TeamView(UserLimitMixin, ProtectedView, TemplateView):
                 "list_url": reverse("equipo_lista"),
                 "can_create": bool(roles_que_puede_crear(self.request.user)),
                 "user_limit": self.user_limit(),
-                "seat_refusal": ""
-                if self.user_limit().has_free_seat
-                else seat_refusal(self.user_limit()),
+                "capacity_help": capacity_help(self.user_limit()),
             }
         )
         return context
@@ -373,9 +371,8 @@ class TeamListView(UserLimitMixin, BaseListViewAjax):
                 inactive_members=Count("pk", filter=Q(is_active=False)),
                 locked_members=Count("pk", filter=locked_users_filter(timezone.now())),
             ),
-            "seat_counter": user_limit.counter_label,
+            "active_members_label": user_limit.active_label,
             "has_free_seat": user_limit.has_free_seat,
-            "seat_refusal": "" if user_limit.has_free_seat else seat_refusal(user_limit),
         }
 
 

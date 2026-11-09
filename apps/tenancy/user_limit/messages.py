@@ -16,6 +16,10 @@ OVER_LIMIT_MEMBER_ACTION = (
     "se puede desactivar: faltan {excess}."
 )
 TEAM_DISABLED = "Este negocio no tiene sección Equipo."
+CAPACITY_HELP = (
+    "Tu negocio puede tener hasta {limit}. Si necesitas más, pide a Hi Agenda "
+    "ampliar el límite."
+)
 
 
 def accounts(count):
@@ -30,3 +34,9 @@ def seat_refusal(user_limit):
     if user_limit.is_over_limit:
         return OVER_LIMIT_MEMBER_ACTION.format(excess=accounts(user_limit.excess))
     return NO_FREE_SEAT.format(limit=active_accounts(user_limit.limit))
+
+
+def capacity_help(user_limit):
+    if user_limit.is_unlimited:
+        return ""
+    return CAPACITY_HELP.format(limit=active_accounts(user_limit.limit))
