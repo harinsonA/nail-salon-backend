@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django_tenants.models import TenantMixin
 from django_tenants.utils import get_public_schema_name
@@ -9,7 +10,6 @@ from model_utils.models import TimeStampedModel
 from apps.common.historial import HistorialRecords
 from apps.common.utils.countries.constants import Country
 from apps.common.utils.utils import CommonCleaner
-
 
 FAILED_STATUS_KEY = "fallido"
 FAILED_STATUS_LABEL = "Falló"
@@ -50,7 +50,9 @@ class Negocio(TenantMixin, TimeStampedModel):
         db_index=True,
     )
     estado_desde = MonitorField(monitor="estado")
-    pais = models.CharField(max_length=2, choices=Country.choices, null=True, blank=True)
+    pais = models.CharField(
+        max_length=2, choices=Country.choices, null=True, blank=True
+    )
     zona_horaria = models.CharField(
         max_length=50,
         default="America/Santiago",
@@ -58,6 +60,11 @@ class Negocio(TenantMixin, TimeStampedModel):
     )
     error_preparacion = models.TextField(blank=True, null=True)
     notas_internas = models.TextField(blank=True, null=True)
+    limite_usuarios = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1)],
+    )
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -77,7 +84,8 @@ class Negocio(TenantMixin, TimeStampedModel):
         verbose_name_plural = "Negocios"
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(titular__isnull=False) | models.Q(schema_name=get_public_schema_name()),
+                condition=models.Q(titular__isnull=False)
+                | models.Q(schema_name=get_public_schema_name()),
                 name="negocios_titular_obligatorio",
             ),
         ]
@@ -95,7 +103,11 @@ class Negocio(TenantMixin, TimeStampedModel):
 
     @property
     def status_label(self):
-        return FAILED_STATUS_LABEL if self.preparation_failed else self.get_estado_display()
+        return (
+            FAILED_STATUS_LABEL
+            if self.preparation_failed
+            else self.get_estado_display()
+        )
 
     def clean(self):
         super().clean()
