@@ -11,7 +11,9 @@
     {% include 'equipo/member_info.html' %}
     <p class="lock-hint">
       <span class="material-symbols-outlined icon--inline" aria-hidden="true">info</span>
-      {% if member.is_active %}
+      {% if seat_refusal %}
+      <span>{{ seat_refusal }}</span>
+      {% elif member.is_active %}
       <span>Ya no podrá entrar a la agenda. No se borra nada: su historial se conserva y puedes reactivarlo cuando quieras.</span>
       {% else %}
       <span>Podrá volver a entrar a la agenda con su clave actual.</span>
@@ -22,10 +24,12 @@
     <button type="button" class="btn btn-sm btn-secondary bg-gradient me-2 action-modal__close" data-bs-dismiss="modal">
       Cancelar
     </button>
+    {% if not seat_refusal %}
     <button id="member_active_submit_btn" type="button"
       class="btn btn-sm {% if member.is_active %}btn-danger{% else %}btn-primary{% endif %} bg-gradient d-inline-flex align-items-center gap-1 action-modal__submit">
       <span class="material-symbols-outlined icon--small" aria-hidden="true">{% if member.is_active %}person_off{% else %}person_check{% endif %}</span>
       {% if member.is_active %}Desactivar{% else %}Reactivar{% endif %}
     </button>
+    {% endif %}
   </div>
 </form>

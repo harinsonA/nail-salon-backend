@@ -84,7 +84,7 @@
                   Perfil
                 </a>
               </li>
-              {% if administra_el_negocio %}
+              {% if administra_el_negocio and team_enabled %}
               <li>
                 <a class="menu__dropdown-item dropdown-item" href="{% url 'equipo' %}">
                   Equipo

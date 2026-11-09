@@ -1,11 +1,15 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.contrib.auth.views import LogoutView as DjangoLogoutView
+from django.core.exceptions import ValidationError
+from django_tenants.utils import get_public_schema_name
 
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import rol_de
 from apps.seguridad.forms import LockAwareAuthenticationMixin
 from apps.seguridad.sessions import pop_closure_message
+from apps.tenancy.user_limit import UserLimit
+from apps.tenancy.user_limit.messages import OVER_LIMIT_LOGIN
 
 """========================================================================="""
 # region ........ Constants
@@ -32,6 +36,14 @@ class CorreoAuthenticationForm(LockAwareAuthenticationMixin, AuthenticationForm)
 
     def get_unlock_hint(self, user):
         return UNLOCK_HINTS.get(rol_de(user) if user else None, DEFAULT_UNLOCK_HINT)
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        tenant = getattr(self.request, "tenant", None)
+        if tenant is None or tenant.schema_name == get_public_schema_name():
+            return
+        if not UserLimit(tenant).lets_in(user):
+            raise ValidationError(OVER_LIMIT_LOGIN, code="over_limit")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

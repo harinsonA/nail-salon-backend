@@ -1,0 +1,7 @@
+{% if user_limit.is_over_limit %}
+<div class="alert alert-warning mt-3 mb-0" role="alert">
+  El negocio tiene {{ user_limit.active_count }} cuentas activas y su límite es {{ user_limit.limit }}. Mientras tanto
+  solo tú puedes entrar: desactiva {{ user_limit.excess }} cuenta{{ user_limit.excess|pluralize }} en
+  <a href="{% url 'equipo' %}" class="alert-link">Equipo</a> o pide a Hi Agenda ampliar el límite.
+</div>
+{% endif %}

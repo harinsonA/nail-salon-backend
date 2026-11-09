@@ -6,8 +6,11 @@ from django.utils import timezone
 from django_tenants.utils import get_public_schema_name
 
 from apps.profiles.permisos import SOLO_ADMINISTRACION, administra_el_negocio
+from apps.seguridad.sessions import close_session
 from apps.tenancy.models import Negocio
 from apps.tenancy.subdominios import SUBDOMINIO_PANEL
+from apps.tenancy.user_limit import UserLimit
+from apps.tenancy.user_limit.messages import OVER_LIMIT_LOGIN
 
 NEGOCIO_NO_DISPONIBLE = {
     Negocio.Estado.PREPARANDO: (
@@ -63,6 +66,24 @@ class EstadoDelNegocioMiddleware:
         if es_ajax(request):
             return JsonResponse({"message": PAGO_PENDIENTE}, status=402)
         return render(request, "estado/pago_pendiente.html", {"mensaje": PAGO_PENDIENTE}, status=402)
+
+
+class UserLimitGuardMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        negocio = getattr(request, "tenant", None)
+        user = getattr(request, "user", None)
+        if (
+            negocio is not None
+            and negocio.schema_name != get_public_schema_name()
+            and user is not None
+            and user.is_authenticated
+            and not UserLimit.for_request(request).lets_in(user)
+        ):
+            close_session(request, OVER_LIMIT_LOGIN)
+        return self.get_response(request)
 
 
 class BusinessTimeZoneMiddleware:
