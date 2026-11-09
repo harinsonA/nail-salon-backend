@@ -17,7 +17,6 @@ Equipo
     </a>
   </section>
   {% endif %}
-  <p id="seat_counter_id" class="text-body-secondary fs-7 mt-2 mb-2">{{ user_limit.counter_label }}</p>
   <section class="row justify-content-center">
     <div class="col-3">
       <div class="card rounded-4 agenda-card">
@@ -26,7 +25,13 @@ Equipo
             <span>Total activos</span>
           </h6>
           <h4 class="card-title text-end text-primary m-0">
-            <b id="active_members_id">0</b>
+            <b id="active_members_id">{{ user_limit.active_label }}</b>
+            {% if capacity_help %}
+            <button type="button" id="capacity_help_id" class="info-help" aria-label="{{ capacity_help }}"
+              data-bs-title="{{ capacity_help }}" data-bs-placement="bottom">
+              <span class="material-symbols-outlined icon--small" aria-hidden="true">info</span>
+            </button>
+            {% endif %}
           </h4>
         </div>
       </div>
@@ -66,10 +71,6 @@ Equipo
     </div>
     {% endfor %}
   </section>
-  <div id="seat_refusal_note" class="profile-note mt-3 mb-0{% if user_limit.has_free_seat %} d-none{% endif %}" role="status">
-    <span class="material-symbols-outlined" aria-hidden="true">group_off</span>
-    <span id="seat_refusal_id">{{ seat_refusal }}</span>
-  </div>
   <div class="profile-note mt-3 mb-0" role="note">
     <span class="material-symbols-outlined" aria-hidden="true">info</span>
     <span>Los miembros no se borran: se desactivan, para que el historial conserve quién hizo cada cambio.</span>
@@ -122,12 +123,9 @@ Equipo
       extraConfig: {
         ajax: {
           dataSrc: (json) => {
-            $('#active_members_id').text(json.active_members);
+            $('#active_members_id').text(json.active_members_label);
             $('#inactive_members_id').text(json.inactive_members);
             $('#locked_members_id').text(json.locked_members);
-            $('#seat_counter_id').text(json.seat_counter);
-            $('#seat_refusal_id').text(json.seat_refusal);
-            $('#seat_refusal_note').toggleClass('d-none', json.has_free_seat);
             $('#member-create-btn').toggleClass('d-none', !json.has_free_seat);
             return json.data;
           },
@@ -150,6 +148,11 @@ Equipo
     }
 
     initializeActionModal('#modal', { onDone: () => table.draw(false) });
+
+    const capacityHelp = document.getElementById('capacity_help_id');
+    if (capacityHelp) {
+      new bootstrap.Tooltip(capacityHelp, { container: 'body' });
+    }
   });
 </script>
 {% endblock %}
