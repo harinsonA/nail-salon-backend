@@ -43,3 +43,7 @@ PREPAID_TOO_HIGH = (
     "Edita la cita antes de completarla."
 )
 COMPLETE_NOT_PENDING = "Solo se pueden completar las citas en estado Pendiente."
+REFUNDS_INVALID = "Los reembolsos enviados no son válidos."
+CANCEL_NOT_PENDING = "Solo se pueden cancelar las agendas en estado Pendiente."
+RESTORED_INVALID = "Los pagos a restaurar no son válidos."
+RESTORE_NOT_CANCELLED = "Solo se pueden restaurar las agendas en estado Cancelada."
