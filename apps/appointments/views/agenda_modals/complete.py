@@ -1,14 +1,14 @@
 from bootstrap_modal_forms.forms import BSModalModelForm
 from bootstrap_modal_forms.generic import BSModalUpdateView
 from django import forms
-from django.db import transaction
 from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.appointments.access import AppointmentAccessMixin
+from apps.appointments.engine import AppointmentCompletion, AppointmentRuleError
+from apps.appointments.engine.messages import FULL_PAYMENT_LABEL
 from apps.appointments.models import Cita
 from apps.appointments.panel import AppointmentPanel, person_name
-from apps.appointments.engine import AppointmentReservation
 from apps.appointments.views.agenda_modals.common import AgendaBaseModalView
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
@@ -17,39 +17,8 @@ from apps.common.form_classes import (
 )
 from apps.common.form_fields import MoneyField, NoteField
 from apps.common.utils.currency import Money
-from apps.common.utils.utils import CommonCleaner, get_errors_to_response
-from apps.payments.accounting import (
-    ZERO,
-    AppointmentLedger,
-    AppointmentPaymentService,
-    AppointmentPaymentSummary,
-    PaymentAccount,
-    PaymentHeader,
-)
-from apps.payments.choices import MetodoPago, TipoDetallePago
-
-"""========================================================================="""
-# region ........ Constants
-
-
-FULL_PAYMENT_LABEL = "Paga el total ahora"
-BALANCE_PAYMENT_LABEL = "Paga el saldo ahora"
-AMOUNT_TOO_HIGH = 'Si paga {total} o más, activa "{label}".'
-SETTLED_SUBJECTS = {
-    ("Anticipo",): "El anticipo ya cubre",
-    ("Reserva",): "La reserva ya cubre",
-    ("Reserva", "Anticipo"): "La reserva y el anticipo ya cubren",
-}
-SETTLED_HINT = "{subject} el total de la cita. Al completarla queda pagada y hoy no hay nada que cobrar."
-NOTHING_TO_CHARGE = "La cita no tiene monto por cobrar. Al completarla queda pagada."
-PREPAID_TOO_HIGH = (
-    "Lo pagado antes ({paid}) supera el total de los servicios ({total}). "
-    "Edita la cita antes de completarla."
-)
-
-
-# endregion
-"""========================================================================="""
+from apps.common.utils.utils import get_errors_to_response
+from apps.payments.choices import MetodoPago
 
 """========================================================================="""
 # region ........ Forms
@@ -96,13 +65,8 @@ class AgendaConfirmationForm(BSModalModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.payment = AppointmentLedger.for_appointment(self.instance).payment
-        self.services_total = PaymentHeader(self.instance).services_total()
-        self.summary = AppointmentPaymentSummary(self.payment) if self.payment else None
-        self.prepaid = PaymentAccount(self.payment).credit() if self.payment else ZERO
-        self.remaining_payment_value = max(ZERO, self.services_total - self.prepaid)
-        if self.prepaid:
-            self.fields["full_payment"].label = BALANCE_PAYMENT_LABEL
+        self.completion = AppointmentCompletion(self.instance)
+        self.fields["full_payment"].label = self.completion.full_payment_label()
 
     class Meta:
         model = Cita
@@ -112,61 +76,19 @@ class AgendaConfirmationForm(BSModalModelForm):
         return self.instance
 
     def clean_down_payment(self):
-        down_payment = self.cleaned_data.get("down_payment")
-        if self.prepaid > self.services_total:
-            raise forms.ValidationError(
-                PREPAID_TOO_HIGH.format(
-                    paid=Money.format(self.prepaid),
-                    total=Money.format(self.services_total),
-                )
+        try:
+            return self.completion.clean_amount(
+                self.cleaned_data.get("full_payment"),
+                self.cleaned_data.get("down_payment"),
             )
-        if not self.remaining_payment_value:
-            return 0
-        if self.cleaned_data.get("full_payment"):
-            return down_payment
-        result = CommonCleaner.clean_amount_field("monto abonado", down_payment)
-        if result.is_err():
-            raise forms.ValidationError(result.err_value)
-        down_payment = result.ok_value
-        if down_payment >= self.remaining_payment_value:
-            total = Money.format(self.remaining_payment_value)
-            label = self.fields["full_payment"].label
-            raise forms.ValidationError(AMOUNT_TOO_HIGH.format(total=total, label=label))
-        return down_payment
-
-    def credit_parts(self):
-        return self.summary.credit_parts() if self.summary else []
-
-    def settled_hint(self):
-        labels = tuple(label for label, _ in self.credit_parts())
-        if not labels:
-            return NOTHING_TO_CHARGE
-        return SETTLED_HINT.format(subject=SETTLED_SUBJECTS[labels])
-
-    def advance_part(self):
-        return dict(self.credit_parts()).get("Anticipo", ZERO)
-
-    def reservation_card(self):
-        row = AppointmentLedger(self.payment).open_reservation() if self.payment else None
-        if row is None:
-            return None
-        discounts = row.tipo_detalle == TipoDetallePago.RESERVA_DESCONTABLE
-        return {
-            "label": (
-                AppointmentReservation.DISCOUNTS_LABEL
-                if discounts
-                else AppointmentReservation.SEPARATE_LABEL
-            ),
-            "amount": Money.format(-row.monto_pago if discounts else row.monto_pago),
-            "discounts": discounts,
-        }
+        except AppointmentRuleError as error:
+            raise forms.ValidationError(error.message) from error
 
     def amount_paid_now(self):
-        if not self.remaining_payment_value:
-            return ZERO
-        if self.cleaned_data.get("full_payment"):
-            return self.remaining_payment_value
-        return self.cleaned_data.get("down_payment") or ZERO
+        return self.completion.amount_paid_now(
+            self.cleaned_data.get("full_payment"),
+            self.cleaned_data.get("down_payment"),
+        )
 
 
 # endregion
@@ -189,27 +111,29 @@ class AgendaConfirmationModal(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         form = context["form"]
+        completion = form.completion
         services, subtotal, discounts, _ = AppointmentPanel(
             self.object, self.request.user
         ).services()
-        total = form.remaining_payment_value
+        total = completion.remaining
+        advance = completion.advance_part()
         context.update(
             {
                 "modal_url": self.request.path,
                 "services": services,
                 "subtotal": Money.format(subtotal),
                 "discounts": Money.format(-discounts) if discounts else Money.format(0),
-                "services_total": Money.format(form.services_total),
-                "prepaid": Money.format(-form.prepaid) if form.prepaid else "",
-                "advance": Money.format(-form.advance_part()) if form.advance_part() else "",
-                "reservation": form.reservation_card(),
-                "settled_hint": form.settled_hint(),
+                "services_total": Money.format(completion.services_total),
+                "prepaid": Money.format(-completion.prepaid) if completion.prepaid else "",
+                "advance": Money.format(-advance) if advance else "",
+                "reservation": completion.reservation_card(),
+                "settled_hint": completion.settled_hint(),
                 "total": Money.format(total),
                 "total_value": int(total),
                 "complete_config": {
                     "total": int(total),
-                    "prepaid": int(form.prepaid),
-                    "servicesTotal": int(form.services_total),
+                    "prepaid": int(completion.prepaid),
+                    "servicesTotal": int(completion.services_total),
                     "fullLabel": form.fields["full_payment"].label,
                 },
                 "attended_by": person_name(self.request.user, self.request.user),
@@ -227,17 +151,15 @@ class AgendaConfirmationModal(
             "time": self._get_time_formatted(self.object),
         }
 
-    @transaction.atomic
     def form_valid(self, form):
         cleaned_data = form.cleaned_data
-        AppointmentPaymentService(self.object, self.request.user).complete(
+        form.completion.complete(
+            self.request.user,
             amount=form.amount_paid_now(),
             method=cleaned_data.get("payment_method", MetodoPago.EFECTIVO),
             reference=cleaned_data.get("payment_reference"),
             notes=cleaned_data.get("observations", ""),
         )
-        self.object.estado = Cita.EstadoChoices.COMPLETADA
-        self.object.save()
         message = self.__get_message_success()
         return JsonResponse({"message": message}, status=200)
 

@@ -25,3 +25,21 @@ RESERVATION_TOO_HIGH = (
     "La reserva o los anticipos suman {paid} y no pueden superar el total de los "
     "servicios ({total})."
 )
+FULL_PAYMENT_LABEL = "Paga el total ahora"
+BALANCE_PAYMENT_LABEL = "Paga el saldo ahora"
+AMOUNT_TOO_HIGH = 'Si paga {total} o más, activa "{label}".'
+SETTLED_SUBJECTS = {
+    ("Anticipo",): "El anticipo ya cubre",
+    ("Reserva",): "La reserva ya cubre",
+    ("Reserva", "Anticipo"): "La reserva y el anticipo ya cubren",
+}
+SETTLED_HINT = (
+    "{subject} el total de la cita. Al completarla queda pagada y hoy no hay nada "
+    "que cobrar."
+)
+NOTHING_TO_CHARGE = "La cita no tiene monto por cobrar. Al completarla queda pagada."
+PREPAID_TOO_HIGH = (
+    "Lo pagado antes ({paid}) supera el total de los servicios ({total}). "
+    "Edita la cita antes de completarla."
+)
+COMPLETE_NOT_PENDING = "Solo se pueden completar las citas en estado Pendiente."
