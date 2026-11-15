@@ -2,8 +2,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.appointments.access import is_collaborator
+from apps.appointments.engine import PrepaidCard
 from apps.appointments.models import Cita
-from apps.appointments.prepaid import PrepaidCard
 from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_date_time, format_long_date
 from apps.common.utils.text import user_display_name

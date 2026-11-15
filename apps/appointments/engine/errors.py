@@ -3,3 +3,7 @@ class AppointmentRuleError(Exception):
         super().__init__(message)
         self.message = message
         self.field = field
+
+
+class AppointmentLockedError(AppointmentRuleError):
+    pass
