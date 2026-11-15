@@ -1,10 +1,12 @@
 class Scope:
     USER = "user"
     NEGOCIO = "negocio"
+    PLATAFORMA = "plataforma"
 
     CHOICES = (
         (USER, "Usuario"),
         (NEGOCIO, "Negocio"),
+        (PLATAFORMA, "Plataforma"),
     )
 
 
