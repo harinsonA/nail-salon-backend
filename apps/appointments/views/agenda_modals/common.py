@@ -3,16 +3,20 @@ import json
 from bootstrap_modal_forms.forms import BSModalForm
 from django import forms
 from django.contrib.auth import get_user_model
-from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from apps.appointments.access import is_collaborator
-from apps.appointments.models.detalle_cita import DetalleCita
+from apps.appointments.engine import AppointmentDraft, AppointmentRuleError
+from apps.appointments.engine.messages import (
+    ADVANCES_INVALID,
+    MAX_QUANTITY,
+    REFERENCE_MAX_LENGTH,
+    RESERVATION_INVALID,
+    SERVICES_INVALID,
+)
 from apps.appointments.panel import AppointmentPanel
-from apps.appointments.reservation import AppointmentReservation
 from apps.clients.models import Cliente
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
@@ -20,7 +24,6 @@ from apps.common.form_classes import (
     FORM_SELECT2_CLASS,
 )
 from apps.common.form_fields import NoteField
-from apps.common.utils.currency import Money
 from apps.common.utils.dates import (
     format_date_time,
     format_long_date,
@@ -29,15 +32,7 @@ from apps.common.utils.dates import (
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from apps.payments.accounting import (
-    AppointmentLedger,
-    PaymentAccount,
-    PaymentLabels,
-    PaymentRowFactory,
-    ServiceLines,
-)
-from apps.payments.accounting.constants import ReservationAction
-from apps.payments.choices import MetodoPago, TipoDetallePago
+from apps.payments.choices import MetodoPago
 from apps.services.models import Categoria, Servicio
 
 User = get_user_model()
@@ -48,34 +43,7 @@ User = get_user_model()
 
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M"
-MAX_QUANTITY = 99
-SERVICES_REQUIRED = "Agrega al menos un servicio."
-SERVICES_INVALID = "Los servicios enviados no son válidos."
-SERVICE_UNAVAILABLE = "Uno de los servicios ya no está disponible."
-SERVICE_REPEATED = "Un servicio no puede repetirse en la misma cita."
-QUANTITY_INVALID = "La cantidad de «{name}» debe estar entre 1 y {max}."
-DISCOUNT_INVALID = (
-    "El descuento de «{name}» no puede ser negativo ni superar su precio."
-)
 NO_CATEGORY = "Sin categoría"
-REFERENCE_MAX_LENGTH = 100
-ADVANCES_INVALID = "Los anticipos enviados no son válidos."
-ADVANCE_AMOUNT_REQUIRED = "Ingresa el monto de cada anticipo."
-ADVANCE_LOCKED_ROLE = (
-    "Solo la propietaria o la encargada pueden cambiar anticipos ya registrados."
-)
-ADVANCES_TOO_HIGH = (
-    "Los anticipos suman {paid} y no pueden superar el total de los servicios "
-    "({total})."
-)
-RESERVATION_INVALID = "La reserva enviada no es válida."
-RESERVATION_LOCKED_ROLE = (
-    "Solo la propietaria o la encargada pueden cambiar o quitar una reserva guardada."
-)
-RESERVATION_TOO_HIGH = (
-    "La reserva o los anticipos suman {paid} y no pueden superar el total de los "
-    "servicios ({total})."
-)
 
 
 # endregion
@@ -83,22 +51,6 @@ RESERVATION_TOO_HIGH = (
 
 """========================================================================="""
 # region ........ Helpers
-
-
-def assignable_users(user, current=None):
-    if is_collaborator(user):
-        return User.objects.filter(pk=user.pk)
-    condition = Q(is_active=True, perfil__isnull=False)
-    if current:
-        condition |= Q(pk=current.pk)
-    return User.objects.filter(condition).order_by("first_name", "last_name", "email")
-
-
-def selectable_clients(current=None):
-    condition = Q(pk__in=Cliente.activos.values("pk"))
-    if current:
-        condition |= Q(pk=current.pk)
-    return Cliente.objects.filter(condition).order_by("nombre", "apellido")
 
 
 def client_name(client):
@@ -143,20 +95,6 @@ def initial_from(appointment):
         "time": appointment.hora_agenda,
         "observations": appointment.observaciones or "",
     }
-
-
-def build_detail(appointment, line):
-    service = line["service"]
-    return DetalleCita(
-        cita=appointment,
-        servicio=service,
-        nombre_servicio=service.nombre,
-        precio_servicio=service.precio,
-        duracion_estimada_servicio=service.duracion_estimada,
-        precio_acordado=line["total"],
-        cantidad_servicios=line["quantity"],
-        descuento=line["discount"],
-    )
 
 
 class StaffChoiceField(forms.ModelChoiceField):
@@ -217,240 +155,61 @@ class AppointmentForm(BSModalForm):
 
     def __init__(self, *args, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
-        user = self.request.user
         self.instance = instance
-        self.can_change_saved = not is_collaborator(user)
-        ledger = AppointmentLedger.for_appointment(instance)
-        self.payment = ledger.payment
-        self.saved_advances = ledger.open_advances()
-        self.reservation = AppointmentReservation(ledger, creating=instance is None)
-        self.details = {}
+        self.draft = AppointmentDraft(self.request.user, instance)
         if instance:
-            self.details = {detail.pk: detail for detail in instance.detalles.all()}
             self.initial = {**initial_from(instance), **self.initial}
         current_client = instance.cliente if instance else None
         current_staff = instance.asignado_a if instance else None
-        self.fields["client"].queryset = selectable_clients(current_client)
-        self.fields["assigned_to"].queryset = assignable_users(user, current_staff)
-        if is_collaborator(user):
+        assignment = self.draft.assignment
+        self.fields["client"].queryset = assignment.clients(current_client)
+        self.fields["assigned_to"].queryset = assignment.staff(current_staff)
+        if assignment.collaborator:
             self.fields["assigned_to"].disabled = True
-            self.fields["assigned_to"].initial = user
-
-    def parse_lines(self):
-        try:
-            lines = json.loads(self.cleaned_data.get("services") or "[]")
-        except json.JSONDecodeError as error:
-            raise forms.ValidationError(SERVICES_INVALID) from error
-        if not isinstance(lines, list):
-            raise forms.ValidationError(SERVICES_INVALID)
-        if not all(isinstance(line, dict) for line in lines):
-            raise forms.ValidationError(SERVICES_INVALID)
-        if not lines:
-            raise forms.ValidationError(SERVICES_REQUIRED)
-        return lines
-
-    def resolve(self, lines):
-        new_ids = []
-        resolved = []
-        try:
-            for line in lines:
-                if line.get("detalle") is not None:
-                    detail = self.details.get(int(line["detalle"]))
-                    if not detail:
-                        raise forms.ValidationError(SERVICES_INVALID)
-                    resolved.append((line, detail, detail.servicio))
-                else:
-                    new_ids.append(int(line.get("id")))
-                    resolved.append((line, None, new_ids[-1]))
-        except (TypeError, ValueError) as error:
-            raise forms.ValidationError(SERVICES_INVALID) from error
-        services = Servicio.activos.in_bulk(new_ids)
-        if len(services) != len(set(new_ids)):
-            raise forms.ValidationError(SERVICE_UNAVAILABLE)
-        return [
-            (line, detail, service if detail else services[service])
-            for line, detail, service in resolved
-        ]
-
-    def clean_services(self):
-        resolved = self.resolve(self.parse_lines())
-        keys = [
-            (
-                service.pk if service else None,
-                detail.pk if detail and not service else None,
-            )
-            for _, detail, service in resolved
-        ]
-        if len(set(keys)) != len(keys):
-            raise forms.ValidationError(SERVICE_REPEATED)
-        return [
-            self.clean_line(line, detail, service)
-            for line, detail, service in resolved
-        ]
+            self.fields["assigned_to"].initial = self.request.user
 
     @staticmethod
-    def clean_line(line, detail, service):
-        name = detail.nombre_servicio if detail else service.nombre
-        price = detail.precio_servicio if detail else service.precio
+    def decode(raw, message):
         try:
-            quantity = int(line.get("cantidad", 1))
-            discount = int(line.get("descuento", 0))
-        except (TypeError, ValueError) as error:
-            raise forms.ValidationError(SERVICES_INVALID) from error
-        if not 1 <= quantity <= MAX_QUANTITY:
-            raise forms.ValidationError(
-                QUANTITY_INVALID.format(name=name, max=MAX_QUANTITY)
-            )
-        if not ServiceLines.accepts_discount(price, quantity, discount):
-            raise forms.ValidationError(DISCOUNT_INVALID.format(name=name))
-        return {
-            "detail": detail,
-            "service": service,
-            "quantity": quantity,
-            "discount": discount,
-            "total": ServiceLines.total(price, quantity, discount),
-        }
+            return json.loads(raw)
+        except json.JSONDecodeError as error:
+            raise forms.ValidationError(message) from error
+
+    @staticmethod
+    def apply(rule, value):
+        try:
+            return rule(value)
+        except AppointmentRuleError as error:
+            raise forms.ValidationError(error.message) from error
+
+    def clean_services(self):
+        lines = self.decode(self.cleaned_data.get("services") or "[]", SERVICES_INVALID)
+        return self.apply(self.draft.services.clean, lines)
 
     def clean_assigned_to(self):
-        user = self.request.user
-        return user if is_collaborator(user) else self.cleaned_data["assigned_to"]
+        return self.draft.assignment.resolve(self.cleaned_data["assigned_to"])
 
     def clean_advances(self):
-        try:
-            advances = json.loads(self.cleaned_data.get("advances") or "[]")
-        except json.JSONDecodeError as error:
-            raise forms.ValidationError(ADVANCES_INVALID) from error
-        if not isinstance(advances, list):
-            raise forms.ValidationError(ADVANCES_INVALID)
-        saved = {row.pk: row for row in self.saved_advances}
-        changes = [self.clean_advance(advance, saved) for advance in advances]
-        touched = [change["row"].pk for change in changes if change["row"]]
-        if len(touched) != len(set(touched)):
-            raise forms.ValidationError(ADVANCES_INVALID)
-        return changes
-
-    def saved_row(self, advance, saved):
-        if advance.get("id") is None:
-            return None
-        try:
-            row = saved.get(int(advance["id"]))
-        except (TypeError, ValueError) as error:
-            raise forms.ValidationError(ADVANCES_INVALID) from error
-        if row is None:
-            raise forms.ValidationError(ADVANCES_INVALID)
-        if not self.can_change_saved:
-            raise forms.ValidationError(ADVANCE_LOCKED_ROLE)
-        return row
-
-    def clean_advance(self, advance, saved):
-        if not isinstance(advance, dict):
-            raise forms.ValidationError(ADVANCES_INVALID)
-        row = self.saved_row(advance, saved)
-        if row and advance.get("quitar") is True:
-            return {"row": row, "remove": True, "amount": 0, "method": row.metodo_pago, "reference": ""}
-        amount = advance.get("monto")
-        method = advance.get("metodo")
-        reference = advance.get("referencia") or ""
-        if amount in (None, "", 0):
-            raise forms.ValidationError(ADVANCE_AMOUNT_REQUIRED)
-        if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
-            raise forms.ValidationError(ADVANCES_INVALID)
-        if method not in PaymentLabels.METHODS or not isinstance(reference, str):
-            raise forms.ValidationError(ADVANCES_INVALID)
-        reference = reference.strip()
-        if len(reference) > REFERENCE_MAX_LENGTH:
-            raise forms.ValidationError(ADVANCES_INVALID)
-        return {"row": row, "remove": False, "amount": amount, "method": method, "reference": reference}
+        advances = self.decode(self.cleaned_data.get("advances") or "[]", ADVANCES_INVALID)
+        return self.apply(self.draft.advances.clean, advances)
 
     def clean_reservation(self):
-        offer = self.reservation
         raw = self.cleaned_data.get("reservation")
-        if not offer.available or not raw:
+        if not self.draft.reservation.available or not raw:
             return {}
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError as error:
-            raise forms.ValidationError(RESERVATION_INVALID) from error
-        if not isinstance(data, dict) or not isinstance(data.get("activa"), bool):
-            raise forms.ValidationError(RESERVATION_INVALID)
-        saved = offer.saved
-        if not data["activa"]:
-            return self.saved_reservation_change(ReservationAction.REMOVE) if saved else {}
-        method = data.get("metodo")
-        reference = data.get("referencia") or ""
-        if method not in PaymentLabels.METHODS or not isinstance(reference, str):
-            raise forms.ValidationError(RESERVATION_INVALID)
-        reference = reference.strip()
-        if len(reference) > REFERENCE_MAX_LENGTH:
-            raise forms.ValidationError(RESERVATION_INVALID)
-        change = {
-            "row": saved,
-            "amount": offer.amount(),
-            "kind": offer.kind(),
-            "method": method,
-            "reference": reference,
-        }
-        if not saved:
-            return {**change, "action": ReservationAction.CREATE}
-        unchanged = saved.metodo_pago == method and (
-            saved.referencia_pago or None
-        ) == PaymentRowFactory.reference(method, reference)
-        if unchanged:
-            return {}
-        return self.saved_reservation_change(ReservationAction.UPDATE, change)
-
-    def saved_reservation_change(self, action, change=None):
-        if not self.can_change_saved:
-            raise forms.ValidationError(RESERVATION_LOCKED_ROLE)
-        return {**(change or {"row": self.reservation.saved}), "action": action}
-
-    def paid_after(self, changes):
-        touched = {change["row"].pk for change in changes if change["row"]}
-        paid = PaymentAccount(self.payment).credit() if self.payment else 0
-        paid -= sum(row.monto_pago for row in self.saved_advances if row.pk in touched)
-        return paid + sum(change["amount"] for change in changes if not change["remove"])
-
-    def saved_discounts(self):
-        saved = self.reservation.saved
-        return bool(saved) and saved.tipo_detalle == TipoDetallePago.RESERVA_DESCONTABLE
-
-    def reservation_delta(self, reservation):
-        action = reservation.get("action")
-        if action == ReservationAction.CREATE and self.reservation.discounts():
-            return reservation["amount"]
-        if action == ReservationAction.REMOVE and self.saved_discounts():
-            return -self.reservation.saved.monto_pago
-        return 0
-
-    def reservation_counts(self, reservation):
-        action = reservation.get("action")
-        if action == ReservationAction.CREATE:
-            return self.reservation.discounts()
-        return self.saved_discounts() and action != ReservationAction.REMOVE
-
-    def keeps_advances(self, changes):
-        removed = {change["row"].pk for change in changes if change["remove"]}
-        kept = [row for row in self.saved_advances if row.pk not in removed]
-        return bool(kept) or any(change["row"] is None for change in changes)
+        data = self.decode(raw, RESERVATION_INVALID)
+        return self.apply(self.draft.reservation_change.clean, data)
 
     def clean(self):
         cleaned_data = super().clean()
         lines = cleaned_data.get("services")
         if not lines or "advances" not in cleaned_data or "reservation" not in cleaned_data:
             return cleaned_data
-        advances = cleaned_data["advances"]
-        reservation = cleaned_data["reservation"]
-        paid = self.paid_after(advances) + self.reservation_delta(reservation)
-        total = sum(line["total"] for line in lines)
-        if paid <= total:
-            return cleaned_data
-        amounts = {"paid": Money.format(paid), "total": Money.format(total)}
-        if not self.reservation_counts(reservation):
-            self.add_error("advances", ADVANCES_TOO_HIGH.format(**amounts))
-        elif self.keeps_advances(advances):
-            self.add_error("advances", RESERVATION_TOO_HIGH.format(**amounts))
-        else:
-            self.add_error("reservation", RESERVATION_TOO_HIGH.format(**amounts))
+        error = self.draft.limit.check(
+            lines, cleaned_data["advances"], cleaned_data["reservation"]
+        )
+        if error:
+            self.add_error(error.field, error.message)
         return cleaned_data
 
 
@@ -488,14 +247,15 @@ class AppointmentFormMixin:
                 "reference": row.referencia_pago or "",
                 "date": format_date_time(row.fecha_pago),
             }
-            for row in form.saved_advances
+            for row in form.draft.advances.saved
         ]
 
     def get_context_data(self, **kwargs):
         appointment = getattr(self, "object", None)
         context = super().get_context_data(**kwargs)
         form = context["form"]
-        reservation = form.reservation.config(form.can_change_saved)
+        draft = form.draft
+        reservation = draft.reservation.config(draft.can_change_saved)
         services = Servicio.activos.select_related("categoria").order_by("nombre")
         categories = Categoria.activos.order_by("nombre").values("pk", "nombre")
         return {
@@ -516,7 +276,7 @@ class AppointmentFormMixin:
                 "maxQuantity": MAX_QUANTITY,
                 "advances": {
                     "rows": self.advance_rows(form),
-                    "canChangeSaved": form.can_change_saved,
+                    "canChangeSaved": draft.can_change_saved,
                     "methods": MetodoPago.CHOICES,
                     "cash": MetodoPago.EFECTIVO,
                     "referenceMaxLength": REFERENCE_MAX_LENGTH,

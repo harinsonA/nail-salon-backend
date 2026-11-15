@@ -8,7 +8,7 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from apps.appointments.access import AppointmentAccessMixin
 from apps.appointments.models import Cita
 from apps.appointments.panel import AppointmentPanel, person_name
-from apps.appointments.reservation import AppointmentReservation
+from apps.appointments.engine import AppointmentReservation
 from apps.appointments.views.agenda_modals.common import AgendaBaseModalView
 from apps.common.form_classes import (
     FORM_CONTROL_CLASS,
