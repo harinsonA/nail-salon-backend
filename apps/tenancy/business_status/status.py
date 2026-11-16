@@ -1,0 +1,45 @@
+from typing import NamedTuple
+
+from django_tenants.utils import get_public_schema_name
+
+from apps.profiles.permisos import SOLO_ADMINISTRACION, administra_el_negocio
+from apps.tenancy.business_status import messages
+from apps.tenancy.models import Negocio
+
+
+class Unavailable(NamedTuple):
+    status_code: int
+    title: str
+    message: str
+
+
+UNAVAILABLE = {
+    Negocio.Estado.PREPARANDO: Unavailable(503, messages.PREPARING_TITLE, messages.PREPARING_MESSAGE),
+    Negocio.Estado.PAUSADO: Unavailable(410, messages.PAUSED_TITLE, messages.PAUSED_MESSAGE),
+    Negocio.Estado.CANCELADO: Unavailable(410, messages.CANCELLED_TITLE, messages.CANCELLED_MESSAGE),
+}
+
+
+class BusinessStatus:
+    PAYMENT_PENDING_STATUS = 402
+
+    def __init__(self, negocio):
+        self.negocio = negocio
+
+    @classmethod
+    def for_request(cls, request):
+        negocio = getattr(request, "tenant", None)
+        if negocio is None or negocio.schema_name == get_public_schema_name():
+            return None
+        return cls(negocio)
+
+    @property
+    def unavailable(self):
+        return UNAVAILABLE.get(self.negocio.estado)
+
+    @property
+    def is_overdue(self):
+        return self.negocio.estado == Negocio.Estado.MOROSO
+
+    def pauses_section(self, url_name, user):
+        return self.is_overdue and url_name in SOLO_ADMINISTRACION and administra_el_negocio(user)

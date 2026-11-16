@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django_tenants.utils import get_public_schema_name
 
+from apps.common.api_request import ApiRequest
 from apps.profiles.models import Perfil
 from apps.profiles.permisos import (
     SOLO_ADMINISTRACION,
@@ -32,7 +33,7 @@ class CambioDeClaveObligatorioMiddleware:
         return self.get_response(request)
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        if connection.schema_name == get_public_schema_name():
+        if connection.schema_name == get_public_schema_name() or ApiRequest.matches(request):
             return None
         if not request.user.is_authenticated or request.resolver_match.url_name in RUTAS_PERMITIDAS:
             return None
@@ -52,7 +53,9 @@ class PermisosPorRolMiddleware:
         return self.get_response(request)
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        if connection.schema_name == get_public_schema_name() or not request.user.is_authenticated:
+        if connection.schema_name == get_public_schema_name() or ApiRequest.matches(request):
+            return None
+        if not request.user.is_authenticated:
             return None
         url_name = request.resolver_match.url_name
         if url_name in SOLO_ADMINISTRACION and not administra_el_negocio(request.user):
