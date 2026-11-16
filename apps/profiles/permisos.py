@@ -100,6 +100,9 @@ PARA_TODO_EL_EQUIPO = {
     "api_session_biometric",
     "api_session_logout",
     "api_account_password",
+    "api_me",
+    "api_me_profile",
+    "api_me_preferences",
     "api_schema",
     "api_docs",
 }
