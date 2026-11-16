@@ -264,6 +264,8 @@ SECURITY_TEMPORARY_LOCK_MINUTES = config("SECURITY_TEMPORARY_LOCK_MINUTES", defa
 SECURITY_PERMANENT_LOCK_FAILURES = config("SECURITY_PERMANENT_LOCK_FAILURES", default=10, cast=int)
 SECURITY_SINGLE_SESSION = config("SECURITY_SINGLE_SESSION", default=True, cast=bool)
 
+APP_RELEASE_SECRET = config("APP_RELEASE_SECRET", default="")
+
 # Celery / Redis (tareas en segundo plano)
 # REDIS_URL apunta a localhost en desarrollo nativo, a "redis" dentro de
 # Docker Compose, y al Redis administrado de Render en producción.
