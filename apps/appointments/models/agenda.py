@@ -41,6 +41,7 @@ class Cita(TimeStampedModel, SoftDeletableModel):
         blank=True,
         related_name="citas_asignadas",
     )
+    codigo_app = models.UUIDField(null=True, blank=True, unique=True, editable=False)
 
     # Auditoría completa (crítico para cambios de estado)
     history = HistoricalRecords(inherit=True)
