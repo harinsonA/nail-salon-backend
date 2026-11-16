@@ -1,9 +1,11 @@
 from django.urls import path
 
+from apps.settings.app_release.view import AppReleaseView
 from apps.tenancy.views import pagina_publica
 
 urlpatterns = [
     path("", pagina_publica, name="pagina_publica"),
+    path("api/platform/app-release/", AppReleaseView.as_view(), name="app_release"),
 ]
 
 handler400 = "apps.common.views.error_views.bad_request"
