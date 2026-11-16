@@ -24,3 +24,11 @@ class Money:
         if not WHOLE_AMOUNT.fullmatch(text):
             raise ValueError(text)
         return int(text.replace(".", ""))
+
+
+class Currency:
+    DEFAULT = "CLP"
+
+    @classmethod
+    def of(cls, negocio) -> str:
+        return cls.DEFAULT

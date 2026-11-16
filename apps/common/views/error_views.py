@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
 from django_tenants.utils import get_public_schema_name
 
+from apps.common.api_request import ApiRequest
 from apps.profiles.permisos import administra_el_negocio
 from apps.tenancy.middleware import PanelSoloEnSubdominioMiddleware
 
@@ -86,6 +87,8 @@ def site_context(request):
 
 def error_response(request, status):
     error = ERRORS[status]
+    if ApiRequest.matches(request):
+        return ApiRequest.error_response(status, error["title"])
     context = site_context(request)
     description = error["description"]
     if status == 403 and context["site"] == "panel":

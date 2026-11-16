@@ -94,6 +94,7 @@ PARA_TODO_EL_EQUIPO = {
     "cambiar_clave",
     "profile_modal",
     "session_ping",
+    "api_startup",
 }
 
 
