@@ -15,10 +15,12 @@ class Category:
     APARIENCIA = "apariencia"
     AGENDA = "agenda"
     FUNCIONES_NUEVAS = "funciones_nuevas"
+    APP_MOVIL = "app_movil"
 
     CHOICES = (
         (SEGURIDAD, "Seguridad"),
         (APARIENCIA, "Apariencia"),
         (AGENDA, "Agenda"),
         (FUNCIONES_NUEVAS, "Funciones nuevas"),
+        (APP_MOVIL, "App móvil"),
     )

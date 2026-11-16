@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.core.exceptions import ValidationError
 
@@ -151,6 +153,20 @@ class TextPreference(BasePreference):
             max_length=self.max_length,
             widget=forms.TextInput(attrs={"class": "form-control"}),
         )
+
+
+class VersionPreference(TextPreference):
+    PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("max_length", 20)
+        super().__init__(*args, **kwargs)
+
+    def clean(self, value):
+        value = super().clean(value)
+        if value and not self.PATTERN.match(value):
+            raise ValidationError("Escribe la versión con la forma 1.4.0.")
+        return value
 
 
 class JsonPreference(BasePreference):

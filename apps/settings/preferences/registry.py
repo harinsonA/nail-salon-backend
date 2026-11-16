@@ -4,6 +4,8 @@ from apps.settings.preferences.types import (
     BooleanPreference,
     ChoicePreference,
     IntegerPreference,
+    TextPreference,
+    VersionPreference,
 )
 
 
@@ -138,6 +140,59 @@ RESERVATION_PAYMENT_METHOD = ChoicePreference(
 )
 
 
+APP_MODULE = BooleanPreference(
+    key="app_module",
+    label="App móvil",
+    help_text=(
+        "Permite usar la app móvil en este negocio. "
+        "Se activa solo desde la base de datos."
+    ),
+    default=False,
+    category=Category.FUNCIONES_NUEVAS,
+    scope=Scope.NEGOCIO,
+)
+
+
+APP_MINIMUM_VERSION = VersionPreference(
+    key="app_version_minima",
+    label="Versión mínima",
+    help_text="Las versiones anteriores deben actualizar para seguir usando la app.",
+    default="",
+    category=Category.APP_MOVIL,
+    scope=Scope.PLATAFORMA,
+)
+
+
+APP_LATEST_VERSION = VersionPreference(
+    key="app_version_ultima",
+    label="Última versión",
+    help_text="Las versiones anteriores ven la sugerencia de actualizar.",
+    default="",
+    category=Category.APP_MOVIL,
+    scope=Scope.PLATAFORMA,
+)
+
+
+APP_MAINTENANCE = BooleanPreference(
+    key="app_mantenimiento",
+    label="Mantenimiento",
+    help_text="La app muestra la pantalla de mantenimiento en todos los negocios.",
+    default=False,
+    category=Category.APP_MOVIL,
+    scope=Scope.PLATAFORMA,
+)
+
+
+APP_MAINTENANCE_MESSAGE = TextPreference(
+    key="app_mantenimiento_mensaje",
+    label="Mensaje de mantenimiento",
+    help_text="Si queda vacío, la app muestra su texto por defecto.",
+    default="",
+    category=Category.APP_MOVIL,
+    scope=Scope.PLATAFORMA,
+)
+
+
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
     CALENDAR_DEFAULT_VIEW,
@@ -149,4 +204,9 @@ PREFERENCES = PreferenceRegistry(
     RESERVATION_DISCOUNTS_TOTAL,
     RESERVATION_AMOUNT,
     RESERVATION_PAYMENT_METHOD,
+    APP_MODULE,
+    APP_MINIMUM_VERSION,
+    APP_LATEST_VERSION,
+    APP_MAINTENANCE,
+    APP_MAINTENANCE_MESSAGE,
 )
