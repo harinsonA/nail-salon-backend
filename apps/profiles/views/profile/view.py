@@ -10,6 +10,7 @@ from apps.common.middleware import start_session_window
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
+from apps.profiles.password import PasswordChange
 from apps.settings.preferences import SESSION_IDLE_MINUTES, Category
 from apps.settings.preferences.forms import PreferenceFieldsMixin
 
@@ -138,30 +139,14 @@ class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelFor
 
     def clean(self):
         cleaned_data = super().clean()
-        current_pw = cleaned_data.get("current_password")
-        new_pw = cleaned_data.get("new_password")
-        confirm_pw = cleaned_data.get("confirm_password")
-
-        if new_pw or confirm_pw or current_pw:
-            if not current_pw:
-                self.add_error(
-                    "current_password", "Debes ingresar tu contraseña actual."
-                )
-            elif not self.instance.check_password(current_pw):
-                self.add_error(
-                    "current_password", "La contraseña actual es incorrecta."
-                )
-
-            if not new_pw:
-                self.add_error("new_password", "Debes ingresar la nueva contraseña.")
-            if not confirm_pw:
-                self.add_error(
-                    "confirm_password", "Debes confirmar la nueva contraseña."
-                )
-
-            if new_pw and confirm_pw and new_pw != confirm_pw:
-                self.add_error("confirm_password", "Las contraseñas no coinciden.")
-
+        errors = PasswordChange(self.instance).voluntary_errors(
+            cleaned_data.get("current_password"),
+            cleaned_data.get("new_password"),
+            cleaned_data.get("confirm_password"),
+        )
+        for field, messages in errors.items():
+            for message in messages:
+                self.add_error(field, message)
         return cleaned_data
 
     def save(self, commit=True):
