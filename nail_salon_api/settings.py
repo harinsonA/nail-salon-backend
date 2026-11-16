@@ -76,6 +76,7 @@ SHARED_APPS = [
     "bootstrap_modal_forms",
     "simple_history",
     "apps.seguridad",
+    "apps.settings",
 ]
 
 TENANT_APPS = [
