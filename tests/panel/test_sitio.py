@@ -21,7 +21,14 @@ class RegistroDelSitioTests(SimpleTestCase):
 
     def test_los_modelos_siguen_registrados(self):
         registrados = {modelo._meta.label for modelo in admin.site._registry}
-        self.assertEqual(registrados, {"auth.Group", "auth.User", "tenancy.Negocio", "tenancy.Persona", "tenancy.Rubro"})
+        self.assertEqual(registrados, {
+            "auth.Group",
+            "auth.User",
+            "settings.PreferenciaPlataforma",
+            "tenancy.Negocio",
+            "tenancy.Persona",
+            "tenancy.Rubro",
+        })
 
     def test_el_admin_migra_en_los_mismos_esquemas(self):
         router = TenantSyncRouter()

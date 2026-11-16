@@ -1,0 +1,89 @@
+{% extends 'panel/base.html' %}
+{% load static %}
+
+{% block view_title %}
+App móvil
+{% endblock %}
+
+{% block content %}
+{% include 'common/bs_modal.html' %}
+{% include 'common/bs_xl_modal.html' %}
+<section>
+  <section class="d-inline-flex align-items-center gap-2">
+    {% if change_modal_url %}
+    <a id="app-mobile-edit-btn" data-form-url="{{ change_modal_url }}"
+      class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+      Editar
+    </a>
+    {% endif %}
+    <a id="app-mobile-history-btn" data-form-url="{{ history_modal_url }}"
+      class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2" role="button">
+      Historial
+    </a>
+  </section>
+  <section class="table-container--custom">
+    <table id="app_mobile_table" class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Campo</th>
+          <th scope="col">Valor</th>
+          <th scope="col">Descripción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="fs-7 w-auto text-nowrap">{{ row.label }}</td>
+          <td id="{{ row.key }}_value" class="fs-7 w-auto text-nowrap {% if row.is_flag %}text-center{% endif %}">
+            {% if row.is_flag %}
+            {% if row.flag %}
+            <img src="{% static 'images/common/check_circle.svg' %}" alt="Sí" title="{{ row.value }}" width="20" height="20" class="icon--cell">
+            {% else %}
+            <img src="{% static 'images/common/cancel.svg' %}" alt="No" title="{{ row.value }}" width="20" height="20" class="icon--cell">
+            {% endif %}
+            {% else %}
+            {{ row.value }}
+            {% endif %}
+          </td>
+          <td class="fs-7 w-auto">{{ row.help_text }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+  $(() => {
+    renderDataTable({
+      tableID: '#app_mobile_table',
+      extraConfig: {
+        paging: false,
+        order: [],
+      },
+    });
+
+    if ($('#app-mobile-edit-btn').length) {
+      initializeBSModals('#app-mobile-edit-btn');
+    }
+    initializeBSXLModals('#app-mobile-history-btn');
+
+    $('#modal').on('show.bs.modal', ({ target }) => {
+      const submitBtn = target.querySelector('#app_mobile_submit_btn');
+      $(submitBtn).click(async () => {
+        submitBtn.disabled = true;
+        const modalForm = target.querySelector('#app-mobile-form-modal');
+        const reloadPage = (form, response, statusCode) => {
+          if ([200].includes(statusCode)) {
+            window.location.reload();
+          }
+          submitBtn.disabled = statusCode === 200;
+          return [response, statusCode];
+        };
+        await submitRequestBSModal(modalForm, { reload: false, callBack: reloadPage });
+      });
+    });
+  });
+</script>
+{% endblock %}

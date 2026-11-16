@@ -1,4 +1,5 @@
+from .app_mobile import PreferenciaPlataformaAdmin
 from .group import GroupAdmin
 from .user import UserAdmin
 
-__all__ = ["GroupAdmin", "UserAdmin"]
+__all__ = ["GroupAdmin", "PreferenciaPlataformaAdmin", "UserAdmin"]

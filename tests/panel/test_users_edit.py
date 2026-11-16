@@ -122,7 +122,7 @@ class UserUpdateModalTests(TestCase):
 
     def test_permission_table_only_lists_panel_permissions(self):
         html = self.modal().content.decode()
-        self.assertEqual(len(re.findall(r'name="user_permissions"', html)), 20)
+        self.assertEqual(len(re.findall(r'name="user_permissions"', html)), 22)
         self.assertNotIn(f'value="{permission("clients", "view_cliente").pk}"', html)
 
     def test_permissions_from_groups_are_marked(self):
