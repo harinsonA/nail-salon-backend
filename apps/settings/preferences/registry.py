@@ -193,6 +193,53 @@ APP_MAINTENANCE_MESSAGE = TextPreference(
 )
 
 
+APP_CALENDAR_VIEW = ChoicePreference(
+    key="app_calendario_vista",
+    label="Vista del calendario de la app",
+    default="day",
+    choices=(
+        ("day", "Día"),
+        ("three_days", "Tres días"),
+        ("list", "Lista"),
+    ),
+    category=Category.APP_MOVIL,
+)
+
+
+APP_CALENDAR_SHOW_PENDING = BooleanPreference(
+    key="app_calendario_ver_pendientes",
+    label="Pendientes",
+    default=True,
+    category=Category.APP_MOVIL,
+)
+
+
+APP_CALENDAR_SHOW_COMPLETED = BooleanPreference(
+    key="app_calendario_ver_completadas",
+    label="Completadas",
+    default=True,
+    category=Category.APP_MOVIL,
+)
+
+
+APP_CALENDAR_SHOW_CANCELLED = BooleanPreference(
+    key="app_calendario_ver_canceladas",
+    label="Canceladas",
+    default=True,
+    category=Category.APP_MOVIL,
+)
+
+
+APP_IDLE_LOCK_MINUTES = ChoicePreference(
+    key="app_bloqueo_minutos",
+    label="Bloqueo por inactividad",
+    default=SESSION_IDLE_MINUTES.default,
+    coerce=int,
+    choices=SESSION_IDLE_MINUTES.choices,
+    category=Category.APP_MOVIL,
+)
+
+
 PREFERENCES = PreferenceRegistry(
     SESSION_IDLE_MINUTES,
     CALENDAR_DEFAULT_VIEW,
@@ -209,4 +256,9 @@ PREFERENCES = PreferenceRegistry(
     APP_LATEST_VERSION,
     APP_MAINTENANCE,
     APP_MAINTENANCE_MESSAGE,
+    APP_CALENDAR_VIEW,
+    APP_CALENDAR_SHOW_PENDING,
+    APP_CALENDAR_SHOW_COMPLETED,
+    APP_CALENDAR_SHOW_CANCELLED,
+    APP_IDLE_LOCK_MINUTES,
 )
