@@ -6,8 +6,9 @@ from apps.common.api_request import ERROR_CODES, ApiRequest
 
 
 class ApiError(exceptions.APIException):
-    def __init__(self, message=None, code=None):
+    def __init__(self, message=None, code=None, extra=None):
         super().__init__(detail=message or self.default_detail, code=code or self.default_code)
+        self.extra = extra or {}
 
 
 class OutdatedVersion(ApiError):
@@ -45,6 +46,28 @@ class SessionRequired(ApiError):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = messages.SESSION_REQUIRED
     default_code = "session_required"
+
+
+class SessionEnded(ApiError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = messages.SESSION_REQUIRED
+    default_code = "session_required"
+
+
+class InvalidCredentials(ApiError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_code = "invalid_credentials"
+
+
+class AccountLocked(ApiError):
+    status_code = status.HTTP_423_LOCKED
+    default_code = "account_locked"
+
+
+class TooManyRequests(ApiError):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    default_detail = messages.TOO_MANY_REQUESTS
+    default_code = "too_many_requests"
 
 
 class UserLimitReached(ApiError):
@@ -99,7 +122,7 @@ class ApiErrorFormat:
                 message = messages.INVALID_DATA
             return ApiRequest.error_body("invalid_data", message, fields)
         if isinstance(exc, ApiError):
-            return ApiRequest.error_body(exc.get_codes(), cls.first_message(exc.detail))
+            return {**ApiRequest.error_body(exc.get_codes(), cls.first_message(exc.detail)), **exc.extra}
         return ApiRequest.error_body(ERROR_CODES.get(status_code, "error"), cls.first_message(detail))
 
 

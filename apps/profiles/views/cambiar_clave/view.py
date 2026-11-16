@@ -21,5 +21,5 @@ class CambiarClaveView(ProtectedView, FormView):
         usuario = form.save()
         PasswordChange(usuario).finish_temporary()
         update_session_auth_hash(self.request, usuario)
-        messages.success(self.request, "Tu clave quedó guardada.")
+        messages.success(self.request, PasswordChange.SAVED_MESSAGE)
         return redirect("calendar")

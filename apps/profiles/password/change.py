@@ -10,6 +10,8 @@ TEMPORARY_FIELDS = {"new_password1": NEW_FIELD, "new_password2": CONFIRM_FIELD}
 
 
 class PasswordChange:
+    SAVED_MESSAGE = "Tu clave quedó guardada."
+
     def __init__(self, user):
         self.user = user
 

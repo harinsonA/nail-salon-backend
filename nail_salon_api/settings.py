@@ -139,6 +139,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
     "EXCEPTION_HANDLER": "apis.common.errors.handle_exception",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_RATES": {
+        "session_login": config("API_LOGIN_RATE", default="10/min"),
+        "session_refresh": config("API_REFRESH_RATE", default="30/min"),
+    },
+    "NUM_PROXIES": config("API_NUM_PROXIES", default=1, cast=int),
 }
 
 SPECTACULAR_SETTINGS = {
