@@ -76,7 +76,7 @@ def get_preferences(keys, user=None) -> dict:
     return {definition.key: values[definition.key] for definition in definitions}
 
 
-def set_platform_value(definition, value):
+def set_platform_value(definition, value, reason=""):
     from_negocio = not fuera_de_un_negocio()
     with schema_context(get_public_schema_name()):
         preference = Preference.objects.filter(
@@ -85,14 +85,16 @@ def set_platform_value(definition, value):
         preference.value = definition.serialize(value)
         if from_negocio:
             preference._history_user = None
+        if reason:
+            preference._change_reason = reason
         preference.save()
 
 
-def set_preference(key, value, user=None):
+def set_preference(key, value, user=None, reason=""):
     definition = PREFERENCES.get(key)
     value = definition.clean(value)
     if is_platform(definition):
-        set_platform_value(definition, value)
+        set_platform_value(definition, value, reason=reason)
         return value
     Preference.objects.update_or_create(
         scope=definition.scope,
