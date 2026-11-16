@@ -1,50 +1,25 @@
 from bootstrap_modal_forms.forms import BSModalModelForm
 from bootstrap_modal_forms.generic import BSModalUpdateView
 from django import forms
-from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash
 from django.http import JsonResponse
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
-from apps.common.forms import NATIONAL_ID_FIELDS, NationalIdentifierForm
+from apps.common.forms import NATIONAL_ID_FIELDS
 from apps.common.middleware import start_session_window
-from apps.common.utils.utils import CommonCleaner, get_errors_to_response
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from apps.profiles.models import Perfil
 from apps.profiles.password import PasswordChange
+from apps.profiles.profile import PERSONAL_FIELDS, PersonalDataForm, ProfileRules
 from apps.settings.preferences import SESSION_IDLE_MINUTES, Category
 from apps.settings.preferences.forms import PreferenceFieldsMixin
 
-User = get_user_model()
-
-"""========================================================================="""
-# region ........ Constants
-
-PERSONAL_FIELDS = ("username", "first_name", "last_name", "email")
-
-
-# endregion
-"""========================================================================="""
-"""========================================================================="""
-# region ........ Helpers
-
-
-def profile_of(user):
-    try:
-        return user.perfil if user else None
-    except Perfil.DoesNotExist:
-        return None
-
-
-# endregion
-"""========================================================================="""
 """========================================================================="""
 # region ........ Forms
 
 
-class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelForm):
+class ProfileForm(PersonalDataForm, PreferenceFieldsMixin, BSModalModelForm):
     preference_category = Category.SEGURIDAD
-    national_id_required = True
-    national_id_holder = "otra persona de este negocio"
 
     current_password = forms.CharField(
         label="Contraseña actual",
@@ -81,61 +56,14 @@ class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelFor
     )
 
     def __init__(self, *args, **kwargs):
-        self.perfil = profile_of(kwargs.get("instance"))
-        kwargs["initial"] = {
-            **self.national_id_initial(self.perfil),
-            **kwargs.get("initial", {}),
-        }
         super().__init__(*args, **kwargs)
         self.add_preference_fields(self.instance)
-        self.personal_data_locked = bool(self.perfil) and (
-            self.perfil.rol == Perfil.Rol.PROPIETARIO
-        )
+        self.personal_data_locked = ProfileRules(self.instance).personal_data_locked
         if self.personal_data_locked:
             for name in PERSONAL_FIELDS:
                 self.fields[name].disabled = True
             for name in NATIONAL_ID_FIELDS:
                 del self.fields[name]
-
-    class Meta:
-        model = User
-        fields = ["first_name", "last_name", "email", "username"]
-        labels = {
-            "first_name": "Nombre",
-            "last_name": "Apellido",
-            "email": "Correo electrónico",
-            "username": "Nombre de usuario",
-        }
-        widgets = {
-            "first_name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Nombre"}
-            ),
-            "last_name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Apellido"}
-            ),
-            "email": forms.EmailInput(
-                attrs={"class": "form-control", "placeholder": "Correo electrónico"}
-            ),
-            "username": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Nombre de usuario"}
-            ),
-        }
-
-    def national_id_queryset(self):
-        return Perfil.objects.exclude(user=self.instance)
-
-    def clean_email(self):
-        correo = (self.cleaned_data.get("email") or "").strip().lower()
-        if not correo:
-            raise forms.ValidationError(
-                "El correo es obligatorio: es con lo que inicias sesión."
-            )
-        result = CommonCleaner.check_email_available(
-            User.objects.exclude(pk=self.instance.pk), self.national_id_holder, correo
-        )
-        if result.is_err():
-            raise forms.ValidationError(result.err_value)
-        return correo
 
     def clean(self):
         cleaned_data = super().clean()
@@ -170,32 +98,17 @@ class ProfileForm(NationalIdentifierForm, PreferenceFieldsMixin, BSModalModelFor
 class ProfileModalView(ProtectedView, BSModalUpdateView):
     template_name = "profiles/index.html"
     form_class = ProfileForm
-    success_message = "Perfil actualizado exitosamente."
+    success_message = ProfileRules.SAVED_MESSAGE
 
     def get_object(self, queryset=None):
         return self.request.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["profile_full_name"] = self.get_full_name(self.request.user)
-        context["profile_initials"] = self.get_initials(self.request.user)
+        rules = ProfileRules(self.request.user)
+        context["profile_full_name"] = rules.full_name
+        context["profile_initials"] = rules.initials
         return context
-
-    @staticmethod
-    def get_full_name(user):
-        if user.first_name and user.last_name:
-            return f"{user.first_name} {user.last_name}"
-        return user.username
-
-    @staticmethod
-    def get_initials(user):
-        first = (user.first_name or "").strip()
-        last = (user.last_name or "").strip()
-        if first and last:
-            return f"{first[0]}{last[0]}".upper()
-        if first:
-            return first[:2].upper()
-        return (user.username or "?")[:2].upper()
 
     def form_valid(self, form):
         user = form.save()
