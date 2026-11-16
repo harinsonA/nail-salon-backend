@@ -53,6 +53,7 @@ class Cliente(TimeStampedModel, SoftDeletableModel):
     tipo_identificador_nacional = models.CharField(max_length=20, null=True, blank=True)
     identificador_nacional = models.CharField(max_length=20, null=True, blank=True)
     notas = models.TextField(blank=True, null=True)
+    codigo_app = models.UUIDField(null=True, blank=True, unique=True, editable=False)
 
     # Auditoría completa
     history = HistoricalRecords(inherit=True)
