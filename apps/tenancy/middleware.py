@@ -5,34 +5,13 @@ from django.shortcuts import render
 from django.utils import timezone
 from django_tenants.utils import get_public_schema_name
 
-from apps.profiles.permisos import SOLO_ADMINISTRACION, administra_el_negocio
+from apps.common.api_request import ApiRequest
 from apps.seguridad.sessions import close_session
-from apps.tenancy.models import Negocio
+from apps.tenancy.business_status import BusinessStatus
+from apps.tenancy.business_status.messages import PAYMENT_PENDING
 from apps.tenancy.subdominios import SUBDOMINIO_PANEL
 from apps.tenancy.user_limit import UserLimit
 from apps.tenancy.user_limit.messages import OVER_LIMIT_LOGIN
-
-NEGOCIO_NO_DISPONIBLE = {
-    Negocio.Estado.PREPARANDO: (
-        503,
-        "Estamos preparando tu agenda",
-        "Tu negocio se está configurando. Vuelve a intentarlo en unos minutos.",
-    ),
-    Negocio.Estado.PAUSADO: (
-        410,
-        "Servicio suspendido",
-        "El acceso a esta agenda está suspendido. Para reactivarlo, comunícate con Hi Agenda.",
-    ),
-    Negocio.Estado.CANCELADO: (
-        410,
-        "Servicio finalizado",
-        "Esta agenda ya no está disponible. Sus datos se conservan: para recuperarla, comunícate con Hi Agenda.",
-    ),
-}
-PAGO_PENDIENTE = (
-    "Hay un pago pendiente con Hi Agenda. La agenda sigue funcionando, pero esta sección "
-    "se reactiva cuando se regularice el pago."
-)
 
 
 def es_ajax(request):
@@ -47,25 +26,25 @@ class EstadoDelNegocioMiddleware:
         return self.get_response(request)
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        negocio = getattr(request, "tenant", None)
-        if negocio is None or negocio.schema_name == get_public_schema_name():
+        status = BusinessStatus.for_request(request)
+        if status is None or ApiRequest.matches(request):
             return None
-        if negocio.estado in NEGOCIO_NO_DISPONIBLE:
-            estado_http, titulo, mensaje = NEGOCIO_NO_DISPONIBLE[negocio.estado]
+        unavailable = status.unavailable
+        if unavailable:
             if es_ajax(request):
-                return JsonResponse({"message": mensaje}, status=estado_http)
-            contexto = {"titulo": titulo, "mensaje": mensaje}
-            return render(request, "estado/no_disponible.html", contexto, status=estado_http)
-        bloqueado = (
-            negocio.estado == Negocio.Estado.MOROSO
-            and request.resolver_match.url_name in SOLO_ADMINISTRACION
-            and administra_el_negocio(request.user)
-        )
-        if not bloqueado:
+                return JsonResponse({"message": unavailable.message}, status=unavailable.status_code)
+            contexto = {"titulo": unavailable.title, "mensaje": unavailable.message}
+            return render(request, "estado/no_disponible.html", contexto, status=unavailable.status_code)
+        if not status.pauses_section(request.resolver_match.url_name, request.user):
             return None
         if es_ajax(request):
-            return JsonResponse({"message": PAGO_PENDIENTE}, status=402)
-        return render(request, "estado/pago_pendiente.html", {"mensaje": PAGO_PENDIENTE}, status=402)
+            return JsonResponse({"message": PAYMENT_PENDING}, status=BusinessStatus.PAYMENT_PENDING_STATUS)
+        return render(
+            request,
+            "estado/pago_pendiente.html",
+            {"mensaje": PAYMENT_PENDING},
+            status=BusinessStatus.PAYMENT_PENDING_STATUS,
+        )
 
 
 class UserLimitGuardMiddleware:
