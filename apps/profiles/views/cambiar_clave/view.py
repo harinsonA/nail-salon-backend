@@ -5,7 +5,7 @@ from django.shortcuts import redirect
 from django.views.generic import FormView
 
 from apps.common.views.base_views import ProtectedView
-from apps.profiles.models import Perfil
+from apps.profiles.password import PasswordChange
 
 
 class CambiarClaveView(ProtectedView, FormView):
@@ -19,7 +19,7 @@ class CambiarClaveView(ProtectedView, FormView):
 
     def form_valid(self, form):
         usuario = form.save()
-        Perfil.objects.update_or_create(user=usuario, defaults={"debe_cambiar_clave": False})
+        PasswordChange(usuario).finish_temporary()
         update_session_auth_hash(self.request, usuario)
         messages.success(self.request, "Tu clave quedó guardada.")
         return redirect("calendar")
