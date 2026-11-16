@@ -71,6 +71,8 @@ SHARED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "rest_framework",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "corsheaders",
     "django_filters",
     "bootstrap_modal_forms",
@@ -136,6 +138,22 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
     "EXCEPTION_HANDLER": "apis.common.errors.handle_exception",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "API de HiAgenda",
+    "DESCRIPTION": (
+        "API de la app móvil. Vive en el subdominio de cada negocio. "
+        "Cabeceras: X-App-Version en todas las rutas. "
+        "Errores: {\"code\", \"message\"} y \"fields\" en los de formulario."
+    ),
+    "VERSION": "1",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": "/api/v[0-9]+",
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
 }
 
 TEMPLATES = [

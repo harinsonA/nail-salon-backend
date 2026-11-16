@@ -95,6 +95,8 @@ PARA_TODO_EL_EQUIPO = {
     "profile_modal",
     "session_ping",
     "api_startup",
+    "api_schema",
+    "api_docs",
 }
 
 
