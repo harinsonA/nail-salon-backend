@@ -1,0 +1,7 @@
+OUTDATED_VERSION = "Hay una versión nueva de la app. Actualízala para seguir usándola."
+APP_DISABLED = "La app todavía no está activada para este negocio."
+MAINTENANCE = "Estamos haciendo mejoras en la app. Vuelve a intentarlo en unos minutos."
+SESSION_REQUIRED = "Tu sesión terminó. Vuelve a entrar."
+TEMPORARY_PASSWORD = "Debes cambiar tu clave temporal."
+ADMINISTRATION_ONLY = "Esta sección es solo para el propietario y los encargados."
+INVALID_DATA = "Revisa los datos ingresados."

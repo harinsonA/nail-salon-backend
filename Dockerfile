@@ -29,6 +29,7 @@ FROM deps AS app
 COPY manage.py entrypoint.sh ./
 COPY nail_salon_api/ nail_salon_api/
 COPY apps/ apps/
+COPY apis/ apis/
 COPY dashboard/ dashboard/
 COPY templates/ templates/
 COPY static/ static/
