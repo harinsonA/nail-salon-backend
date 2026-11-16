@@ -95,6 +95,11 @@ PARA_TODO_EL_EQUIPO = {
     "profile_modal",
     "session_ping",
     "api_startup",
+    "api_session_login",
+    "api_session_refresh",
+    "api_session_biometric",
+    "api_session_logout",
+    "api_account_password",
     "api_schema",
     "api_docs",
 }
