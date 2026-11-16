@@ -62,7 +62,7 @@ class GroupModalsTests(TestCase):
         html = response.content.decode()
         self.assertIn("Nuevo grupo", html)
         self.assertIn('id="id_name"', html)
-        self.assertEqual(len(re.findall(r'name="permissions"', html)), 20)
+        self.assertEqual(len(re.findall(r'name="permissions"', html)), 22)
         self.assertNotIn("Usuarios asignados", html)
 
     def test_creates_a_group_with_panel_permissions(self):

@@ -11,6 +11,7 @@ PANEL_PERMISSION_MODELS = [
     ("tenancy", "rubro", "Rubros"),
     ("auth", "user", "Usuarios"),
     ("auth", "group", "Grupos"),
+    ("settings", "preferenciaplataforma", "App móvil"),
 ]
 PERMISSION_ACTIONS = [("view", "Ver"), ("add", "Agregar"), ("change", "Editar"), ("delete", "Eliminar")]
 
@@ -57,6 +58,7 @@ def build_permission_rows(direct_ids, inherited_ids=frozenset()):
         for action, action_label in PERMISSION_ACTIONS:
             permission = permissions.get((app_label, f"{action}_{model}"))
             if permission is None:
+                cells.append(None)
                 continue
             cells.append(
                 {

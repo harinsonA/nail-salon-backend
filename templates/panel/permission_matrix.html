@@ -13,6 +13,9 @@
                   <tr>
                     <th scope="row" class="fw-normal">{{ row.label }}</th>
                     {% for cell in row.cells %}
+                    {% if not cell %}
+                    <td></td>
+                    {% else %}
                     <td class="text-center">
                       <input class="form-check-input permission-checkbox" type="checkbox" name="{{ field.html_name }}"
                         value="{{ cell.id }}" data-direct="{{ cell.direct|yesno:'1,0' }}"
@@ -23,6 +26,7 @@
                         por grupo
                       </div>
                     </td>
+                    {% endif %}
                     {% endfor %}
                   </tr>
                   {% endfor %}
