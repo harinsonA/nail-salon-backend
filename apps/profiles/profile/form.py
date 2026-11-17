@@ -8,7 +8,7 @@ from apps.profiles.profile.rules import ProfileRules
 
 User = get_user_model()
 
-PERSONAL_FIELDS = ("username", "first_name", "last_name", "email")
+PERSONAL_FIELDS = ("first_name", "last_name", "email")
 EMAIL_REQUIRED = "El correo es obligatorio: es con lo que inicias sesión."
 
 
@@ -26,12 +26,11 @@ class PersonalDataForm(NationalIdentifierForm, forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "username"]
+        fields = ["first_name", "last_name", "email"]
         labels = {
             "first_name": "Nombre",
             "last_name": "Apellido",
             "email": "Correo electrónico",
-            "username": "Nombre de usuario",
         }
         widgets = {
             "first_name": forms.TextInput(
@@ -42,9 +41,6 @@ class PersonalDataForm(NationalIdentifierForm, forms.ModelForm):
             ),
             "email": forms.EmailInput(
                 attrs={"class": "form-control", "placeholder": "Correo electrónico"}
-            ),
-            "username": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Nombre de usuario"}
             ),
         }
 

@@ -233,7 +233,6 @@ class MemberForm(NationalIdentifierForm, BSModalForm):
     def save(self):
         data = self.cleaned_data
         member = self.instance or User()
-        member.username = data["email"][:NAME_MAX_LENGTH]
         member.email = data["email"]
         member.first_name = data["first_name"]
         member.last_name = data["last_name"]

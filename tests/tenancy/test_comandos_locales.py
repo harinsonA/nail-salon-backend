@@ -70,7 +70,7 @@ class CopiarDatosDemoTests(TestCase):
         with schema_context("destino"):
             self.assertEqual(
                 dict(Perfil.objects.values_list("user__username", "rol")),
-                {"harinson": Perfil.Rol.PROPIETARIO, "ana": Perfil.Rol.COLABORADOR},
+                {"h@correo.cl": Perfil.Rol.PROPIETARIO, "a@correo.cl": Perfil.Rol.COLABORADOR},
             )
             self.assertFalse(Perfil.objects.filter(debe_cambiar_clave=True).exists())
 

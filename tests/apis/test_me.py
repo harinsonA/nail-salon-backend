@@ -167,6 +167,8 @@ class MeProfileTests(ApiTestCase):
         self.assertEqual(response.json()["user"]["first_name"], "Elena")
         user.refresh_from_db()
         self.assertEqual(user.email, "elena@correo.cl")
+        self.assertEqual(user.username, "elena@correo.cl")
+        self.assertNotIn("username", response.json()["user"])
         self.assertEqual(user.perfil.identificador_nacional, "12345678-5")
 
     def test_collaborator_saves_her_identifier(self):
