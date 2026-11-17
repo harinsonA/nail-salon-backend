@@ -18,7 +18,9 @@ class ApiTestCase(NegocioTestCase):
         self.api_client = APIClient(HTTP_HOST=self.dominio, HTTP_X_APP_VERSION=self.app_version)
 
     def make_user(self, rol, debe_cambiar_clave=False):
-        user = User.objects.create_user(username=f"{rol}_api", email=f"{rol}.api@correo.cl")
+        user = User.objects.create_user(
+            username=f"{rol}_api", email=f"{rol}.api@correo.cl", first_name="Ana", last_name="Rojas"
+        )
         Perfil.objects.filter(user=user).update(rol=rol, debe_cambiar_clave=debe_cambiar_clave)
         return User.objects.get(pk=user.pk)
 

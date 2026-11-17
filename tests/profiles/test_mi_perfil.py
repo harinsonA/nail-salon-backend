@@ -33,7 +33,6 @@ class MiPerfilTests(NegocioTestCase):
     def guardar(self, usuario, **cambios):
         datos = {
             **IDENTIFICADOR_VALIDO,
-            "username": usuario.username,
             "first_name": usuario.first_name,
             "last_name": usuario.last_name,
             "email": usuario.email,
@@ -64,7 +63,6 @@ class MiPerfilTests(NegocioTestCase):
         propietaria = self.crear(Rol.PROPIETARIO, "maria")
         respuesta = self.guardar(
             propietaria,
-            username="otra",
             first_name="Otra",
             last_name="Persona",
             email="otra@correo.cl",
@@ -78,7 +76,7 @@ class MiPerfilTests(NegocioTestCase):
                 propietaria.last_name,
                 propietaria.email,
             ),
-            ("maria", "Maria", "Rojas", "maria@correo.cl"),
+            ("maria@correo.cl", "Maria", "Rojas", "maria@correo.cl"),
         )
 
     def test_el_propietario_si_puede_cambiar_su_contrasena(self):
@@ -165,3 +163,28 @@ class MiPerfilTests(NegocioTestCase):
             errores["id_national_id"],
             "Ese identificador nacional ya lo tiene otra persona de este negocio.",
         )
+
+    def test_el_usuario_sigue_al_correo(self):
+        usuario = self.crear(Rol.ENCARGADO, "ana")
+        self.assertEqual(usuario.username, "ana@correo.cl")
+        html = (
+            self.navegador_de(usuario)
+            .get(reverse("profile_modal"), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            .content.decode()
+        )
+        self.assertNotRegex(html, r'<input[^>]*name="username"')
+        respuesta = self.guardar(usuario, email="ana.rojas@correo.cl", username="otro")
+        self.assertEqual(respuesta.status_code, 200)
+        usuario.refresh_from_db()
+        self.assertEqual((usuario.email, usuario.username), ("ana.rojas@correo.cl",) * 2)
+
+    def test_nombre_y_apellido_son_obligatorios(self):
+        usuario = self.crear(Rol.COLABORADOR, "laura")
+        respuesta = self.guardar(usuario, first_name="", last_name="")
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertEqual(
+            {error["id_element"]: error["error"] for error in respuesta.json()["errors"]},
+            {"id_first_name": "Escribe el nombre.", "id_last_name": "Escribe el apellido."},
+        )
+        usuario.refresh_from_db()
+        self.assertEqual((usuario.first_name, usuario.last_name), ("Laura", "Rojas"))

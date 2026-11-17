@@ -8,6 +8,8 @@ from django_tenants.utils import get_public_schema_name
 from apps.common.middleware import start_session_window
 from apps.settings.preferences import SESSION_IDLE_MINUTES
 
+USERNAME_MAX_LENGTH = 150
+
 
 @receiver(user_logged_in)
 def start_user_session_window(sender, request, user, **kwargs):
@@ -17,6 +19,12 @@ def start_user_session_window(sender, request, user, **kwargs):
 @receiver(pre_save, sender=settings.AUTH_USER_MODEL)
 def guardar_correo_en_minusculas(sender, instance, **kwargs):
     instance.email = (instance.email or "").strip().lower()
+
+
+@receiver(pre_save, sender=settings.AUTH_USER_MODEL)
+def usuario_igual_al_correo_en_los_negocios(sender, instance, **kwargs):
+    if connection.schema_name != get_public_schema_name() and instance.email:
+        instance.username = instance.email[:USERNAME_MAX_LENGTH]
 
 
 @receiver(pre_save, sender=settings.AUTH_USER_MODEL)

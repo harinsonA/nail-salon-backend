@@ -16,13 +16,13 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.claves import generar_clave_temporal
 from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.form_fields import AlphabeticField
 from apps.common.forms import NationalIdentifierForm
 from apps.common.utils.search import search_ignoring_accents
 from apps.common.utils.text import user_display_name
 from apps.common.utils.utils import CommonCleaner, get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 from apps.profiles.models import Perfil
+from apps.profiles.names import PersonNameFields
 from apps.profiles.permisos import puede_gestionar, roles_que_puede_crear
 from apps.seguridad.access import (
     LOCK_FREE,
@@ -170,17 +170,8 @@ class MemberForm(NationalIdentifierForm, BSModalForm):
     national_id_required = True
     national_id_holder = "otra persona de este negocio"
 
-    first_name = AlphabeticField(
-        label="Nombre",
-        max_length=NAME_MAX_LENGTH,
-        widget=forms.TextInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Ana"}),
-    )
-    last_name = AlphabeticField(
-        label="Apellido",
-        max_length=NAME_MAX_LENGTH,
-        required=False,
-        widget=forms.TextInput(attrs={"class": FORM_CONTROL_CLASS, "placeholder": "Rojas"}),
-    )
+    first_name = PersonNameFields.first_name("Ana")
+    last_name = PersonNameFields.last_name("Rojas")
     email = forms.EmailField(
         label="Correo",
         max_length=EMAIL_MAX_LENGTH,
@@ -233,7 +224,6 @@ class MemberForm(NationalIdentifierForm, BSModalForm):
     def save(self):
         data = self.cleaned_data
         member = self.instance or User()
-        member.username = data["email"][:NAME_MAX_LENGTH]
         member.email = data["email"]
         member.first_name = data["first_name"]
         member.last_name = data["last_name"]

@@ -69,7 +69,7 @@ class PersonCreateModalTests(TestCase):
             "national_id": "12.345.678-5",
             "first_name": "Ana",
             "second_name": "",
-            "first_surname": "",
+            "first_surname": "Rojas",
             "second_surname": "",
             "email": "ana@ejemplo.com",
             "country_phone_prefix": "+56",
@@ -192,11 +192,11 @@ class PersonCreateModalTests(TestCase):
         )
         self.assertEqual(log.action_flag, ADDITION)
 
-    def test_only_the_identifier_first_name_and_email_are_required(self):
+    def test_only_the_identifier_names_and_email_are_required(self):
         response = self.post()
         self.assertEqual(response.status_code, 200)
         person = Persona.objects.get(nombres="Ana")
-        self.assertEqual((person.apellidos, person.notas), ("", None))
+        self.assertEqual((person.apellidos, person.notas), ("Rojas", None))
         self.assertEqual(
             list(person.correos.values_list("correo", "es_principal")),
             [("ana@ejemplo.com", True)],
@@ -207,6 +207,7 @@ class PersonCreateModalTests(TestCase):
     def test_name_rules(self):
         cases = {
             ("first_name", ""): "requerido",
+            ("first_surname", ""): "Escribe el primer apellido.",
             ("first_name", "Ana2"): "caracteres alfabéticos",
             ("second_name", "María!"): "caracteres alfabéticos",
             ("first_surname", "a" * 51): "50",
@@ -214,13 +215,14 @@ class PersonCreateModalTests(TestCase):
         }
         for (field, value), message in cases.items():
             with self.subTest(field=field, value=value):
-                errors = self.errors(self.post(**{field: value}))
+                data = {field: value, "first_surname": ""} if field == "second_surname" else {field: value}
+                errors = self.errors(self.post(**data))
                 if message:
                     self.assertIn(message, errors[f"id_{field}"])
                 else:
                     self.assertEqual(
                         errors["id_first_surname"],
-                        "Escribe el primer apellido antes del segundo.",
+                        "Escribe el primer apellido.",
                     )
 
     def test_joined_names_cannot_exceed_the_model_length(self):

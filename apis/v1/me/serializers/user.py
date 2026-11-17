@@ -6,7 +6,6 @@ class UserSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     email = serializers.CharField()
-    username = serializers.CharField()
     initials = serializers.CharField()
     rol = serializers.CharField()
     role_label = serializers.CharField(allow_null=True)

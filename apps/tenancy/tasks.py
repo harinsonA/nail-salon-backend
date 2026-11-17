@@ -42,7 +42,6 @@ def crear_propietario(negocio, correo, hash_clave):
     usuario = get_user_model().objects.filter(email__iexact=correo).first()
     if usuario is None:
         usuario = get_user_model()(
-            username=correo[:150],
             email=correo,
             first_name=negocio.titular.nombres[:150],
             last_name=negocio.titular.apellidos[:150],

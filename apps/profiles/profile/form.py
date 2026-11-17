@@ -4,17 +4,21 @@ from django.contrib.auth import get_user_model
 from apps.common.forms import NationalIdentifierForm
 from apps.common.utils.utils import CommonCleaner
 from apps.profiles.models import Perfil
+from apps.profiles.names import PersonNameFields
 from apps.profiles.profile.rules import ProfileRules
 
 User = get_user_model()
 
-PERSONAL_FIELDS = ("username", "first_name", "last_name", "email")
+PERSONAL_FIELDS = ("first_name", "last_name", "email")
 EMAIL_REQUIRED = "El correo es obligatorio: es con lo que inicias sesión."
 
 
 class PersonalDataForm(NationalIdentifierForm, forms.ModelForm):
     national_id_required = True
     national_id_holder = "otra persona de este negocio"
+
+    first_name = PersonNameFields.first_name()
+    last_name = PersonNameFields.last_name()
 
     def __init__(self, *args, **kwargs):
         self.perfil = ProfileRules(kwargs.get("instance")).perfil
@@ -26,25 +30,11 @@ class PersonalDataForm(NationalIdentifierForm, forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "username"]
-        labels = {
-            "first_name": "Nombre",
-            "last_name": "Apellido",
-            "email": "Correo electrónico",
-            "username": "Nombre de usuario",
-        }
+        fields = ["first_name", "last_name", "email"]
+        labels = {"email": "Correo electrónico"}
         widgets = {
-            "first_name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Nombre"}
-            ),
-            "last_name": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Apellido"}
-            ),
             "email": forms.EmailInput(
                 attrs={"class": "form-control", "placeholder": "Correo electrónico"}
-            ),
-            "username": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "Nombre de usuario"}
             ),
         }
 
