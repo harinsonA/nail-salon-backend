@@ -12,7 +12,6 @@ from apis.v1.me.serializers import (
     ProfileSerializer,
 )
 from apps.common.utils.text import user_display_name
-from apps.payments.choices import MetodoPago
 from apps.profiles.capabilities import Capabilities
 from apps.profiles.profile import PersonalDataForm, ProfileRules
 from apps.settings.preferences.mobile import MobilePreferences
@@ -73,6 +72,7 @@ def user_data(user):
         "username": user.username,
         "initials": rules.initials,
         "rol": rules.rol,
+        "role_label": perfil.get_rol_display() if perfil else None,
         "pais": perfil.pais if perfil else None,
         "tipo_identificador_nacional": perfil.tipo_identificador_nacional if perfil else None,
         "identificador_nacional": perfil.identificador_nacional if perfil else None,
@@ -124,9 +124,6 @@ class MeView(ApiView):
                 for member in capabilities.assignable_users()
             ],
             "preferences": preferences_data(user),
-            "payment_methods": [
-                {"value": value, "label": label} for value, label in MetodoPago.CHOICES
-            ],
         }
         return Response(MeSerializer(data).data)
 

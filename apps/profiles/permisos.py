@@ -103,6 +103,9 @@ PARA_TODO_EL_EQUIPO = {
     "api_me",
     "api_me_profile",
     "api_me_preferences",
+    "api_catalogs_countries",
+    "api_catalogs_phone_prefixes",
+    "api_catalogs_payment_methods",
     "api_schema",
     "api_docs",
 }
