@@ -79,7 +79,7 @@ class MeTests(ApiTestCase):
         self.assertEqual(data["capabilities"], [])
         self.assertEqual(data["assignable_users"], [])
 
-    def test_user_block_and_payment_methods(self):
+    def test_user_block(self):
         user = self.log_in_as(Rol.ENCARGADO)
         user.first_name, user.last_name = "Ana", "Rojas"
         user.save()
@@ -87,7 +87,8 @@ class MeTests(ApiTestCase):
         self.assertEqual(data["user"]["initials"], "AR")
         self.assertEqual(data["user"]["email"], user.email)
         self.assertIsNone(data["user"]["pais"])
-        self.assertEqual(data["payment_methods"][0], {"value": "EFECTIVO", "label": "Efectivo"})
+        self.assertEqual(data["user"]["role_label"], "Encargado")
+        self.assertNotIn("payment_methods", data)
 
     def test_default_preferences_and_reservation_from_the_web(self):
         set_preference(RESERVATION_ENABLED.key, True)

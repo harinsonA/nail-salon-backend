@@ -9,6 +9,7 @@ class UserSerializer(serializers.Serializer):
     username = serializers.CharField()
     initials = serializers.CharField()
     rol = serializers.CharField()
+    role_label = serializers.CharField(allow_null=True)
     pais = serializers.CharField(allow_null=True)
     tipo_identificador_nacional = serializers.CharField(allow_null=True)
     identificador_nacional = serializers.CharField(allow_null=True)
