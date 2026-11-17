@@ -204,3 +204,13 @@ class MeProfileTests(ApiTestCase):
         owner.refresh_from_db()
         self.assertNotEqual(owner.first_name, "Cambio")
         self.assertEqual(get_preference(SESSION_IDLE_MINUTES.key, user=owner), 60)
+
+    def test_first_and_last_name_are_required(self):
+        user = self.log_in_as(Rol.COLABORADOR)
+        response = self.patch({"first_name": "", "last_name": " "})
+        self.assertApiError(response, 400, "invalid_data")
+        fields = response.json()["fields"]
+        self.assertEqual(fields["first_name"], ["Escribe el nombre."])
+        self.assertEqual(fields["last_name"], ["Escribe el apellido."])
+        user.refresh_from_db()
+        self.assertEqual((user.first_name, user.last_name), ("Ana", "Rojas"))

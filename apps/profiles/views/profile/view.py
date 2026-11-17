@@ -62,6 +62,7 @@ class ProfileForm(PersonalDataForm, PreferenceFieldsMixin, BSModalModelForm):
         if self.personal_data_locked:
             for name in PERSONAL_FIELDS:
                 self.fields[name].disabled = True
+                self.fields[name].required = False
             for name in NATIONAL_ID_FIELDS:
                 del self.fields[name]
 

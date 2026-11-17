@@ -240,11 +240,11 @@ class PersonEditModalTests(TestCase):
         self.assertIn("correo de acceso de su negocio", html)
         self.assertEqual(html.count("formset-remove"), 3)
         changed = [row(self.access_email, EMAIL_FIELDS, correo="otro@correo.cl")]
-        self.assertEqual(self.post(self.owner, emails=changed, first_name="Carlos", second_name="", first_surname="", second_surname="").status_code, 200)
+        self.assertEqual(self.post(self.owner, emails=changed, first_name="Carlos", second_name="", first_surname="Rojas", second_surname="").status_code, 200)
         self.access_email.refresh_from_db()
         self.assertEqual(self.access_email.correo, "carlos@elcorte.cl")
         removed = [row(self.access_email, EMAIL_FIELDS, DELETE=True)]
-        errors = self.errors(self.post(self.owner, emails=removed, first_name="Carlos", second_name="", first_surname="", second_surname=""))
+        errors = self.errors(self.post(self.owner, emails=removed, first_name="Carlos", second_name="", first_surname="Rojas", second_surname=""))
         self.assertEqual(errors["id_correos-errors"], "El correo de acceso de su negocio no se puede quitar.")
         self.assertTrue(PersonaCorreo.objects.filter(pk=self.access_email.pk).exists())
 
@@ -307,7 +307,7 @@ class PersonEditModalTests(TestCase):
         self.assertEqual(self.person.correos.count(), 2)
 
     def test_existing_owners_without_identifier_must_complete_it(self):
-        errors = self.errors(self.post(person=self.owner, first_name="Carlos", second_name="", first_surname="", second_surname="", national_id_country="", national_id_type="", national_id=""))
+        errors = self.errors(self.post(person=self.owner, first_name="Carlos", second_name="", first_surname="Rojas", second_surname="", national_id_country="", national_id_type="", national_id=""))
         self.assertIn("id_national_id_country", errors)
 
     def test_keeping_its_own_data_is_allowed_but_not_repeating_it(self):

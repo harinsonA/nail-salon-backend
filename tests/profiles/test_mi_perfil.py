@@ -177,3 +177,14 @@ class MiPerfilTests(NegocioTestCase):
         self.assertEqual(respuesta.status_code, 200)
         usuario.refresh_from_db()
         self.assertEqual((usuario.email, usuario.username), ("ana.rojas@correo.cl",) * 2)
+
+    def test_nombre_y_apellido_son_obligatorios(self):
+        usuario = self.crear(Rol.COLABORADOR, "laura")
+        respuesta = self.guardar(usuario, first_name="", last_name="")
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertEqual(
+            {error["id_element"]: error["error"] for error in respuesta.json()["errors"]},
+            {"id_first_name": "Escribe el nombre.", "id_last_name": "Escribe el apellido."},
+        )
+        usuario.refresh_from_db()
+        self.assertEqual((usuario.first_name, usuario.last_name), ("Laura", "Rojas"))

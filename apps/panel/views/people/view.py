@@ -102,6 +102,11 @@ class PersonNamesForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
     national_id_required = True
     national_id_holder = OWNER_HOLDER
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["first_surname"].required = True
+        self.fields["first_surname"].error_messages["required"] = "Escribe el primer apellido."
+
     notes = NoteField(
         label="Nota",
         required=False,

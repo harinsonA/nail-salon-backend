@@ -56,7 +56,7 @@ class LimiteDeUsuariosEnElNegocioTests(NegocioTestCase):
     def crear_miembro(self, navegador, correo="sofi@correo.cl"):
         return navegador.post(
             reverse("equipo_crear"),
-            {**IDENTIFICADOR_VALIDO, "first_name": "Sofi", "email": correo, "rol": Rol.COLABORADOR},
+            {**IDENTIFICADOR_VALIDO, "first_name": "Sofi", "last_name": "Rojas", "email": correo, "rol": Rol.COLABORADOR},
         )
 
     def test_sin_limite_todo_sigue_como_hoy(self):
