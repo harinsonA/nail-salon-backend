@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import Count, Q, TextChoices
 from django.http import JsonResponse
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
@@ -292,7 +293,7 @@ class CategoryDetailModalView(BaseCategoryModalView):
 
         category.servicios.filter(is_removed=False).exclude(
             estado=Servicio.EstadoChoices.INACTIVO
-        ).update(estado=Servicio.EstadoChoices.INACTIVO)
+        ).update(estado=Servicio.EstadoChoices.INACTIVO, modified=timezone.now())
 
     def form_valid(self, form):
         cleaned_data = form.cleaned_data
