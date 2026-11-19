@@ -2,7 +2,6 @@ from django.db.models import Sum
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 
-from apps.appointments.models import Cita
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
@@ -10,9 +9,8 @@ from apps.common.utils.currency import Money
 from apps.common.utils.dates import format_short_date_time
 from apps.common.views.base_views import ProtectedView
 from apps.payments.accounting import PaymentExpressions
+from apps.payments.accounting.debts import Debts
 from apps.payments.models import Pago
-
-from ...choices import EstadoPago
 
 """========================================================================="""
 # region ........ Views
@@ -35,10 +33,7 @@ class DebtorsView(ProtectedView, TemplateView):
 class DebtorsListView(BaseListViewAjax):
     model = Pago
     include_options_column = False
-    _filters = {
-        "estado_pago__in": [EstadoPago.PENDIENTE],
-        "cita__estado": Cita.EstadoChoices.COMPLETADA,
-    }
+    _filters = Debts.FILTERS
 
     field_list = [
         "pk",
