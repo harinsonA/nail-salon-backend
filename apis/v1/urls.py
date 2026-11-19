@@ -3,6 +3,7 @@ from django.urls import path
 from apis.v1.account.view import PasswordView
 from apis.v1.catalogs.registry import catalog_urlpatterns
 from apis.v1.docs.view import DocsView, SchemaView
+from apis.v1.home.view import HomeView
 from apis.v1.me.view import MeView, PreferencesView, ProfileView
 from apis.v1.session.view import BiometricView, LoginView, LogoutView, RefreshView
 from apis.v1.startup.view import StartupView
@@ -19,6 +20,7 @@ urlpatterns = [
     path("me/profile/", ProfileView.as_view(), name="api_me_profile"),
     path("me/preferences/", PreferencesView.as_view(), name="api_me_preferences"),
     *catalog_urlpatterns(),
+    path("home/", HomeView.as_view(), name="api_home"),
     path("sync/changes/", ChangesView.as_view(), name="api_sync_changes"),
     path("schema/", SchemaView.as_view(), name="api_schema"),
     path("docs/", DocsView.as_view(), name="api_docs"),
