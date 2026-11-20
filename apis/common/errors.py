@@ -91,6 +91,11 @@ class TeamDisabled(Forbidden):
     default_code = "team_disabled"
 
 
+class Conflict(ApiError):
+    status_code = status.HTTP_409_CONFLICT
+    default_code = "conflict"
+
+
 class ApiErrorFormat:
     @staticmethod
     def first_message(detail):

@@ -7,3 +7,5 @@ ADMINISTRATION_ONLY = "Esta sección es solo para el propietario y los encargado
 INVALID_DATA = "Revisa los datos ingresados."
 NOT_FOUND = "Esta página no existe."
 TOO_MANY_REQUESTS = "Hiciste demasiados intentos seguidos. Espera un momento y vuelve a intentarlo."
+CLIENT_NOT_FOUND = "Este cliente ya no existe."
+CLIENT_CHANGED = "Este cliente cambió en otro lugar. Revisa sus datos y vuelve a guardar."
