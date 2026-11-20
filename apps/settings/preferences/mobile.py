@@ -3,6 +3,7 @@ from django.db import transaction
 from apps.settings.preferences.registry import (
     APP_CALENDAR_SHOW_CANCELLED,
     APP_CALENDAR_SHOW_COMPLETED,
+    APP_CALENDAR_SHOW_DEBT,
     APP_CALENDAR_SHOW_PENDING,
     APP_CALENDAR_VIEW,
     APP_IDLE_LOCK_MINUTES,
@@ -20,6 +21,7 @@ class MobilePreferences:
         APP_CALENDAR_SHOW_PENDING,
         APP_CALENDAR_SHOW_COMPLETED,
         APP_CALENDAR_SHOW_CANCELLED,
+        APP_CALENDAR_SHOW_DEBT,
         APP_IDLE_LOCK_MINUTES,
     )
     READ_ONLY = (

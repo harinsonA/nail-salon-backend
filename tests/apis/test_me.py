@@ -7,6 +7,7 @@ from apps.settings.preferences.registry import (
     APP_CALENDAR_VIEW,
     APP_IDLE_LOCK_MINUTES,
     CALENDAR_DEFAULT_VIEW,
+    CALENDAR_SHOW_DEBT,
     RESERVATION_AMOUNT,
     RESERVATION_ENABLED,
     SESSION_IDLE_MINUTES,
@@ -99,6 +100,7 @@ class MeTests(ApiTestCase):
         self.assertTrue(preferences["calendar_show_pending"])
         self.assertTrue(preferences["calendar_show_completed"])
         self.assertTrue(preferences["calendar_show_cancelled"])
+        self.assertTrue(preferences["calendar_show_debt"])
         self.assertEqual(preferences["idle_lock_minutes"], 120)
         self.assertTrue(preferences["reservation_enabled"])
         self.assertEqual(preferences["reservation_amount"], 5000)
@@ -114,15 +116,19 @@ class MePreferencesTests(ApiTestCase):
 
     def test_saves_only_what_changed_without_touching_the_web(self):
         user = self.log_in_as(Rol.COLABORADOR)
-        response = self.patch({"calendar_view": "list", "calendar_show_cancelled": False, "idle_lock_minutes": 0})
+        response = self.patch(
+            {"calendar_view": "list", "calendar_show_cancelled": False, "calendar_show_debt": False, "idle_lock_minutes": 0}
+        )
         self.assertEqual(response.status_code, 200, response.content)
         preferences = response.json()["preferences"]
         self.assertEqual(preferences["calendar_view"], "list")
         self.assertFalse(preferences["calendar_show_cancelled"])
+        self.assertFalse(preferences["calendar_show_debt"])
         self.assertTrue(preferences["calendar_show_pending"])
         self.assertEqual(preferences["idle_lock_minutes"], 0)
         self.assertEqual(get_preference(APP_CALENDAR_VIEW.key, user=user), "list")
         self.assertEqual(get_preference(CALENDAR_DEFAULT_VIEW.key, user=user), "mes")
+        self.assertTrue(get_preference(CALENDAR_SHOW_DEBT.key, user=user))
         self.assertEqual(get_preference(SESSION_IDLE_MINUTES.key, user=user), 120)
 
     def test_preferences_belong_to_each_person(self):

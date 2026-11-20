@@ -230,6 +230,14 @@ APP_CALENDAR_SHOW_CANCELLED = BooleanPreference(
 )
 
 
+APP_CALENDAR_SHOW_DEBT = BooleanPreference(
+    key="app_calendario_ver_deuda",
+    label="Con deuda",
+    default=True,
+    category=Category.APP_MOVIL,
+)
+
+
 APP_IDLE_LOCK_MINUTES = ChoicePreference(
     key="app_bloqueo_minutos",
     label="Bloqueo por inactividad",
@@ -260,5 +268,6 @@ PREFERENCES = PreferenceRegistry(
     APP_CALENDAR_SHOW_PENDING,
     APP_CALENDAR_SHOW_COMPLETED,
     APP_CALENDAR_SHOW_CANCELLED,
+    APP_CALENDAR_SHOW_DEBT,
     APP_IDLE_LOCK_MINUTES,
 )

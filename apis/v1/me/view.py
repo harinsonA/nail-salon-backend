@@ -18,6 +18,7 @@ from apps.settings.preferences.mobile import MobilePreferences
 from apps.settings.preferences.registry import (
     APP_CALENDAR_SHOW_CANCELLED,
     APP_CALENDAR_SHOW_COMPLETED,
+    APP_CALENDAR_SHOW_DEBT,
     APP_CALENDAR_SHOW_PENDING,
     APP_CALENDAR_VIEW,
     APP_IDLE_LOCK_MINUTES,
@@ -36,6 +37,7 @@ PREFERENCE_KEYS = {
     "calendar_show_pending": APP_CALENDAR_SHOW_PENDING.key,
     "calendar_show_completed": APP_CALENDAR_SHOW_COMPLETED.key,
     "calendar_show_cancelled": APP_CALENDAR_SHOW_CANCELLED.key,
+    "calendar_show_debt": APP_CALENDAR_SHOW_DEBT.key,
     "idle_lock_minutes": APP_IDLE_LOCK_MINUTES.key,
     "reservation_enabled": RESERVATION_ENABLED.key,
     "reservation_amount": RESERVATION_AMOUNT.key,
