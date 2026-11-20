@@ -15,18 +15,12 @@ from rest_framework.status import HTTP_400_BAD_REQUEST
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.form_classes import (
-    FORM_CONTROL_CLASS,
-    FORM_CONTROL_TEXTAREA_CLASS,
-    FORM_SELECT_CLASS,
-)
-from apps.common.form_fields import NoteField
-from apps.common.forms import NationalIdentifierForm, SplitNamesForm
-from apps.common.utils.countries.constants import CountryPhonePrefix
-from apps.common.utils.utils import CommonCleaner, get_errors_to_response
+from apps.common.form_classes import FORM_CONTROL_TEXTAREA_CLASS, FORM_SELECT_CLASS
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.utils.whatsapp import get_whatsapp_url
 from apps.common.views.base_views import ProtectedView
 
+from ..editing import ClientEditor, ClientInitial, ClientsForm
 from ..models.cliente import Cliente
 
 """========================================================================="""
@@ -59,128 +53,6 @@ class ClientsFilterForm(BSModalForm):
             return data_to_filter
         data_to_filter["estado"] = status
         return data_to_filter
-
-
-class ClientsForm(NationalIdentifierForm, SplitNamesForm, BSModalForm):
-    national_id_holder = "otro cliente"
-
-    def __init__(self, *args, instance=None, **kwargs):
-        self.instance = instance
-        super().__init__(*args, **kwargs)
-
-    def other_clients(self):
-        clients = Cliente.objects.all()
-        return clients.exclude(pk=self.instance.pk) if self.instance else clients
-
-    def national_id_queryset(self):
-        return self.other_clients()
-
-    country_phone_prefix = forms.ChoiceField(
-        label="Prefijo País",
-        choices=CountryPhonePrefix.choices,
-        initial=CountryPhonePrefix.CHILE,
-        widget=forms.Select(attrs={"class": FORM_SELECT_CLASS}),
-    )
-    phone = forms.CharField(
-        label="Teléfono",
-        required=False,
-        max_length=20,
-        widget=forms.TextInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "9 1234 5678",
-            },
-        ),
-    )
-    email = forms.EmailField(
-        label="Correo electrónico",
-        max_length=100,
-        required=False,
-        widget=forms.EmailInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "cliente@ejemplo.com",
-            },
-        ),
-    )
-    status = forms.BooleanField(
-        label="Estado",
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-    )
-    notes = NoteField(
-        label="Notas",
-        required=False,
-        help_text="Notas del cliente",
-        widget=forms.Textarea(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Cliente alergico a...",
-                "rows": 3,
-            }
-        ),
-    )
-
-    def clean_phone(self):
-        phone_prefix = self.cleaned_data.get("country_phone_prefix", "").strip()
-        phone = self.cleaned_data.get("phone", "").strip()
-        if not phone:
-            return ""
-        result = CommonCleaner.clean_phone_field(phone_prefix, phone)
-        if result.is_err():
-            raise forms.ValidationError(result.value)
-        available = CommonCleaner.check_phone_available(
-            self.other_clients(), self.national_id_holder, telefono=result.value
-        )
-        if available.is_err():
-            raise forms.ValidationError(available.err_value)
-        return result.value
-
-    def clean_email(self):
-        email = (self.cleaned_data.get("email") or "").strip().lower()
-        if not email:
-            return ""
-        result = CommonCleaner.check_email_available(
-            self.other_clients(), self.national_id_holder, email
-        )
-        if result.is_err():
-            raise forms.ValidationError(result.err_value)
-        return email
-
-    def clean_status(self):
-        status = self.cleaned_data.get("status")
-        if not status:
-            return Cliente.EstadoChoices.INACTIVO
-        return Cliente.EstadoChoices.ACTIVO
-
-    def clean(self):
-        cleaned_data = super().clean()
-        return {
-            **self.normaliza_data(cleaned_data),
-            "nombre": self.full_names(),
-            "apellido": self.full_surnames(),
-            **self.national_id_data(),
-        }
-
-    @staticmethod
-    def normaliza_data(data: dict) -> dict:
-        """
-        Normalizes form data before saving to the database.
-        """
-        normalized_data = {}
-        fields = [
-            ("phone", "telefono"),
-            ("email", "email"),
-            ("status", "estado"),
-            ("notes", "notas"),
-        ]
-        for form_field, model_field in fields:
-            value = data.get(form_field)
-            if not value and form_field != "status":
-                continue
-            normalized_data[model_field] = value
-        return normalized_data
 
 
 class ClientWhatsappForm(forms.Form):
@@ -347,21 +219,15 @@ class BaseClientModalView(ProtectedView, BSModalFormView):
 
 class ClientCreateModalView(BaseClientModalView):
     modal_url = "client_create_modal"
-    success_message = "Cliente %(client_full_name)s creado exitosamente."
 
     def form_valid(self, form):
-        cleaned_data = form.cleaned_data
-        client_new = Cliente.objects.create(**cleaned_data)
-        full_name = client_new.nombre_completo
-        return JsonResponse(
-            {"message": self.success_message % {"client_full_name": full_name}}
-        )
+        client = ClientEditor.create(form)
+        return JsonResponse({"message": ClientEditor.created_message(client)})
 
 
 class ClientDetailModalView(BaseClientModalView):
     modal_url = "client_detail_modal"
     pk_url_kwarg = "pk"
-    success_message = "Cliente %(client_full_name)s actualizado exitosamente."
     base_object = None
 
     def get_object(self, queryset=None):
@@ -373,36 +239,9 @@ class ClientDetailModalView(BaseClientModalView):
     def get_form_kwargs(self):
         return {**super().get_form_kwargs(), "instance": self.get_object()}
 
-    @staticmethod
-    def get_phone_and_prefix(client: Cliente) -> tuple:
-        if not client.telefono:
-            return CountryPhonePrefix.CHILE, ""
-        prefixes = dict(CountryPhonePrefix.choices)
-        phone_without_prefix = ""
-        prefix = ""
-        for _prefix in prefixes:
-            if not client.telefono.startswith(_prefix):
-                continue
-            phone_without_prefix = client.telefono[len(_prefix) :]
-            prefix = _prefix
-            break
-        return prefix, phone_without_prefix
-
     def get_initial(self):
         self.base_object = self.get_object()
-        prefix, phone = self.get_phone_and_prefix(self.base_object)
-        initial = {
-            **ClientsForm.split_names_initial(
-                self.base_object.nombre, self.base_object.apellido
-            ),
-            **ClientsForm.national_id_initial(self.base_object),
-            "country_phone_prefix": prefix,
-            "phone": phone,
-            "email": self.base_object.email,
-            "status": self.base_object.estado == Cliente.EstadoChoices.ACTIVO,
-            "notes": self.base_object.notas,
-        }
-        return initial
+        return ClientInitial.of(self.base_object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -410,15 +249,8 @@ class ClientDetailModalView(BaseClientModalView):
         return context
 
     def form_valid(self, form):
-        cleaned_data = form.cleaned_data
-        client = self.get_object()
-        for field, value in cleaned_data.items():
-            setattr(client, field, value)
-        client.save(update_fields=cleaned_data.keys())
-        full_name = client.nombre_completo
-        return JsonResponse(
-            {"message": self.success_message % {"client_full_name": full_name}}
-        )
+        client = ClientEditor.update(self.get_object(), form)
+        return JsonResponse({"message": ClientEditor.updated_message(client)})
 
 
 class ClientWhatsappModalView(ProtectedView, BSModalReadView):

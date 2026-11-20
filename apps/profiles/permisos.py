@@ -108,6 +108,8 @@ PARA_TODO_EL_EQUIPO = {
     "api_catalogs_payment_methods",
     "api_sync_changes",
     "api_home",
+    "api_clients",
+    "api_client",
     "api_schema",
     "api_docs",
 }
