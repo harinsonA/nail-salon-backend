@@ -9,6 +9,7 @@ class PreferencesSerializer(serializers.Serializer):
     calendar_show_pending = serializers.BooleanField()
     calendar_show_completed = serializers.BooleanField()
     calendar_show_cancelled = serializers.BooleanField()
+    calendar_show_debt = serializers.BooleanField()
     idle_lock_minutes = serializers.ChoiceField(choices=APP_IDLE_LOCK_MINUTES.choices)
     reservation_enabled = serializers.BooleanField(read_only=True)
     reservation_amount = serializers.IntegerField(read_only=True)
