@@ -6,23 +6,16 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
-from result import Err, Ok, Result
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
-from apps.common.custom_time_fields import DurationInMinutesField
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.form_classes import (
-    FORM_CONTROL_CLASS,
-    FORM_SELECT2_CLASS,
-    FORM_SELECT_CLASS,
-)
-from apps.common.form_fields import AlphabeticField, MoneyField, NoteField
+from apps.common.form_classes import FORM_SELECT2_CLASS, FORM_SELECT_CLASS
 from apps.common.utils.currency import Money
-from apps.common.utils.utils import CommonCleaner, get_errors_to_response
+from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
-from apps.common.widgets import MoneyInput
 
+from ..editing import ServiceEditor, ServiceInitial, ServicesForm
 from ..models.categoria import Categoria
 from ..models.servicio import Servicio
 
@@ -80,116 +73,6 @@ class ServicesFilterForm(BSModalForm):
         elif category and category != CATEGORY_ALL:
             data_to_filter["categoria_id"] = category
         return data_to_filter
-
-
-class ServicesForm(BSModalForm):
-    category = forms.ModelChoiceField(
-        label="Categoria",
-        required=True,
-        queryset=Categoria.objects.filter(is_removed=False),
-        widget=forms.Select(
-            attrs={
-                "class": FORM_SELECT_CLASS,
-            },
-        ),
-        empty_label="Selecciona una categoria",
-    )
-    name = AlphabeticField(
-        label="Nombre del Servicio",
-        max_length=100,
-        required=True,
-        widget=forms.TextInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Manicure Clásica",
-            },
-        ),
-    )
-    description = NoteField(
-        label="Descripción",
-        required=False,
-        widget=forms.Textarea(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Descripción del servicio...",
-                "rows": 3,
-            },
-        ),
-    )
-    price = MoneyField(
-        label="Precio",
-        initial=0,
-        max_value=99_999_999,
-        required=False,
-        widget=MoneyInput(attrs={"placeholder": "15.000"}),
-    )
-    duration = DurationInMinutesField(
-        label="Duración (minutos)",
-        required=True,
-        initial=30,
-        widget=forms.NumberInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "60",
-                "min": "1",
-            },
-        ),
-    )
-    status = forms.BooleanField(
-        label="Estado",
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-    )
-
-    def clean_category(self):
-        category = self.cleaned_data.get("category")
-        if not category:
-            raise forms.ValidationError("Debes seleccionar una categoria.")
-        return category
-
-    def clean_price(self):
-        result = CommonCleaner.clean_amount_field("precio", self.cleaned_data.get("price"))
-        if result.is_err():
-            raise forms.ValidationError(result.err_value)
-        return result.ok_value
-
-    def clean_duration(self):
-        duration = self.cleaned_data.get("duration")
-        if not int(duration.total_seconds()):
-            raise forms.ValidationError("La duración debe ser mayor a cero.")
-        return duration
-
-    def clean_status(self):
-        status = self.cleaned_data.get("status")
-        if not status:
-            return Servicio.EstadoChoices.INACTIVO
-        return Servicio.EstadoChoices.ACTIVO
-
-    def clean(self):
-        cleaned_data = super().clean()
-        return self.normaliza_data(cleaned_data)
-
-    @staticmethod
-    def normaliza_data(data: dict) -> dict:
-        """
-        Normalizes form data before saving to the database.
-        """
-        normalized_data = {}
-        fields = [
-            ("category", "categoria"),
-            ("name", "nombre"),
-            ("description", "descripcion"),
-            ("price", "precio"),
-            ("duration", "duracion_estimada"),
-            ("status", "estado"),
-        ]
-        for form_field, model_field in fields:
-            value = data.get(form_field)
-            if not value and form_field not in ("status", "price"):
-                continue
-            normalized_data[model_field] = value
-        return normalized_data
 
 
 # endregion
@@ -353,94 +236,36 @@ class BaseServiceModalView(ProtectedView, BSModalFormView):
 
 class ServiceCreateModalView(BaseServiceModalView):
     modal_url = "service_create_modal"
-    success_message = "Servicio %(service_name)s creado exitosamente."
 
     def form_valid(self, form):
-        cleaned_data = form.cleaned_data
-        service_new = Servicio.objects.create(**cleaned_data)
-        service_name = service_new.nombre
-        return JsonResponse(
-            {"message": self.success_message % {"service_name": service_name}}
-        )
+        service = ServiceEditor.create(form)
+        return JsonResponse({"message": ServiceEditor.created_message(service)})
 
 
 class ServiceDetailModalView(BaseServiceModalView):
     modal_url = "service_detail_modal"
     pk_url_kwarg = "pk"
-    success_message = "Servicio %(service_name)s actualizado exitosamente."
     base_object = None
 
     def get_object(self, queryset=None):
         service_id = self.kwargs.get(self.pk_url_kwarg)
         return Servicio.objects.filter(pk=service_id).first()
 
-    @staticmethod
-    def get_duration_init(duration) -> int:
-        if not duration:
-            return 0
-        return int(duration.total_seconds() // 60)
-
     def get_initial(self):
         self.base_object = self.get_object()
-        initial = {
-            "category": self.base_object.categoria_id,
-            "name": self.base_object.nombre,
-            "description": self.base_object.descripcion,
-            "price": self.base_object.precio,
-            "duration": self.get_duration_init(self.base_object.duracion_estimada),
-            "status": self.base_object.estado == Servicio.EstadoChoices.ACTIVO,
-        }
-        return initial
+        return ServiceInitial.of(self.base_object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["service_name"] = self.base_object.nombre
         return context
 
-    @staticmethod
-    def validate_category_active_for_activation(
-        previous_status: str,
-        new_status: str,
-        category,
-    ) -> Result[str, str]:
-        is_transition_to_active = (
-            previous_status == Servicio.EstadoChoices.INACTIVO
-            and new_status == Servicio.EstadoChoices.ACTIVO
-        )
-        if not is_transition_to_active:
-            return Ok("valid")
-
-        is_category_active = (
-            category and category.estado == Categoria.EstadoChoices.ACTIVO
-        )
-        if is_category_active:
-            return Ok("valid")
-
-        return Err("No puedes activar un servicio con una categoria inactiva.")
-
     def form_valid(self, form):
-        cleaned_data = form.cleaned_data
-        service = self.get_object()
-        previous_status = service.estado
-        new_status = cleaned_data.get("estado", previous_status)
-        category = cleaned_data.get("categoria")
-
-        category_validation_result = self.validate_category_active_for_activation(
-            previous_status=previous_status,
-            new_status=new_status,
-            category=category,
-        )
-        if category_validation_result.is_err():
-            form.add_error("category", category_validation_result.err_value)
+        result = ServiceEditor.update(self.get_object(), form)
+        if result.is_err():
+            form.add_error(ServiceEditor.CATEGORY_FIELD, result.err_value)
             return self.form_invalid(form)
-
-        for field, value in cleaned_data.items():
-            setattr(service, field, value)
-        service.save(update_fields=cleaned_data.keys())
-        service_name = service.nombre
-        return JsonResponse(
-            {"message": self.success_message % {"service_name": service_name}}
-        )
+        return JsonResponse({"message": ServiceEditor.updated_message(result.ok_value)})
 
 
 class ServiceDeleteModalView(ProtectedView, BSModalDeleteView):
