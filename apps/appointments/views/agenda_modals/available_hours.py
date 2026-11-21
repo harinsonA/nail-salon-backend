@@ -4,7 +4,7 @@ from django.views import View
 
 from apps.appointments.access import visible_appointments
 from apps.appointments.models.agenda import Cita
-from apps.appointments.views.agenda_modals.common import DATE_FORMAT, TIME_FORMAT
+from apps.appointments.editing import DATE_FORMAT, TIME_FORMAT
 from apps.common.views.base_views import ProtectedAjaxView
 
 """========================================================================="""
