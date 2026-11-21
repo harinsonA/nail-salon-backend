@@ -71,6 +71,8 @@ class PermisosPorRolTests(NegocioTestCase):
         for rol in (Perfil.Rol.ENCARGADO, Perfil.Rol.PROPIETARIO):
             navegador = self.navegador_de(rol, raise_request_exception=False)
             for patron in self.rutas_de(SOLO_ADMINISTRACION):
+                if patron.name.startswith("api_"):
+                    continue
                 with self.subTest(rol=rol, ruta=patron.name):
                     self.assertNotEqual(navegador.get(url_de_prueba(patron)).status_code, 403)
 

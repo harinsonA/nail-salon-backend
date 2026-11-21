@@ -1,24 +1,21 @@
 from bootstrap_modal_forms.forms import BSModalForm
 from bootstrap_modal_forms.generic import BSModalDeleteView, BSModalFormView
 from django import forms
-from django.db import transaction
 from django.db.models import Count, Q, TextChoices
 from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.utils import timezone
 from django.views.generic import TemplateView
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from apps.common.base_list_view_ajax import BaseListViewAjax
 from apps.common.exports.columns import ExcelColumn
 from apps.common.exports.excel_export_mixin import ExcelExportMixin
-from apps.common.form_classes import FORM_CONTROL_CLASS, FORM_SELECT_CLASS
-from apps.common.form_fields import AlphabeticField, NoteField
+from apps.common.form_classes import FORM_SELECT_CLASS
 from apps.common.utils.utils import get_errors_to_response
 from apps.common.views.base_views import ProtectedView
 
+from ...editing import CategoriesForm, CategoryEditor, CategoryInitial
 from ...models.categoria import Categoria
-from ...models.servicio import Servicio
 
 """========================================================================="""
 # region ........ Form
@@ -50,62 +47,6 @@ class CategoriesFilterForm(BSModalForm):
             return data_to_filter
         data_to_filter["estado"] = status
         return data_to_filter
-
-
-class CategoriesForm(BSModalForm):
-    name = AlphabeticField(
-        label="Nombre de la categoria",
-        max_length=100,
-        required=True,
-        widget=forms.TextInput(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Manicure",
-            },
-        ),
-    )
-    description = NoteField(
-        label="Descripcion",
-        required=False,
-        widget=forms.Textarea(
-            attrs={
-                "class": FORM_CONTROL_CLASS,
-                "placeholder": "Descripcion de la categoria...",
-                "rows": 3,
-            },
-        ),
-    )
-    status = forms.BooleanField(
-        label="Estado",
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-    )
-
-    def clean_status(self):
-        status = self.cleaned_data.get("status")
-        if not status:
-            return Categoria.EstadoChoices.INACTIVO
-        return Categoria.EstadoChoices.ACTIVO
-
-    def clean(self):
-        cleaned_data = super().clean()
-        return self.normalize_data(cleaned_data)
-
-    @staticmethod
-    def normalize_data(data: dict) -> dict:
-        normalized_data = {}
-        fields = [
-            ("name", "nombre"),
-            ("description", "descripcion"),
-            ("status", "estado"),
-        ]
-        for form_field, model_field in fields:
-            value = data.get(form_field)
-            if not value and form_field != "status":
-                continue
-            normalized_data[model_field] = value
-        return normalized_data
 
 
 # endregion
@@ -244,21 +185,15 @@ class BaseCategoryModalView(ProtectedView, BSModalFormView):
 
 class CategoryCreateModalView(BaseCategoryModalView):
     modal_url = "category_create_modal"
-    success_message = "Categoria %(category_name)s creada exitosamente."
 
     def form_valid(self, form):
-        cleaned_data = form.cleaned_data
-        category_new = Categoria.objects.create(**cleaned_data)
-        category_name = category_new.nombre
-        return JsonResponse(
-            {"message": self.success_message % {"category_name": category_name}}
-        )
+        category = CategoryEditor.create(form)
+        return JsonResponse({"message": CategoryEditor.created_message(category)})
 
 
 class CategoryDetailModalView(BaseCategoryModalView):
     modal_url = "category_detail_modal"
     pk_url_kwarg = "pk"
-    success_message = "Categoria %(category_name)s actualizada exitosamente."
     base_object = None
 
     def get_object(self, queryset=None):
@@ -267,54 +202,16 @@ class CategoryDetailModalView(BaseCategoryModalView):
 
     def get_initial(self):
         self.base_object = self.get_object()
-        return {
-            "name": self.base_object.nombre,
-            "description": self.base_object.descripcion,
-            "status": self.base_object.estado == Categoria.EstadoChoices.ACTIVO,
-        }
+        return CategoryInitial.of(self.base_object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["category_name"] = self.base_object.nombre
         return context
 
-    @staticmethod
-    def set_services_to_inactive_when_category_is_inactivated(
-        category: Categoria,
-        previous_status: str,
-        new_status: str,
-    ):
-        is_transition_to_inactive = (
-            previous_status == Categoria.EstadoChoices.ACTIVO
-            and new_status == Categoria.EstadoChoices.INACTIVO
-        )
-        if not is_transition_to_inactive:
-            return
-
-        category.servicios.filter(is_removed=False).exclude(
-            estado=Servicio.EstadoChoices.INACTIVO
-        ).update(estado=Servicio.EstadoChoices.INACTIVO, modified=timezone.now())
-
     def form_valid(self, form):
-        cleaned_data = form.cleaned_data
-        category = self.get_object()
-        previous_status = category.estado
-        new_status = cleaned_data.get("estado", previous_status)
-
-        with transaction.atomic():
-            for field, value in cleaned_data.items():
-                setattr(category, field, value)
-            category.save(update_fields=cleaned_data.keys())
-            self.set_services_to_inactive_when_category_is_inactivated(
-                category=category,
-                previous_status=previous_status,
-                new_status=new_status,
-            )
-
-        category_name = category.nombre
-        return JsonResponse(
-            {"message": self.success_message % {"category_name": category_name}}
-        )
+        category = CategoryEditor.update(self.get_object(), form)
+        return JsonResponse({"message": CategoryEditor.updated_message(category)})
 
 
 class CategoryDeleteModalView(ProtectedView, BSModalDeleteView):

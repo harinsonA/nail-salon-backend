@@ -11,7 +11,7 @@ from apps.payments.choices import MetodoPago
 from apps.payments.models import DetallePago, Pago
 from apps.profiles.models import Perfil
 from apps.services.models import Categoria, Servicio
-from apps.services.views.categories.categoria import CategoryDetailModalView
+from apps.services.editing import CategoryEditor
 from apps.sync import SyncWindow
 from tests.apis.base import ApiTestCase
 
@@ -243,7 +243,7 @@ class SyncChangesTests(ApiTestCase):
         mark = self.sync()["mark"]
         self.category.estado = Categoria.EstadoChoices.INACTIVO
         self.category.save()
-        CategoryDetailModalView.set_services_to_inactive_when_category_is_inactivated(
+        CategoryEditor.set_services_to_inactive_when_category_is_inactivated(
             self.category, Categoria.EstadoChoices.ACTIVO, Categoria.EstadoChoices.INACTIVO
         )
         data = self.sync(mark)

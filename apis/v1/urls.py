@@ -6,6 +6,8 @@ from apis.v1.clients.view import ClientsView, ClientView
 from apis.v1.docs.view import DocsView, SchemaView
 from apis.v1.home.view import HomeView
 from apis.v1.me.view import MeView, PreferencesView, ProfileView
+from apis.v1.services.views.categories import CategoriesView, CategoryView
+from apis.v1.services.views.services import ServicesView, ServiceView
 from apis.v1.session.view import BiometricView, LoginView, LogoutView, RefreshView
 from apis.v1.startup.view import StartupView
 from apis.v1.sync.view import ChangesView
@@ -25,6 +27,10 @@ urlpatterns = [
     path("sync/changes/", ChangesView.as_view(), name="api_sync_changes"),
     path("clients/", ClientsView.as_view(), name="api_clients"),
     path("clients/<int:pk>/", ClientView.as_view(), name="api_client"),
+    path("categories/", CategoriesView.as_view(), name="api_categories"),
+    path("categories/<int:pk>/", CategoryView.as_view(), name="api_category"),
+    path("services/", ServicesView.as_view(), name="api_services"),
+    path("services/<int:pk>/", ServiceView.as_view(), name="api_service"),
     path("schema/", SchemaView.as_view(), name="api_schema"),
     path("docs/", DocsView.as_view(), name="api_docs"),
 ]
