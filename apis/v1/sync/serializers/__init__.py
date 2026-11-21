@@ -1,5 +1,6 @@
 from .appointment import AppointmentSerializer
 from .appointment_payment import AppointmentPaymentSerializer
+from .appointment_prepaid import AppointmentPrepaidSerializer
 from .appointment_service import AppointmentServiceSerializer
 from .category import CategorySerializer
 from .changes import ChangesSerializer
@@ -11,6 +12,7 @@ from .window import WindowSerializer
 
 __all__ = [
     "AppointmentPaymentSerializer",
+    "AppointmentPrepaidSerializer",
     "AppointmentSerializer",
     "AppointmentServiceSerializer",
     "CategorySerializer",

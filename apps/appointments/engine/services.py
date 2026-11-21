@@ -77,9 +77,24 @@ class AppointmentServices:
         ]
 
     @classmethod
+    def quoted_price(cls, line):
+        quoted = line.get("precio")
+        if quoted is None:
+            return None
+        if isinstance(quoted, bool) or not isinstance(quoted, int) or quoted < 0:
+            raise cls.error(SERVICES_INVALID)
+        return quoted
+
+    @classmethod
     def clean_line(cls, line, detail, service):
         name = detail.nombre_servicio if detail else service.nombre
-        price = detail.precio_servicio if detail else service.precio
+        quoted = None if detail else cls.quoted_price(line)
+        if detail:
+            price = detail.precio_servicio
+        elif quoted is None:
+            price = service.precio
+        else:
+            price = min(service.precio, quoted)
         try:
             quantity = int(line.get("cantidad", 1))
             discount = int(line.get("descuento", 0))
@@ -94,9 +109,19 @@ class AppointmentServices:
             "service": service,
             "quantity": quantity,
             "discount": discount,
+            "price": price,
+            "quoted": quoted,
             "total": ServiceLines.total(price, quantity, discount),
         }
 
     @staticmethod
     def total(lines):
         return sum(line["total"] for line in lines)
+
+    @staticmethod
+    def lowered(lines):
+        return [
+            line
+            for line in lines
+            if line["quoted"] is not None and line["price"] < line["quoted"]
+        ]

@@ -35,6 +35,21 @@ class AppointmentLedger:
             and PaymentDetail.status(row) == EstadoDetallePago.VIGENTE
         ]
 
+    @staticmethod
+    def open_prepaid_of(details):
+        details = list(details)
+        refunded = {
+            detail.detalle_devuelto_id for detail in details if PaymentDetail.is_refund(detail)
+        }
+        rows = [
+            detail
+            for detail in details
+            if PaymentDetail.kind(detail) in PREPAID_TYPES
+            and detail.pk not in refunded
+            and PaymentDetail.status(detail) == EstadoDetallePago.VIGENTE
+        ]
+        return sorted(rows, key=lambda detail: (detail.fecha_pago, detail.pk))
+
     def advances(self):
         return self.rows_of([TipoDetallePago.ANTICIPO])
 

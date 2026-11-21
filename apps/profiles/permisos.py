@@ -114,6 +114,8 @@ PARA_TODO_EL_EQUIPO = {
     "api_home",
     "api_clients",
     "api_client",
+    "api_appointments",
+    "api_appointment",
     "api_schema",
     "api_docs",
 }
