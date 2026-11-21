@@ -17,7 +17,7 @@ class AppointmentWriter:
             cita=appointment,
             servicio=service,
             nombre_servicio=service.nombre,
-            precio_servicio=service.precio,
+            precio_servicio=line["price"],
             duracion_estimada_servicio=service.duracion_estimada,
             precio_acordado=line["total"],
             cantidad_servicios=line["quantity"],
@@ -34,6 +34,7 @@ class AppointmentWriter:
             observaciones=data["observations"] or None,
             creado_por=self.user,
             asignado_a=data["assigned_to"],
+            codigo_app=data.get("codigo_app"),
         )
         DetalleCita.objects.bulk_create(
             self.build_detail(appointment, line) for line in data["services"]

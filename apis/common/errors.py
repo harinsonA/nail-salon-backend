@@ -136,3 +136,14 @@ def handle_exception(exc, context):
     if response is not None:
         response.data = ApiErrorFormat.body(exc, response.status_code, response.data)
     return response
+
+
+class PricesLowered(ApiError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = "prices_lowered"
+
+
+class SummaryMismatch(ApiError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = messages.SUMMARY_MISMATCH
+    default_code = "summary_mismatch"

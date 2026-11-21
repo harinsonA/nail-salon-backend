@@ -13,3 +13,11 @@ CATEGORY_NOT_FOUND = "Esta categoría ya no existe."
 CATEGORY_CHANGED = "Esta categoría cambió en otro lugar. Revisa sus datos y vuelve a guardar."
 SERVICE_NOT_FOUND = "Este servicio ya no existe."
 SERVICE_CHANGED = "Este servicio cambió en otro lugar. Revisa sus datos y vuelve a guardar."
+APPOINTMENT_NOT_FOUND = "Esta cita ya no existe."
+APPOINTMENT_CHANGED = "Esta cita cambió en otro lugar. Revisa sus datos y vuelve a guardar."
+APPOINTMENT_NOT_PENDING = "Esta cita ya no está pendiente, así que no se puede editar."
+PRICES_LOWERED = "Bajó el precio de {names}. Revisa el resumen antes de confirmar."
+SUMMARY_MISMATCH = (
+    "Los montos de la app no coinciden con los del sistema y la cita no se guardó. "
+    "Actualiza la app o avísanos para revisarlo."
+)

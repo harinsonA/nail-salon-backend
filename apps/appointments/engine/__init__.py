@@ -10,6 +10,7 @@ from apps.appointments.engine.reservation import AppointmentReservation
 from apps.appointments.engine.reservation_change import ReservationChange
 from apps.appointments.engine.restoration import AppointmentRestoration
 from apps.appointments.engine.services import AppointmentServices
+from apps.appointments.engine.summary import AppointmentSummary
 from apps.appointments.engine.writer import AppointmentWriter
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "AppointmentRestoration",
     "AppointmentRuleError",
     "AppointmentServices",
+    "AppointmentSummary",
     "AppointmentWriter",
     "PrepaidCard",
     "PrepaidLimit",
