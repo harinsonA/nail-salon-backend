@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from apis.common import errors
 from apis.common.views import ApiView
+from apis.v1.me.preferences_data import PreferencesData
 from apis.v1.me.serializers import (
     MeSerializer,
     PreferencesSavedSerializer,
@@ -15,35 +16,10 @@ from apps.common.utils.text import user_display_name
 from apps.profiles.capabilities import Capabilities
 from apps.profiles.profile import PersonalDataForm, ProfileRules
 from apps.settings.preferences.mobile import MobilePreferences
-from apps.settings.preferences.registry import (
-    APP_CALENDAR_SHOW_CANCELLED,
-    APP_CALENDAR_SHOW_COMPLETED,
-    APP_CALENDAR_SHOW_DEBT,
-    APP_CALENDAR_SHOW_PENDING,
-    APP_CALENDAR_VIEW,
-    APP_IDLE_LOCK_MINUTES,
-    RESERVATION_AMOUNT,
-    RESERVATION_DISCOUNTS_TOTAL,
-    RESERVATION_ENABLED,
-    RESERVATION_PAYMENT_METHOD,
-)
 
 """========================================================================="""
 # region ........ Constants
 
-
-PREFERENCE_KEYS = {
-    "calendar_view": APP_CALENDAR_VIEW.key,
-    "calendar_show_pending": APP_CALENDAR_SHOW_PENDING.key,
-    "calendar_show_completed": APP_CALENDAR_SHOW_COMPLETED.key,
-    "calendar_show_cancelled": APP_CALENDAR_SHOW_CANCELLED.key,
-    "calendar_show_debt": APP_CALENDAR_SHOW_DEBT.key,
-    "idle_lock_minutes": APP_IDLE_LOCK_MINUTES.key,
-    "reservation_enabled": RESERVATION_ENABLED.key,
-    "reservation_amount": RESERVATION_AMOUNT.key,
-    "reservation_discounts_total": RESERVATION_DISCOUNTS_TOTAL.key,
-    "reservation_payment_method": RESERVATION_PAYMENT_METHOD.key,
-}
 
 PROFILE_FIELDS = {
     "first_name": "first_name",
@@ -77,11 +53,6 @@ def user_data(user):
         "tipo_identificador_nacional": perfil.tipo_identificador_nacional if perfil else None,
         "identificador_nacional": perfil.identificador_nacional if perfil else None,
     }
-
-
-def preferences_data(user):
-    values = MobilePreferences(user).values()
-    return {name: values[key] for name, key in PREFERENCE_KEYS.items()}
 
 
 def profile_form_data(user, changes):
@@ -123,7 +94,7 @@ class MeView(ApiView):
                 {"id": member.pk, "name": user_display_name(member)}
                 for member in capabilities.assignable_users()
             ],
-            "preferences": preferences_data(user),
+            "preferences": PreferencesData.of(user),
         }
         return Response(MeSerializer(data).data)
 
@@ -165,11 +136,11 @@ class PreferencesView(ApiView):
         serializer = PreferencesSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         MobilePreferences(request.user).update(
-            {PREFERENCE_KEYS[name]: value for name, value in serializer.validated_data.items()}
+            PreferencesData.keys_for(serializer.validated_data)
         )
         return Response(
             PreferencesSavedSerializer(
-                {"message": MobilePreferences.SAVED_MESSAGE, "preferences": preferences_data(request.user)}
+                {"message": MobilePreferences.SAVED_MESSAGE, "preferences": PreferencesData.of(request.user)}
             ).data
         )
 
