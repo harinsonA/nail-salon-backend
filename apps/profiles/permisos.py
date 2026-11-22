@@ -52,6 +52,7 @@ SOLO_ADMINISTRACION = {
     "equipo_restablecer_clave",
     "equipo_desbloquear",
     "appointment_preferences",
+    "api_reservation_settings",
     "api_categories",
     "api_category",
     "api_services",

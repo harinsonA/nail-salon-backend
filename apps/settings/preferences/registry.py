@@ -112,7 +112,7 @@ RESERVATION_ENABLED = BooleanPreference(
 
 RESERVATION_DISCOUNTS_TOTAL = BooleanPreference(
     key="reserva_descuenta_total",
-    label="Descontar la reserva del total",
+    label="Descuenta del total a pagar",
     default=False,
     category=Category.AGENDA,
     scope=Scope.NEGOCIO,
