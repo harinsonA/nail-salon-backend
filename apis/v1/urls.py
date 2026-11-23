@@ -3,7 +3,9 @@ from django.urls import path
 from apis.v1.account.view import PasswordView
 from apis.v1.appointment_settings.view import ReservationView
 from apis.v1.appointments.views.appointment import AppointmentView
+from apis.v1.appointments.views.appointment_cancel import AppointmentCancelView
 from apis.v1.appointments.views.appointment_complete import AppointmentCompleteView
+from apis.v1.appointments.views.appointment_restore import AppointmentRestoreView
 from apis.v1.appointments.views.appointments import AppointmentsView
 from apis.v1.catalogs.registry import catalog_urlpatterns
 from apis.v1.clients.view import ClientsView, ClientView
@@ -37,6 +39,16 @@ urlpatterns = [
         "appointments/<int:pk>/complete/",
         AppointmentCompleteView.as_view(),
         name="api_appointment_complete",
+    ),
+    path(
+        "appointments/<int:pk>/cancel/",
+        AppointmentCancelView.as_view(),
+        name="api_appointment_cancel",
+    ),
+    path(
+        "appointments/<int:pk>/restore/",
+        AppointmentRestoreView.as_view(),
+        name="api_appointment_restore",
     ),
     path(
         "appointment-settings/reservation/",

@@ -22,6 +22,15 @@ SUMMARY_MISMATCH = (
     "Actualiza la app o avísanos para revisarlo."
 )
 APPOINTMENT_NOT_PENDING_COMPLETE = "Esta cita ya no está pendiente, así que no se puede completar."
+APPOINTMENT_NOT_PENDING_CANCEL = (
+    "Esta cita ya no está pendiente, así que no se puede cancelar."
+)
+APPOINTMENT_NOT_CANCELLED_RESTORE = (
+    "Esta cita ya no está cancelada, así que no se puede restaurar."
+)
+APPOINTMENT_PREPAID_CHANGED = (
+    "Los pagos de esta cita cambiaron en otro lugar. Revisa los montos y vuelve a confirmar."
+)
 APPOINTMENT_PAYMENT_CHANGED = (
     "El pago de esta cita cambió en otro lugar. Revisa los montos y vuelve a confirmar."
 )
