@@ -17,11 +17,15 @@ class ClientsApiTests(ApiTestCase):
     esquema = "api_clients"
     dominio = "api-clients.localhost"
 
-    def create(self, **data):
-        return self.api_client.post(reverse("api_clients"), {"first_name": "Ana", "phone_prefix": "+56", **data}, format="json")
+    def create(self, key=None, **data):
+        headers = {"HTTP_IDEMPOTENCY_KEY": key} if key else {}
+        body = {"first_name": "Ana", "phone_prefix": "+56", **data}
+        return self.api_client.post(reverse("api_clients"), body, format="json", **headers)
 
-    def edit(self, client, **data):
-        return self.api_client.patch(reverse("api_client", kwargs={"pk": client.pk}), data, format="json")
+    def edit(self, client, key=None, **data):
+        headers = {"HTTP_IDEMPOTENCY_KEY": key} if key else {}
+        url = reverse("api_client", kwargs={"pk": client.pk})
+        return self.api_client.patch(url, data, format="json", **headers)
 
     def version(self, client):
         client.refresh_from_db()
@@ -105,6 +109,27 @@ class ClientsApiTests(ApiTestCase):
         self.assertApiError(self.edit(client, notas="Nueva", version=old), 409, "conflict")
         client.refresh_from_db()
         self.assertIsNone(client.notas)
+
+    def test_a_repeated_idempotency_key_on_edit_answers_the_same_without_conflict(self):
+        self.log_in_as(Rol.ENCARGADO)
+        client = Cliente.objects.create(nombre="Ana", telefono="+56911112222")
+        version = self.version(client)
+        first = self.edit(client, key="clave-1", first_name="Anita", version=version)
+        second = self.edit(client, key="clave-1", first_name="Anita", version=version)
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(second.status_code, 200, second.content)
+        self.assertEqual(first.json(), second.json())
+        third = self.edit(client, key="clave-2", first_name="Anita", version=version)
+        self.assertApiError(third, 409, "conflict")
+
+    def test_a_repeated_idempotency_key_on_create_answers_the_same(self):
+        self.log_in_as(Rol.COLABORADOR)
+        first = self.create(key="clave-1", codigo_app=str(uuid.uuid4()))
+        second = self.create(key="clave-1", codigo_app=str(uuid.uuid4()))
+        self.assertEqual(first.status_code, 201, first.content)
+        self.assertEqual(second.status_code, 201, second.content)
+        self.assertEqual(first.json(), second.json())
+        self.assertEqual(Cliente.objects.filter(nombre="Ana").count(), 1)
 
     def test_edit_keeps_its_own_phone_and_email_but_not_others(self):
         self.log_in_as(Rol.ENCARGADO)

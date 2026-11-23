@@ -4,6 +4,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from apis.common import errors, messages
+from apis.common.idempotency import IdempotentWrite
 from apis.common.views import ApiView
 from apis.v1.clients.form_data import ClientFormData
 from apis.v1.clients.serializers import (
@@ -49,6 +50,9 @@ class ClientsView(ApiView):
         responses={201: ClientSavedSerializer, 200: ClientSavedSerializer},
     )
     def post(self, request, *args, **kwargs):
+        return IdempotentWrite(request).run(lambda: self.create(request))
+
+    def create(self, request):
         serializer = ClientCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         changes = serializer.validated_data
@@ -74,7 +78,10 @@ class ClientView(ApiView):
         responses=ClientSavedSerializer,
     )
     def patch(self, request, *args, **kwargs):
-        client = Cliente.objects.filter(pk=kwargs["pk"]).first()
+        return IdempotentWrite(request).run(lambda: self.update(request, kwargs["pk"]))
+
+    def update(self, request, pk):
+        client = Cliente.objects.filter(pk=pk).first()
         if client is None:
             raise NotFound(messages.CLIENT_NOT_FOUND)
         serializer = ClientUpdateSerializer(data=request.data)
