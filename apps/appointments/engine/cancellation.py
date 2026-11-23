@@ -8,6 +8,7 @@ from apps.appointments.engine.messages import (
     REFUNDS_INVALID,
 )
 from apps.appointments.engine.prepaid_card import PrepaidCard
+from apps.appointments.engine.prepaid_snapshot import PrepaidSnapshot
 from apps.appointments.models import Cita
 from apps.payments.accounting import (
     AppointmentLedger,
@@ -56,6 +57,9 @@ class AppointmentCancellation:
         if not isinstance(reference, str) or len(reference.strip()) > REFERENCE_MAX_LENGTH:
             raise AppointmentRuleError(REFUNDS_INVALID)
         return pk, {"method": method, "reference": reference.strip()}
+
+    def rows_changed(self, seen):
+        return PrepaidSnapshot.changed(self.rows, seen)
 
     @transaction.atomic
     def cancel(self, refunds):

@@ -118,6 +118,8 @@ PARA_TODO_EL_EQUIPO = {
     "api_appointments",
     "api_appointment",
     "api_appointment_complete",
+    "api_appointment_cancel",
+    "api_appointment_restore",
     "api_schema",
     "api_docs",
 }
