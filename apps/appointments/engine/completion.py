@@ -69,6 +69,9 @@ class AppointmentCompletion:
             )
         return amount
 
+    def remaining_changed(self, seen):
+        return int(self.remaining) != int(seen)
+
     def amount_paid_now(self, full_payment, amount):
         if not self.remaining:
             return ZERO
@@ -88,8 +91,11 @@ class AppointmentCompletion:
     def advance_part(self):
         return dict(self.credit_parts()).get("Anticipo", ZERO)
 
+    def reservation_row(self):
+        return AppointmentLedger(self.payment).open_reservation() if self.payment else None
+
     def reservation_card(self):
-        row = AppointmentLedger(self.payment).open_reservation() if self.payment else None
+        row = self.reservation_row()
         if row is None:
             return None
         discounts = row.tipo_detalle == TipoDetallePago.RESERVA_DESCONTABLE
