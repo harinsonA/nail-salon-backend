@@ -6,6 +6,7 @@ from apps.appointments.engine.draft import AppointmentDraft
 from apps.appointments.engine.errors import AppointmentLockedError, AppointmentRuleError
 from apps.appointments.engine.prepaid_card import PrepaidCard
 from apps.appointments.engine.prepaid_limit import PrepaidLimit
+from apps.appointments.engine.prepaid_snapshot import PrepaidSnapshot
 from apps.appointments.engine.reservation import AppointmentReservation
 from apps.appointments.engine.reservation_change import ReservationChange
 from apps.appointments.engine.restoration import AppointmentRestoration
@@ -28,5 +29,6 @@ __all__ = [
     "AppointmentWriter",
     "PrepaidCard",
     "PrepaidLimit",
+    "PrepaidSnapshot",
     "ReservationChange",
 ]

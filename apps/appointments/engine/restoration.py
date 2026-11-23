@@ -4,6 +4,7 @@ from apps.appointments.access import is_collaborator
 from apps.appointments.engine.errors import AppointmentLockedError, AppointmentRuleError
 from apps.appointments.engine.messages import RESTORE_NOT_CANCELLED, RESTORED_INVALID
 from apps.appointments.engine.prepaid_card import PrepaidCard
+from apps.appointments.engine.prepaid_snapshot import PrepaidSnapshot
 from apps.appointments.models import Cita
 from apps.payments.accounting import AppointmentLedger, AppointmentPaymentService
 
@@ -30,6 +31,9 @@ class AppointmentRestoration:
         if len(restored) != len(set(restored)) or not set(restored) <= rows:
             raise AppointmentRuleError(RESTORED_INVALID)
         return set(restored)
+
+    def rows_changed(self, seen):
+        return PrepaidSnapshot.changed(self.rows, seen)
 
     @transaction.atomic
     def restore(self, restored):
