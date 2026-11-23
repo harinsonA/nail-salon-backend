@@ -25,8 +25,7 @@ RESERVATION_TOO_HIGH = (
     "La reserva o los anticipos suman {paid} y no pueden superar el total de los "
     "servicios ({total})."
 )
-FULL_PAYMENT_LABEL = "Paga el total ahora"
-BALANCE_PAYMENT_LABEL = "Paga el saldo ahora"
+FULL_PAYMENT_LABEL = "Pago completo"
 AMOUNT_TOO_HIGH = 'Si paga {total} o más, activa "{label}".'
 SETTLED_SUBJECTS = {
     ("Anticipo",): "El anticipo ya cubre",

@@ -87,7 +87,7 @@ class AppointmentCompleteApiTests(ApiTestCase):
             (body["services_total"], body["prepaid"], body["remaining"]), (18000, 5000, 13000)
         )
         self.assertEqual(body["credit"], [{"label": "Anticipo", "amount": 5000}])
-        self.assertEqual(body["full_payment_label"], "Paga el saldo ahora")
+        self.assertEqual(body["full_payment_label"], "Pago completo")
         self.assertIsNone(body["settled_hint"])
         self.assertIsNone(body["blocked"])
         self.assertIsNone(body["reservation"])

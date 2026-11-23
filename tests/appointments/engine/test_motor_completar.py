@@ -8,7 +8,6 @@ from apps.appointments.engine import (
     AppointmentWriter,
 )
 from apps.appointments.engine.messages import (
-    BALANCE_PAYMENT_LABEL,
     COMPLETE_NOT_PENDING,
     FULL_PAYMENT_LABEL,
     NOTHING_TO_CHARGE,
@@ -50,14 +49,14 @@ class MotorCompletarTests(CitaBase):
 
     def test_con_anticipo_cobra_el_saldo(self):
         motor = AppointmentCompletion(self.cita(4000))
-        self.assertEqual((motor.remaining, motor.full_payment_label()), (Decimal("6000"), BALANCE_PAYMENT_LABEL))
+        self.assertEqual((motor.remaining, motor.full_payment_label()), (Decimal("6000"), FULL_PAYMENT_LABEL))
         self.assertEqual(motor.advance_part(), Decimal("4000"))
 
     def test_un_abono_igual_al_saldo_pide_pagar_el_saldo(self):
         motor = AppointmentCompletion(self.cita(4000))
         with self.assertRaises(AppointmentRuleError) as error:
             motor.clean_amount(False, "6000")
-        self.assertEqual(error.exception.message, 'Si paga $6.000 o más, activa "Paga el saldo ahora".')
+        self.assertEqual(error.exception.message, 'Si paga $6.000 o más, activa "Pago completo".')
         self.assertEqual(motor.clean_amount(False, "2000"), Decimal("2000"))
 
     def test_sin_servicios_por_cobrar_no_hay_saldo(self):

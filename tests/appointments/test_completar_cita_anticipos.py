@@ -71,10 +71,10 @@ class CompletarCitaConAnticipoTests(NegocioTestCase):
         self.assertEqual(respuesta.context["total_value"], 6000)
         self.assertEqual(
             respuesta.context["complete_config"],
-            {"total": 6000, "prepaid": 4000, "servicesTotal": 10000, "fullLabel": "Paga el saldo ahora"},
+            {"total": 6000, "prepaid": 4000, "servicesTotal": 10000, "fullLabel": "Pago completo"},
         )
         self.assertContains(respuesta, "Saldo a pagar")
-        self.assertContains(respuesta, "Paga el saldo ahora")
+        self.assertContains(respuesta, "Pago completo")
         self.assertContains(respuesta, "-$4.000")
         self.assertContains(respuesta, "$6.000")
 
@@ -115,7 +115,7 @@ class CompletarCitaConAnticipoTests(NegocioTestCase):
         respuesta = self.completar(down_payment="6000")
         self.assertEqual(respuesta.status_code, 400)
         errores = {error["id_element"]: error["error"] for error in respuesta.json()["errors"]}
-        self.assertEqual(errores["id_down_payment"], 'Si paga $6.000 o más, activa "Paga el saldo ahora".')
+        self.assertEqual(errores["id_down_payment"], 'Si paga $6.000 o más, activa "Pago completo".')
         self.cita.refresh_from_db()
         self.assertEqual(self.cita.estado, Cita.EstadoChoices.PENDIENTE)
         self.assertEqual(self.pago().detalles_pago.count(), 1)

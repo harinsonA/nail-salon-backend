@@ -3,7 +3,6 @@ from django.db import transaction
 from apps.appointments.engine.errors import AppointmentRuleError
 from apps.appointments.engine.messages import (
     AMOUNT_TOO_HIGH,
-    BALANCE_PAYMENT_LABEL,
     COMPLETE_NOT_PENDING,
     FULL_PAYMENT_LABEL,
     NOTHING_TO_CHARGE,
@@ -43,7 +42,7 @@ class AppointmentCompletion:
         return AppointmentRuleError(message, cls.FIELD)
 
     def full_payment_label(self):
-        return BALANCE_PAYMENT_LABEL if self.prepaid else FULL_PAYMENT_LABEL
+        return FULL_PAYMENT_LABEL
 
     def clean_amount(self, full_payment, amount):
         if self.prepaid > self.services_total:
