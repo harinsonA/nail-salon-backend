@@ -93,7 +93,7 @@ class CompletarCitaTests(NegocioTestCase):
     def test_abre_el_modal_con_el_formato_nuevo(self):
         respuesta = self.abrir()
         self.assertContains(respuesta, "Completar cita: Clienta")
-        self.assertContains(respuesta, "Paga el total ahora")
+        self.assertContains(respuesta, "Pago completo")
         self.assertContains(respuesta, "$10.000")
         self.assertContains(respuesta, "20 octubre 2026, 10:00")
         self.assertContains(respuesta, "initAppointmentComplete")
@@ -102,7 +102,7 @@ class CompletarCitaTests(NegocioTestCase):
     def test_un_abono_igual_al_total_pide_activar_el_pago_completo(self):
         respuesta = self.completar(down_payment="10000")
         self.assertNoSeCompleta(respuesta)
-        self.assertIn('activa \\"Paga el total ahora\\"', respuesta.content.decode())
+        self.assertIn('activa \\"Pago completo\\"', respuesta.content.decode())
 
     def test_con_tarjeta_o_transferencia_la_referencia_es_opcional(self):
         respuesta = self.completar(full_payment="on", payment_method="TARJETA")

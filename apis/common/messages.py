@@ -21,3 +21,7 @@ SUMMARY_MISMATCH = (
     "Los montos de la app no coinciden con los del sistema y la cita no se guardó. "
     "Actualiza la app o avísanos para revisarlo."
 )
+APPOINTMENT_NOT_PENDING_COMPLETE = "Esta cita ya no está pendiente, así que no se puede completar."
+APPOINTMENT_PAYMENT_CHANGED = (
+    "El pago de esta cita cambió en otro lugar. Revisa los montos y vuelve a confirmar."
+)

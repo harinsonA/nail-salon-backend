@@ -6,7 +6,7 @@
   const DIALOG_CLASSES = "modal-lg modal-dialog-scrollable";
 
   class AppointmentComplete {
-    constructor(form, { total, prepaid = 0, servicesTotal = total, fullLabel = "Paga el total ahora" }) {
+    constructor(form, { total, prepaid = 0, servicesTotal = total, fullLabel = "Pago completo" }) {
       this.form = form;
       this.total = total;
       this.prepaid = prepaid;
