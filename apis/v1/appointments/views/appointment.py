@@ -5,8 +5,10 @@ from rest_framework.response import Response
 from apis.common import errors, messages
 from apis.common.idempotency import IdempotentWrite
 from apis.common.views import ApiView
+from apis.v1.appointments.detail import AppointmentDetail
 from apis.v1.appointments.saving import AppointmentSaving
 from apis.v1.appointments.serializers import (
+    AppointmentDetailSerializer,
     AppointmentSavedSerializer,
     AppointmentUpdateSerializer,
 )
@@ -20,12 +22,30 @@ from apps.appointments.models import Cita
 
 
 class AppointmentView(ApiView):
-    http_method_names = ["put"]
+    http_method_names = ["get", "put"]
 
-    def update(self, request, pk):
+    @staticmethod
+    def visible(request, pk):
         appointment = visible_appointments(request.user).filter(pk=pk).first()
         if appointment is None:
             raise NotFound(messages.APPOINTMENT_NOT_FOUND)
+        return appointment
+
+    @extend_schema(
+        summary="Detalle de cita",
+        description=(
+            "Lo que muestra el panel de la web que no está en la copia local: equipo, pago "
+            "(filas, pagos registrados y reservas) y quién la creó y cuándo. Los textos y montos "
+            "llegan listos para mostrar. Cita que no existe o no es de la colaboradora: 404."
+        ),
+        responses=AppointmentDetailSerializer,
+    )
+    def get(self, request, *args, **kwargs):
+        appointment = self.visible(request, kwargs["pk"])
+        return Response(AppointmentDetailSerializer(AppointmentDetail(appointment, request.user).build()).data)
+
+    def update(self, request, pk):
+        appointment = self.visible(request, pk)
         serializer = AppointmentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         changes = serializer.validated_data
