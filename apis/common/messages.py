@@ -16,6 +16,8 @@ SERVICE_CHANGED = "Este servicio tuvo cambios desde otro dispositivo. Revisa có
 APPOINTMENT_NOT_FOUND = "Esta cita ya no existe."
 APPOINTMENT_CHANGED = "Esta cita tuvo cambios desde otro dispositivo. Revisa cómo quedó y vuelve a hacer tu cambio."
 APPOINTMENT_NOT_PENDING = "Esta cita ya no está pendiente, así que no se puede editar."
+APPOINTMENT_COMPLETED_EDIT = "Esta cita ya fue completada, así que tu cambio no se puede guardar."
+APPOINTMENT_CANCELLED_EDIT = "Esta cita fue cancelada, así que tu cambio no se puede guardar."
 PRICES_LOWERED = "Bajó el precio de {names}. Revisa el resumen antes de confirmar."
 SUMMARY_MISMATCH = (
     "Los montos de la app no coinciden con los del sistema y la cita no se guardó. "

@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.urls import reverse
 
+from apis.common import messages
 from apis.v1.sync.serializers import AppointmentSerializer
 from apps.appointments.models import Cita
 from apps.clients.models import Cliente
@@ -222,6 +223,26 @@ class AppointmentsApiTests(ApiTestCase):
         Cita.objects.filter(pk=appointment.pk).update(estado=Cita.EstadoChoices.CANCELADA)
         response = self.edit(appointment, self.payload(user))
         self.assertApiError(response, 409, "conflict")
+
+    def test_an_old_edit_of_a_completed_appointment_says_it_was_completed(self):
+        user = self.log_in_as(Rol.PROPIETARIO)
+        appointment = self.created(user)
+        old = self.version(appointment)
+        appointment.estado = Cita.EstadoChoices.COMPLETADA
+        appointment.save()
+        response = self.edit(appointment, self.payload(user, version=old))
+        self.assertApiError(response, 409, "conflict")
+        self.assertEqual(response.json()["message"], messages.APPOINTMENT_COMPLETED_EDIT)
+
+    def test_an_old_edit_of_a_cancelled_appointment_says_it_was_cancelled(self):
+        user = self.log_in_as(Rol.PROPIETARIO)
+        appointment = self.created(user)
+        old = self.version(appointment)
+        appointment.estado = Cita.EstadoChoices.CANCELADA
+        appointment.save()
+        response = self.edit(appointment, self.payload(user, version=old))
+        self.assertApiError(response, 409, "conflict")
+        self.assertEqual(response.json()["message"], messages.APPOINTMENT_CANCELLED_EDIT)
 
     def test_collaborator_cannot_edit_someone_elses_appointment(self):
         owner = self.log_in_as(Rol.PROPIETARIO)

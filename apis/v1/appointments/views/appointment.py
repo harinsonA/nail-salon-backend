@@ -23,6 +23,10 @@ from apps.appointments.models import Cita
 
 class AppointmentView(ApiView):
     http_method_names = ["get", "put"]
+    not_pending_messages = {
+        Cita.EstadoChoices.COMPLETADA: messages.APPOINTMENT_COMPLETED_EDIT,
+        Cita.EstadoChoices.CANCELADA: messages.APPOINTMENT_CANCELLED_EDIT,
+    }
 
     @staticmethod
     def visible(request, pk):
@@ -49,11 +53,11 @@ class AppointmentView(ApiView):
         serializer = AppointmentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         changes = serializer.validated_data
+        if appointment.estado != Cita.EstadoChoices.PENDIENTE:
+            raise errors.Conflict(self.not_pending_messages.get(appointment.estado, messages.APPOINTMENT_NOT_PENDING))
         version = changes.get("version")
         if version and version != appointment.modified:
             raise errors.Conflict(messages.APPOINTMENT_CHANGED)
-        if appointment.estado != Cita.EstadoChoices.PENDIENTE:
-            raise errors.Conflict(messages.APPOINTMENT_NOT_PENDING)
         data = AppointmentSaving(request, appointment).validated(changes)
         appointment = AppointmentWriter(request.user).update(appointment, data)
         appointment = AppointmentSaving.reloaded(appointment)
@@ -64,8 +68,8 @@ class AppointmentView(ApiView):
         summary="Editar cita",
         description=(
             "Todos los datos del formulario, cada servicio y anticipo guardado con su id. "
-            "Con version distinta al modified de la cita responde 409; si ya no está "
-            "pendiente, también 409. El resumen se valida igual que al crear."
+            "Si ya no está pendiente responde 409 diciendo si fue completada o cancelada, antes "
+            "de revisar la versión; con version distinta al modified de la cita, también 409. El resumen se valida igual que al crear."
         ),
         request=AppointmentUpdateSerializer,
         responses=AppointmentSavedSerializer,
