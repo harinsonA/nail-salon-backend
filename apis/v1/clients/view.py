@@ -72,7 +72,7 @@ class ClientView(ApiView):
         summary="Editar cliente",
         description=(
             "Solo lo que cambió, incluido estado. Con version distinta al modified del cliente "
-            "responde 409: cambió en otro lugar."
+            "responde 409: tuvo cambios desde otro dispositivo."
         ),
         request=ClientUpdateSerializer,
         responses=ClientSavedSerializer,
