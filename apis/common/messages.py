@@ -8,13 +8,13 @@ INVALID_DATA = "Revisa los datos ingresados."
 NOT_FOUND = "Esta página no existe."
 TOO_MANY_REQUESTS = "Hiciste demasiados intentos seguidos. Espera un momento y vuelve a intentarlo."
 CLIENT_NOT_FOUND = "Este cliente ya no existe."
-CLIENT_CHANGED = "Este cliente cambió en otro lugar. Revisa sus datos y vuelve a guardar."
+CLIENT_CHANGED = "Este cliente tuvo cambios desde otro dispositivo. Revisa cómo quedó y vuelve a hacer tu cambio."
 CATEGORY_NOT_FOUND = "Esta categoría ya no existe."
-CATEGORY_CHANGED = "Esta categoría cambió en otro lugar. Revisa sus datos y vuelve a guardar."
+CATEGORY_CHANGED = "Esta categoría tuvo cambios desde otro dispositivo. Revisa cómo quedó y vuelve a hacer tu cambio."
 SERVICE_NOT_FOUND = "Este servicio ya no existe."
-SERVICE_CHANGED = "Este servicio cambió en otro lugar. Revisa sus datos y vuelve a guardar."
+SERVICE_CHANGED = "Este servicio tuvo cambios desde otro dispositivo. Revisa cómo quedó y vuelve a hacer tu cambio."
 APPOINTMENT_NOT_FOUND = "Esta cita ya no existe."
-APPOINTMENT_CHANGED = "Esta cita cambió en otro lugar. Revisa sus datos y vuelve a guardar."
+APPOINTMENT_CHANGED = "Esta cita tuvo cambios desde otro dispositivo. Revisa cómo quedó y vuelve a hacer tu cambio."
 APPOINTMENT_NOT_PENDING = "Esta cita ya no está pendiente, así que no se puede editar."
 PRICES_LOWERED = "Bajó el precio de {names}. Revisa el resumen antes de confirmar."
 SUMMARY_MISMATCH = (
@@ -29,8 +29,8 @@ APPOINTMENT_NOT_CANCELLED_RESTORE = (
     "Esta cita ya no está cancelada, así que no se puede restaurar."
 )
 APPOINTMENT_PREPAID_CHANGED = (
-    "Los pagos de esta cita cambiaron en otro lugar. Revisa los montos y vuelve a confirmar."
+    "Los pagos de esta cita tuvieron cambios desde otro dispositivo. Revisa los montos y vuelve a confirmar."
 )
 APPOINTMENT_PAYMENT_CHANGED = (
-    "El pago de esta cita cambió en otro lugar. Revisa los montos y vuelve a confirmar."
+    "El pago de esta cita tuvo cambios desde otro dispositivo. Revisa los montos y vuelve a confirmar."
 )
