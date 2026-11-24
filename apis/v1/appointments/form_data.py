@@ -1,5 +1,7 @@
 import json
 
+from apis.common import messages
+
 FORM_FIELDS = {
     "cliente_id": "client",
     "asignado_a_id": "assigned_to",
@@ -9,6 +11,11 @@ FORM_FIELDS = {
 }
 API_FIELDS = {form_field: field for field, form_field in FORM_FIELDS.items()}
 API_FIELDS["__all__"] = "non_field_errors"
+UNAVAILABLE = {
+    "client": messages.CLIENT_UNAVAILABLE,
+    "assigned_to": messages.ASSIGNEE_UNAVAILABLE,
+}
+INVALID_CHOICE = "invalid_choice"
 
 
 class AppointmentFormData:
@@ -60,5 +67,17 @@ class AppointmentFormData:
         }
 
     @staticmethod
-    def errors(form) -> dict:
-        return {API_FIELDS.get(name, name): messages for name, messages in form.errors.items()}
+    def field_errors(name, errors) -> list:
+        unavailable = UNAVAILABLE.get(name)
+        return [
+            unavailable if unavailable and error.code == INVALID_CHOICE else message
+            for error in errors
+            for message in error.messages
+        ]
+
+    @classmethod
+    def errors(cls, form) -> dict:
+        return {
+            API_FIELDS.get(name, name): cls.field_errors(name, errors)
+            for name, errors in form.errors.as_data().items()
+        }

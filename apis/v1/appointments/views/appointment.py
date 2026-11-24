@@ -1,18 +1,17 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from apis.common import errors, messages
 from apis.common.idempotency import IdempotentWrite
 from apis.common.views import ApiView
 from apis.v1.appointments.detail import AppointmentDetail
+from apis.v1.appointments.lookup import AppointmentLookup
 from apis.v1.appointments.saving import AppointmentSaving
 from apis.v1.appointments.serializers import (
     AppointmentDetailSerializer,
     AppointmentSavedSerializer,
     AppointmentUpdateSerializer,
 )
-from apps.appointments.access import visible_appointments
 from apps.appointments.editing import AppointmentSavedMessage
 from apps.appointments.engine import AppointmentWriter
 from apps.appointments.models import Cita
@@ -30,10 +29,7 @@ class AppointmentView(ApiView):
 
     @staticmethod
     def visible(request, pk):
-        appointment = visible_appointments(request.user).filter(pk=pk).first()
-        if appointment is None:
-            raise NotFound(messages.APPOINTMENT_NOT_FOUND)
-        return appointment
+        return AppointmentLookup.visible(request.user, pk)
 
     @extend_schema(
         summary="Detalle de cita",
@@ -69,7 +65,9 @@ class AppointmentView(ApiView):
         description=(
             "Todos los datos del formulario, cada servicio y anticipo guardado con su id. "
             "Si ya no está pendiente responde 409 diciendo si fue completada o cancelada, antes "
-            "de revisar la versión; con version distinta al modified de la cita, también 409. El resumen se valida igual que al crear."
+            "de revisar la versión; con version distinta al modified de la cita, también 409. El resumen se valida igual que al crear. "
+            "Borrada: 404 «ya no existe»; de la colaboradora y reasignada a otra persona: 404 «ya no está asignada a ti». "
+            "Cliente o persona asignada que ya no está disponible: error en su campo."
         ),
         request=AppointmentUpdateSerializer,
         responses=AppointmentSavedSerializer,
