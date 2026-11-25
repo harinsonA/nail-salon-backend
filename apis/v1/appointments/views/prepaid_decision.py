@@ -2,15 +2,14 @@ import json
 
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from apis.common import errors, messages
 from apis.common.idempotency import IdempotentWrite
 from apis.common.views import ApiView
+from apis.v1.appointments.lookup import AppointmentLookup
 from apis.v1.appointments.saving import AppointmentSaving
 from apis.v1.appointments.serializers import AppointmentSavedSerializer
-from apps.appointments.access import visible_appointments
 from apps.appointments.engine import AppointmentLockedError, AppointmentRuleError
 
 """========================================================================="""
@@ -30,12 +29,7 @@ class PrepaidDecisionView(ApiView):
     message_class = None
 
     def appointment(self, request, pk, lock=False):
-        appointments = visible_appointments(request.user)
-        if lock:
-            appointments = appointments.select_for_update(of=("self",))
-        appointment = appointments.filter(pk=pk).first()
-        if appointment is None:
-            raise NotFound(messages.APPOINTMENT_NOT_FOUND)
+        appointment = AppointmentLookup.visible(request.user, pk, lock)
         if appointment.estado != self.status:
             raise errors.Conflict(self.wrong_status_message)
         return appointment

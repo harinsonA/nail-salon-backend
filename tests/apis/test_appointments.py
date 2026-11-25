@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from apis.common import messages
@@ -20,6 +21,7 @@ from apps.settings.preferences import (
 from tests.apis.base import ApiTestCase
 
 Rol = Perfil.Rol
+User = get_user_model()
 DATE = "2026-12-04"
 
 
@@ -250,6 +252,30 @@ class AppointmentsApiTests(ApiTestCase):
         self.log_in_as(Rol.COLABORADOR)
         response = self.edit(appointment, self.payload(owner))
         self.assertApiError(response, 404, "not_found")
+        self.assertEqual(response.json()["message"], messages.APPOINTMENT_NOT_YOURS)
+
+    def test_a_deleted_appointment_says_it_no_longer_exists(self):
+        user = self.log_in_as(Rol.PROPIETARIO)
+        appointment = self.created(user)
+        Cita.all_objects.filter(pk=appointment.pk).update(is_removed=True)
+        response = self.edit(appointment, self.payload(user))
+        self.assertApiError(response, 404, "not_found")
+        self.assertEqual(response.json()["message"], messages.APPOINTMENT_NOT_FOUND)
+
+    def test_an_inactive_client_is_reported_as_unavailable(self):
+        user = self.log_in_as(Rol.PROPIETARIO)
+        Cliente.objects.filter(pk=self.client_row.pk).update(estado=Cliente.EstadoChoices.INACTIVO)
+        response = self.create(self.payload(user))
+        self.assertApiError(response, 400, "invalid_data")
+        self.assertEqual(response.json()["fields"]["cliente_id"], [messages.CLIENT_UNAVAILABLE])
+
+    def test_an_inactive_assignee_is_reported_as_unavailable(self):
+        owner = self.log_in_as(Rol.PROPIETARIO)
+        other = self.make_user(Rol.COLABORADOR)
+        User.objects.filter(pk=other.pk).update(is_active=False)
+        response = self.create(self.payload(owner, asignado_a_id=other.pk))
+        self.assertApiError(response, 400, "invalid_data")
+        self.assertEqual(response.json()["fields"]["asignado_a_id"], [messages.ASSIGNEE_UNAVAILABLE])
 
     def test_a_repeated_idempotency_key_answers_the_same_without_conflict(self):
         user = self.log_in_as(Rol.PROPIETARIO)
