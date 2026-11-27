@@ -55,15 +55,13 @@ class ClientsApiTests(ApiTestCase):
                 self.assertEqual(client.email, f"ana.{rol}@correo.cl")
                 self.assertEqual(data["client"]["telefono"], client.telefono)
 
-    def test_overdue_business_pauses_clients_for_managers_only(self):
+    def test_overdue_business_pauses_clients_for_everyone(self):
         Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.MOROSO)
-        for rol in (Rol.PROPIETARIO, Rol.ENCARGADO):
+        for rol in (Rol.PROPIETARIO, Rol.ENCARGADO, Rol.COLABORADOR):
             with self.subTest(rol=rol):
                 self.log_in_as(rol)
                 self.assertApiError(self.create(first_name=f"Ana {rol}"), 402, "payment_pending")
         self.assertFalse(Cliente.objects.exists())
-        self.log_in_as(Rol.COLABORADOR)
-        self.assertEqual(self.create(first_name="Ana").status_code, 201)
 
     def test_create_returns_the_form_errors_with_api_names(self):
         self.log_in_as(Rol.COLABORADOR)

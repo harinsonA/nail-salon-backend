@@ -102,7 +102,7 @@ class EstadoEnLaAgendaTests(NegocioTestCase):
         self.assertNotContains(calendario, "data-calendar-new")
         nueva = colaborador.get(reverse("create_appointment_from_calendar", args=["2026-11-26"]))
         self.assertEqual(nueva.status_code, 402)
-        self.assertEqual(colaborador.get(reverse("clients")).status_code, 200)
+        self.assertEqual(colaborador.get(reverse("clients")).status_code, 402)
         self.assertEqual(colaborador.get(reverse("incomes")).status_code, 403)
 
     def test_moroso_quien_administra_ve_el_aviso_y_no_entra_a_la_administracion(self):

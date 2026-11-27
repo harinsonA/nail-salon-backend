@@ -22,7 +22,7 @@ TEAM_ONLY = {"api_sample_team"}
 @override_settings(ROOT_URLCONF=TEST_URLCONF)
 @patch("apis.common.guards.SOLO_ADMINISTRACION", ADMINISTRATION_ONLY)
 @patch("apis.common.guards.SOLO_CON_EQUIPO", TEAM_ONLY)
-@patch("apps.tenancy.business_status.status.EN_PAUSA_CON_MOROSO", ADMINISTRATION_ONLY)
+@patch("apps.tenancy.business_status.status.SOLO_ADMINISTRACION", ADMINISTRATION_ONLY)
 class GuardChainTests(ApiTestCase):
     esquema = "api_guards"
     dominio = "api-guards.localhost"

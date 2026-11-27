@@ -46,14 +46,14 @@ class PausedSectionTests(NegocioTestCase):
         self.assertFalse(overdue.pauses_section("incomes", self.make_user(Perfil.Rol.COLABORADOR)))
         self.assertFalse(overdue.pauses_section("calendar", self.make_user(Perfil.Rol.PROPIETARIO)))
 
-    def test_overdue_pauses_clients_for_managers_but_not_whatsapp(self):
+    def test_overdue_pauses_clients_for_everyone_but_not_whatsapp(self):
         overdue = BusinessStatus(Negocio(estado=Estado.MOROSO))
         owner = self.make_user(Perfil.Rol.PROPIETARIO)
         for url_name in ("clients", "client_create_modal", "api_clients", "api_client"):
             with self.subTest(url_name=url_name):
                 self.assertTrue(overdue.pauses_section(url_name, owner))
         self.assertFalse(overdue.pauses_section("client_whatsapp_modal", owner))
-        self.assertFalse(overdue.pauses_section("clients", self.make_user(Perfil.Rol.COLABORADOR)))
+        self.assertTrue(overdue.pauses_section("clients", self.make_user(Perfil.Rol.COLABORADOR)))
 
     def test_overdue_stops_new_appointments_for_everyone(self):
         overdue = BusinessStatus(Negocio(estado=Estado.MOROSO))
