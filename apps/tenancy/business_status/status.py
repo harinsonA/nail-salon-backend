@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 from django_tenants.utils import get_public_schema_name
 
-from apps.profiles.permisos import SOLO_ADMINISTRACION, administra_el_negocio
+from apps.profiles.permisos import EN_PAUSA_CON_MOROSO, administra_el_negocio
 from apps.tenancy.business_status import messages
 from apps.tenancy.models import Negocio
 
@@ -42,4 +42,4 @@ class BusinessStatus:
         return self.negocio.estado == Negocio.Estado.MOROSO
 
     def pauses_section(self, url_name, user):
-        return self.is_overdue and url_name in SOLO_ADMINISTRACION and administra_el_negocio(user)
+        return self.is_overdue and url_name in EN_PAUSA_CON_MOROSO and administra_el_negocio(user)

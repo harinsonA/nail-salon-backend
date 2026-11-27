@@ -108,7 +108,7 @@ class EstadoEnLaAgendaTests(NegocioTestCase):
                 navegador = self.navegador_de(rol)
                 calendario = navegador.get(reverse("calendar"))
                 self.assertContains(calendario, "Hay un pago pendiente con Hi Agenda")
-                self.assertEqual(navegador.get(reverse("clients")).status_code, 200)
+                self.assertContains(navegador.get(reverse("clients")), "Pago pendiente", status_code=402)
                 self.assertContains(navegador.get(reverse("incomes")), "Pago pendiente", status_code=402)
                 ajax = navegador.get(reverse("incomes_list"), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
                 self.assertEqual(ajax.status_code, 402)

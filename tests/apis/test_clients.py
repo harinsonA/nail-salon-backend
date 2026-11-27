@@ -8,6 +8,7 @@ from django.utils import timezone
 from apis.v1.sync.serializers import ClientSerializer
 from apps.clients.models import Cliente
 from apps.profiles.models import Perfil
+from apps.tenancy.models import Negocio
 from tests.apis.base import ApiTestCase
 
 Rol = Perfil.Rol
@@ -53,6 +54,16 @@ class ClientsApiTests(ApiTestCase):
                 self.assertTrue(client.telefono.startswith("+569"))
                 self.assertEqual(client.email, f"ana.{rol}@correo.cl")
                 self.assertEqual(data["client"]["telefono"], client.telefono)
+
+    def test_overdue_business_pauses_clients_for_managers_only(self):
+        Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.MOROSO)
+        for rol in (Rol.PROPIETARIO, Rol.ENCARGADO):
+            with self.subTest(rol=rol):
+                self.log_in_as(rol)
+                self.assertApiError(self.create(first_name=f"Ana {rol}"), 402, "payment_pending")
+        self.assertFalse(Cliente.objects.exists())
+        self.log_in_as(Rol.COLABORADOR)
+        self.assertEqual(self.create(first_name="Ana").status_code, 201)
 
     def test_create_returns_the_form_errors_with_api_names(self):
         self.log_in_as(Rol.COLABORADOR)
