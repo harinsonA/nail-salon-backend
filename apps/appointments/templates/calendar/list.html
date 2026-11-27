@@ -39,10 +39,12 @@ Calendario
       </div>
     </div>
     <div class="calendar-toolbar__group calendar-toolbar__group--end">
+      {% if can_create_appointment %}
       <button type="button" class="btn btn-primary calendar-new-btn bs-xl-modal" data-calendar-new data-form-url="{{ new_appointment_url }}" aria-label="Nueva cita" title="Nueva cita">
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">add</span>
         Cita
       </button>
+      {% endif %}
       <label class="calendar-search">
         <span class="visually-hidden">Buscar cita por cliente</span>
         <span class="material-symbols-outlined icon--inline" aria-hidden="true">search</span>

@@ -143,6 +143,9 @@
     }
 
     setNewAppointmentUrl(url) {
+      if (!this.newButton) {
+        return;
+      }
       this.newButton.dataset.formUrl = url;
       window.jQuery(this.newButton).off("click");
       initializeBSXLModals(this.newButton, { formURL: url });

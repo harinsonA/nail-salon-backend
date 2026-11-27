@@ -98,7 +98,11 @@ class EstadoEnLaAgendaTests(NegocioTestCase):
         colaborador = self.navegador_de(Perfil.Rol.COLABORADOR)
         calendario = colaborador.get(reverse("calendar"))
         self.assertEqual(calendario.status_code, 200)
-        self.assertNotContains(calendario, "pago pendiente")
+        self.assertContains(calendario, "Hay un pago pendiente con Hi Agenda")
+        self.assertNotContains(calendario, "data-calendar-new")
+        nueva = colaborador.get(reverse("create_appointment_from_calendar", args=["2026-11-26"]))
+        self.assertEqual(nueva.status_code, 402)
+        self.assertEqual(colaborador.get(reverse("clients")).status_code, 402)
         self.assertEqual(colaborador.get(reverse("incomes")).status_code, 403)
 
     def test_moroso_quien_administra_ve_el_aviso_y_no_entra_a_la_administracion(self):
@@ -108,7 +112,7 @@ class EstadoEnLaAgendaTests(NegocioTestCase):
                 navegador = self.navegador_de(rol)
                 calendario = navegador.get(reverse("calendar"))
                 self.assertContains(calendario, "Hay un pago pendiente con Hi Agenda")
-                self.assertEqual(navegador.get(reverse("clients")).status_code, 200)
+                self.assertContains(navegador.get(reverse("clients")), "Pago pendiente", status_code=402)
                 self.assertContains(navegador.get(reverse("incomes")), "Pago pendiente", status_code=402)
                 ajax = navegador.get(reverse("incomes_list"), HTTP_X_REQUESTED_WITH="XMLHttpRequest")
                 self.assertEqual(ajax.status_code, 402)
@@ -117,6 +121,7 @@ class EstadoEnLaAgendaTests(NegocioTestCase):
         propietario = self.navegador_de(Perfil.Rol.PROPIETARIO)
         calendario = propietario.get(reverse("calendar"))
         self.assertEqual(calendario.status_code, 200)
+        self.assertContains(calendario, "data-calendar-new")
         self.assertNotContains(calendario, "Hay un pago pendiente")
         self.assertEqual(propietario.get(reverse("incomes")).status_code, 200)
 

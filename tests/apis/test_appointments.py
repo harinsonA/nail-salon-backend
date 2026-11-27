@@ -12,6 +12,7 @@ from apps.payments.choices import MetodoPago, TipoDetallePago
 from apps.payments.models import DetallePago
 from apps.profiles.models import Perfil
 from apps.services.models import Categoria, Servicio
+from apps.tenancy.models import Negocio
 from apps.settings.preferences import (
     RESERVATION_AMOUNT,
     RESERVATION_DISCOUNTS_TOTAL,
@@ -35,6 +36,14 @@ class AppointmentsApiTests(ApiTestCase):
         category = Categoria.objects.create(nombre="Manos")
         self.manicure = Servicio.objects.create(nombre="Manicure", precio=Decimal("15000"), categoria=category)
         self.design = Servicio.objects.create(nombre="Diseño", precio=Decimal("3000"), categoria=category)
+
+    def test_overdue_business_stops_new_appointments_for_everyone(self):
+        Negocio.objects.filter(pk=self.negocio.pk).update(estado=Negocio.Estado.MOROSO)
+        for rol in (Rol.PROPIETARIO, Rol.ENCARGADO, Rol.COLABORADOR):
+            with self.subTest(rol=rol):
+                user = self.log_in_as(rol)
+                self.assertApiError(self.create(self.payload(user)), 402, "payment_pending")
+        self.assertFalse(Cita.objects.exists())
 
     def turn_on_reservation(self, discounts=True):
         RESERVATION_ENABLED.set(True)

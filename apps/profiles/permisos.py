@@ -59,6 +59,26 @@ SOLO_ADMINISTRACION = {
     "api_service",
 }
 
+CLIENTES_EN_PAUSA_CON_MOROSO = {
+    "clients",
+    "client_list",
+    "client_export",
+    "client_import",
+    "client_example_export",
+    "client_create_modal",
+    "client_detail_modal",
+    "client_delete_modal",
+    "api_clients",
+    "api_client",
+}
+
+CREAR_CITAS_EN_PAUSA_CON_MOROSO = {
+    "create_appointment_from_calendar",
+    "api_appointments",
+}
+
+EN_PAUSA_CON_MOROSO_PARA_TODOS = CLIENTES_EN_PAUSA_CON_MOROSO | CREAR_CITAS_EN_PAUSA_CON_MOROSO
+
 SOLO_CON_EQUIPO = {
     "equipo",
     "equipo_lista",
