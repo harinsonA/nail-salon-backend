@@ -98,7 +98,7 @@ class EstadoEnLaAgendaTests(NegocioTestCase):
         colaborador = self.navegador_de(Perfil.Rol.COLABORADOR)
         calendario = colaborador.get(reverse("calendar"))
         self.assertEqual(calendario.status_code, 200)
-        self.assertNotContains(calendario, "pago pendiente")
+        self.assertContains(calendario, "Hay un pago pendiente con Hi Agenda")
         self.assertNotContains(calendario, "data-calendar-new")
         nueva = colaborador.get(reverse("create_appointment_from_calendar", args=["2026-11-26"]))
         self.assertEqual(nueva.status_code, 402)

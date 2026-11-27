@@ -9,7 +9,7 @@ def estado_del_negocio(request):
     negocio = getattr(request, "tenant", None)
     moroso = negocio is not None and negocio.estado == Negocio.Estado.MOROSO
     usuario = getattr(request, "user", None)
-    return {"aviso_de_pago": moroso and usuario is not None and administra_el_negocio(usuario)}
+    return {"aviso_de_pago": moroso and usuario is not None and usuario.is_authenticated}
 
 
 def user_limit(request):
