@@ -13,6 +13,7 @@ from apps.clients.models import Cliente
 from apps.common.views.base_views import ProtectedAjaxView, ProtectedView
 from apps.profiles.permisos import administra_el_negocio
 from apps.services.models import Servicio
+from apps.tenancy.business_status import BusinessStatus
 
 """========================================================================="""
 # region ........ Constants
@@ -74,6 +75,7 @@ class CalendarView(ProtectedView, TemplateView):
         return {
             **super().get_context_data(**kwargs),
             "new_appointment_url": new_appointment_url,
+            "can_create_appointment": BusinessStatus(self.request.tenant).allows_new_appointments,
             "preferences_url": reverse("calendar_preferences"),
             "appointment_preferences_url": self.appointment_preferences_url(),
             "calendar_filtered": settings["filtered"],

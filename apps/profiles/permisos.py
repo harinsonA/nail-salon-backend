@@ -74,6 +74,11 @@ CLIENTES_EN_PAUSA_CON_MOROSO = {
 
 EN_PAUSA_CON_MOROSO = SOLO_ADMINISTRACION | CLIENTES_EN_PAUSA_CON_MOROSO
 
+CREAR_CITAS_EN_PAUSA_CON_MOROSO = {
+    "create_appointment_from_calendar",
+    "api_appointments",
+}
+
 SOLO_CON_EQUIPO = {
     "equipo",
     "equipo_lista",

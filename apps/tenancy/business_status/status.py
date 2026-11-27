@@ -2,7 +2,11 @@ from typing import NamedTuple
 
 from django_tenants.utils import get_public_schema_name
 
-from apps.profiles.permisos import EN_PAUSA_CON_MOROSO, administra_el_negocio
+from apps.profiles.permisos import (
+    CREAR_CITAS_EN_PAUSA_CON_MOROSO,
+    EN_PAUSA_CON_MOROSO,
+    administra_el_negocio,
+)
 from apps.tenancy.business_status import messages
 from apps.tenancy.models import Negocio
 
@@ -41,5 +45,13 @@ class BusinessStatus:
     def is_overdue(self):
         return self.negocio.estado == Negocio.Estado.MOROSO
 
+    @property
+    def allows_new_appointments(self):
+        return not self.is_overdue
+
     def pauses_section(self, url_name, user):
-        return self.is_overdue and url_name in EN_PAUSA_CON_MOROSO and administra_el_negocio(user)
+        if not self.is_overdue:
+            return False
+        if url_name in CREAR_CITAS_EN_PAUSA_CON_MOROSO:
+            return True
+        return url_name in EN_PAUSA_CON_MOROSO and administra_el_negocio(user)
